@@ -1,4 +1,4 @@
-#include <src/nodes/MeshInstance.hpp>
+#include <src/nodes/rendering/MeshInstance.hpp>
 
 #include <iostream>
 
@@ -32,11 +32,4 @@ void MeshInstance::generateTriangle()
 MeshInstance::~MeshInstance()
 {
     Renderer::getInstance().clearMesh(renderId);
-}
-
-void MeshInstance::handleInputFromBot(const InputAction& inputAction)
-{
-    if(inputAction.action.name == "forward" && inputAction.action.clicked){
-        std::cout << "Input working \n";
-    }
 }

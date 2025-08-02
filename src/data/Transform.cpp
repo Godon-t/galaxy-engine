@@ -1,5 +1,7 @@
 #include <src/data/Transform.hpp>
 
+#include <iostream>
+
 Transform::Transform(): globalModelMatrix(1.f), 
                         pos(0.0f), 
                         scale(1.0f), 

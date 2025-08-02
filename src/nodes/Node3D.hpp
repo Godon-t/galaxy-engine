@@ -1,3 +1,5 @@
+#pragma once
+
 #include <src/data/Transform.hpp>
 
 #include <src/nodes/Node.hpp>
@@ -11,4 +13,7 @@ public:
 
     void forceUpdateTransformAndChilds(const mat4 &matrix) override;
 
+    void translate(vec3 translation);
+    void rotate(vec3 rotation);
+    void setScale(vec3 scale);
 };

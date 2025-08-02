@@ -34,7 +34,7 @@ public:
 
     void destroy();
 
-    virtual void updateTransformAndChilds(const mat4& matrix);
+    virtual void updateTransformAndChilds(const mat4& matrix = mat4(1));
     virtual void forceUpdateTransformAndChilds(const mat4& matrix);
 
     void handleInput(const InputAction& inputAction);

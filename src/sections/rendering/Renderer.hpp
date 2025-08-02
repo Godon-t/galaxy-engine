@@ -8,6 +8,7 @@
 
 #include <src/sections/rendering/Program.hpp>
 #include <src/sections/rendering/VisualInstance.hpp>
+#include <src/sections/rendering/CameraManager.hpp>
 
 #include <src/types/Render.hpp>
 #include <src/data/Transform.hpp>
@@ -17,7 +18,8 @@ private:
     // int nbFrames = 0;
     std::chrono::milliseconds frameDuration;
     Program mainProgram;
-    VisualInstance triangleInstance;
+
+    CameraManager camManager;
 
 
     std::vector<std::pair<VisualInstance, Transform*>> visuInstances;
@@ -38,6 +40,9 @@ public:
     static Renderer& getInstance();
 
     void renderFrame();
+    camID addCamera(Transform* transformRef);
+    void setCurrentCamera(camID id);
+    void removeCamera(camID id);
     renderID instanciateMesh(Transform* transformRef, std::vector<Vertex> &vertices, std::vector<short unsigned int> &indices);
     void clearMesh(renderID meshID);
 };

@@ -75,7 +75,8 @@ add_executable(main
 
 	src/data/Transform.cpp
 
-	src/nodes/MeshInstance.cpp
+	src/nodes/rendering/MeshInstance.cpp
+	src/nodes/rendering/Camera.cpp
 	src/nodes/Node.cpp
 	src/nodes/Node3D.cpp
 	src/nodes/Root.cpp
@@ -84,6 +85,7 @@ add_executable(main
 	src/sections/rendering/Program.cpp
 	src/sections/rendering/Renderer.cpp
 	src/sections/rendering/VisualInstance.cpp
+	src/sections/rendering/CameraManager.cpp
 
 
 	common/shader.cpp

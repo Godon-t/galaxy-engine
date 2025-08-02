@@ -22,3 +22,14 @@ void Node3D::forceUpdateTransformAndChilds(const mat4 &matrix)
         child->forceUpdateTransformAndChilds(transform.getGlobalModelMatrix());
     }
 }
+
+void Node3D::translate(vec3 translation){
+    transform.translate(translation);
+}
+void Node3D::rotate(vec3 rotation){
+    transform.rotate(rotation);
+}
+void Node3D::setScale(vec3 scale){
+    transform.setLocalScale(scale);
+}
+

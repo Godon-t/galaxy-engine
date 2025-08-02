@@ -2,6 +2,8 @@
 
 #include <GL/glew.h>
 
+#include <iostream>
+
 #include <common/shader.hpp>
 #include <src/sections/rendering/OpenglHelper.hpp>
 
@@ -22,7 +24,7 @@ Program::Program(const char *vertexPath, const char *fragmentPath){
     // updateProjectionMatrix(p);
     // glm::mat4 camProj = Camera::getInstance().getP();
     // updateProjectionMatrix(camProj);
-    mat4 view = lookAt(vec3(0,0,-1), vec3(0,0,1), vec3(0,1,0));
+    mat4 view = lookAt(vec3(0,0,0), vec3(0,0,-1), vec3(0,1,0));
     updateViewMatrix(view);
     mat4 projection = perspective(radians(45.f), 16.f/9.f, 0.1f, 999.0f);
     updateProjectionMatrix(projection);
@@ -33,12 +35,18 @@ Program::Program(Program &&other) noexcept
 {
     programID = other.programID;
     other.programID = 0;
+    modelLocation = other.modelLocation;
+    viewLocation = other.viewLocation;
+    projectionLocation = other.projectionLocation;
 }
 
 Program &Program::operator=(Program &&other) noexcept
 {
     programID = other.programID;
     other.programID = 0;
+    modelLocation = other.modelLocation;
+    viewLocation = other.viewLocation;
+    projectionLocation = other.projectionLocation;
     return *this;
 }
 

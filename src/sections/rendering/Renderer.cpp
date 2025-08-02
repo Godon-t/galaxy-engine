@@ -8,6 +8,7 @@
 
 #include <src/sections/rendering/VisualInstance.hpp>
 #include <src/sections/rendering/OpenglHelper.hpp>
+#include "Renderer.hpp"
 
 
 void Renderer::framebuffer_size_callback(GLFWwindow *window, int width, int height)
@@ -80,7 +81,8 @@ Renderer::Renderer()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
-    glEnable(GL_CULL_FACE);
+    // glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
 
     ImGui::CreateContext();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -101,6 +103,7 @@ Renderer::~Renderer()
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
+    glfwDestroyWindow(Renderer::getInstance().window);
     glfwTerminate();
 }
 
@@ -129,7 +132,10 @@ void Renderer::renderFrame()
 
     mainProgram.use();
 
+    mainProgram.updateViewMatrix(camManager.getViewMatrix());
+
     for(int instanceIdx=0; instanceIdx<instanceCount; instanceIdx++){
+        mainProgram.updateModelMatrix(visuInstances[instanceIdx].second->getGlobalModelMatrix());
         visuInstances[instanceIdx].first.draw();
     }
 
@@ -146,7 +152,19 @@ void Renderer::renderFrame()
         std::this_thread::sleep_for(frameDuration - elapsed);
 }
 
-renderID Renderer::instanciateMesh(Transform* transformRef, std::vector<Vertex> &vertices, std::vector<short unsigned int> &indices)
+camID Renderer::addCamera(Transform *transformRef)
+{
+    return camManager.registerCam(transformRef);
+}
+void Renderer::setCurrentCamera(camID id)
+{
+    camManager.setCurrent(id);
+}
+void Renderer::removeCamera(camID id)
+{
+    camManager.unregisterCam(id);
+}
+renderID Renderer::instanciateMesh(Transform *transformRef, std::vector<Vertex> &vertices, std::vector<short unsigned int> &indices)
 {
     if(freeIds.size() == 0) return -1;
 

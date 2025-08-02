@@ -38,10 +38,8 @@ void Node::destroy() {
 
 void Node::updateTransformAndChilds(const mat4& matrix)
 {
-    mat4 mat = parent_ == nullptr ? mat4(1) : matrix;
-
     for(auto&& child : children_){
-        child->updateTransformAndChilds(mat);
+        child->updateTransformAndChilds(matrix);
     }
 }
 

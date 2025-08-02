@@ -8,7 +8,8 @@
 #include <backend/imgui_impl_glfw.h>
 
 #include <src/sections/rendering/Renderer.hpp>
-#include <src/nodes/MeshInstance.hpp>
+#include <src/nodes/rendering/MeshInstance.hpp>
+#include <src/nodes/rendering/Camera.hpp>
 #include <src/nodes/Root.hpp>
 #include <src/input/InputManager.hpp>
 
@@ -23,14 +24,28 @@ int main(int argc, char const *argv[])
 
     
     InputManager inputManager(renderer.window);
+
     std::unique_ptr<MeshInstance> testInstance = std::make_unique<MeshInstance>();
     testInstance->generateTriangle();
+    testInstance->translate(vec3(0,0,2));
+
+    std::unique_ptr<Camera> mainCam = std::make_unique<Camera>();
+    testInstance->addChild(std::move(mainCam));
+    
     Root root(inputManager, std::move(testInstance));
+    
+
+    bool terminated = false;
+    inputManager.addListener([&terminated](InputAction inputAction){terminated = inputAction.action.name == "exit";});
+    
     do {
         inputManager.processInputs();
+        
+        root.process();
+
         renderer.renderFrame();
 
-    } while(glfwWindowShouldClose(renderer.window) == 0);
+    } while(!terminated);
 
     return 0;
 }

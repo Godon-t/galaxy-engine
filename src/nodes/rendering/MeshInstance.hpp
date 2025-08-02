@@ -11,6 +11,4 @@ public:
     void generateTriangle();
 
     ~MeshInstance() override;
-
-    void handleInputFromBot(const InputAction& inputAction) override;
 };

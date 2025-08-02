@@ -9,7 +9,7 @@ using namespace math;
 
 class Program {
     private:
-    GLuint modelLocation, vLocation, pLocation;
+    GLuint modelLocation, viewLocation, projectionLocation;
 
     public:
     GLuint programID;

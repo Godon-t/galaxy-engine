@@ -4,11 +4,13 @@
 
 #include <src/nodes/Node3D.hpp>
 
-class MeshInstance: Node3D {
+class MeshInstance: public Node3D {
 private:
     renderID renderId;
 public:
     void generateTriangle();
 
-    ~MeshInstance();
+    ~MeshInstance() override;
+
+    void handleInputFromBot(const InputAction& inputAction) override;
 };

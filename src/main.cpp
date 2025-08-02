@@ -9,6 +9,8 @@
 
 #include <src/sections/rendering/Renderer.hpp>
 #include <src/nodes/MeshInstance.hpp>
+#include <src/nodes/Root.hpp>
+#include <src/input/InputManager.hpp>
 
 int main(int argc, char const *argv[])
 {
@@ -19,10 +21,15 @@ int main(int argc, char const *argv[])
     glfwPollEvents();
     glfwSetCursorPos(renderer.window, 1024/2, 768/2);
 
-    MeshInstance testInstance;
-    testInstance.generateTriangle();
+    
+    InputManager inputManager(renderer.window);
+    std::unique_ptr<MeshInstance> testInstance = std::make_unique<MeshInstance>();
+    testInstance->generateTriangle();
+    Root root(inputManager, std::move(testInstance));
     do {
+        inputManager.processInputs();
         renderer.renderFrame();
+
     } while(glfwWindowShouldClose(renderer.window) == 0);
 
     return 0;

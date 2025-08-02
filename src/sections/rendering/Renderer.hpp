@@ -10,6 +10,7 @@
 #include <src/sections/rendering/VisualInstance.hpp>
 
 #include <src/types/Render.hpp>
+#include <src/data/Transform.hpp>
 
 class Renderer {
 private:
@@ -19,7 +20,7 @@ private:
     VisualInstance triangleInstance;
 
 
-    std::vector<VisualInstance> visuInstances;
+    std::vector<std::pair<VisualInstance, Transform*>> visuInstances;
     size_t instanceCount = 0; // Idx of the last added element
     std::unordered_map<renderID, size_t> instanceIdToVisuIdx;
     std::unordered_map<size_t, renderID> visuIdxToInstanceId;
@@ -37,7 +38,7 @@ public:
     static Renderer& getInstance();
 
     void renderFrame();
-    renderID instanciateMesh(std::vector<Vertex> &vertices, std::vector<short unsigned int> &indices);
+    renderID instanciateMesh(Transform* transformRef, std::vector<Vertex> &vertices, std::vector<short unsigned int> &indices);
     void clearMesh(renderID meshID);
 };
 

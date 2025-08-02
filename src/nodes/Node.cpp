@@ -1,5 +1,6 @@
 #include <src/nodes/Node.hpp>
 #include <src/nodes/Node3D.hpp>
+#include "Node.hpp"
 
 void Node::setParent(Node* parent) {
     this->parent_ = parent;
@@ -49,4 +50,13 @@ void Node::forceUpdateTransformAndChilds(const mat4 &matrix)
     for(auto&& child : children_){
         child->forceUpdateTransformAndChilds(matrix);
     }
+}
+
+void Node::handleInput(const InputAction &inputAction)
+{
+    handleInputFromTop(inputAction);
+    for(auto&& child : children_){
+        child->handleInput(inputAction);
+    }
+    handleInputFromBot(inputAction);
 }

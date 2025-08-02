@@ -130,7 +130,7 @@ void Renderer::renderFrame()
     mainProgram.use();
 
     for(int instanceIdx=0; instanceIdx<instanceCount; instanceIdx++){
-        visuInstances[instanceIdx].draw();
+        visuInstances[instanceIdx].first.draw();
     }
 
 
@@ -139,7 +139,6 @@ void Renderer::renderFrame()
 
     // Swap buffers
     glfwSwapBuffers(window);
-    // glfwPollEvents();
 
     auto frameEnd = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart);
@@ -147,7 +146,7 @@ void Renderer::renderFrame()
         std::this_thread::sleep_for(frameDuration - elapsed);
 }
 
-renderID Renderer::instanciateMesh(std::vector<Vertex> &vertices, std::vector<short unsigned int> &indices)
+renderID Renderer::instanciateMesh(Transform* transformRef, std::vector<Vertex> &vertices, std::vector<short unsigned int> &indices)
 {
     if(freeIds.size() == 0) return -1;
 
@@ -156,7 +155,7 @@ renderID Renderer::instanciateMesh(std::vector<Vertex> &vertices, std::vector<sh
     
     renderID meshID = freeIds.top();
     size_t listIdx = instanceCount;
-    visuInstances[listIdx] = std::move(meshInstance);
+    visuInstances[listIdx] = std::make_pair(std::move(meshInstance), transformRef);
     visuIdxToInstanceId[listIdx] = meshID;
     instanceIdToVisuIdx[meshID] = listIdx;
     

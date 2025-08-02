@@ -5,19 +5,27 @@
 #include <common/shader.hpp>
 #include <src/sections/rendering/OpenglHelper.hpp>
 
+#include <src/types/Math.hpp>
+
+using namespace math;
+
 
 Program::Program(const char *vertexPath, const char *fragmentPath){
     programID = LoadShaders( vertexPath, fragmentPath );
     glUseProgram(programID);
 
-    // modelLocation = glGetUniformLocation(programID, "model");
-    // vLocation = glGetUniformLocation(programID, "v");
-    // pLocation = glGetUniformLocation(programID, "p");
+    modelLocation = glGetUniformLocation(programID, "model");
+    viewLocation = glGetUniformLocation(programID, "view");
+    projectionLocation = glGetUniformLocation(programID, "projection");
 
     // glm::mat4 p = Camera::getInstance().getP();
     // updateProjectionMatrix(p);
     // glm::mat4 camProj = Camera::getInstance().getP();
     // updateProjectionMatrix(camProj);
+    mat4 view = lookAt(vec3(0,0,-1), vec3(0,0,1), vec3(0,1,0));
+    updateViewMatrix(view);
+    mat4 projection = perspective(radians(45.f), 16.f/9.f, 0.1f, 999.0f);
+    updateProjectionMatrix(projection);
     checkOpenGLErrors("Program initialization");
 }
 
@@ -41,10 +49,10 @@ Program::~Program()
 }
 
 void Program::updateViewMatrix(const mat4 &v){
-    glUniformMatrix4fv(vLocation, 1, GL_FALSE, &v[0][0]);
+    glUniformMatrix4fv(viewLocation, 1, GL_FALSE, &v[0][0]);
 }
 void Program::updateProjectionMatrix(const mat4 &p){
-    glUniformMatrix4fv(pLocation, 1, GL_FALSE, &p[0][0]);
+    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &p[0][0]);
 }
 void Program::updateModelMatrix(const mat4 &model){
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, &model[0][0]);

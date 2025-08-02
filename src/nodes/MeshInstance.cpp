@@ -1,7 +1,10 @@
 #include <src/nodes/MeshInstance.hpp>
 
+#include <iostream>
+
 #include <src/sections/rendering/VisualInstance.hpp>
 #include <src/sections/rendering/Renderer.hpp>
+#include "MeshInstance.hpp"
 
 void MeshInstance::generateTriangle()
 {
@@ -23,10 +26,17 @@ void MeshInstance::generateTriangle()
     triangleIndices.push_back(1);
     triangleIndices.push_back(2);
 
-    renderId = Renderer::getInstance().instanciateMesh(triangleVertices, triangleIndices);
+    renderId = Renderer::getInstance().instanciateMesh(getTransform(), triangleVertices, triangleIndices);
 }
 
 MeshInstance::~MeshInstance()
 {
     Renderer::getInstance().clearMesh(renderId);
+}
+
+void MeshInstance::handleInputFromBot(const InputAction& inputAction)
+{
+    if(inputAction.action.name == "forward" && inputAction.action.clicked){
+        std::cout << "Input working \n";
+    }
 }

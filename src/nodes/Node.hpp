@@ -3,6 +3,8 @@
 #include <vector>
 #include <memory>
 
+#include <src/input/Action.hpp>
+
 #include <src/types/Math.hpp>
 
 using namespace math;
@@ -34,4 +36,8 @@ public:
 
     virtual void updateTransformAndChilds(const mat4& matrix);
     virtual void forceUpdateTransformAndChilds(const mat4& matrix);
+
+    void handleInput(const InputAction& inputAction);
+    virtual void handleInputFromTop(const InputAction& inputAction){};
+    virtual void handleInputFromBot(const InputAction& inputAction){};
 };

@@ -69,11 +69,16 @@ add_definitions(
 add_executable(main
 	src/main.cpp
 
+	src/input/Action.cpp
+	src/input/Input.cpp
+	src/input/InputManager.cpp
+
 	src/data/Transform.cpp
 
 	src/nodes/MeshInstance.cpp
 	src/nodes/Node.cpp
 	src/nodes/Node3D.cpp
+	src/nodes/Root.cpp
 
 	src/sections/rendering/OpenglHelper.cpp
 	src/sections/rendering/Program.cpp

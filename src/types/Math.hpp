@@ -17,4 +17,6 @@ namespace math {
     using glm::scale;
     using glm::toMat4;
     using glm::radians;
+    using glm::perspective;
+    using glm::lookAt;
 }

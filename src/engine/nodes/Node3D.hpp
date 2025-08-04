@@ -1,0 +1,19 @@
+#pragma once
+
+#include "engine/data/Transform.hpp"
+
+#include "Node.hpp"
+
+class Node3D: public Node {
+protected:
+    Transform transform;
+public:
+    Transform* getTransform() {return &transform; }
+    void updateTransformAndChilds(const mat4 &matrix) override;
+
+    void forceUpdateTransformAndChilds(const mat4 &matrix) override;
+
+    void translate(vec3 translation);
+    void rotate(vec3 rotation);
+    void setScale(vec3 scale);
+};

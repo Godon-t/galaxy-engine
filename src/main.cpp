@@ -1,4 +1,4 @@
-#include <iostream>
+#include "pch.hpp"
 
 #include <GL/glew.h>
 
@@ -7,11 +7,11 @@
 
 #include <backend/imgui_impl_glfw.h>
 
-#include <src/sections/rendering/Renderer.hpp>
-#include <src/nodes/rendering/MeshInstance.hpp>
-#include <src/nodes/rendering/Camera.hpp>
-#include <src/nodes/Root.hpp>
-#include <src/input/InputManager.hpp>
+#include "engine/sections/rendering/Renderer.hpp"
+#include "engine/nodes/rendering/MeshInstance.hpp"
+#include "engine/nodes/rendering/Camera.hpp"
+#include "engine/nodes/Root.hpp"
+#include "engine/input/InputManager.hpp"
 
 int main(int argc, char const *argv[])
 {

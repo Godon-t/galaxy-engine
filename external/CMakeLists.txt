@@ -16,7 +16,6 @@ add_definitions(
 )
 
 ### GLFW ###
-
 add_subdirectory (glfw-3.1.2)
 
 include_directories(
@@ -74,14 +73,27 @@ option(ASSIMP_BUILD_ASSIMP_TOOLS "Build tools" OFF)
 
 include(FetchContent)
 FetchContent_Declare(
-    assimp
+	assimp
     GIT_REPOSITORY https://github.com/assimp/assimp.git
     GIT_TAG v5.3.1
     GIT_SHALLOW TRUE
 )
 
+# TODO: beware of static lib
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build static libraries" FORCE)
 FetchContent_MakeAvailable(assimp)
+	
+	
+	
+FetchContent_Declare(
+  yaml-cpp
+  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+  GIT_TAG 0.8.0
+)
+set(YAML_CPP_BUILD_SHARED_LIBS OFF CACHE BOOL "Build yaml-cpp statically" FORCE)
+FetchContent_MakeAvailable(yaml-cpp)
+
+# target_link_libraries(YOUR_LIBRARY PUBLIC yaml-cpp::yaml-cpp) # The library or executable that require yaml-cpp library
 
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")

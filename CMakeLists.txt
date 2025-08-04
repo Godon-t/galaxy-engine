@@ -54,6 +54,7 @@ set(ALL_LIBS
     glfw
     GLEW_1130
     assimp
+	yaml-cpp
 	imgui
 )
 
@@ -69,27 +70,30 @@ add_definitions(
 add_executable(main
 	src/main.cpp
 
-	src/input/Action.cpp
-	src/input/Input.cpp
-	src/input/InputManager.cpp
+	src/engine/input/Action.cpp
+	src/engine/input/Input.cpp
+	src/engine/input/InputManager.cpp
 
-	src/data/Transform.cpp
+	src/engine/data/Transform.cpp
 
-	src/nodes/rendering/MeshInstance.cpp
-	src/nodes/rendering/Camera.cpp
-	src/nodes/Node.cpp
-	src/nodes/Node3D.cpp
-	src/nodes/Root.cpp
+	src/engine/nodes/rendering/MeshInstance.cpp
+	src/engine/nodes/rendering/Camera.cpp
+	src/engine/nodes/Node.cpp
+	src/engine/nodes/Node3D.cpp
+	src/engine/nodes/Root.cpp
 
-	src/sections/rendering/OpenglHelper.cpp
-	src/sections/rendering/Program.cpp
-	src/sections/rendering/Renderer.cpp
-	src/sections/rendering/VisualInstance.cpp
-	src/sections/rendering/CameraManager.cpp
+	src/engine/sections/rendering/OpenglHelper.cpp
+	src/engine/sections/rendering/Program.cpp
+	src/engine/sections/rendering/Renderer.cpp
+	src/engine/sections/rendering/VisualInstance.cpp
+	src/engine/sections/rendering/CameraManager.cpp
 
 
 	common/shader.cpp
 )
+
+target_include_directories(main PUBLIC src)
+target_precompile_headers(main PUBLIC src/pch.hpp)
 
 add_subdirectory(external/imgui)
 

@@ -2,7 +2,12 @@
 
 #include <Engine.hpp>
 
-int main(){
-    Application test = Application();
-    test.run();
+class Sandbox : public Galaxy::Application {
+public:
+    Sandbox(){}
+    ~Sandbox(){}
+};
+
+Galaxy::Application* Galaxy::createApplication(){
+    return new Sandbox();
 }

@@ -15,15 +15,16 @@
 #include "engine/nodes/Root.hpp"
 #include "engine/input/InputManager.hpp"
 
-Application::Application()
+
+Galaxy::Application::Application()
 {
 }
 
-Application::~Application()
+Galaxy::Application::~Application()
 {
 }
 
-void Application::run()
+void Galaxy::Application::run()
 {
     Renderer& renderer = Renderer::getInstance();
 

@@ -1,11 +1,17 @@
 #pragma once
 
-#include "core.hpp"
+#include "Core.hpp"
 
-class API Application {
-public:
-    Application();
-    virtual ~Application();
+namespace Galaxy {
+    class API Application {
+    public:
+        Application();
+        virtual ~Application();
+    
+        void run();
+    };
 
-    void run();
-};
+    // Defined client side
+    Application* createApplication();
+}
+

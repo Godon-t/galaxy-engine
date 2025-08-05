@@ -5,9 +5,9 @@
 
 class CameraManager {
 private:
-    std::unordered_map<camID, std::pair<Transform*, bool>> registeredCamTransforms;
-    std::stack<camID> activeCamsHistory;
-    std::stack<camID> freeIds;
+    std::unordered_map<camID, std::pair<Transform*, bool>> m_registeredCamTransforms;
+    std::stack<camID> m_activeCamsHistory;
+    std::stack<camID> m_freeIds;
 
     mat4 getCurrentCamTransform();
 public:

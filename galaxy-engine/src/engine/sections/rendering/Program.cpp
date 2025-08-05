@@ -14,9 +14,9 @@ Program::Program(const char *vertexPath, const char *fragmentPath){
     programID = LoadShaders( vertexPath, fragmentPath );
     glUseProgram(programID);
 
-    modelLocation = glGetUniformLocation(programID, "model");
-    viewLocation = glGetUniformLocation(programID, "view");
-    projectionLocation = glGetUniformLocation(programID, "projection");
+    m_modelLocation = glGetUniformLocation(programID, "model");
+    m_viewLocation = glGetUniformLocation(programID, "view");
+    m_projectionLocation = glGetUniformLocation(programID, "projection");
 
     // glm::mat4 p = Camera::getInstance().getP();
     // updateProjectionMatrix(p);
@@ -35,18 +35,18 @@ Program::Program(Program &&other) noexcept
 {
     programID = other.programID;
     other.programID = 0;
-    modelLocation = other.modelLocation;
-    viewLocation = other.viewLocation;
-    projectionLocation = other.projectionLocation;
+    m_modelLocation = other.m_modelLocation;
+    m_viewLocation = other.m_viewLocation;
+    m_projectionLocation = other.m_projectionLocation;
 }
 
 Program &Program::operator=(Program &&other) noexcept
 {
     programID = other.programID;
     other.programID = 0;
-    modelLocation = other.modelLocation;
-    viewLocation = other.viewLocation;
-    projectionLocation = other.projectionLocation;
+    m_modelLocation = other.m_modelLocation;
+    m_viewLocation = other.m_viewLocation;
+    m_projectionLocation = other.m_projectionLocation;
     return *this;
 }
 
@@ -57,13 +57,13 @@ Program::~Program()
 }
 
 void Program::updateViewMatrix(const mat4 &v){
-    glUniformMatrix4fv(viewLocation, 1, GL_FALSE, &v[0][0]);
+    glUniformMatrix4fv(m_viewLocation, 1, GL_FALSE, &v[0][0]);
 }
 void Program::updateProjectionMatrix(const mat4 &p){
-    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &p[0][0]);
+    glUniformMatrix4fv(m_projectionLocation, 1, GL_FALSE, &p[0][0]);
 }
 void Program::updateModelMatrix(const mat4 &model){
-    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, &model[0][0]);
+    glUniformMatrix4fv(m_modelLocation, 1, GL_FALSE, &model[0][0]);
 }
 
 void Program::use()

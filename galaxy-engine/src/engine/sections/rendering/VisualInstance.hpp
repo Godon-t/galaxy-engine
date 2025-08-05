@@ -7,13 +7,13 @@
 using namespace math;
 
 struct Vertex {
-    vec3 position;
-    vec2 texCoord;
+    vec3 m_position;
+    vec2 m_texCoord;
 };
 
 class VisualInstance {
-    int nbOfIndices = 0;
-    GLuint VAO, VBO, EBO;
+    int m_nbOfIndices = 0;
+    GLuint m_VAO, m_VBO, m_EBO;
 
 public:
     VisualInstance();

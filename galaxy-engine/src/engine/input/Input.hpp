@@ -2,7 +2,7 @@
 
 class Input {
 private:
-    bool captured = false;
+    bool m_captured = false;
 public:
     bool isCaptured();
     void capture();

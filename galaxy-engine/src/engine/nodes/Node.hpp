@@ -8,8 +8,8 @@ using namespace math;
 
 class Node {
 protected:
-    Node* parent_ = nullptr;
-    std::vector<std::unique_ptr<Node>> children_;  // Changement ici pour unique_ptr
+    Node* m_parent = nullptr;
+    std::vector<std::unique_ptr<Node>> m_children;  // Changement ici pour unique_ptr
 
 public:
     Node() = default;
@@ -26,7 +26,7 @@ public:
     void removeChild(Node* component);
     
     bool isLeaf() const {
-        return children_.empty();
+        return m_children.empty();
     }
 
     void destroy();

@@ -5,7 +5,7 @@
 
 class Root{
 private:
-    std::unique_ptr<Node> rootNode;
+    std::unique_ptr<Node> m_rootNode;
 public:
     Root(InputManager& inputManager, std::unique_ptr<Node> node);
     void process();

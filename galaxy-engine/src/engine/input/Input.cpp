@@ -4,10 +4,10 @@
 
 bool Input::isCaptured()
 {
-    return captured;
+    return m_captured;
 }
 
 void Input::capture()
 {
-    captured = true;
+    m_captured = true;
 }

@@ -9,12 +9,12 @@ void MeshInstance::generateTriangle()
 {
     std::vector<Vertex> triangleVertices;
     Vertex v1, v2, v3;
-    v1.position = vec3(-1, -1, 0);
-    v1.texCoord = vec2(0,0);
-    v2.position = vec3(1, -1, 0);
-    v2.texCoord = vec2(1,0);
-    v3.position = vec3(1, 1, 0);
-    v3.texCoord = vec2(0,1);
+    v1.m_position = vec3(-1, -1, 0);
+    v1.m_texCoord = vec2(0,0);
+    v2.m_position = vec3(1, -1, 0);
+    v2.m_texCoord = vec2(1,0);
+    v3.m_position = vec3(1, 1, 0);
+    v3.m_texCoord = vec2(0,1);
     
     triangleVertices.push_back(v1);
     triangleVertices.push_back(v2);
@@ -25,10 +25,10 @@ void MeshInstance::generateTriangle()
     triangleIndices.push_back(1);
     triangleIndices.push_back(2);
 
-    renderId = Renderer::getInstance().instanciateMesh(getTransform(), triangleVertices, triangleIndices);
+    m_renderId = Renderer::getInstance().instanciateMesh(getTransform(), triangleVertices, triangleIndices);
 }
 
 MeshInstance::~MeshInstance()
 {
-    Renderer::getInstance().clearMesh(renderId);
+    Renderer::getInstance().clearMesh(m_renderId);
 }

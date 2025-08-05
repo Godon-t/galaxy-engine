@@ -4,59 +4,59 @@
 #include "OpenglHelper.hpp"
 
 
-VisualInstance::VisualInstance(): VAO(0), VBO(0), EBO(0) {}
+VisualInstance::VisualInstance(): m_VAO(0), m_VBO(0), m_EBO(0) {}
 
 VisualInstance::~VisualInstance(){
-    if (VAO != 0) {
-        glDeleteVertexArrays(1, &VAO);
+    if (m_VAO != 0) {
+        glDeleteVertexArrays(1, &m_VAO);
     }
-    if (VBO != 0) {
-        glDeleteBuffers(1, &VBO);
+    if (m_VBO != 0) {
+        glDeleteBuffers(1, &m_VBO);
     }
-    if (EBO != 0) {
-        glDeleteBuffers(1, &EBO);
+    if (m_EBO != 0) {
+        glDeleteBuffers(1, &m_EBO);
     }
 }
 
 VisualInstance::VisualInstance(VisualInstance &&other)
 {
-    VAO = other.VAO;
-    VBO = other.VBO;
-    EBO = other.EBO;
-    nbOfIndices = other.nbOfIndices;
+    m_VAO = other.m_VAO;
+    m_VBO = other.m_VBO;
+    m_EBO = other.m_EBO;
+    m_nbOfIndices = other.m_nbOfIndices;
 
-    other.VAO = 0;
-    other.VBO = 0;
-    other.EBO = 0;
+    other.m_VAO = 0;
+    other.m_VBO = 0;
+    other.m_EBO = 0;
 }
 
 VisualInstance &VisualInstance::operator=(VisualInstance &&other)
 {
-    VAO = other.VAO;
-    VBO = other.VBO;
-    EBO = other.EBO;
-    nbOfIndices = other.nbOfIndices;
+    m_VAO = other.m_VAO;
+    m_VBO = other.m_VBO;
+    m_EBO = other.m_EBO;
+    m_nbOfIndices = other.m_nbOfIndices;
 
-    other.VAO = 0;
-    other.VBO = 0;
-    other.EBO = 0;
+    other.m_VAO = 0;
+    other.m_VBO = 0;
+    other.m_EBO = 0;
 
     return *this;
 }
 void VisualInstance::init(std::vector<Vertex> &vertices, std::vector<short unsigned int> &indices)
 {
-    nbOfIndices = indices.size();
+    m_nbOfIndices = indices.size();
 
-    glGenVertexArrays(1,&VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+    glGenVertexArrays(1,&m_VAO);
+    glGenBuffers(1, &m_VBO);
+    glGenBuffers(1, &m_EBO);
 
-    glBindVertexArray(VAO);
+    glBindVertexArray(m_VAO);
     
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
     
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0], GL_STATIC_DRAW);
     
     int vertexSize = sizeof(Vertex);
@@ -74,11 +74,11 @@ void VisualInstance::init(std::vector<Vertex> &vertices, std::vector<short unsig
 
 void VisualInstance::draw()
 {
-    glBindVertexArray(VAO);
+    glBindVertexArray(m_VAO);
     
     glDrawElements(
                 GL_TRIANGLES,      // mode
-                nbOfIndices,
+                m_nbOfIndices,
                 GL_UNSIGNED_SHORT,   // type
                 (void*)0           // element array buffer offset
                 );

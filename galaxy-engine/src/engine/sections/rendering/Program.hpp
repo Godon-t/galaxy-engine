@@ -8,7 +8,7 @@ using namespace math;
 
 class Program {
     private:
-    GLuint modelLocation, viewLocation, projectionLocation;
+    GLuint m_modelLocation, m_viewLocation, m_projectionLocation;
 
     public:
     GLuint programID;

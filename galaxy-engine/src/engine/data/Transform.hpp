@@ -11,12 +11,12 @@ enum RotationOrderEnum {
 };
 struct Transform {
 private:
-    vec3 pos = { 0.0f, 0.0f, 0.0f };
-    vec3 scale = { 1.0f, 1.0f, 1.0f };
-    mat4 globalModelMatrix = mat4(1.f);
-    quat rotationQuat = quat();
+    vec3 m_pos = { 0.0f, 0.0f, 0.0f };
+    vec3 m_scale = { 1.0f, 1.0f, 1.0f };
+    mat4 m_globalModelMatrix = mat4(1.f);
+    quat m_rotationQuat = quat();
 
-    RotationOrderEnum rotationOrder = YXZ;
+    RotationOrderEnum m_rotationOrder = YXZ;
     
 public:
     bool dirty = true;
@@ -53,12 +53,12 @@ public:
 
     Transform& operator=(Transform&& other) noexcept {
         if (this != &other) {
-            pos = std::move(other.pos);
-            rotationQuat = std::move(other.rotationQuat);
-            scale = std::move(other.scale);
-            globalModelMatrix = std::move(other.globalModelMatrix);
+            m_pos = std::move(other.m_pos);
+            m_rotationQuat = std::move(other.m_rotationQuat);
+            m_scale = std::move(other.m_scale);
+            m_globalModelMatrix = std::move(other.m_globalModelMatrix);
             dirty = other.dirty;
-            rotationOrder = other.rotationOrder;
+            m_rotationOrder = other.m_rotationOrder;
 
             other.dirty = true;
         }

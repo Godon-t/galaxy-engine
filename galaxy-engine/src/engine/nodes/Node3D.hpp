@@ -6,9 +6,9 @@
 
 class Node3D: public Node {
 protected:
-    Transform transform;
+    Transform m_transform;
 public:
-    Transform* getTransform() {return &transform; }
+    Transform* getTransform() {return &m_transform; }
     void updateTransformAndChilds(const mat4 &matrix) override;
 
     void forceUpdateTransformAndChilds(const mat4 &matrix) override;

@@ -47,7 +47,7 @@ void Galaxy::Application::run()
     
 
     bool terminated = false;
-    inputManager.addListener([&terminated](InputAction inputAction){terminated = inputAction.action.name == "exit";});
+    inputManager.addListener([&terminated](InputAction inputAction){terminated = inputAction.action.m_name == "exit";});
     
     do {
         inputManager.processInputs();

@@ -6,7 +6,7 @@
 
 class Camera: public Node3D {
 private:
-    bool current;
+    bool m_current;
 public:
     camID id;
     Camera();

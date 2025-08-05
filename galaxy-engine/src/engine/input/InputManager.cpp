@@ -4,25 +4,25 @@
 
 void InputManager::emitEvent(const InputAction& input)
 {
-    for(auto& listener : listeners){
+    for(auto& listener : m_listeners){
         listener(input);
     }
 }
 
 void InputManager::processInputs()
 {
-    for(auto& action : managedActions){
-        if (glfwGetKey(context, action.glfwKey) == GLFW_PRESS) {
-            if(action.pressed) action.clicked = false;
+    for(auto& action : m_managedActions){
+        if (glfwGetKey(m_context, action.m_glfwKey) == GLFW_PRESS) {
+            if(action.m_pressed) action.m_clicked = false;
             else {
-                action.pressed = true;
-                action.clicked = true;
+                action.m_pressed = true;
+                action.m_clicked = true;
             }
         } else {
-            action.pressed = false;
+            action.m_pressed = false;
         }
 
-        if(action.pressed){
+        if(action.m_pressed){
             InputAction inputA(action);
             emitEvent(inputA);
         }
@@ -33,5 +33,5 @@ void InputManager::processInputs()
 
 void InputManager::addListener(std::function<void(InputAction inputAction)> listener)
 {
-    listeners.push_back(listener);
+    m_listeners.push_back(listener);
 }

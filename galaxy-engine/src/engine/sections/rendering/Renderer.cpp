@@ -30,10 +30,10 @@ void Renderer::framebuffer_size_callback(GLFWwindow *window, int width, int heig
 const size_t maxSize = 512;
 Renderer::Renderer()
 {
-    visuInstances.resize(maxSize);
+    m_visuInstances.resize(maxSize);
     
     for(size_t i=0; i<maxSize; i++){
-        freeIds.push(i);
+        m_freeIds.push(i);
     }
 
     GLenum error = glGetError();
@@ -91,10 +91,10 @@ Renderer::Renderer()
     ImGui_ImplOpenGL3_Init();
 
 
-    frameDuration = std::chrono::milliseconds(1000 / 60); // 60 fps
+    m_frameDuration = std::chrono::milliseconds(1000 / 60); // 60 fps
 
 
-    mainProgram = std::move(Program(galaxy::engineRes("shaders/vertex.glsl"), galaxy::engineRes("shaders/fragment.glsl")));
+    m_mainProgram = std::move(Program(galaxy::engineRes("shaders/vertex.glsl"), galaxy::engineRes("shaders/fragment.glsl")));
     
     checkOpenGLErrors("Renderer constructor");
 }
@@ -132,13 +132,13 @@ void Renderer::renderFrame()
 
 
 
-    mainProgram.use();
+    m_mainProgram.use();
 
-    mainProgram.updateViewMatrix(camManager.getViewMatrix());
+    m_mainProgram.updateViewMatrix(m_camManager.getViewMatrix());
 
     for(int instanceIdx=0; instanceIdx<instanceCount; instanceIdx++){
-        mainProgram.updateModelMatrix(visuInstances[instanceIdx].second->getGlobalModelMatrix());
-        visuInstances[instanceIdx].first.draw();
+        m_mainProgram.updateModelMatrix(m_visuInstances[instanceIdx].second->getGlobalModelMatrix());
+        m_visuInstances[instanceIdx].first.draw();
     }
 
 
@@ -150,51 +150,51 @@ void Renderer::renderFrame()
 
     auto frameEnd = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart);
-    if (elapsed < frameDuration)
-        std::this_thread::sleep_for(frameDuration - elapsed);
+    if (elapsed < m_frameDuration)
+        std::this_thread::sleep_for(m_frameDuration - elapsed);
 }
 
 camID Renderer::addCamera(Transform *transformRef)
 {
-    return camManager.registerCam(transformRef);
+    return m_camManager.registerCam(transformRef);
 }
 void Renderer::setCurrentCamera(camID id)
 {
-    camManager.setCurrent(id);
+    m_camManager.setCurrent(id);
 }
 void Renderer::removeCamera(camID id)
 {
-    camManager.unregisterCam(id);
+    m_camManager.unregisterCam(id);
 }
 renderID Renderer::instanciateMesh(Transform *transformRef, std::vector<Vertex> &vertices, std::vector<short unsigned int> &indices)
 {
-    if(freeIds.size() == 0) return -1;
+    if(m_freeIds.size() == 0) return -1;
 
     VisualInstance meshInstance;
     meshInstance.init(vertices, indices);
     
-    renderID meshID = freeIds.top();
+    renderID meshID = m_freeIds.top();
     size_t listIdx = instanceCount;
-    visuInstances[listIdx] = std::make_pair(std::move(meshInstance), transformRef);
-    visuIdxToInstanceId[listIdx] = meshID;
-    instanceIdToVisuIdx[meshID] = listIdx;
+    m_visuInstances[listIdx] = std::make_pair(std::move(meshInstance), transformRef);
+    m_visuIdxToInstanceId[listIdx] = meshID;
+    m_instanceIdToVisuIdx[meshID] = listIdx;
     
-    freeIds.pop();
+    m_freeIds.pop();
     instanceCount ++;
     return meshID;
 }
 
 void Renderer::clearMesh(renderID meshID)
 {
-    size_t idxToDelete = instanceIdToVisuIdx[meshID];
+    size_t idxToDelete = m_instanceIdToVisuIdx[meshID];
 
     instanceCount--;
 
-    renderID movedMeshID = visuIdxToInstanceId[instanceCount];
-    instanceIdToVisuIdx[movedMeshID] = idxToDelete;
-    visuIdxToInstanceId[idxToDelete] = movedMeshID;
+    renderID movedMeshID = m_visuIdxToInstanceId[instanceCount];
+    m_instanceIdToVisuIdx[movedMeshID] = idxToDelete;
+    m_visuIdxToInstanceId[idxToDelete] = movedMeshID;
 
-    visuInstances[idxToDelete] = std::move(visuInstances[instanceCount]);
+    m_visuInstances[idxToDelete] = std::move(m_visuInstances[instanceCount]);
 
-    freeIds.emplace(meshID);
+    m_freeIds.emplace(meshID);
 }

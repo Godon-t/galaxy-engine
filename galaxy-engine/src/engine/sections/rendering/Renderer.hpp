@@ -15,17 +15,17 @@
 class Renderer {
 private:
     // int nbFrames = 0;
-    std::chrono::milliseconds frameDuration;
-    Program mainProgram;
+    std::chrono::milliseconds m_frameDuration;
+    Program m_mainProgram;
 
-    CameraManager camManager;
+    CameraManager m_camManager;
 
 
-    std::vector<std::pair<VisualInstance, Transform*>> visuInstances;
+    std::vector<std::pair<VisualInstance, Transform*>> m_visuInstances;
     size_t instanceCount = 0; // Idx of the last added element
-    std::unordered_map<renderID, size_t> instanceIdToVisuIdx;
-    std::unordered_map<size_t, renderID> visuIdxToInstanceId;
-    std::stack<renderID> freeIds;
+    std::unordered_map<renderID, size_t> m_instanceIdToVisuIdx;
+    std::unordered_map<size_t, renderID> m_visuIdxToInstanceId;
+    std::stack<renderID> m_freeIds;
 public:
     GLFWwindow* window;
 

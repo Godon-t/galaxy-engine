@@ -3,10 +3,10 @@
 #include "Input.hpp"
 
 struct Action {
-    std::string name;
-    int glfwKey;
-    bool pressed;
-    bool clicked;
+    std::string m_name;
+    int m_glfwKey;
+    bool m_pressed;
+    bool m_clicked;
 
     Action(int key, std::string name);
 };

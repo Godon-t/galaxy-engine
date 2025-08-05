@@ -4,8 +4,8 @@
 
 Action::Action(int key, std::string name)
 {
-    glfwKey = key;
-    this->name = name;
-    pressed = false;
-    clicked = false;
+    m_glfwKey = key;
+    this->m_name = name;
+    m_pressed = false;
+    m_clicked = false;
 }

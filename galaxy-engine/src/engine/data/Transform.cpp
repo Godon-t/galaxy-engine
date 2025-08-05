@@ -2,79 +2,79 @@
 
 #include "Transform.hpp"
 
-Transform::Transform(): globalModelMatrix(1.f), 
-                        pos(0.0f), 
-                        scale(1.0f), 
-                        rotationQuat(1.0f, 0.f, 0.f, 0.f), 
-                        rotationOrder(XYZ), 
+Transform::Transform(): m_globalModelMatrix(1.f), 
+                        m_pos(0.0f), 
+                        m_scale(1.0f), 
+                        m_rotationQuat(1.0f, 0.f, 0.f, 0.f), 
+                        m_rotationOrder(XYZ), 
                         dirty(true)
 {}
 
-Transform::Transform(Transform &&other) noexcept : pos(std::move(other.pos)),
-                                                   rotationQuat(std::move(other.rotationQuat)),
-                                                   scale(std::move(other.scale)),
-                                                   globalModelMatrix(std::move(other.globalModelMatrix)),
+Transform::Transform(Transform &&other) noexcept : m_pos(std::move(other.m_pos)),
+                                                   m_rotationQuat(std::move(other.m_rotationQuat)),
+                                                   m_scale(std::move(other.m_scale)),
+                                                   m_globalModelMatrix(std::move(other.m_globalModelMatrix)),
                                                    dirty(other.dirty),
-                                                   rotationOrder(other.rotationOrder)
+                                                   m_rotationOrder(other.m_rotationOrder)
 {}
 
 void Transform::computeModelMatrix(const mat4 &parentGlobalModelMatrix)
 {
-    globalModelMatrix = parentGlobalModelMatrix * getLocalModelMatrix();
+    m_globalModelMatrix = parentGlobalModelMatrix * getLocalModelMatrix();
     dirty = false;
 }
 
 void Transform::computeModelMatrix()
 {
-    globalModelMatrix = getLocalModelMatrix();
+    m_globalModelMatrix = getLocalModelMatrix();
     dirty = false;
 }
 
 mat4 Transform::getLocalModelMatrix()
 {
-    mat4 R = toMat4(rotationQuat);
-    return math::translate(mat4(1.0f), pos)
+    mat4 R = toMat4(m_rotationQuat);
+    return math::translate(mat4(1.0f), m_pos)
          * R
-         * math::scale(mat4(1.0f), scale);
+         * math::scale(mat4(1.0f), m_scale);
 }
 
 mat4 Transform::getGlobalModelMatrix()
 {
-    return globalModelMatrix;
+    return m_globalModelMatrix;
 }
 
 void Transform::setLocalPosition(vec3 position)
 {
-    pos = position;
+    m_pos = position;
     dirty = true;
 }
 
 vec3 Transform::getLocalPosition(){
-    return pos;
+    return m_pos;
 }
 
 vec3 Transform::getGlobalPosition()
 {
-    return vec3(globalModelMatrix[3]);
+    return vec3(m_globalModelMatrix[3]);
 }
 
 void Transform::setLocalScale(const vec3 &s)
 {
-    scale = s;
+    m_scale = s;
     dirty = true;
 }
 
 vec3 Transform::getLocalScale() const
 {
-    return scale;
+    return m_scale;
 }
 
 vec3 Transform::getGlobalScale(vec3 value)
 {
     vec3 res;
-    res.x = length(vec3(globalModelMatrix[0])); // Basis vector X
-    res.y = length(vec3(globalModelMatrix[1])); // Basis vector Y
-    res.z = length(vec3(globalModelMatrix[2])); // Basis vector Z
+    res.x = length(vec3(m_globalModelMatrix[0])); // Basis vector X
+    res.y = length(vec3(m_globalModelMatrix[1])); // Basis vector Y
+    res.z = length(vec3(m_globalModelMatrix[2])); // Basis vector Z
     
     return res;
 }
@@ -92,7 +92,7 @@ void Transform::setLocalRotation(vec3 rotationAngles)
             vec3(0.0f, 0.0f, 1.0f));
     
     mat4 rotationMatrix;
-    switch (rotationOrder)
+    switch (m_rotationOrder)
     {
         case YXZ:
         rotationMatrix = transformY * transformX * transformZ;
@@ -105,25 +105,25 @@ void Transform::setLocalRotation(vec3 rotationAngles)
         break;
     }
 
-    rotationQuat = toQuat(rotationMatrix);
+    m_rotationQuat = toQuat(rotationMatrix);
     dirty = true;
 }
 
 void Transform::setLocalRotation(const quat &q)
 {
-    rotationQuat = q;
+    m_rotationQuat = q;
     dirty = true;
 }
 
 vec3 Transform::getLocalRotation()
 {
-    return degrees(eulerAngles(rotationQuat));
+    return degrees(eulerAngles(m_rotationQuat));
 }
 
 void Transform::rotate(vec3 rotations){
     vec3 rad = radians(rotations);
     quat dq = quat(rad);  
-    rotationQuat = normalize(dq * rotationQuat);
+    m_rotationQuat = normalize(dq * m_rotationQuat);
     dirty = true;
 }
 
@@ -135,6 +135,6 @@ void Transform::rotate(vec3 rotations){
 
 void Transform::translate(vec3 translation)
 {
-    pos += translation;
+    m_pos += translation;
     dirty = true;
 }

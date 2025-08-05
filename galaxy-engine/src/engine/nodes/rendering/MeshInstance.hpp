@@ -6,7 +6,7 @@
 
 class MeshInstance: public Node3D {
 private:
-    renderID renderId;
+    renderID m_renderId;
 public:
     void generateTriangle();
 

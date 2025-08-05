@@ -42,6 +42,7 @@ set(ALL_LIBS
     assimp
 	yaml-cpp
 	imgui
+	spdlog::spdlog_header_only
 )
 
 add_definitions(
@@ -55,6 +56,8 @@ add_definitions(
 
 add_library(galaxy-engine
 	src/engine/Application.cpp
+
+	src/engine/Log.cpp
 
 	src/engine/input/Action.cpp
 	src/engine/input/Input.cpp

@@ -83,7 +83,13 @@ FetchContent_Declare(
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build static libraries" FORCE)
 FetchContent_MakeAvailable(assimp)
 	
-	
+FetchContent_Declare(
+  spdlog
+  GIT_REPOSITORY https://github.com/gabime/spdlog.git
+  GIT_TAG        v1.15.3  # Mets à jour selon la version stable que tu veux
+)
+
+FetchContent_MakeAvailable(spdlog)
 	
 FetchContent_Declare(
   yaml-cpp

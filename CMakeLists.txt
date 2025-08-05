@@ -7,6 +7,7 @@ set(CMAKE_C_FLAGS_DEBUG "-g -O0")
 set(CMAKE_BUILD_TYPE Debug)
 
 option(BUILD_SANDBOX "Build the sandbox application" ON)
+option(GALAXY_ENABLE_ASSERTS "Enable assertions" ON)
 
 #list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/external/rpavlik-cmake-modules-fe2273")
 

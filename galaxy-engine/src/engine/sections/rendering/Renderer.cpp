@@ -5,11 +5,11 @@
 #include <imgui.h>
 #include <backend/imgui_impl_opengl3.h>
 
-#include <iostream>
-
 #include "VisualInstance.hpp"
 #include "OpenglHelper.hpp"
 #include "engine/Helper.hpp"
+
+#include "Core.hpp"
 
 
 
@@ -23,7 +23,7 @@ void Renderer::framebuffer_size_callback(GLFWwindow *window, int width, int heig
     // Camera::getInstance().view_height = float(height);
 
     // Camera::editor = !Camera::editor;
-    std::cout<<width<<" "<<height<<std::endl;
+    // std::cout<<width<<" "<<height<<std::endl;
     glViewport(0, 0, width, height);
 }
 
@@ -38,13 +38,8 @@ Renderer::Renderer()
 
     GLenum error = glGetError();
     
-    // Initialise GLFW
-    if( !glfwInit() )
-    {
-        fprintf( stderr, "Failed to initialize GLFW\n" );
-        getchar();
-        throw std::runtime_error("Failed glfw init");
-    }
+    bool initialized = glfwInit();
+    GLX_CORE_ASSERT(initialized, "Glfw init");
 
     
     glfwWindowHint(GLFW_SAMPLES, 4);
@@ -54,23 +49,16 @@ Renderer::Renderer()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
     window = glfwCreateWindow( 1024, 768, "engine - GLFW", NULL, NULL);
-    if( window == NULL ){
-        fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
-        getchar();
-        glfwTerminate();
-        throw std::runtime_error("Failed window creation");
-    }
+    GLX_CORE_ASSERT(window != NULL, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version");
+
     glfwMakeContextCurrent(window);
     
     
     checkOpenGLErrors("error before glewInit");
     glewExperimental = true; // Needed for core profile
-    if (glewInit() != GLEW_OK) {
-        fprintf(stderr, "Failed to initialize GLEW\n");
-        getchar();
-        glfwTerminate();
-        throw std::runtime_error("Failed glfw init");
-    }
+    int glewInitialized = glewInit();
+    GLX_CORE_ASSERT(glewInitialized == GLEW_OK, "Failed to initialize GLEW")
+
     checkOpenGLErrors("known error after glewInit");
     
     glfwSetWindowSizeCallback(window, Renderer::framebuffer_size_callback);

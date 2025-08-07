@@ -27,6 +27,17 @@ void Node::removeChild(Node *component)
     }
 }
 
+std::vector<Node*> Node::getChildren() const
+{
+    // TODO: replace with an iterator
+    std::vector<Node*> result;
+    result.reserve(m_children.size());
+    for (const auto& child : m_children) {
+        result.push_back(child.get());
+    }
+    return result;
+}
+
 void Node::destroy() {
     m_children.clear(); 
 
@@ -58,3 +69,9 @@ void Node::handleInput(const InputAction &inputAction)
     }
     handleInputFromBot(inputAction);
 }
+
+void Node::accept(Galaxy::NodeVisitor &visitor)
+{
+    visitor.visit(*this);
+}
+

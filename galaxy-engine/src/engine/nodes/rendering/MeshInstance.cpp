@@ -32,3 +32,8 @@ MeshInstance::~MeshInstance()
 {
     Renderer::getInstance().clearMesh(m_renderId);
 }
+
+void MeshInstance::accept(Galaxy::NodeVisitor &visitor)
+{
+    visitor.visit(*this);
+}

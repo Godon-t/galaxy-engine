@@ -11,4 +11,6 @@ public:
     void generateTriangle();
 
     ~MeshInstance() override;
+
+    void accept(Galaxy::NodeVisitor& visitor) override;
 };

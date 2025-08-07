@@ -26,3 +26,8 @@ void Camera::handleInputFromBot(const InputAction& inputAction)
         translate(vec3(speed,0,0));
     }
 }
+
+void Camera::accept(Galaxy::NodeVisitor &visitor)
+{
+    visitor.visit(*this);
+}

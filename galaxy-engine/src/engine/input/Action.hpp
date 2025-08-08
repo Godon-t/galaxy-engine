@@ -11,8 +11,9 @@ struct Action {
     Action(int key, std::string name);
 };
 
-class InputAction: Input {
+class InputAction : Input {
 public:
-    InputAction(Action act): action(act){};
+    InputAction(Action act)
+        : action(act) {};
     Action action;
 };

@@ -4,10 +4,10 @@
 
 #include "engine/input/InputManager.hpp"
 
-Root::Root(InputManager &inputManager, std::unique_ptr<Node> node)
+Root::Root(InputManager& inputManager, std::unique_ptr<Node> node)
 {
     m_rootNode = std::move(node);
-    inputManager.addListener([&](InputAction inputAction) {m_rootNode->handleInput(inputAction);});
+    inputManager.addListener([&](InputAction inputAction) { m_rootNode->handleInput(inputAction); });
 }
 
 void Root::process()

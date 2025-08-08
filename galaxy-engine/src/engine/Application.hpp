@@ -3,15 +3,14 @@
 #include "Core.hpp"
 
 namespace Galaxy {
-    class API Application {
-    public:
-        Application();
-        virtual ~Application();
-    
-        void run();
-    };
+class API Application {
+public:
+    Application();
+    virtual ~Application();
 
-    // Defined client side
-    Application* createApplication();
-}
+    void run();
+};
 
+// Defined client side
+Application* createApplication();
+} // namespace Galaxy

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "engine/types/Render.hpp"
 #include "engine/data/Transform.hpp"
+#include "engine/types/Render.hpp"
 
 class CameraManager {
 private:
@@ -10,6 +10,7 @@ private:
     std::stack<camID> m_freeIds;
 
     mat4 getCurrentCamTransform();
+
 public:
     CameraManager();
     camID registerCam(Transform* transformRef);

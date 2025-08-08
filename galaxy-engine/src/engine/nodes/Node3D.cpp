@@ -10,27 +10,29 @@ void Node3D::updateTransformAndChilds(const mat4& matrix)
         return;
     }
 
-    for(auto&& child : m_children){
+    for (auto&& child : m_children) {
         child->updateTransformAndChilds(mat);
     }
 }
 
-void Node3D::forceUpdateTransformAndChilds(const mat4 &matrix)
+void Node3D::forceUpdateTransformAndChilds(const mat4& matrix)
 {
     m_transform.computeModelMatrix(matrix);
-    
-    for(auto&& child : m_children){
+
+    for (auto&& child : m_children) {
         child->forceUpdateTransformAndChilds(m_transform.getGlobalModelMatrix());
     }
 }
 
-void Node3D::translate(vec3 translation){
+void Node3D::translate(vec3 translation)
+{
     m_transform.translate(translation);
 }
-void Node3D::rotate(vec3 rotation){
+void Node3D::rotate(vec3 rotation)
+{
     m_transform.rotate(rotation);
 }
-void Node3D::setScale(vec3 scale){
+void Node3D::setScale(vec3 scale)
+{
     m_transform.setLocalScale(scale);
 }
-

@@ -1,12 +1,17 @@
-#include "pch.hpp"
 #include "VisualInstance.hpp"
+#include "pch.hpp"
 
 #include "OpenglHelper.hpp"
 
+VisualInstance::VisualInstance()
+    : m_VAO(0)
+    , m_VBO(0)
+    , m_EBO(0)
+{
+}
 
-VisualInstance::VisualInstance(): m_VAO(0), m_VBO(0), m_EBO(0) {}
-
-VisualInstance::~VisualInstance(){
+VisualInstance::~VisualInstance()
+{
     if (m_VAO != 0) {
         glDeleteVertexArrays(1, &m_VAO);
     }
@@ -18,7 +23,7 @@ VisualInstance::~VisualInstance(){
     }
 }
 
-VisualInstance::VisualInstance(VisualInstance &&other)
+VisualInstance::VisualInstance(VisualInstance&& other)
 {
     m_VAO = other.m_VAO;
     m_VBO = other.m_VBO;
@@ -30,7 +35,7 @@ VisualInstance::VisualInstance(VisualInstance &&other)
     other.m_EBO = 0;
 }
 
-VisualInstance &VisualInstance::operator=(VisualInstance &&other)
+VisualInstance& VisualInstance::operator=(VisualInstance&& other)
 {
     m_VAO = other.m_VAO;
     m_VBO = other.m_VBO;
@@ -43,22 +48,22 @@ VisualInstance &VisualInstance::operator=(VisualInstance &&other)
 
     return *this;
 }
-void VisualInstance::init(std::vector<Vertex> &vertices, std::vector<short unsigned int> &indices)
+void VisualInstance::init(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices)
 {
     m_nbOfIndices = indices.size();
 
-    glGenVertexArrays(1,&m_VAO);
+    glGenVertexArrays(1, &m_VAO);
     glGenBuffers(1, &m_VBO);
     glGenBuffers(1, &m_EBO);
 
     glBindVertexArray(m_VAO);
-    
+
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
-    
+
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0], GL_STATIC_DRAW);
-    
+
     int vertexSize = sizeof(Vertex);
 
     glEnableVertexAttribArray(0);
@@ -75,13 +80,13 @@ void VisualInstance::init(std::vector<Vertex> &vertices, std::vector<short unsig
 void VisualInstance::draw()
 {
     glBindVertexArray(m_VAO);
-    
+
     glDrawElements(
-                GL_TRIANGLES,      // mode
-                m_nbOfIndices,
-                GL_UNSIGNED_SHORT,   // type
-                (void*)0           // element array buffer offset
-                );
+        GL_TRIANGLES, // mode
+        m_nbOfIndices,
+        GL_UNSIGNED_SHORT, // type
+        (void*)0 // element array buffer offset
+    );
 
     glBindVertexArray(0);
 

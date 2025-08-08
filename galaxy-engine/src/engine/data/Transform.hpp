@@ -17,28 +17,26 @@ private:
     quat m_rotationQuat = quat();
 
     RotationOrderEnum m_rotationOrder = YXZ;
-    
+
 public:
     bool dirty = true;
-
 
     void computeModelMatrix(const mat4& parentGlobalModelMatrix);
     void computeModelMatrix();
 
     mat4 getLocalModelMatrix();
     mat4 getGlobalModelMatrix();
-    
-    
+
     void setLocalPosition(vec3 position);
     vec3 getLocalPosition();
     vec3 getGlobalPosition();
 
-    void setLocalScale(const vec3 &s);
+    void setLocalScale(const vec3& s);
     vec3 getLocalScale() const;
     vec3 getGlobalScale(vec3 value);
-    
+
     void setLocalRotation(vec3 rotationAngles);
-    void setLocalRotation(const quat &q) ;
+    void setLocalRotation(const quat& q);
     vec3 getLocalRotation();
 
     // vec3 applyRotation(vec3 vector);
@@ -51,7 +49,8 @@ public:
 
     Transform(Transform&& other) noexcept;
 
-    Transform& operator=(Transform&& other) noexcept {
+    Transform& operator=(Transform&& other) noexcept
+    {
         if (this != &other) {
             m_pos = std::move(other.m_pos);
             m_rotationQuat = std::move(other.m_rotationQuat);

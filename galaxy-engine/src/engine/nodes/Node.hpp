@@ -9,13 +9,13 @@ using namespace math;
 class Node {
 protected:
     Node* m_parent = nullptr;
-    std::vector<std::unique_ptr<Node>> m_children;  // Changement ici pour unique_ptr
+    std::vector<std::unique_ptr<Node>> m_children; // Changement ici pour unique_ptr
 
 public:
     Node() = default;
-    Node(const Node&) = delete;  // Interdit la copie
+    Node(const Node&) = delete; // Interdit la copie
     Node(Node&&) = default;
-    
+
     virtual ~Node() = default;
 
     void setParent(Node* parent);
@@ -24,8 +24,9 @@ public:
 
     void addChild(std::unique_ptr<Node> child);
     void removeChild(Node* component);
-    
-    bool isLeaf() const {
+
+    bool isLeaf() const
+    {
         return m_children.empty();
     }
 
@@ -35,6 +36,6 @@ public:
     virtual void forceUpdateTransformAndChilds(const mat4& matrix);
 
     void handleInput(const InputAction& inputAction);
-    virtual void handleInputFromTop(const InputAction& inputAction){};
-    virtual void handleInputFromBot(const InputAction& inputAction){};
+    virtual void handleInputFromTop(const InputAction& inputAction) {};
+    virtual void handleInputFromBot(const InputAction& inputAction) {};
 };

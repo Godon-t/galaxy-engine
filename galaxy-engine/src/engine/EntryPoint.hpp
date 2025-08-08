@@ -2,7 +2,7 @@
 
 extern Galaxy::Application* Galaxy::createApplication();
 
-int main(int argc, char const *argv[])
+int main(int argc, char const* argv[])
 {
     Galaxy::Log::Init();
 

@@ -25,8 +25,6 @@ public:
     VisualInstance(VisualInstance&&);
     VisualInstance& operator=(VisualInstance&&);
 
-
-    void init(std::vector<Vertex> &vertices, std::vector<short unsigned int> &indices);
+    void init(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices);
     void draw();
-    
 };

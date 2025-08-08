@@ -65,11 +65,12 @@ add_library(galaxy-engine
 
 	src/engine/data/Transform.cpp
 
-	src/engine/nodes/rendering/MeshInstance.cpp
-	src/engine/nodes/rendering/Camera.cpp
 	src/engine/nodes/Node.cpp
 	src/engine/nodes/Node3D.cpp
 	src/engine/nodes/Root.cpp
+	src/engine/nodes/visitors/Serializer.cpp
+	src/engine/nodes/rendering/MeshInstance.cpp
+	src/engine/nodes/rendering/Camera.cpp
 
 	src/engine/sections/rendering/OpenglHelper.cpp
 	src/engine/sections/rendering/Program.cpp

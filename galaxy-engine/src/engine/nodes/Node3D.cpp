@@ -36,3 +36,8 @@ void Node3D::setScale(vec3 scale)
 {
     m_transform.setLocalScale(scale);
 }
+
+void Node3D::accept(Galaxy::NodeVisitor& visitor)
+{
+    visitor.visit(*this);
+}

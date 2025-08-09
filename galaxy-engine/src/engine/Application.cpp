@@ -15,7 +15,6 @@
 namespace Galaxy {
 Application::Application()
 {
-
     WindowProps props = WindowProps();
     actionManager = std::make_unique<ActionManager>();
     props.KeyCallback = [this](int key, bool pressed) {
@@ -23,9 +22,20 @@ Application::Application()
     };
 
     m_window = std::unique_ptr<Window>(Window::create(props));
+
+    m_layerStack = LayerStack();
 }
 
 Application::~Application() { }
+
+void Application::pushLayer(Layer* layer)
+{
+    m_layerStack.pushLayer(layer);
+}
+void Application::pushOverlay(Layer* overlay)
+{
+    m_layerStack.pushOverlay(overlay);
+}
 
 void Application::run()
 {
@@ -46,6 +56,10 @@ void Application::run()
     });
 
     do {
+        for (Layer* layer : m_layerStack) {
+            layer->onUpdate();
+        }
+
         root.process();
 
         renderer.renderFrame();

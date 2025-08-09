@@ -2,12 +2,29 @@
 
 #include <Engine.hpp>
 
-class Sandbox : public Galaxy::Application {
+class ExampleLayer : public Galaxy::Layer {
 public:
-    Sandbox(){}
-    ~Sandbox(){}
+    ExampleLayer()
+        : Layer("Example")
+    {
+    }
+
+    void onUpdate() override
+    {
+        GLX_INFO("Update");
+    }
 };
 
-Galaxy::Application* Galaxy::createApplication(){
+class Sandbox : public Galaxy::Application {
+public:
+    Sandbox()
+    {
+        pushLayer(new ExampleLayer());
+    }
+    ~Sandbox() { }
+};
+
+Galaxy::Application* Galaxy::createApplication()
+{
     return new Sandbox();
 }

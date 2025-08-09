@@ -59,6 +59,8 @@ add_library(galaxy-engine
 	src/engine/Application.cpp
 
 	src/engine/Log.cpp
+	src/engine/Layer.cpp
+	src/engine/LayerStack.cpp
 
 	src/engine/input/Action.cpp
 	src/engine/input/Input.cpp

@@ -2,7 +2,7 @@
 
 #include "engine/types/Math.hpp"
 
-#include <GL/glew.h>
+#include "engine/gl_headers.hpp"
 
 using namespace math;
 

@@ -1,8 +1,7 @@
 #pragma once
 
-#include <GL/glew.h>
-
 #include "engine/types/Math.hpp"
+#include "gl_headers.hpp"
 
 using namespace math;
 

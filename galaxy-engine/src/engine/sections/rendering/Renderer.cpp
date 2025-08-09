@@ -1,29 +1,11 @@
 #include "Renderer.hpp"
 #include "pch.hpp"
 
-#include <backend/imgui_impl_glfw.h>
-#include <backend/imgui_impl_opengl3.h>
-#include <imgui.h>
-
 #include "OpenglHelper.hpp"
 #include "VisualInstance.hpp"
 #include "engine/Helper.hpp"
 
 #include "Core.hpp"
-
-void Renderer::framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    // Camera::getInstance().view_width = float(width);
-    // Camera::getInstance().view_height = float(height);
-
-    // Camera::editor = !Camera::editor;
-    // Camera::getInstance().view_width = float(width);
-    // Camera::getInstance().view_height = float(height);
-
-    // Camera::editor = !Camera::editor;
-    // std::cout<<width<<" "<<height<<std::endl;
-    glViewport(0, 0, width, height);
-}
 
 const size_t maxSize = 512;
 Renderer::Renderer()
@@ -36,28 +18,12 @@ Renderer::Renderer()
 
     GLenum error = glGetError();
 
-    bool initialized = glfwInit();
-    GLX_CORE_ASSERT(initialized, "Glfw init");
-
-    glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    window = glfwCreateWindow(1024, 768, "engine - GLFW", NULL, NULL);
-    GLX_CORE_ASSERT(window != NULL, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version");
-
-    glfwMakeContextCurrent(window);
-
     checkOpenGLErrors("error before glewInit");
     glewExperimental = true; // Needed for core profile
     int glewInitialized = glewInit();
     GLX_CORE_ASSERT(glewInitialized == GLEW_OK, "Failed to initialize GLEW")
 
     checkOpenGLErrors("known error after glewInit");
-
-    glfwSetWindowSizeCallback(window, Renderer::framebuffer_size_callback);
 
     glClearColor(1.f, 0.f, 0.2f, 0.0f);
 
@@ -69,9 +35,9 @@ Renderer::Renderer()
     // glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);
 
-    ImGui::CreateContext();
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init();
+    // ImGui::CreateContext();
+    // ImGui_ImplGlfw_InitForOpenGL(window, true);
+    // ImGui_ImplOpenGL3_Init();
 
     m_frameDuration = std::chrono::milliseconds(1000 / 60); // 60 fps
 
@@ -82,12 +48,9 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
-    glfwDestroyWindow(Renderer::getInstance().window);
-    glfwTerminate();
+    // ImGui_ImplOpenGL3_Shutdown();
+    // ImGui_ImplGlfw_Shutdown();
+    // ImGui::DestroyContext();
 }
 
 Renderer& Renderer::getInstance()
@@ -98,16 +61,11 @@ Renderer& Renderer::getInstance()
 
 void Renderer::renderFrame()
 {
-    // glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
+    // ImGui_ImplOpenGL3_NewFrame();
+    // ImGui_ImplGlfw_NewFrame();
+    // ImGui::NewFrame();
 
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    // float currentFrame = glfwGetTime();
     auto frameStart = std::chrono::high_resolution_clock::now();
-    // deltaTime = currentFrame - lastFrame;
-    // lastFrame = currentFrame;
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -120,11 +78,8 @@ void Renderer::renderFrame()
         m_visuInstances[instanceIdx].first.draw();
     }
 
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    // Swap buffers
-    glfwSwapBuffers(window);
+    // ImGui::Render();
+    // ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     auto frameEnd = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart);

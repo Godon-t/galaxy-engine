@@ -2,8 +2,7 @@
 
 #include <bits/this_thread_sleep.h>
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "engine/gl_headers.hpp"
 
 #include "CameraManager.hpp"
 #include "Program.hpp"
@@ -26,11 +25,7 @@ private:
     std::unordered_map<size_t, renderID> m_visuIdxToInstanceId;
     std::stack<renderID> m_freeIds;
 
-public:
-    GLFWwindow* window;
-
 private:
-    static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
     Renderer();
     ~Renderer();
 

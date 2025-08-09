@@ -1,7 +1,7 @@
 #include "Program.hpp"
 #include "pch.hpp"
 
-#include <GL/glew.h>
+#include "engine/gl_headers.hpp"
 #include <common/shader.hpp>
 
 #include "OpenglHelper.hpp"

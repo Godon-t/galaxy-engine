@@ -55,13 +55,14 @@ add_definitions(
 )
 
 add_library(galaxy-engine
+	src/platform/linux/LinuxWindow.cpp
 	src/engine/Application.cpp
 
 	src/engine/Log.cpp
 
 	src/engine/input/Action.cpp
 	src/engine/input/Input.cpp
-	src/engine/input/InputManager.cpp
+	src/engine/input/ActionManager.cpp
 
 	src/engine/data/Transform.cpp
 

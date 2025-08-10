@@ -17,10 +17,14 @@ public:
 
     void run();
 
+    static inline Application& getInstance() { return *s_instance; }
+    inline Window& getWindow() { return *m_window; }
+
     // TODO: find a better place
     std::unique_ptr<ActionManager> actionManager;
 
 private:
+    static Application* s_instance;
     std::unique_ptr<Window> m_window;
     LayerStack m_layerStack;
     bool m_terminated;

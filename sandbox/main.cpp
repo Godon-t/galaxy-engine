@@ -20,6 +20,7 @@ public:
     Sandbox()
     {
         pushLayer(new ExampleLayer());
+        pushOverlay(new Galaxy::ImGuiLayer());
     }
     ~Sandbox() { }
 };

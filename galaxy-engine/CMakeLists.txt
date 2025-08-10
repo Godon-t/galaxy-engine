@@ -64,6 +64,8 @@ add_library(galaxy-engine
 
 	src/engine/event/ActionManager.cpp
 
+	src/engine/ImGui/ImGuiLayer.cpp
+
 	src/engine/data/Transform.cpp
 
 	src/engine/nodes/Node.cpp

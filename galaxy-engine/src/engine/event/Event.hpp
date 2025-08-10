@@ -7,14 +7,16 @@ enum class EventType {
     None = 0,
     WindowClose,
     WindowResize,
-    KeyInteract
+    KeyInteract,
+    MouseButtonInteract,
+    MouseMotion
 };
 enum EventCategory {
     None                     = 0,
     EventCategoryApplication = BIT(0),
     EventCategoryInput       = BIT(1),
     EventCategoryKeyboard    = BIT(2),
-    // EventCategoryMouse       = BIT(3)
+    EventCategoryMouse       = BIT(3)
 };
 
 // maccro to simplify Event implementation writting (copied from the cherno tutorial but I don't know if it is a good practice and easy to understand)

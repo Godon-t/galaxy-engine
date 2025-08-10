@@ -62,8 +62,6 @@ add_library(galaxy-engine
 	src/engine/Layer.cpp
 	src/engine/LayerStack.cpp
 
-	src/engine/event/Action.cpp
-	src/engine/event/Event.cpp
 	src/engine/event/ActionManager.cpp
 
 	src/engine/data/Transform.cpp

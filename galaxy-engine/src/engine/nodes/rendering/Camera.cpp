@@ -8,7 +8,7 @@ namespace Galaxy {
 Camera::Camera()
 {
     m_current = true;
-    id = Renderer::getInstance().addCamera(getTransform());
+    id        = Renderer::getInstance().addCamera(getTransform());
     Renderer::getInstance().setCurrentCamera(id);
 }
 
@@ -16,16 +16,17 @@ Camera::~Camera()
 {
     Renderer::getInstance().removeCamera(id);
 }
-void Camera::handleInputFromBot(const EventAction& evtAction)
+void Camera::handleInputFromBot(const ActionEvent& evtAction)
 {
     const float speed = 0.1f;
-    if (evtAction.action.m_name == "forward" && evtAction.action.m_pressed) {
+    auto actionName   = std::string(evtAction.getName());
+    if (actionName == "forward" && evtAction.isPressed()) {
         translate(vec3(0, 0, speed));
-    } else if (evtAction.action.m_name == "backward" && evtAction.action.m_pressed) {
+    } else if (actionName == "backward" && evtAction.isPressed()) {
         translate(vec3(0, 0, -speed));
-    } else if (evtAction.action.m_name == "left" && evtAction.action.m_pressed) {
+    } else if (actionName == "left" && evtAction.isPressed()) {
         translate(vec3(-speed, 0, 0));
-    } else if (evtAction.action.m_name == "right" && evtAction.action.m_pressed) {
+    } else if (actionName == "right" && evtAction.isPressed()) {
         translate(vec3(speed, 0, 0));
     }
 }

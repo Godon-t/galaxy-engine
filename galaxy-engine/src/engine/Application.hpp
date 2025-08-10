@@ -20,11 +20,10 @@ public:
     // TODO: find a better place
     std::unique_ptr<ActionManager> actionManager;
 
-    // TODO: need an event dispatch
-
 private:
     std::unique_ptr<Window> m_window;
     LayerStack m_layerStack;
+    bool m_terminated;
 };
 
 Application* createApplication();

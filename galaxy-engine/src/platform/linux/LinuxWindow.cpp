@@ -1,6 +1,8 @@
 #include "LinuxWindow.hpp"
 
 #include "Log.hpp"
+#include "event/KeyEvent.hpp"
+#include "event/WindowEvent.hpp"
 #include "pch.hpp"
 
 namespace Galaxy {
@@ -23,24 +25,56 @@ LinuxWindow::~LinuxWindow()
 
 void LinuxWindow::framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-    WindowData* data = (WindowData*)glfwGetWindowUserPointer(window);
-    (*data).Width = width;
-    (*data).Height = height;
+    WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+    data.Width       = width;
+    data.Height      = height;
     glViewport(0, 0, width, height);
+
+    WindowResizeEvent evt(width, height);
+    data.EventCallback(evt);
 }
 
 void LinuxWindow::key_input_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    WindowData* data = (WindowData*)glfwGetWindowUserPointer(window);
-    (*data).KeyCallback(key, action == GLFW_PRESS || action != GLFW_RELEASE);
+    WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+
+    auto it = data.KeyStates.find(key);
+    if (it == data.KeyStates.end())
+        data.KeyStates[key] = false;
+
+    switch (action) {
+    case GLFW_PRESS: {
+        bool clicked = data.KeyStates[key] == false;
+        if (clicked)
+            data.KeyStates[key] = true;
+
+        KeyEvent evt(key, true, clicked);
+        data.EventCallback(evt);
+        break;
+    }
+    case GLFW_RELEASE: {
+        data.KeyStates[key] = false;
+        KeyEvent evt(key, false, false);
+        data.EventCallback(evt);
+        break;
+    }
+    case GLFW_REPEAT:
+        break;
+    }
+}
+
+void LinuxWindow::window_close_callback(GLFWwindow* window)
+{
+    WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+    WindowCloseEvent evt;
+    data.EventCallback(evt);
 }
 
 void LinuxWindow::init(const WindowProps& props)
 {
-    m_data.Title = props.Title;
-    m_data.Width = props.Width;
+    m_data.Title  = props.Title;
+    m_data.Width  = props.Width;
     m_data.Height = props.Height;
-    m_data.KeyCallback = props.KeyCallback;
 
     GLX_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
 
@@ -70,6 +104,7 @@ void LinuxWindow::init(const WindowProps& props)
     glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
     glfwSetKeyCallback(m_window, key_input_callback);
+    glfwSetWindowCloseCallback(m_window, window_close_callback);
 
     // glfwSetCursorPos(m_window, 1024 / 2, 768 / 2);
 }

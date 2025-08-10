@@ -14,7 +14,7 @@ public:
     Camera();
     ~Camera() override;
 
-    void handleInputFromBot(const EventAction& input) override;
+    void handleInputFromBot(const ActionEvent& input) override;
     void accept(Galaxy::NodeVisitor& visitor) override;
 };
 }

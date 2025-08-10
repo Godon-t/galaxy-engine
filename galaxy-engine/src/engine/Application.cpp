@@ -6,7 +6,8 @@
 
 // Include GLFW
 
-#include "engine/event/ActionManager.hpp"
+#include "Log.hpp"
+#include "engine/event/WindowEvent.hpp"
 #include "engine/nodes/Root.hpp"
 #include "engine/nodes/rendering/Camera.hpp"
 #include "engine/nodes/rendering/MeshInstance.hpp"
@@ -16,14 +17,23 @@ namespace Galaxy {
 Application::Application()
 {
     WindowProps props = WindowProps();
-    actionManager = std::make_unique<ActionManager>();
-    props.KeyCallback = [this](int key, bool pressed) {
-        actionManager->processInput(key, pressed);
-    };
+    actionManager     = std::make_unique<ActionManager>();
+    m_terminated      = false;
+    m_window          = std::unique_ptr<Window>(Window::create(props));
+    m_layerStack      = LayerStack();
 
-    m_window = std::unique_ptr<Window>(Window::create(props));
-
-    m_layerStack = LayerStack();
+    m_window->setEventCallback([this](Event& event) {
+        if (event.isInCategory(EventCategory::EventCategoryKeyboard)) {
+            actionManager->processInput((KeyEvent&)event);
+        } else if (event.isInCategory(EventCategory::EventCategoryApplication)) {
+            if (event.getEventType() == EventType::WindowClose) {
+                m_terminated = true;
+            } else if (event.getEventType() == EventType::WindowResize) {
+                WindowResizeEvent& windowResize = (WindowResizeEvent&)event;
+                GLX_CORE_INFO("Window resize ({0}, {1})", windowResize.getWidth(), windowResize.getHeight());
+            }
+        }
+    });
 }
 
 Application::~Application() { }
@@ -39,6 +49,7 @@ void Application::pushOverlay(Layer* overlay)
 
 void Application::run()
 {
+    m_terminated       = false;
     Renderer& renderer = Renderer::getInstance();
 
     std::unique_ptr<MeshInstance> testInstance = std::make_unique<MeshInstance>();
@@ -50,9 +61,8 @@ void Application::run()
 
     Root root(*actionManager, std::move(testInstance));
 
-    bool terminated = false;
-    actionManager->addListener([&terminated](EventAction inputAction) {
-        terminated = inputAction.action.m_name == "exit";
+    actionManager->addListener([this](ActionEvent inputAction) {
+        m_terminated = std::string(inputAction.getName()) == "exit";
     });
 
     do {
@@ -64,6 +74,6 @@ void Application::run()
 
         renderer.renderFrame();
         m_window->onUpdate();
-    } while (!terminated);
+    } while (!m_terminated);
 }
 }

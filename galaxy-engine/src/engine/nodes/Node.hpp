@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/event/Action.hpp"
+#include "engine/event/ActionEvent.hpp"
 
 #include "engine/types/Math.hpp"
 #include "visitors/NodeVisitor.hpp"
@@ -17,9 +17,9 @@ protected:
     std::vector<std::unique_ptr<Node>> m_children; // Changement ici pour unique_ptr
 
 public:
-    Node() = default;
+    Node()            = default;
     Node(const Node&) = delete; // Interdit la copie
-    Node(Node&&) = default;
+    Node(Node&&)      = default;
 
     virtual ~Node() = default;
 
@@ -41,9 +41,9 @@ public:
     virtual void updateTransformAndChilds(const mat4& matrix = mat4(1));
     virtual void forceUpdateTransformAndChilds(const mat4& matrix);
 
-    void handleInput(const EventAction& eventAction);
-    virtual void handleInputFromTop(const EventAction& eventAction) {};
-    virtual void handleInputFromBot(const EventAction& eventAction) {};
+    void handleInput(const ActionEvent& eventAction);
+    virtual void handleInputFromTop(const ActionEvent& eventAction) {};
+    virtual void handleInputFromBot(const ActionEvent& eventAction) {};
 
     virtual void accept(NodeVisitor& visitor);
 };

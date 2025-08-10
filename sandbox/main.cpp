@@ -11,7 +11,7 @@ public:
 
     void onUpdate() override
     {
-        GLX_INFO("Update");
+        // GLX_INFO("Update");
     }
 };
 

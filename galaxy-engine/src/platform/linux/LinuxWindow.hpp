@@ -15,12 +15,15 @@ public:
     inline unsigned int getWidth() const override { return m_data.Width; }
     inline unsigned int getHeight() const override { return m_data.Height; }
 
+    inline void setEventCallback(const EventCallbackFn& callback) override { m_data.EventCallback = callback; }
+
 private:
     void init(const WindowProps& props);
     void shutdown();
 
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
     static void key_input_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void window_close_callback(GLFWwindow* window);
 
 private:
     GLFWwindow* m_window;
@@ -28,7 +31,8 @@ private:
     struct WindowData {
         std::string Title;
         unsigned int Width, Height;
-        std::function<void(int key, bool pressed)> KeyCallback;
+        EventCallbackFn EventCallback;
+        std::unordered_map<int, bool> KeyStates;
     };
 
     WindowData m_data;

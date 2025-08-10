@@ -65,7 +65,7 @@ void Node::forceUpdateTransformAndChilds(const mat4& matrix)
     }
 }
 
-void Node::handleInput(const EventAction& eventAction)
+void Node::handleInput(const ActionEvent& eventAction)
 {
     handleInputFromTop(eventAction);
     for (auto&& child : m_children) {

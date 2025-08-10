@@ -1,12 +1,13 @@
 #pragma once
 
-#include "engine/input/Action.hpp"
+#include "engine/event/Action.hpp"
 
 #include "engine/types/Math.hpp"
 #include "visitors/NodeVisitor.hpp"
 
 using namespace math;
 
+namespace Galaxy {
 class Node {
 private:
     friend class NodeVisitor;
@@ -40,9 +41,10 @@ public:
     virtual void updateTransformAndChilds(const mat4& matrix = mat4(1));
     virtual void forceUpdateTransformAndChilds(const mat4& matrix);
 
-    void handleInput(const InputAction& inputAction);
-    virtual void handleInputFromTop(const InputAction& inputAction) {};
-    virtual void handleInputFromBot(const InputAction& inputAction) {};
+    void handleInput(const EventAction& eventAction);
+    virtual void handleInputFromTop(const EventAction& eventAction) {};
+    virtual void handleInputFromBot(const EventAction& eventAction) {};
 
-    virtual void accept(Galaxy::NodeVisitor& visitor);
+    virtual void accept(NodeVisitor& visitor);
 };
+}

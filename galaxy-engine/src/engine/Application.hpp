@@ -4,7 +4,7 @@
 #include "Layer.hpp"
 #include "LayerStack.hpp"
 #include "Window.hpp"
-#include "input/ActionManager.hpp"
+#include "event/ActionManager.hpp"
 
 namespace Galaxy {
 class API Application {

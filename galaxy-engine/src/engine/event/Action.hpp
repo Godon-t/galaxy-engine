@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Input.hpp"
+#include "Event.hpp"
 
+namespace Galaxy {
 struct Action {
     std::string m_name;
     int m_glfwKey;
@@ -11,9 +12,10 @@ struct Action {
     Action(int key, std::string name);
 };
 
-class InputAction : Input {
+class EventAction : public Event {
 public:
-    InputAction(Action act)
+    EventAction(Action act)
         : action(act) {};
     Action action;
 };
+}

@@ -3,6 +3,7 @@
 
 #include "OpenglHelper.hpp"
 
+namespace Galaxy {
 VisualInstance::VisualInstance()
     : m_VAO(0)
     , m_VBO(0)
@@ -91,4 +92,5 @@ void VisualInstance::draw()
     glBindVertexArray(0);
 
     checkOpenGLErrors("Visual instance draw");
+}
 }

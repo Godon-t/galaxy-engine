@@ -5,6 +5,7 @@
 
 using namespace math;
 
+namespace Galaxy {
 const size_t maxIds = 256;
 CameraManager::CameraManager()
 {
@@ -57,4 +58,5 @@ mat4 CameraManager::getViewMatrix()
     vec3 forward = vec3(tansMat[2][0], tansMat[2][1], tansMat[2][2]);
     vec3 target = position + forward;
     return lookAt(position, target, vec3(0, 1, 0));
+}
 }

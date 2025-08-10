@@ -4,6 +4,7 @@
 
 #include "engine/nodes/Node3D.hpp"
 
+namespace Galaxy {
 class Camera : public Node3D {
 private:
     bool m_current;
@@ -13,6 +14,7 @@ public:
     Camera();
     ~Camera() override;
 
-    void handleInputFromBot(const InputAction& input) override;
+    void handleInputFromBot(const EventAction& input) override;
     void accept(Galaxy::NodeVisitor& visitor) override;
 };
+}

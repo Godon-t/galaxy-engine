@@ -6,6 +6,7 @@
 
 using namespace math;
 
+namespace Galaxy {
 struct Vertex {
     vec3 m_position;
     vec2 m_texCoord;
@@ -28,3 +29,4 @@ public:
     void init(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices);
     void draw();
 };
+}

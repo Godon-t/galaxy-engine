@@ -4,6 +4,7 @@
 
 #include "Node.hpp"
 
+namespace Galaxy {
 class Node3D : public Node {
 protected:
     Transform m_transform;
@@ -20,3 +21,4 @@ public:
 
     void accept(Galaxy::NodeVisitor& visitor) override;
 };
+}

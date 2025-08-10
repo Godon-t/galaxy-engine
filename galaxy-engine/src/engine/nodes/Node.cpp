@@ -2,6 +2,8 @@
 
 #include "Node.hpp"
 
+namespace Galaxy {
+
 void Node::setParent(Node* parent)
 {
     this->m_parent = parent;
@@ -63,16 +65,17 @@ void Node::forceUpdateTransformAndChilds(const mat4& matrix)
     }
 }
 
-void Node::handleInput(const InputAction& inputAction)
+void Node::handleInput(const EventAction& eventAction)
 {
-    handleInputFromTop(inputAction);
+    handleInputFromTop(eventAction);
     for (auto&& child : m_children) {
-        child->handleInput(inputAction);
+        child->handleInput(eventAction);
     }
-    handleInputFromBot(inputAction);
+    handleInputFromBot(eventAction);
 }
 
-void Node::accept(Galaxy::NodeVisitor& visitor)
+void Node::accept(NodeVisitor& visitor)
 {
     visitor.visit(*this);
+}
 }

@@ -4,6 +4,7 @@
 
 #include "engine/sections/rendering/Renderer.hpp"
 
+namespace Galaxy {
 Camera::Camera()
 {
     m_current = true;
@@ -15,16 +16,16 @@ Camera::~Camera()
 {
     Renderer::getInstance().removeCamera(id);
 }
-void Camera::handleInputFromBot(const InputAction& inputAction)
+void Camera::handleInputFromBot(const EventAction& evtAction)
 {
     const float speed = 0.1f;
-    if (inputAction.action.m_name == "forward" && inputAction.action.m_pressed) {
+    if (evtAction.action.m_name == "forward" && evtAction.action.m_pressed) {
         translate(vec3(0, 0, speed));
-    } else if (inputAction.action.m_name == "backward" && inputAction.action.m_pressed) {
+    } else if (evtAction.action.m_name == "backward" && evtAction.action.m_pressed) {
         translate(vec3(0, 0, -speed));
-    } else if (inputAction.action.m_name == "left" && inputAction.action.m_pressed) {
+    } else if (evtAction.action.m_name == "left" && evtAction.action.m_pressed) {
         translate(vec3(-speed, 0, 0));
-    } else if (inputAction.action.m_name == "right" && inputAction.action.m_pressed) {
+    } else if (evtAction.action.m_name == "right" && evtAction.action.m_pressed) {
         translate(vec3(speed, 0, 0));
     }
 }
@@ -32,4 +33,5 @@ void Camera::handleInputFromBot(const InputAction& inputAction)
 void Camera::accept(Galaxy::NodeVisitor& visitor)
 {
     visitor.visit(*this);
+}
 }

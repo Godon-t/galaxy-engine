@@ -7,6 +7,7 @@
 
 #include "Core.hpp"
 
+namespace Galaxy {
 const size_t maxSize = 512;
 Renderer::Renderer()
 {
@@ -131,4 +132,5 @@ void Renderer::clearMesh(renderID meshID)
     m_visuInstances[idxToDelete] = std::move(m_visuInstances[instanceCount]);
 
     m_freeIds.emplace(meshID);
+}
 }

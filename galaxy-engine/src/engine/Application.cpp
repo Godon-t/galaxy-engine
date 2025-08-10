@@ -6,7 +6,7 @@
 
 // Include GLFW
 
-#include "engine/input/ActionManager.hpp"
+#include "engine/event/ActionManager.hpp"
 #include "engine/nodes/Root.hpp"
 #include "engine/nodes/rendering/Camera.hpp"
 #include "engine/nodes/rendering/MeshInstance.hpp"
@@ -51,7 +51,7 @@ void Application::run()
     Root root(*actionManager, std::move(testInstance));
 
     bool terminated = false;
-    actionManager->addListener([&terminated](InputAction inputAction) {
+    actionManager->addListener([&terminated](EventAction inputAction) {
         terminated = inputAction.action.m_name == "exit";
     });
 

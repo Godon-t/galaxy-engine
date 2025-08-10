@@ -4,7 +4,8 @@
 
 #include <GLFW/glfw3.h>
 
-void ActionManager::emitEvent(const InputAction& input)
+namespace Galaxy {
+void ActionManager::emitEvent(const EventAction& input)
 {
     for (auto& listener : m_listeners) {
         listener(input);
@@ -41,12 +42,12 @@ void ActionManager::processInput(int key, bool pressed)
             action.m_pressed = false;
         }
 
-        InputAction inputA(action);
+        EventAction inputA(action);
         emitEvent(inputA);
     }
 }
 
-void ActionManager::addListener(std::function<void(InputAction inputAction)> listener)
+void ActionManager::addListener(std::function<void(EventAction inputAction)> listener)
 {
     m_listeners.push_back(listener);
 }
@@ -54,4 +55,5 @@ void ActionManager::addListener(std::function<void(InputAction inputAction)> lis
 bool ActionManager::isActionPressed(const std::string& name)
 {
     return m_managedActionsByKey[m_actionKeyByName[name]][0].m_pressed;
+}
 }

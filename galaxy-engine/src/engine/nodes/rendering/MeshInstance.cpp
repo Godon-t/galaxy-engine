@@ -5,6 +5,7 @@
 #include "engine/sections/rendering/Renderer.hpp"
 #include "engine/sections/rendering/VisualInstance.hpp"
 
+namespace Galaxy {
 void MeshInstance::generateTriangle()
 {
     std::vector<Vertex> triangleVertices;
@@ -37,3 +38,4 @@ void MeshInstance::accept(Galaxy::NodeVisitor& visitor)
 {
     visitor.visit(*this);
 }
+} // namespace Galaxy

@@ -2,6 +2,7 @@
 
 #include "Node3D.hpp"
 
+namespace Galaxy {
 void Node3D::updateTransformAndChilds(const mat4& matrix)
 {
     mat4 mat = m_parent == nullptr ? mat4(1) : matrix;
@@ -40,4 +41,5 @@ void Node3D::setScale(vec3 scale)
 void Node3D::accept(Galaxy::NodeVisitor& visitor)
 {
     visitor.visit(*this);
+}
 }

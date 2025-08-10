@@ -6,6 +6,7 @@
 
 #include <iostream>
 
+namespace Galaxy {
 void checkOpenGLErrors(const char* context)
 {
     GLenum err;
@@ -39,4 +40,5 @@ void checkOpenGLErrors(const char* context)
         }
         std::cerr << "[OpenGL Error] (" << errorStr << ") at: " << context << std::endl;
     }
+}
 }

@@ -2,7 +2,7 @@
 
 #include "Action.hpp"
 
-Action::Action(int key, std::string name)
+Galaxy::Action::Action(int key, std::string name)
 {
     m_glfwKey = key;
     this->m_name = name;

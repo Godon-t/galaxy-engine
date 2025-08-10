@@ -8,7 +8,7 @@
 #include "engine/types/Math.hpp"
 
 using namespace math;
-
+namespace Galaxy {
 Program::Program(const char* vertexPath, const char* fragmentPath)
 {
     programID = LoadShaders(vertexPath, fragmentPath);
@@ -86,4 +86,5 @@ void Program::setUniform(const char* uniformName, float value)
 void Program::setUniform(const char* uniformName, int value)
 {
     glUniform1i(glGetUniformLocation(programID, uniformName), value);
+}
 }

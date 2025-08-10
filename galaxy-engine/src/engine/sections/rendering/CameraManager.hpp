@@ -3,6 +3,7 @@
 #include "engine/data/Transform.hpp"
 #include "engine/types/Render.hpp"
 
+namespace Galaxy {
 class CameraManager {
 private:
     std::unordered_map<camID, std::pair<Transform*, bool>> m_registeredCamTransforms;
@@ -20,3 +21,4 @@ public:
 
     mat4 getViewMatrix();
 };
+}

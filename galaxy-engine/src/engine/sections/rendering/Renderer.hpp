@@ -11,6 +11,7 @@
 #include "engine/data/Transform.hpp"
 #include "engine/types/Render.hpp"
 
+namespace Galaxy {
 class Renderer {
 private:
     // int nbFrames = 0;
@@ -39,3 +40,4 @@ public:
     renderID instanciateMesh(Transform* transformRef, std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices);
     void clearMesh(renderID meshID);
 };
+}

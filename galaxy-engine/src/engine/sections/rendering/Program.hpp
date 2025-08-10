@@ -5,6 +5,7 @@
 
 using namespace math;
 
+namespace Galaxy {
 class Program {
 private:
     GLuint m_modelLocation, m_viewLocation, m_projectionLocation;
@@ -32,3 +33,4 @@ public:
     void setUniform(const char* uniformName, float value);
     void setUniform(const char* uniformName, int value);
 };
+}

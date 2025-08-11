@@ -6,7 +6,9 @@
 using namespace math;
 
 namespace Galaxy {
-const size_t maxIds = 256;
+CameraManager* CameraManager::s_instance = new CameraManager();
+
+const size_t maxIds = 64;
 CameraManager::CameraManager()
 {
     for (size_t i = 0; i < maxIds; i++) {
@@ -51,12 +53,11 @@ mat4 CameraManager::getCurrentCamTransform()
     return lookAt(vec3(0, 0, 0), vec3(0, 0, 1), vec3(0, 1, 0));
 }
 
-mat4 CameraManager::getViewMatrix()
+mat4 CameraManager::processViewMatrix(mat4& transform)
 {
-    mat4 tansMat = getCurrentCamTransform();
-    vec3 position = vec3(tansMat[3][0], tansMat[3][1], tansMat[3][2]);
-    vec3 forward = vec3(tansMat[2][0], tansMat[2][1], tansMat[2][2]);
-    vec3 target = position + forward;
+    vec3 position = vec3(transform[3][0], transform[3][1], transform[3][2]);
+    vec3 forward  = vec3(transform[2][0], transform[2][1], transform[2][2]);
+    vec3 target   = position + forward;
     return lookAt(position, target, vec3(0, 1, 0));
 }
 }

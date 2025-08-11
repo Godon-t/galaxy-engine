@@ -10,7 +10,7 @@ private:
     std::stack<camID> m_activeCamsHistory;
     std::stack<camID> m_freeIds;
 
-    mat4 getCurrentCamTransform();
+    static CameraManager* s_instance;
 
 public:
     CameraManager();
@@ -19,6 +19,9 @@ public:
 
     void setCurrent(camID id);
 
-    mat4 getViewMatrix();
+    mat4 getCurrentCamTransform();
+
+    static mat4 processViewMatrix(mat4& transform);
+    static inline CameraManager& getInstance() { return *s_instance; }
 };
 }

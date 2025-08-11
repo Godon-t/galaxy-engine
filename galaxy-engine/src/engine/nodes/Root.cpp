@@ -14,8 +14,9 @@ Root::Root(ActionManager& actionManager, std::unique_ptr<Node> node)
     serializer.serialize(*m_rootNode.get());
 }
 
-void Root::process()
+void Root::process(double delta)
 {
+    m_rootNode->update(delta);
     m_rootNode->updateTransformAndChilds();
 }
 }

@@ -8,13 +8,13 @@ namespace Galaxy {
 Camera::Camera()
 {
     m_current = true;
-    id        = Renderer::getInstance().addCamera(getTransform());
-    Renderer::getInstance().setCurrentCamera(id);
+    id        = CameraManager::getInstance().registerCam(getTransform());
+    CameraManager::getInstance().setCurrent(id);
 }
 
 Camera::~Camera()
 {
-    Renderer::getInstance().removeCamera(id);
+    CameraManager::getInstance().unregisterCam(id);
 }
 void Camera::handleInputFromBot(const ActionEvent& evtAction)
 {

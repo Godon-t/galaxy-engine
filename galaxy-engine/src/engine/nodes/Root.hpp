@@ -10,6 +10,6 @@ private:
 
 public:
     Root(ActionManager& actionManager, std::unique_ptr<Node> node);
-    void process();
+    void process(double delta);
 };
 }

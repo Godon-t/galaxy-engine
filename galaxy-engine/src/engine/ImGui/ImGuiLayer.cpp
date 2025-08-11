@@ -35,20 +35,13 @@ void ImGuiLayer::onDetach()
 
 void ImGuiLayer::onUpdate()
 {
-    auto& io       = ImGui::GetIO();
-    auto& window   = Application::getInstance().getWindow();
-    io.DisplaySize = ImVec2(window.getWidth(), window.getHeight());
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui::NewFrame();
-
-    ImGui::Begin("Scene", nullptr);
-    ImGui::Text("Hello, world %d", 123);
-
-    ImGui::End();
-
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
+
+void ImGuiLayer::onImGuiRender()
+{
+    ImGui::Text("Hello, world %d", 123);
+}
+
 void ImGuiLayer::onEvent(Event& event)
 {
     if (event.isInCategory(EventCategory::EventCategoryMouse)) {
@@ -64,5 +57,24 @@ void ImGuiLayer::onEvent(Event& event)
             io.MousePos                  = ImVec2(mousMotion.getX(), mousMotion.getY());
         }
     }
+}
+
+void ImGuiLayer::begin()
+{
+    auto& io       = ImGui::GetIO();
+    auto& window   = Application::getInstance().getWindow();
+    io.DisplaySize = ImVec2(window.getWidth(), window.getHeight());
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::Begin("Scene", nullptr);
+}
+
+void ImGuiLayer::end()
+{
+    ImGui::End();
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 }

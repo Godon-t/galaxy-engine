@@ -14,6 +14,8 @@ public:
 
     ~MeshInstance() override;
 
+    void process(double delta) override;
+
     void accept(Galaxy::NodeVisitor& visitor) override;
 };
 }

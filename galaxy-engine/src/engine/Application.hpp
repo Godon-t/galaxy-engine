@@ -1,10 +1,13 @@
 #pragma once
 
 #include "Core.hpp"
+#include "ImGui/ImGuiLayer.hpp"
 #include "Layer.hpp"
 #include "LayerStack.hpp"
 #include "Window.hpp"
 #include "event/ActionManager.hpp"
+
+#include <chrono>
 
 namespace Galaxy {
 class API Application {
@@ -23,11 +26,17 @@ public:
     // TODO: find a better place
     std::unique_ptr<ActionManager> actionManager;
 
+    inline double getDelta() { return m_delta; }
+
 private:
     static Application* s_instance;
+    ImGuiLayer* m_imGuiLayer;
     std::unique_ptr<Window> m_window;
     LayerStack m_layerStack;
     bool m_terminated;
+
+    double m_delta;
+    std::chrono::milliseconds m_frameDuration;
 };
 
 Application* createApplication();

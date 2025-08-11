@@ -25,16 +25,16 @@ Transform::Transform(Transform&& other) noexcept
 void Transform::computeModelMatrix(const mat4& parentGlobalModelMatrix)
 {
     m_globalModelMatrix = parentGlobalModelMatrix * getLocalModelMatrix();
-    dirty = false;
+    dirty               = false;
 }
 
 void Transform::computeModelMatrix()
 {
     m_globalModelMatrix = getLocalModelMatrix();
-    dirty = false;
+    dirty               = false;
 }
 
-mat4 Transform::getLocalModelMatrix()
+mat4 Transform::getLocalModelMatrix() const
 {
     mat4 R = toMat4(m_rotationQuat);
     return math::translate(mat4(1.0f), m_pos)
@@ -42,7 +42,7 @@ mat4 Transform::getLocalModelMatrix()
         * math::scale(mat4(1.0f), m_scale);
 }
 
-mat4 Transform::getGlobalModelMatrix()
+mat4 Transform::getGlobalModelMatrix() const
 {
     return m_globalModelMatrix;
 }
@@ -53,12 +53,12 @@ void Transform::setLocalPosition(vec3 position)
     dirty = true;
 }
 
-vec3 Transform::getLocalPosition()
+vec3 Transform::getLocalPosition() const
 {
     return m_pos;
 }
 
-vec3 Transform::getGlobalPosition()
+vec3 Transform::getGlobalPosition() const
 {
     return vec3(m_globalModelMatrix[3]);
 }
@@ -66,7 +66,7 @@ vec3 Transform::getGlobalPosition()
 void Transform::setLocalScale(const vec3& s)
 {
     m_scale = s;
-    dirty = true;
+    dirty   = true;
 }
 
 vec3 Transform::getLocalScale() const
@@ -74,7 +74,7 @@ vec3 Transform::getLocalScale() const
     return m_scale;
 }
 
-vec3 Transform::getGlobalScale(vec3 value)
+vec3 Transform::getGlobalScale(vec3 value) const
 {
     vec3 res;
     res.x = length(vec3(m_globalModelMatrix[0])); // Basis vector X
@@ -110,26 +110,26 @@ void Transform::setLocalRotation(vec3 rotationAngles)
     }
 
     m_rotationQuat = toQuat(rotationMatrix);
-    dirty = true;
+    dirty          = true;
 }
 
 void Transform::setLocalRotation(const quat& q)
 {
     m_rotationQuat = q;
-    dirty = true;
+    dirty          = true;
 }
 
-vec3 Transform::getLocalRotation()
+vec3 Transform::getLocalRotation() const
 {
     return degrees(eulerAngles(m_rotationQuat));
 }
 
 void Transform::rotate(vec3 rotations)
 {
-    vec3 rad = radians(rotations);
-    quat dq = quat(rad);
+    vec3 rad       = radians(rotations);
+    quat dq        = quat(rad);
     m_rotationQuat = normalize(dq * m_rotationQuat);
-    dirty = true;
+    dirty          = true;
 }
 
 // void Transform::scale(vec3 s)

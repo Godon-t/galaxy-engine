@@ -14,8 +14,8 @@ Program::Program(const char* vertexPath, const char* fragmentPath)
     programID = LoadShaders(vertexPath, fragmentPath);
     glUseProgram(programID);
 
-    m_modelLocation = glGetUniformLocation(programID, "model");
-    m_viewLocation = glGetUniformLocation(programID, "view");
+    m_modelLocation      = glGetUniformLocation(programID, "model");
+    m_viewLocation       = glGetUniformLocation(programID, "view");
     m_projectionLocation = glGetUniformLocation(programID, "projection");
 
     // glm::mat4 p = Camera::getInstance().getP();
@@ -36,19 +36,19 @@ Program::Program(const std::string& vertexPath, const std::string& fragmentPath)
 
 Program::Program(Program&& other) noexcept
 {
-    programID = other.programID;
-    other.programID = 0;
-    m_modelLocation = other.m_modelLocation;
-    m_viewLocation = other.m_viewLocation;
+    programID            = other.programID;
+    other.programID      = 0;
+    m_modelLocation      = other.m_modelLocation;
+    m_viewLocation       = other.m_viewLocation;
     m_projectionLocation = other.m_projectionLocation;
 }
 
 Program& Program::operator=(Program&& other) noexcept
 {
-    programID = other.programID;
-    other.programID = 0;
-    m_modelLocation = other.m_modelLocation;
-    m_viewLocation = other.m_viewLocation;
+    programID            = other.programID;
+    other.programID      = 0;
+    m_modelLocation      = other.m_modelLocation;
+    m_viewLocation       = other.m_viewLocation;
     m_projectionLocation = other.m_projectionLocation;
     return *this;
 }

@@ -20,7 +20,7 @@ public:
     Program(Program&& other) noexcept;
     Program& operator=(Program&& other) noexcept;
 
-    Program(const Program&) = delete;
+    Program(const Program&)            = delete;
     Program& operator=(const Program&) = delete;
 
     ~Program();

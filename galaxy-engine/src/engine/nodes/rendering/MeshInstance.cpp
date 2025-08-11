@@ -26,12 +26,17 @@ void MeshInstance::generateTriangle()
     triangleIndices.push_back(1);
     triangleIndices.push_back(2);
 
-    m_renderId = Renderer::getInstance().instanciateMesh(getTransform(), triangleVertices, triangleIndices);
+    m_renderId = Renderer::getInstance().instanciateMesh(triangleVertices, triangleIndices);
 }
 
 MeshInstance::~MeshInstance()
 {
     Renderer::getInstance().clearMesh(m_renderId);
+}
+
+void MeshInstance::process(double delta)
+{
+    Renderer::getInstance().submit(*getTransform(), m_renderId);
 }
 
 void MeshInstance::accept(Galaxy::NodeVisitor& visitor)

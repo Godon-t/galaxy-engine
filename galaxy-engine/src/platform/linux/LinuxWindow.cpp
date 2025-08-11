@@ -134,10 +134,6 @@ void LinuxWindow::shutdown()
 
 void LinuxWindow::onUpdate()
 {
-    // float currentFrame = glfwGetTime();
-    // deltaTime = currentFrame - lastFrame;
-    // lastFrame = currentFrame;
-
     glfwPollEvents();
     glfwSwapBuffers(m_window);
 }

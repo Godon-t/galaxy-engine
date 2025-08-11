@@ -7,10 +7,14 @@
 
 using namespace math;
 
+class Root;
+
 namespace Galaxy {
 class Node {
 private:
     friend class NodeVisitor;
+    friend class Root;
+    void update(double delta);
 
 protected:
     Node* m_parent = nullptr;
@@ -38,12 +42,14 @@ public:
 
     void destroy();
 
+    virtual void process(double delta) { }
+
     virtual void updateTransformAndChilds(const mat4& matrix = mat4(1));
     virtual void forceUpdateTransformAndChilds(const mat4& matrix);
 
     void handleInput(const ActionEvent& eventAction);
-    virtual void handleInputFromTop(const ActionEvent& eventAction) {};
-    virtual void handleInputFromBot(const ActionEvent& eventAction) {};
+    virtual void handleInputFromTop(const ActionEvent& eventAction) { }
+    virtual void handleInputFromBot(const ActionEvent& eventAction) { }
 
     virtual void accept(NodeVisitor& visitor);
 };

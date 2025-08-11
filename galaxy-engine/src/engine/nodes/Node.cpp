@@ -51,6 +51,14 @@ void Node::destroy()
     }
 }
 
+void Node::update(double delta)
+{
+    process(delta);
+    for (auto&& child : m_children) {
+        child->update(delta);
+    }
+}
+
 void Node::updateTransformAndChilds(const mat4& matrix)
 {
     for (auto&& child : m_children) {

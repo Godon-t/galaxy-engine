@@ -16,6 +16,7 @@ Node* Node::getParent() const
 
 void Node::addChild(std::unique_ptr<Node> child)
 {
+    child->setParent(this);
     m_children.push_back(std::move(child));
 }
 
@@ -73,13 +74,13 @@ void Node::forceUpdateTransformAndChilds(const mat4& matrix)
     }
 }
 
-void Node::handleInput(const ActionEvent& eventAction)
+void Node::handleInput(const Event& event)
 {
-    handleInputFromTop(eventAction);
+    handleInputFromTop(event);
     for (auto&& child : m_children) {
-        child->handleInput(eventAction);
+        child->handleInput(event);
     }
-    handleInputFromBot(eventAction);
+    handleInputFromBot(event);
 }
 
 void Node::accept(NodeVisitor& visitor)

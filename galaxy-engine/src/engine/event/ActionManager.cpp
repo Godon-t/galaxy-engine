@@ -35,7 +35,7 @@ void ActionManager::processInput(KeyEvent& keyEvent)
     auto it = m_managedActionsByKey.find(key);
     if (it != m_managedActionsByKey.end()) {
         for (auto& action : m_managedActionsByKey[key]) {
-            ActionEvent inputA(key, keyEvent.isPressed(), keyEvent.isClicked(), action.name);
+            ActionEvent inputA(keyEvent.isPressed(), keyEvent.isClicked(), action.name);
             emitEvent(inputA);
         }
     }

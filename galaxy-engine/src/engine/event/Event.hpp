@@ -9,14 +9,16 @@ enum class EventType {
     WindowResize,
     KeyInteract,
     MouseButtonInteract,
-    MouseMotion
+    MouseMotion,
+    ActionInteract
 };
 enum EventCategory {
     None                     = 0,
     EventCategoryApplication = BIT(0),
     EventCategoryInput       = BIT(1),
     EventCategoryKeyboard    = BIT(2),
-    EventCategoryMouse       = BIT(3)
+    EventCategoryMouse       = BIT(3),
+    EventCategoryAction      = BIT(4)
 };
 
 // maccro to simplify Event implementation writting (copied from the cherno tutorial but I don't know if it is a good practice and easy to understand)
@@ -43,7 +45,7 @@ public:
     virtual EventType getEventType() const = 0;
     virtual const char* getName() const    = 0;
     virtual int getCategoryFlags() const   = 0;
-    inline bool isInCategory(EventCategory category)
+    inline bool isInCategory(EventCategory category) const
     {
         return getCategoryFlags() & category;
     }

@@ -3,6 +3,7 @@
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtx/euler_angles.hpp>
+
 namespace math {
 using vec3 = glm::vec3;
 using vec2 = glm::vec2;

@@ -94,6 +94,7 @@ target_compile_definitions(galaxy-engine PRIVATE GALAXY_ENGINE_BUILD)
 target_include_directories(galaxy-engine PUBLIC src)
 target_include_directories(galaxy-engine PUBLIC src/engine)
 target_precompile_headers(galaxy-engine PUBLIC src/engine/pch.hpp)
+target_include_directories(galaxy-engine PUBLIC external/glm-0.9.7.1)
 
 # TODO: move to right spot
 add_subdirectory(external/imgui)

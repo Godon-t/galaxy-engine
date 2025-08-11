@@ -5,6 +5,7 @@
 #include "Layer.hpp"
 #include "LayerStack.hpp"
 #include "Window.hpp"
+#include "engine/nodes/Root.hpp"
 #include "event/ActionManager.hpp"
 
 #include <chrono>
@@ -26,6 +27,8 @@ public:
     // TODO: find a better place
     std::unique_ptr<ActionManager> actionManager;
 
+    void setRootNode(std::unique_ptr<Node> node);
+
     inline double getDelta() { return m_delta; }
 
 private:
@@ -37,6 +40,8 @@ private:
 
     double m_delta;
     std::chrono::milliseconds m_frameDuration;
+
+    std::unique_ptr<Root> m_root;
 };
 
 Application* createApplication();

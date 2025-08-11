@@ -8,7 +8,6 @@
 
 #include "Log.hpp"
 #include "engine/event/WindowEvent.hpp"
-#include "engine/nodes/Root.hpp"
 #include "engine/nodes/rendering/Camera.hpp"
 #include "engine/nodes/rendering/MeshInstance.hpp"
 #include "engine/sections/rendering/Renderer.hpp"
@@ -25,11 +24,13 @@ Application::Application()
 
     WindowProps props = WindowProps();
     actionManager     = std::make_unique<ActionManager>();
-    m_terminated      = false;
-    m_window          = std::unique_ptr<Window>(Window::create(props));
-    m_layerStack      = LayerStack();
-    m_frameDuration   = std::chrono::milliseconds(1000 / 60); // 60 fps
-    m_imGuiLayer      = new ImGuiLayer();
+
+    m_root          = std::make_unique<Root>();
+    m_terminated    = false;
+    m_window        = std::unique_ptr<Window>(Window::create(props));
+    m_layerStack    = LayerStack();
+    m_frameDuration = std::chrono::milliseconds(1000 / 60); // 60 fps
+    m_imGuiLayer    = new ImGuiLayer();
     pushOverlay(m_imGuiLayer);
 
     m_window->setEventCallback([this](Event& event) {
@@ -69,19 +70,9 @@ void Application::run()
 {
     Renderer& renderer = Renderer::getInstance();
 
-    ///////////////////////////////////////////////////////////
-    std::unique_ptr<MeshInstance> testInstance = std::make_unique<MeshInstance>();
-    testInstance->generateTriangle();
-    testInstance->translate(vec3(0, 0, 2));
-
-    std::unique_ptr<Camera> mainCam = std::make_unique<Camera>();
-    testInstance->addChild(std::move(mainCam));
-
-    Root root(*actionManager, std::move(testInstance));
-    ///////////////////////////////////////////////////////////
-
     actionManager->addListener([this](ActionEvent inputAction) {
-        m_terminated = std::string(inputAction.getName()) == "exit";
+        m_root->handleEvent(inputAction);
+        m_terminated = std::string(inputAction.getActionName()) == "exit";
     });
 
     m_delta       = 0;
@@ -105,7 +96,7 @@ void Application::run()
         auto cameraTransform = CameraManager::getInstance().getCurrentCamTransform();
         renderer.beginSceneRender(cameraTransform);
 
-        root.process(m_delta);
+        m_root->process(m_delta);
 
         renderer.renderFrame();
 
@@ -114,5 +105,9 @@ void Application::run()
             std::this_thread::sleep_for(m_frameDuration - elapsed);
 
     } while (!m_terminated);
+}
+void Application::setRootNode(std::unique_ptr<Node> node)
+{
+    m_root->setRoot(std::move(node));
 }
 }

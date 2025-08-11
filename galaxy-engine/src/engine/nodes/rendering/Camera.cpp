@@ -16,10 +16,14 @@ Camera::~Camera()
 {
     CameraManager::getInstance().unregisterCam(id);
 }
-void Camera::handleInputFromBot(const ActionEvent& evtAction)
+void Camera::handleInputFromBot(const Event& event)
 {
-    const float speed = 0.1f;
-    auto actionName   = std::string(evtAction.getName());
+    if (!event.isInCategory(EventCategory::EventCategoryAction))
+        return;
+
+    const ActionEvent& evtAction = (ActionEvent&)event;
+    const float speed            = 0.1f;
+    auto actionName              = std::string(evtAction.getActionName());
     if (actionName == "forward" && evtAction.isPressed()) {
         translate(vec3(0, 0, speed));
     } else if (actionName == "backward" && evtAction.isPressed()) {

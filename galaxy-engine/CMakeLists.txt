@@ -56,11 +56,11 @@ add_definitions(
 
 add_library(galaxy-engine
 	src/platform/linux/LinuxWindow.cpp
-	src/engine/Application.cpp
+	src/engine/core/Application.cpp
 
-	src/engine/Log.cpp
-	src/engine/Layer.cpp
-	src/engine/LayerStack.cpp
+	src/engine/core/Log.cpp
+	src/engine/core/Layer.cpp
+	src/engine/core/LayerStack.cpp
 
 	src/engine/event/ActionManager.cpp
 
@@ -92,8 +92,8 @@ target_compile_definitions(galaxy-engine PUBLIC
 target_compile_definitions(galaxy-engine PRIVATE GALAXY_ENGINE_BUILD)
 
 target_include_directories(galaxy-engine PUBLIC src)
-target_include_directories(galaxy-engine PUBLIC src/engine)
-target_precompile_headers(galaxy-engine PUBLIC src/engine/pch.hpp)
+target_include_directories(galaxy-engine PUBLIC src/engine/core)
+target_precompile_headers(galaxy-engine PUBLIC src/engine/core/pch.hpp)
 target_include_directories(galaxy-engine PUBLIC external/glm-0.9.7.1)
 
 # TODO: move to right spot

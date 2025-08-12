@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/gl_headers.hpp"
+#include "gl_headers.hpp"
 
 #include "CameraManager.hpp"
 #include "Program.hpp"

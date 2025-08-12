@@ -1,9 +1,9 @@
 #include "LinuxWindow.hpp"
 
 #include "Log.hpp"
-#include "event/KeyEvent.hpp"
-#include "event/MouseEvent.hpp"
-#include "event/WindowEvent.hpp"
+#include "engine/event/KeyEvent.hpp"
+#include "engine/event/MouseEvent.hpp"
+#include "engine/event/WindowEvent.hpp"
 #include "pch.hpp"
 
 namespace Galaxy {

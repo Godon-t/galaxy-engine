@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include <Engine.hpp>
-#include <engine/EntryPoint.hpp>
+#include <engine/core/EntryPoint.hpp>
 
 #include "EditorLayer.hpp"
 

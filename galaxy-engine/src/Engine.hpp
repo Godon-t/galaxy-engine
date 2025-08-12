@@ -1,8 +1,8 @@
 #pragma once
 
-#include "engine/Application.hpp"
-#include "engine/Layer.hpp"
-#include "engine/Log.hpp"
+#include "Application.hpp"
+#include "Layer.hpp"
+#include "Log.hpp"
 
 #include "engine/types/Math.hpp"
 #include "engine/types/Render.hpp"

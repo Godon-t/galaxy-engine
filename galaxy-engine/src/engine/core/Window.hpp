@@ -3,7 +3,7 @@
 #include "Core.hpp"
 #include "pch.hpp"
 
-#include "event/Event.hpp"
+#include "engine/event/Event.hpp"
 
 namespace Galaxy {
 struct WindowProps {

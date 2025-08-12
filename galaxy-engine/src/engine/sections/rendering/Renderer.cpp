@@ -1,9 +1,9 @@
 #include "Renderer.hpp"
 #include "pch.hpp"
 
+#include "Helper.hpp"
 #include "OpenglHelper.hpp"
 #include "VisualInstance.hpp"
-#include "engine/Helper.hpp"
 
 #include "Core.hpp"
 

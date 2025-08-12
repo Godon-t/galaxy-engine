@@ -2,7 +2,7 @@
 
 #include "engine/types/Math.hpp"
 
-#include "engine/gl_headers.hpp"
+#include "gl_headers.hpp"
 
 using namespace math;
 
@@ -20,7 +20,7 @@ public:
     VisualInstance();
     ~VisualInstance();
 
-    VisualInstance(const VisualInstance&) = delete;
+    VisualInstance(const VisualInstance&)            = delete;
     VisualInstance& operator=(const VisualInstance&) = delete;
 
     VisualInstance(VisualInstance&&);

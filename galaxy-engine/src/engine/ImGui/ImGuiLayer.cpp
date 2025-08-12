@@ -7,7 +7,7 @@
 #include "Application.hpp"
 #include "Log.hpp"
 
-#include "event/MouseEvent.hpp"
+#include "engine/event/MouseEvent.hpp"
 
 namespace Galaxy {
 ImGuiLayer::~ImGuiLayer()

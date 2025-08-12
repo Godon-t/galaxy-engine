@@ -1,6 +1,6 @@
 #pragma once
 
-#include "event/Event.hpp"
+#include "engine/event/Event.hpp"
 #include "pch.hpp"
 
 namespace Galaxy {

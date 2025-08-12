@@ -12,6 +12,10 @@ private:
 public:
     void generateTriangle();
 
+    MeshInstance(std::string name = "MeshInstance")
+        : Node3D(name)
+    {
+    }
     ~MeshInstance() override;
 
     void process(double delta) override;

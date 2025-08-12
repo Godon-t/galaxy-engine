@@ -110,4 +110,8 @@ void Application::setRootNode(std::unique_ptr<Node> node)
 {
     m_root->setRoot(std::move(node));
 }
+Node* Application::getRootNodePtr()
+{
+    return m_root->getNodePtr();
+}
 }

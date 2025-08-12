@@ -2,8 +2,6 @@
 
 #include "Root.hpp"
 
-#include "visitors/Serializer.hpp"
-
 namespace Galaxy {
 void Root::process(double delta)
 {
@@ -14,8 +12,6 @@ void Root::process(double delta)
 void Root::setRoot(std::unique_ptr<Node> node)
 {
     m_rootNode = std::move(node);
-    Galaxy::NodeSerializer serializer;
-    serializer.serialize(*m_rootNode.get());
 }
 
 void Root::handleEvent(Event& event)

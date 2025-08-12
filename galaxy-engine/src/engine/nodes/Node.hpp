@@ -15,13 +15,15 @@ private:
     friend class NodeVisitor;
     friend class Root;
     void update(double delta);
+    std::string m_name;
 
 protected:
     Node* m_parent = nullptr;
     std::vector<std::unique_ptr<Node>> m_children; // Changement ici pour unique_ptr
 
 public:
-    Node()            = default;
+    Node(std::string name = "Node")
+        : m_name(name) {};
     Node(const Node&) = delete; // Interdit la copie
     Node(Node&&)      = default;
 
@@ -34,6 +36,9 @@ public:
     void addChild(std::unique_ptr<Node> child);
     void removeChild(Node* component);
     std::vector<Node*> getChildren() const;
+    size_t getChildCount() const;
+
+    std::string getName() { return m_name; }
 
     bool isLeaf() const
     {

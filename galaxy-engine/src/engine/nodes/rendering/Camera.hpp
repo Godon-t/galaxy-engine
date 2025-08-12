@@ -11,7 +11,7 @@ private:
 
 public:
     camID id;
-    Camera();
+    Camera(std::string name = "Camera");
     ~Camera() override;
 
     void handleInputFromBot(const Event& input) override;

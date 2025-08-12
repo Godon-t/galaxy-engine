@@ -10,6 +10,10 @@ protected:
     Transform m_transform;
 
 public:
+    Node3D(std::string name = "Node3D")
+        : Node(name)
+    {
+    }
     Transform* getTransform() { return &m_transform; }
     void updateTransformAndChilds(const mat4& matrix) override;
 

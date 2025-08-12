@@ -5,7 +5,8 @@
 #include "engine/sections/rendering/Renderer.hpp"
 
 namespace Galaxy {
-Camera::Camera()
+Camera::Camera(std::string name)
+    : Node3D(name)
 {
     m_current = true;
     id        = CameraManager::getInstance().registerCam(getTransform());

@@ -28,6 +28,7 @@ public:
     std::unique_ptr<ActionManager> actionManager;
 
     void setRootNode(std::unique_ptr<Node> node);
+    Node* getRootNodePtr();
 
     inline double getDelta() { return m_delta; }
 

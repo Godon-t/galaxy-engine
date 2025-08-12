@@ -42,6 +42,11 @@ std::vector<Node*> Node::getChildren() const
     return result;
 }
 
+size_t Node::getChildCount() const
+{
+    return m_children.size();
+}
+
 void Node::destroy()
 {
     m_children.clear();

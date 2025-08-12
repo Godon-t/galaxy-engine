@@ -106,11 +106,11 @@ void Application::run()
 
     } while (!m_terminated);
 }
-void Application::setRootNode(std::unique_ptr<Node> node)
+void Application::setRootNode(std::shared_ptr<Node> node)
 {
-    m_root->setRoot(std::move(node));
+    m_root->setRoot(node);
 }
-Node* Application::getRootNodePtr()
+std::shared_ptr<Node> Application::getRootNodePtr()
 {
     return m_root->getNodePtr();
 }

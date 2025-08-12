@@ -5,13 +5,13 @@
 namespace Galaxy {
 class Root {
 private:
-    std::unique_ptr<Node> m_rootNode;
+    std::shared_ptr<Node> m_rootNode;
 
 public:
     Root() { }
     void process(double delta);
-    void setRoot(std::unique_ptr<Node> node);
+    void setRoot(std::shared_ptr<Node> node);
     void handleEvent(Event& event);
-    Node* getNodePtr() { return m_rootNode.get(); }
+    std::shared_ptr<Node> getNodePtr() { return m_rootNode; }
 };
 }

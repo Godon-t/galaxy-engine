@@ -6,8 +6,7 @@ namespace Galaxy {
 class EditorLayer : public Layer {
 public:
     EditorLayer()
-        : Layer("Editor layer")
-        , m_scenePath("TEST.glx") {};
+        : Layer("Editor layer") {};
     ~EditorLayer() override;
 
     void onAttach() override;
@@ -17,7 +16,6 @@ public:
     void onEvent(Event& evt) override;
 
 private:
-    std::string m_scenePath;
-    void save(Node& node, std::string& filePath);
+    Scene m_selectedScene;
 };
 }

@@ -9,9 +9,9 @@ void Root::process(double delta)
     m_rootNode->updateTransformAndChilds();
 }
 
-void Root::setRoot(std::unique_ptr<Node> node)
+void Root::setRoot(std::shared_ptr<Node> node)
 {
-    m_rootNode = std::move(node);
+    m_rootNode = node;
 }
 
 void Root::handleEvent(Event& event)

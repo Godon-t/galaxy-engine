@@ -11,14 +11,17 @@ EditorLayer::~EditorLayer()
 
 void EditorLayer::onAttach()
 {
-    std::unique_ptr<MeshInstance> testInstance = std::make_unique<MeshInstance>();
+    std::shared_ptr<MeshInstance> testInstance = std::make_shared<MeshInstance>();
     testInstance->generateTriangle();
     testInstance->translate(vec3(0, 0, 2));
 
     std::unique_ptr<Camera> mainCam = std::make_unique<Camera>();
     testInstance->addChild(std::move(mainCam));
 
-    Application::getInstance().setRootNode(std::move(testInstance));
+    m_selectedScene = Scene("TEST.glx");
+    m_selectedScene.load(testInstance);
+
+    Application::getInstance().setRootNode(testInstance);
 }
 
 void EditorLayer::onDetach()
@@ -33,9 +36,12 @@ void EditorLayer::onImGuiRender()
 {
     ImGui::Begin("Application state");
     ImGui::Text((std::string("FPS: ") + std::to_string(1.0 / Application::getInstance().getDelta())).c_str());
+    ImGui::End();
 
-    if (ImGui::Button("Serialize")) {
-        save(*Application::getInstance().getRootNodePtr(), m_scenePath);
+    ImGui::Begin("Scene");
+
+    if (m_selectedScene.isValid() && ImGui::Button("Serialize")) {
+        m_selectedScene.save();
     }
 
     NodeList nl;
@@ -45,11 +51,5 @@ void EditorLayer::onImGuiRender()
 
 void EditorLayer::onEvent(Event& evt)
 {
-}
-
-void EditorLayer::save(Node& node, std::string& filePath)
-{
-    NodeSerializer serializer;
-    serializer.serialize(node, filePath.c_str());
 }
 }

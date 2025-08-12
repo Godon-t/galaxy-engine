@@ -39,7 +39,6 @@ void ImGuiLayer::onUpdate()
 
 void ImGuiLayer::onImGuiRender()
 {
-    ImGui::Text("Hello, world %d", 123);
 }
 
 void ImGuiLayer::onEvent(Event& event)

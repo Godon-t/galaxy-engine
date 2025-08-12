@@ -27,8 +27,8 @@ public:
     // TODO: find a better place
     std::unique_ptr<ActionManager> actionManager;
 
-    void setRootNode(std::unique_ptr<Node> node);
-    Node* getRootNodePtr();
+    void setRootNode(std::shared_ptr<Node> node);
+    std::shared_ptr<Node> getRootNodePtr();
 
     inline double getDelta() { return m_delta; }
 
@@ -42,7 +42,7 @@ private:
     double m_delta;
     std::chrono::milliseconds m_frameDuration;
 
-    std::unique_ptr<Root> m_root;
+    std::shared_ptr<Root> m_root;
 };
 
 Application* createApplication();

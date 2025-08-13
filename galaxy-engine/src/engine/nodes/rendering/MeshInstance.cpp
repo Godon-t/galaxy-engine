@@ -34,6 +34,11 @@ MeshInstance::~MeshInstance()
     Renderer::getInstance().clearMesh(m_renderId);
 }
 
+void MeshInstance::enteredRoot()
+{
+    generateTriangle();
+}
+
 void MeshInstance::process(double delta)
 {
     Renderer::getInstance().submit(*getTransform(), m_renderId);

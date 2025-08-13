@@ -13,7 +13,14 @@ public:
 
     void visit(Node& node) override
     {
-        visitChildren(node);
+        if (node.getChildCount() == 0) {
+            ImGui::BulletText(node.getName().c_str());
+        } else if (ImGui::TreeNode(node.getName().c_str())) {
+            for (auto child : node.getChildren()) {
+                child->accept(*this);
+            }
+            ImGui::TreePop();
+        }
     }
     void visit(Node3D& node) override
     {
@@ -26,18 +33,6 @@ public:
     void visit(MeshInstance& node) override
     {
         visit(static_cast<Node3D&>(node));
-    }
-
-    void visitChildren(Node& node) override
-    {
-        if (node.getChildCount() == 0) {
-            ImGui::BulletText(node.getName().c_str());
-        } else if (ImGui::TreeNode(node.getName().c_str())) {
-            for (auto child : node.getChildren()) {
-                child->accept(*this);
-            }
-            ImGui::TreePop();
-        }
     }
 };
 }

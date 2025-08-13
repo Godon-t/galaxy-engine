@@ -47,7 +47,7 @@ mat4 Transform::getGlobalModelMatrix() const
     return m_globalModelMatrix;
 }
 
-void Transform::setLocalPosition(vec3 position)
+void Transform::setLocalPosition(const vec3& position)
 {
     m_pos = position;
     dirty = true;
@@ -84,7 +84,7 @@ vec3 Transform::getGlobalScale(vec3 value) const
     return res;
 }
 
-void Transform::setLocalRotation(vec3 rotationAngles)
+void Transform::setLocalRotation(const vec3& rotationAngles)
 {
     const mat4 transformX = math::rotate(mat4(1.0f),
         radians(rotationAngles.x),

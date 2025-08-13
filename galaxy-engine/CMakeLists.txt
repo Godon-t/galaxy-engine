@@ -73,6 +73,7 @@ add_library(galaxy-engine
 	src/engine/nodes/Node3D.cpp
 	src/engine/nodes/Root.cpp
 	src/engine/nodes/visitors/Serializer.cpp
+	src/engine/nodes/visitors/Deserializer.cpp
 	src/engine/nodes/rendering/MeshInstance.cpp
 	src/engine/nodes/rendering/Camera.cpp
 

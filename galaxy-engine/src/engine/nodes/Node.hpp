@@ -16,10 +16,11 @@ private:
     friend class Root;
     void update(double delta);
     std::string m_name;
+    bool m_inRoot = false;
 
 protected:
     Node* m_parent = nullptr;
-    std::vector<std::unique_ptr<Node>> m_children; // Changement ici pour unique_ptr
+    std::vector<std::shared_ptr<Node>> m_children; // Changement ici pour unique_ptr
 
 public:
     Node(std::string name = "Node")
@@ -33,7 +34,7 @@ public:
 
     Node* getParent() const;
 
-    void addChild(std::unique_ptr<Node> child);
+    void addChild(std::shared_ptr<Node> child);
     void removeChild(Node* component);
     std::vector<Node*> getChildren() const;
     size_t getChildCount() const;
@@ -47,6 +48,8 @@ public:
 
     void destroy();
 
+    void enterRoot();
+
     virtual void process(double delta) { }
 
     virtual void updateTransformAndChilds(const mat4& matrix = mat4(1));
@@ -57,5 +60,9 @@ public:
     virtual void handleInputFromBot(const Event& event) { }
 
     virtual void accept(NodeVisitor& visitor);
+
+protected:
+    virtual void enteringRoot() { }
+    virtual void enteredRoot() { }
 };
 }

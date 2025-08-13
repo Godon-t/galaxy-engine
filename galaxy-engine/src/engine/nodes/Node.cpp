@@ -14,10 +14,13 @@ Node* Node::getParent() const
     return this->m_parent;
 }
 
-void Node::addChild(std::unique_ptr<Node> child)
+void Node::addChild(std::shared_ptr<Node> child)
 {
     child->setParent(this);
-    m_children.push_back(std::move(child));
+    m_children.push_back(child);
+    if (m_inRoot) {
+        m_children[m_children.size() - 1]->enterRoot();
+    }
 }
 
 void Node::removeChild(Node* component)
@@ -55,6 +58,16 @@ void Node::destroy()
         m_parent->removeChild(this);
         m_parent = nullptr;
     }
+}
+
+void Node::enterRoot()
+{
+    enteringRoot();
+    for (auto&& child : m_children) {
+        child->enterRoot();
+    }
+    enteredRoot();
+    m_inRoot = true;
 }
 
 void Node::update(double delta)

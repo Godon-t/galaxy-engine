@@ -27,7 +27,7 @@ public:
     mat4 getLocalModelMatrix() const;
     mat4 getGlobalModelMatrix() const;
 
-    void setLocalPosition(vec3 position);
+    void setLocalPosition(const vec3& position);
     vec3 getLocalPosition() const;
     vec3 getGlobalPosition() const;
 
@@ -35,7 +35,7 @@ public:
     vec3 getLocalScale() const;
     vec3 getGlobalScale(vec3 value) const;
 
-    void setLocalRotation(vec3 rotationAngles);
+    void setLocalRotation(const vec3& rotationAngles);
     void setLocalRotation(const quat& q);
     vec3 getLocalRotation() const;
 
@@ -49,6 +49,16 @@ public:
 
     Transform(Transform&& other) noexcept;
 
+    Transform& operator=(const Transform& other) noexcept
+    {
+        m_pos               = other.m_pos;
+        m_rotationQuat      = other.m_rotationQuat;
+        m_scale             = other.m_scale;
+        m_globalModelMatrix = other.m_globalModelMatrix;
+        dirty               = other.dirty;
+        m_rotationOrder     = other.m_rotationOrder;
+        return *this;
+    }
     Transform& operator=(Transform&& other) noexcept
     {
         if (this != &other) {

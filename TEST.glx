@@ -1,8 +1,15 @@
-NodeScene: Name
-Type: MeshInstance
-Childs:
-  - Type: Camera
-    Childs:
-      []
-    Transform: (rotation, translation, scale)
-Transform: (rotation, translation, scale)
+Scene: Name
+Root:
+  Type: MeshInstance
+  Childs:
+    - Type: Camera
+      Childs:
+        []
+      Transform:
+        Position: [0, 0, 0]
+        Rotation: [0, -0, 0]
+        Scale: [1, 1, 1]
+  Transform:
+    Position: [0, 0, 2]
+    Rotation: [0, -0, 0]
+    Scale: [1, 1, 1]

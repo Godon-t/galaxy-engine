@@ -9,6 +9,10 @@ class Camera : public Node3D {
 private:
     bool m_current;
 
+protected:
+    virtual void enteringRoot() override {};
+    virtual void enteredRoot() override {};
+
 public:
     camID id;
     Camera(std::string name = "Camera");

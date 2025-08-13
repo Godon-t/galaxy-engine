@@ -9,6 +9,10 @@ class MeshInstance : public Node3D {
 private:
     renderID m_renderId;
 
+protected:
+    virtual void enteringRoot() override {};
+    virtual void enteredRoot() override;
+
 public:
     void generateTriangle();
 

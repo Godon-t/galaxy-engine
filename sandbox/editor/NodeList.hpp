@@ -15,22 +15,14 @@ public:
 
     void visit(Node& node) override
     {
+        ImGui::PushID(node.id);
         if (node.getChildCount() == 0) {
             ImGui::BulletText(node.getName().c_str());
             ImGui::SameLine();
-            ImGui::PushID(node.id);
-            if (ImGui::Button("Add node")) {
-                m_addNodeMenu.open();
-            }
-            ImGui::PopID();
+            addEditButtons(node);
         } else {
             bool treeNotColapse = ImGui::TreeNode(node.getName().c_str());
-            ImGui::SameLine();
-            ImGui::PushID(node.id);
-            if (ImGui::Button("Add node")) {
-                m_addNodeMenu.open();
-            }
-            ImGui::PopID();
+            addEditButtons(node);
             if (treeNotColapse) {
                 for (auto child : node.getChildren()) {
                     child->accept(*this);
@@ -38,11 +30,7 @@ public:
                 ImGui::TreePop();
             }
         }
-        if (m_addNodeMenu.display()) {
-            auto nodeType                 = m_addNodeMenu.getSelectedNode();
-            std::shared_ptr<Node> newNode = constructNode(nodeType);
-            node.addChild(newNode);
-        }
+        ImGui::PopID();
     }
     void visit(Node3D& node) override
     {
@@ -59,5 +47,21 @@ public:
 
 private:
     AddNodeMenu m_addNodeMenu;
+    void addEditButtons(Node& node)
+    {
+        ImGui::SameLine();
+        if (ImGui::Button("Add node")) {
+            m_addNodeMenu.open();
+        }
+        if (m_addNodeMenu.display()) {
+            auto nodeType                 = m_addNodeMenu.getSelectedNode();
+            std::shared_ptr<Node> newNode = constructNode(nodeType);
+            node.addChild(newNode);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Remove node")) {
+            node.destroy();
+        }
+    }
 };
 }

@@ -55,6 +55,9 @@ void EditorLayer::onImGuiRender()
     if (rootPtr) {
         m_nodeList.listNodes(*rootPtr);
     }
+    if (m_nodeList.selectedNode) {
+        m_editNode.selectNode(*m_nodeList.selectedNode);
+    }
     ImGui::End();
 }
 

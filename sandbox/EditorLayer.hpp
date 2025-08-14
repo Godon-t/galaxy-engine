@@ -2,6 +2,7 @@
 
 #include <Engine.hpp>
 
+#include "editor/EditNode.hpp"
 #include "editor/NodeList.hpp"
 
 namespace Galaxy {
@@ -20,5 +21,6 @@ public:
 private:
     Scene m_selectedScene;
     NodeList m_nodeList;
+    EditNode m_editNode;
 };
 }

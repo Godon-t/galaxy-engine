@@ -8,6 +8,8 @@
 namespace Galaxy {
 class NodeList : public NodeVisitor {
 public:
+    Node* selectedNode;
+
     void listNodes(Node& root)
     {
         root.accept(*this);
@@ -18,10 +20,10 @@ public:
         ImGui::PushID(node.id);
         if (node.getChildCount() == 0) {
             ImGui::BulletText(node.getName().c_str());
-            addEditButtons(node);
+            editHierarchyMenu(node);
         } else {
             bool treeNotColapse = ImGui::TreeNode(node.getName().c_str());
-            addEditButtons(node);
+            editHierarchyMenu(node);
             if (treeNotColapse) {
                 for (auto child : node.getChildren()) {
                     child->accept(*this);
@@ -46,7 +48,8 @@ public:
 
 private:
     AddNodeMenu m_addNodeMenu;
-    void addEditButtons(Node& node)
+
+    void editHierarchyMenu(Node& node)
     {
         if (ImGui::BeginPopupContextItem("Edit node")) {
             if (ImGui::Button("Add node")) {
@@ -62,6 +65,9 @@ private:
                 node.destroy();
             }
             ImGui::EndPopup();
+        }
+        if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+            selectedNode = &node;
         }
     }
 };

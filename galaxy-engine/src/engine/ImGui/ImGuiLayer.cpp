@@ -77,6 +77,7 @@ void ImGuiLayer::onAttach()
     auto& io = ImGui::GetIO();
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     // map io keys to glfw keys (io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB)
 
     ImGui_ImplOpenGL3_Init("#version 410");

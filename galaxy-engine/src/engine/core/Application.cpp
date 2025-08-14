@@ -100,9 +100,9 @@ void Application::run()
 
         renderer.renderFrame();
 
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(startTime - clock::now());
-        if (elapsed < m_frameDuration)
-            std::this_thread::sleep_for(m_frameDuration - elapsed);
+        // auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(startTime - clock::now());
+        // if (elapsed < m_frameDuration)
+        //     std::this_thread::sleep_for(m_frameDuration - elapsed);
 
     } while (!m_terminated);
 }

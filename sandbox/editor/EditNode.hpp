@@ -47,7 +47,5 @@ public:
             transform.setLocalScale(scale);
         }
     }
-
-private:
 };
 }

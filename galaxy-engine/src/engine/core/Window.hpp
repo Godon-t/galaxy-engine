@@ -36,6 +36,8 @@ public:
 
     virtual void setEventCallback(const EventCallbackFn& callback) = 0;
 
+    virtual void* getNativeWindow() = 0;
+
 public:
 };
 } // namespace Galaxy

@@ -17,6 +17,8 @@ public:
 
     inline void setEventCallback(const EventCallbackFn& callback) override { m_data.EventCallback = callback; }
 
+    inline void* getNativeWindow() override { return m_window; }
+
 private:
     void init(const WindowProps& props);
     void shutdown();

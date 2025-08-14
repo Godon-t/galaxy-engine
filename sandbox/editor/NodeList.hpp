@@ -8,7 +8,7 @@
 namespace Galaxy {
 class NodeList : public NodeVisitor {
 public:
-    Node* selectedNode;
+    Node* selectedNode = nullptr;
 
     void listNodes(Node& root)
     {

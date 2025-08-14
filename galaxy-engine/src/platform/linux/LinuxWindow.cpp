@@ -64,6 +64,14 @@ void LinuxWindow::key_input_callback(GLFWwindow* window, int key, int scancode, 
     }
 }
 
+void LinuxWindow::char_callback(GLFWwindow* window, unsigned int codePoint)
+{
+    WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+
+    CharEvent evt(codePoint);
+    data.EventCallback(evt);
+}
+
 void LinuxWindow::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
@@ -119,6 +127,7 @@ void LinuxWindow::init(const WindowProps& props)
     glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
 
     glfwSetKeyCallback(m_window, key_input_callback);
+    glfwSetCharCallback(m_window, char_callback);
     glfwSetMouseButtonCallback(m_window, mouse_button_callback);
     glfwSetCursorPosCallback(m_window, mouse_motion_callback);
     glfwSetWindowCloseCallback(m_window, window_close_callback);

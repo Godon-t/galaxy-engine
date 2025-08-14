@@ -24,4 +24,21 @@ private:
     bool m_pressed;
     bool m_clicked;
 };
+
+class CharEvent : public Event {
+public:
+    inline unsigned int getCodePoint() const { return m_codePoint; }
+
+    EVENT_CLASS_TYPE(CharEmit)
+    EVENT_CLASS_CATEGORY(EventCategoryInput | EventCategoryChar)
+
+    CharEvent(unsigned int codePoint)
+        : m_codePoint(codePoint)
+    {
+    }
+
+private:
+    unsigned int m_codePoint;
+};
+
 }

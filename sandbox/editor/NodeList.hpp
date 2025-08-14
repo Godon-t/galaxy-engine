@@ -18,7 +18,6 @@ public:
         ImGui::PushID(node.id);
         if (node.getChildCount() == 0) {
             ImGui::BulletText(node.getName().c_str());
-            ImGui::SameLine();
             addEditButtons(node);
         } else {
             bool treeNotColapse = ImGui::TreeNode(node.getName().c_str());
@@ -49,18 +48,20 @@ private:
     AddNodeMenu m_addNodeMenu;
     void addEditButtons(Node& node)
     {
-        ImGui::SameLine();
-        if (ImGui::Button("Add node")) {
-            m_addNodeMenu.open();
-        }
-        if (m_addNodeMenu.display()) {
-            auto nodeType                 = m_addNodeMenu.getSelectedNode();
-            std::shared_ptr<Node> newNode = constructNode(nodeType);
-            node.addChild(newNode);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Remove node")) {
-            node.destroy();
+        if (ImGui::BeginPopupContextItem("Edit node")) {
+            if (ImGui::Button("Add node")) {
+                m_addNodeMenu.open();
+            }
+            if (m_addNodeMenu.display()) {
+                auto nodeType                 = m_addNodeMenu.getSelectedNode();
+                std::shared_ptr<Node> newNode = constructNode(nodeType);
+                node.addChild(newNode);
+                ImGui::CloseCurrentPopup();
+            }
+            if (ImGui::Selectable("Delete")) {
+                node.destroy();
+            }
+            ImGui::EndPopup();
         }
     }
 };

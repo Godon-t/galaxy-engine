@@ -4,6 +4,8 @@
 
 namespace Galaxy {
 
+size_t Node::s_rootID = 0;
+
 void Node::setParent(Node* parent)
 {
     this->m_parent = parent;

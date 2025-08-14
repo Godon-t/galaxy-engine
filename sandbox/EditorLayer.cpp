@@ -53,8 +53,7 @@ void EditorLayer::onImGuiRender()
 
     auto rootPtr = Application::getInstance().getRootNodePtr();
     if (rootPtr) {
-        NodeList nl;
-        nl.listNodes(*rootPtr);
+        m_nodeList.listNodes(*rootPtr);
     }
     ImGui::End();
 }

@@ -69,6 +69,7 @@ add_library(galaxy-engine
 	src/engine/data/Transform.cpp
 
 	src/engine/nodes/Scene.cpp
+	src/engine/nodes/NodeHelper.cpp
 	src/engine/nodes/Node.cpp
 	src/engine/nodes/Node3D.cpp
 	src/engine/nodes/Root.cpp

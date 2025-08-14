@@ -9,6 +9,7 @@
 
 #include "engine/nodes/Node.hpp"
 #include "engine/nodes/Node3D.hpp"
+#include "engine/nodes/NodeHelper.hpp"
 #include "engine/nodes/Scene.hpp"
 #include "engine/nodes/rendering/Camera.hpp"
 #include "engine/nodes/rendering/MeshInstance.hpp"

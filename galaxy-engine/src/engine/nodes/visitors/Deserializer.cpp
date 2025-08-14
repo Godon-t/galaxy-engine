@@ -6,6 +6,7 @@
 #include "Log.hpp"
 #include "engine/nodes/Node.hpp"
 #include "engine/nodes/Node3D.hpp"
+#include "engine/nodes/NodeHelper.hpp"
 #include "engine/nodes/rendering/Camera.hpp"
 #include "engine/nodes/rendering/MeshInstance.hpp"
 #include "engine/types/Math.hpp"
@@ -82,23 +83,6 @@ Transform SceneDeSerializer::deserializeTransform(YAML::Node& node)
     res.setLocalRotation(rot);
     res.setLocalScale(scale);
     return res;
-}
-
-std::unique_ptr<Node> SceneDeSerializer::constructNode(std::string& type)
-{
-
-    if (type == "Node") {
-        return std::make_unique<Node>();
-    } else if (type == "Node3D") {
-        return std::make_unique<Node3D>();
-    } else if (type == "MeshInstance") {
-        return std::make_unique<MeshInstance>();
-    } else if (type == "Camera") {
-        return std::make_unique<Camera>();
-    } else {
-        GLX_CORE_ERROR("Unknown type '{0}'", type);
-        return nullptr;
-    }
 }
 
 void SceneDeSerializer::visit(Node& node)

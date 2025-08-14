@@ -18,13 +18,17 @@ private:
     std::string m_name;
     bool m_inRoot = false;
 
+    static size_t s_rootID;
+
 protected:
     Node* m_parent = nullptr;
     std::vector<std::shared_ptr<Node>> m_children; // Changement ici pour unique_ptr
 
 public:
+    const size_t id;
     Node(std::string name = "Node")
-        : m_name(name) {};
+        : m_name(name)
+        , id(s_rootID++) {};
     Node(const Node&) = delete; // Interdit la copie
     Node(Node&&)      = default;
 

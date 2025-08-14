@@ -15,8 +15,6 @@ private:
 
     Transform deserializeTransform(YAML::Node& node);
 
-    std::unique_ptr<Node> constructNode(std::string& type);
-
 public:
     SceneDeSerializer();
 

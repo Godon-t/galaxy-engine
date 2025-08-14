@@ -2,6 +2,8 @@
 
 #include <Engine.hpp>
 
+#include "editor/NodeList.hpp"
+
 namespace Galaxy {
 class EditorLayer : public Layer {
 public:
@@ -17,5 +19,6 @@ public:
 
 private:
     Scene m_selectedScene;
+    NodeList m_nodeList;
 };
 }

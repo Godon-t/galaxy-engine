@@ -49,6 +49,46 @@ void EditorLayer::onUpdate()
 
 void EditorLayer::onImGuiRender()
 {
+    static bool dockSpaceOpen = true;
+    if (dockSpaceOpen) {
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_MenuBar;
+        ImGuiViewport* viewport      = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport->Pos);
+        ImGui::SetNextWindowSize(viewport->Size);
+        ImGui::SetNextWindowViewport(viewport->ID);
+        windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+        windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus; // | ImGuiWindowFlags_NoBackground;
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::Begin("Dock", &dockSpaceOpen, windowFlags);
+        ImGui::PopStyleVar(1);
+
+        ImGuiID dockspaceID = ImGui::GetID("DockSpace");
+        ImGui::DockSpace(dockspaceID);
+
+        ImGui::BeginMenuBar();
+        if (ImGui::BeginMenu("File")) {
+            if (m_selectedScene.isValid() && ImGui::MenuItem("Save")) {
+                m_selectedScene.save();
+            }
+            if (ImGui::MenuItem("Load")) {
+                if (!m_selectedScene.load("TEST.glx")) {
+                    GLX_CORE_ERROR("Failed to load '{0}'", "TEST.glx");
+                } else {
+                    if (m_mode == EditorMode::Edit)
+                        m_selectedScene.getNodePtr()->disable();
+                    else
+                        m_selectedScene.getNodePtr()->activate();
+                    Application::getInstance().setRootNode(m_selectedScene.getNodePtr());
+                }
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+
+        ImGui::End();
+    }
+
     ImGui::Begin("Application state");
     ImGui::Text((std::string("FPS: ") + std::to_string(1.0 / Application::getInstance().getDelta())).c_str());
     ImGui::End();
@@ -84,21 +124,6 @@ void EditorLayer::onImGuiRender()
     ImGui::End();
 
     ImGui::Begin("Scene");
-
-    if (m_selectedScene.isValid() && ImGui::Button("Serialize")) {
-        m_selectedScene.save();
-    }
-    if (ImGui::Button("DeSerialize")) {
-        if (!m_selectedScene.load("TEST.glx")) {
-            GLX_CORE_ERROR("Failed to load '{0}'", "TEST.glx");
-        } else {
-            if (m_mode == EditorMode::Edit)
-                m_selectedScene.getNodePtr()->disable();
-            else
-                m_selectedScene.getNodePtr()->activate();
-            Application::getInstance().setRootNode(m_selectedScene.getNodePtr());
-        }
-    }
 
     auto rootPtr = Application::getInstance().getRootNodePtr();
     if (rootPtr) {

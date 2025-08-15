@@ -22,5 +22,8 @@ private:
     Scene m_selectedScene;
     NodeList m_nodeList;
     EditNode m_editNode;
+
+    vec2 m_viewportSize;
+    FrameBuffer* m_viewportFrame;
 };
 }

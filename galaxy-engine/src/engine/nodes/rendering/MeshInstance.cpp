@@ -41,6 +41,11 @@ void MeshInstance::enteredRoot()
 
 void MeshInstance::process(double delta)
 {
+}
+
+void MeshInstance::draw()
+{
+    Node3D::draw();
     Renderer::getInstance().submit(*getTransform(), m_renderId);
 }
 

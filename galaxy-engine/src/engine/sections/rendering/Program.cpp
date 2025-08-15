@@ -5,7 +5,6 @@
 #include <common/shader.hpp>
 
 #include "OpenglHelper.hpp"
-#include "engine/types/Math.hpp"
 
 using namespace math;
 namespace Galaxy {

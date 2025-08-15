@@ -27,5 +27,7 @@ public:
     void setScale(vec3 scale);
 
     void accept(Galaxy::NodeVisitor& visitor) override;
+
+    inline virtual void draw() override { Node::draw(); }
 };
 }

@@ -54,7 +54,7 @@ void ImGuiLayer::onEvent(Event& event)
 
 void ImGuiLayer::begin()
 {
-    static bool dockSpaceOpen = false;
+    static bool dockSpaceOpen = true;
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();

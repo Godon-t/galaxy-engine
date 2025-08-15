@@ -2,8 +2,6 @@
 
 #include "engine/types/Math.hpp"
 
-#include "gl_headers.hpp"
-
 using namespace math;
 
 namespace Galaxy {
@@ -14,7 +12,7 @@ struct Vertex {
 
 class VisualInstance {
     int m_nbOfIndices = 0;
-    GLuint m_VAO, m_VBO, m_EBO;
+    unsigned int m_VAO, m_VBO, m_EBO;
 
 public:
     VisualInstance();

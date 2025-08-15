@@ -1,11 +1,11 @@
 #include "Renderer.hpp"
 #include "pch.hpp"
 
+#include "Core.hpp"
 #include "Helper.hpp"
 #include "OpenglHelper.hpp"
 #include "VisualInstance.hpp"
-
-#include "Core.hpp"
+#include "gl_headers.hpp"
 
 namespace Galaxy {
 const size_t maxSize = 512;

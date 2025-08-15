@@ -68,8 +68,6 @@ void Application::pushOverlay(Layer* overlay)
 
 void Application::run()
 {
-    Renderer& renderer = Renderer::getInstance();
-
     actionManager->addListener([this](ActionEvent inputAction) {
         m_root->handleEvent(inputAction);
         m_terminated = std::string(inputAction.getActionName()) == "exit";
@@ -93,12 +91,8 @@ void Application::run()
         m_imGuiLayer->end();
 
         m_window->onUpdate();
-        auto cameraTransform = CameraManager::getInstance().getCurrentCamTransform();
-        renderer.beginSceneRender(cameraTransform);
 
         m_root->process(m_delta);
-
-        renderer.renderFrame();
 
         // auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(startTime - clock::now());
         // if (elapsed < m_frameDuration)

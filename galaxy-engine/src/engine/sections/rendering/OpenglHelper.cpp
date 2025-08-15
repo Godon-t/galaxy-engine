@@ -2,9 +2,8 @@
 
 #include "pch.hpp"
 
+#include "Log.hpp"
 #include "gl_headers.hpp"
-
-#include <iostream>
 
 namespace Galaxy {
 void checkOpenGLErrors(const char* context)
@@ -38,7 +37,7 @@ void checkOpenGLErrors(const char* context)
             errorStr = "Unknown error";
             break;
         }
-        std::cerr << "[OpenGL Error] (" << errorStr << ") at: " << context << std::endl;
+        GLX_CORE_ERROR("[OpenGL Error] ({0}) at: {1}", errorStr, context);
     }
 }
 }

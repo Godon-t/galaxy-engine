@@ -14,3 +14,12 @@
 #include "engine/nodes/rendering/Camera.hpp"
 #include "engine/nodes/rendering/MeshInstance.hpp"
 #include "engine/nodes/visitors/NodeVisitor.hpp"
+
+#include "engine/sections/rendering/CameraManager.hpp"
+#include "engine/sections/rendering/FrameBuffer.hpp"
+#include "engine/sections/rendering/Renderer.hpp"
+
+#include "engine/event/ActionEvent.hpp"
+#include "engine/event/KeyEvent.hpp"
+#include "engine/event/MouseEvent.hpp"
+#include "engine/event/WindowEvent.hpp"

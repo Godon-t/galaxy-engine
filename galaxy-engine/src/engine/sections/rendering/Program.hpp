@@ -1,17 +1,16 @@
 #pragma once
 
 #include "engine/types/Math.hpp"
-#include "gl_headers.hpp"
 
 using namespace math;
 
 namespace Galaxy {
 class Program {
 private:
-    GLuint m_modelLocation, m_viewLocation, m_projectionLocation;
+    unsigned int m_modelLocation, m_viewLocation, m_projectionLocation;
 
 public:
-    GLuint programID;
+    unsigned int programID;
 
     Program() = default;
     Program(const char* vertexPath, const char* fragmentPath);

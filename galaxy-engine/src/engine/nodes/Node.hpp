@@ -55,6 +55,7 @@ public:
     void enterRoot();
 
     virtual void process(double delta) { }
+    virtual void draw();
 
     virtual void updateTransformAndChilds(const mat4& matrix = mat4(1));
     virtual void forceUpdateTransformAndChilds(const mat4& matrix);

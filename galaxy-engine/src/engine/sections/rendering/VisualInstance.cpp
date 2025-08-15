@@ -2,6 +2,7 @@
 #include "pch.hpp"
 
 #include "OpenglHelper.hpp"
+#include "gl_headers.hpp"
 
 namespace Galaxy {
 VisualInstance::VisualInstance()
@@ -26,9 +27,9 @@ VisualInstance::~VisualInstance()
 
 VisualInstance::VisualInstance(VisualInstance&& other)
 {
-    m_VAO = other.m_VAO;
-    m_VBO = other.m_VBO;
-    m_EBO = other.m_EBO;
+    m_VAO         = other.m_VAO;
+    m_VBO         = other.m_VBO;
+    m_EBO         = other.m_EBO;
     m_nbOfIndices = other.m_nbOfIndices;
 
     other.m_VAO = 0;
@@ -38,9 +39,9 @@ VisualInstance::VisualInstance(VisualInstance&& other)
 
 VisualInstance& VisualInstance::operator=(VisualInstance&& other)
 {
-    m_VAO = other.m_VAO;
-    m_VBO = other.m_VBO;
-    m_EBO = other.m_EBO;
+    m_VAO         = other.m_VAO;
+    m_VBO         = other.m_VBO;
+    m_EBO         = other.m_EBO;
     m_nbOfIndices = other.m_nbOfIndices;
 
     other.m_VAO = 0;

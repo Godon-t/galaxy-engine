@@ -83,6 +83,8 @@ add_library(galaxy-engine
 	src/engine/sections/rendering/Renderer.cpp
 	src/engine/sections/rendering/VisualInstance.cpp
 	src/engine/sections/rendering/CameraManager.cpp
+	src/engine/sections/rendering/Texture.cpp
+	src/engine/sections/rendering/FrameBuffer.cpp
 
 
 	common/shader.cpp
@@ -98,6 +100,7 @@ target_include_directories(galaxy-engine PUBLIC src)
 target_include_directories(galaxy-engine PUBLIC src/engine/core)
 target_precompile_headers(galaxy-engine PUBLIC src/engine/core/pch.hpp)
 target_include_directories(galaxy-engine PUBLIC external/glm-0.9.7.1)
+target_include_directories(galaxy-engine PUBLIC external/stbi)
 
 # TODO: move to right spot
 add_subdirectory(external/imgui)

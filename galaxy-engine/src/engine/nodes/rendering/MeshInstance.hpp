@@ -23,6 +23,7 @@ public:
     ~MeshInstance() override;
 
     void process(double delta) override;
+    virtual void draw() override;
 
     void accept(Galaxy::NodeVisitor& visitor) override;
 };

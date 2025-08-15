@@ -80,6 +80,13 @@ void Node::update(double delta)
     }
 }
 
+void Node::draw()
+{
+    for (auto&& child : m_children) {
+        child->draw();
+    }
+}
+
 void Node::updateTransformAndChilds(const mat4& matrix)
 {
     for (auto&& child : m_children) {

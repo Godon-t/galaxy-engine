@@ -1,7 +1,5 @@
 #pragma once
 
-#include "gl_headers.hpp"
-
 #include "CameraManager.hpp"
 #include "Program.hpp"
 #include "VisualInstance.hpp"

@@ -20,5 +20,7 @@ public:
 
     void handleInputFromBot(const Event& input) override;
     void accept(Galaxy::NodeVisitor& visitor) override;
+
+    inline virtual void draw() override { Node3D::draw(); }
 };
 }

@@ -5,6 +5,7 @@
 namespace Galaxy {
 
 size_t Node::s_rootID = 0;
+std::unordered_map<size_t, std::weak_ptr<Node>> Node::s_nodeByIds;
 
 void Node::setParent(Node* parent)
 {
@@ -20,6 +21,7 @@ void Node::addChild(std::shared_ptr<Node> child)
 {
     child->setParent(this);
     m_children.push_back(child);
+    s_nodeByIds[child->id] = child;
     if (m_inRoot) {
         m_children[m_children.size() - 1]->enterRoot();
     }
@@ -33,6 +35,13 @@ void Node::removeChild(Node* component)
             m_children.erase(it); // Enlève l'enfant du vecteur
             break;
         }
+    }
+}
+
+void Node::clearChilds()
+{
+    for (auto& child : m_children) {
+        child->destroy();
     }
 }
 

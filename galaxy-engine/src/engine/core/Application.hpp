@@ -29,6 +29,7 @@ public:
 
     void setRootNode(std::shared_ptr<Node> node);
     std::shared_ptr<Node> getRootNodePtr();
+    inline std::shared_ptr<Root> getRoot() const { return m_root; }
 
     inline double getDelta() { return m_delta; }
 

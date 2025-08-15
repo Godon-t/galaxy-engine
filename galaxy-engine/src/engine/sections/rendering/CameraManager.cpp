@@ -21,36 +21,40 @@ camID CameraManager::registerCam(Transform* transformRef)
     camID id = m_freeIds.top();
     m_freeIds.pop();
 
-    m_registeredCamTransforms[id] = std::make_pair(transformRef, false);
+    m_registeredCams[id] = transformRef;
     return id;
 }
 
 void CameraManager::unregisterCam(camID id)
 {
-    m_registeredCamTransforms.erase(id);
+    m_registeredCams.erase(id);
+    m_activeCamsHistory.remove(id);
     m_freeIds.emplace(id);
 }
 
-void CameraManager::setCurrent(camID id)
+void CameraManager::updateCurrent(camID id, bool state)
 {
-    m_registeredCamTransforms[id].second = true;
-    m_activeCamsHistory.emplace(id);
+    if (state) {
+        m_activeCamsHistory.emplace_back(id);
+    } else {
+        m_activeCamsHistory.remove(id);
+    }
 }
 
 mat4 CameraManager::getCurrentCamTransform()
 {
     if (m_activeCamsHistory.size() == 0)
-        return lookAt(vec3(0, 0, 0), vec3(0, 0, 1), vec3(0, 1, 0));
-    camID topId = m_activeCamsHistory.top();
-    if (m_registeredCamTransforms.find(topId) != m_registeredCamTransforms.end()) {
-        if (m_registeredCamTransforms[topId].second)
-            return m_registeredCamTransforms[topId].first->getGlobalModelMatrix();
+        return mat4(1);
+    camID topId = m_activeCamsHistory.back();
+    if (m_registeredCams.find(topId) != m_registeredCams.end()) {
+        if (m_registeredCams[topId])
+            return m_registeredCams[topId]->getGlobalModelMatrix();
         else {
-            m_activeCamsHistory.pop();
+            m_activeCamsHistory.pop_back();
             return getCurrentCamTransform();
         }
     }
-    return lookAt(vec3(0, 0, 0), vec3(0, 0, 1), vec3(0, 1, 0));
+    return mat4(1);
 }
 
 mat4 CameraManager::processViewMatrix(mat4& transform)

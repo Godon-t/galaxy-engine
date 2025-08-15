@@ -1,5 +1,5 @@
 #include "EditorLayer.hpp"
-#include "editor/NodeList.hpp"
+#include "editor/NodeListPanel.hpp"
 #include <Engine.hpp>
 
 #include <imgui.h>
@@ -11,17 +11,21 @@ EditorLayer::~EditorLayer()
 
 void EditorLayer::onAttach()
 {
-    // std::shared_ptr<MeshInstance> testInstance = std::make_shared<MeshInstance>();
-    // testInstance->generateTriangle();
-    // testInstance->translate(vec3(0, 0, 2));
+    m_rootEditorNode = std::make_shared<Node>("Editor");
+    m_editorCamera   = std::make_shared<Camera>();
+    m_editorCamera->setCurrent(false);
+    m_rootEditorNode->addChild(m_editorCamera);
+    m_rootEditorNode->activate();
 
-    // std::shared_ptr<Camera> mainCam = std::make_shared<Camera>();
-    // testInstance->addChild(mainCam);
+    m_rootSceneNode = std::make_shared<Node>("RootScene");
+    m_rootSceneNode->disable();
 
-    // m_selectedScene = Scene("TEST.glx");
-    // m_selectedScene.load(testInstance);
+    std::shared_ptr<Node> rootNode = std::make_shared<Node>("Root");
+    rootNode->addChild(m_rootEditorNode);
+    rootNode->addChild(m_rootSceneNode);
 
-    // Application::getInstance().setRootNode(testInstance);
+    Application::getInstance().setRootNode(rootNode);
+
     auto& renderer  = Renderer::getInstance();
     m_viewportFrame = new FrameBuffer(320, 180, FramebufferTextureFormat::RGBA8);
 }
@@ -35,8 +39,13 @@ void EditorLayer::onUpdate()
 {
     m_viewportFrame->bind();
     if (m_selectedScene.getNodePtr()) {
-        auto& renderer       = Renderer::getInstance();
-        auto cameraTransform = CameraManager::getInstance().getCurrentCamTransform();
+        auto& renderer = Renderer::getInstance();
+        mat4 cameraTransform;
+        if (m_mode == EditorMode::Run) {
+            cameraTransform = CameraManager::getInstance().getCurrentCamTransform();
+        } else {
+            cameraTransform = m_editorCamera->getTransform()->getGlobalModelMatrix();
+        }
         renderer.beginSceneRender(cameraTransform);
 
         m_selectedScene.getNodePtr()->draw();
@@ -75,11 +84,8 @@ void EditorLayer::onImGuiRender()
                 if (!m_selectedScene.load("TEST.glx")) {
                     GLX_CORE_ERROR("Failed to load '{0}'", "TEST.glx");
                 } else {
-                    if (m_mode == EditorMode::Edit)
-                        m_selectedScene.getNodePtr()->disable();
-                    else
-                        m_selectedScene.getNodePtr()->activate();
-                    Application::getInstance().setRootNode(m_selectedScene.getNodePtr());
+                    m_rootSceneNode->clearChilds();
+                    m_rootSceneNode->addChild(m_selectedScene.getNodePtr());
                 }
             }
             ImGui::EndMenu();
@@ -98,12 +104,14 @@ void EditorLayer::onImGuiRender()
     if (m_selectedScene.getNodePtr().get()) {
         if (ImGui::Button("Run")) {
             m_mode = EditorMode::Run;
-            Application::getInstance().getRootNodePtr()->activate();
+            m_rootSceneNode->activate();
+            m_rootEditorNode->disable();
         }
         ImGui::SameLine();
         if (ImGui::Button("Stop")) {
             m_mode = EditorMode::Edit;
-            Application::getInstance().getRootNodePtr()->disable();
+            m_rootSceneNode->disable();
+            m_rootEditorNode->activate();
         }
         if (!ImGui::IsWindowDocked()) {
             ImGui::PopStyleVar();
@@ -125,21 +133,29 @@ void EditorLayer::onImGuiRender()
 
     ImGui::Begin("Scene");
 
-    auto rootPtr = Application::getInstance().getRootNodePtr();
-    if (rootPtr) {
-        m_nodeList.listNodes(*rootPtr);
-    }
-    if (m_nodeList.selectedNode) {
-        m_editNode.selectNode(*m_nodeList.selectedNode);
+    m_nodeList.listNodes(*m_rootSceneNode.get());
+    if (Node::nodeExists(m_nodeList.selectedNodeId)) {
+        m_editNode.selectNode(*Node::getNode(m_nodeList.selectedNodeId).lock().get());
     }
     ImGui::End();
 }
 
 void EditorLayer::onEvent(Event& evt)
 {
-    if (evt.isInCategory(EventCategory::EventCategoryApplication) && evt.getEventType() == EventType::WindowResize) {
-        WindowResizeEvent& resizeEvt = (WindowResizeEvent&)evt;
-        m_viewportFrame->resize(resizeEvt.getWidth(), resizeEvt.getHeight());
+    if (evt.isInCategory(EventCategory::EventCategoryKeyboard)) {
+        KeyEvent& keyEvt = (KeyEvent&)evt;
+        if (!keyEvt.isPressed())
+            return;
+
+        if (keyEvt.getKeyCode() == 90) {
+            m_editorCamera->translate(vec3(0, 0, 1));
+        } else if (keyEvt.getKeyCode() == 83) {
+            m_editorCamera->translate(vec3(0, 0, -1));
+        } else if (keyEvt.getKeyCode() == 81) {
+            m_editorCamera->translate(vec3(-1, 0, 0));
+        } else if (keyEvt.getKeyCode() == 68) {
+            m_editorCamera->translate(vec3(1, 0, 0));
+        }
     }
 }
 }

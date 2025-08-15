@@ -6,9 +6,9 @@
 #include "AddNodeMenu.hpp"
 
 namespace Galaxy {
-class NodeList : public NodeVisitor {
+class NodeListPanel : public NodeVisitor {
 public:
-    Node* selectedNode = nullptr;
+    size_t selectedNodeId;
 
     void listNodes(Node& root)
     {
@@ -67,7 +67,7 @@ private:
             ImGui::EndPopup();
         }
         if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
-            selectedNode = &node;
+            selectedNodeId = node.id;
         }
     }
 };

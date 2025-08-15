@@ -3,11 +3,14 @@
 #include "engine/data/Transform.hpp"
 #include "engine/types/Render.hpp"
 
+#include <list>
+
 namespace Galaxy {
+// TODO: Search how to make it correctly
 class CameraManager {
 private:
-    std::unordered_map<camID, std::pair<Transform*, bool>> m_registeredCamTransforms;
-    std::stack<camID> m_activeCamsHistory;
+    std::unordered_map<camID, Transform*> m_registeredCams;
+    std::list<camID> m_activeCamsHistory;
     std::stack<camID> m_freeIds;
 
     static CameraManager* s_instance;
@@ -17,7 +20,7 @@ public:
     camID registerCam(Transform* transformRef);
     void unregisterCam(camID id);
 
-    void setCurrent(camID id);
+    void updateCurrent(camID id, bool state);
 
     mat4 getCurrentCamTransform();
 

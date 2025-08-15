@@ -21,11 +21,16 @@ private:
     static size_t s_rootID;
     bool m_paused;
 
+    static std::unordered_map<size_t, std::weak_ptr<Node>> s_nodeByIds;
+
 protected:
     Node* m_parent = nullptr;
     std::vector<std::shared_ptr<Node>> m_children; // Changement ici pour unique_ptr
 
 public:
+    static inline bool nodeExists(size_t id) { return s_nodeByIds.find(id) != s_nodeByIds.end(); }
+    static inline std::weak_ptr<Node> getNode(size_t id) { return s_nodeByIds[id]; }
+
     const size_t id;
     Node(std::string name = "Node")
         : m_name(name)
@@ -42,6 +47,7 @@ public:
 
     void addChild(std::shared_ptr<Node> child);
     void removeChild(Node* component);
+    void clearChilds();
     std::vector<Node*> getChildren() const;
     size_t getChildCount() const;
 

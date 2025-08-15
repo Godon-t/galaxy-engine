@@ -2,8 +2,8 @@
 
 #include <Engine.hpp>
 
-#include "editor/EditNode.hpp"
-#include "editor/NodeList.hpp"
+#include "editor/NodeEditPanel.hpp"
+#include "editor/NodeListPanel.hpp"
 
 namespace Galaxy {
 enum class EditorMode {
@@ -26,12 +26,17 @@ public:
 
 private:
     Scene m_selectedScene;
-    NodeList m_nodeList;
-    EditNode m_editNode;
+    NodeListPanel m_nodeList;
+    NodeEditPanel m_editNode;
 
     vec2 m_viewportSize;
     FrameBuffer* m_viewportFrame;
 
     EditorMode m_mode;
+
+    // Ref to nodes in Root
+    std::shared_ptr<Node> m_rootEditorNode;
+    std::shared_ptr<Camera> m_editorCamera;
+    std::shared_ptr<Node> m_rootSceneNode;
 };
 }

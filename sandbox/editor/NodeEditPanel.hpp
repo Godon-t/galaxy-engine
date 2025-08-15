@@ -6,7 +6,7 @@
 using namespace math;
 
 namespace Galaxy {
-class EditNode : public NodeVisitor {
+class NodeEditPanel : public NodeVisitor {
 public:
     void selectNode(Node& node)
     {

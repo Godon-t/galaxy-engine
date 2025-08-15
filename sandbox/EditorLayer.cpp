@@ -55,14 +55,32 @@ void EditorLayer::onImGuiRender()
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2 { 0, 0 });
     ImGui::Begin("Viewport");
-    ImVec2 pannelSize = ImGui::GetContentRegionAvail();
-    if (m_viewportSize != *(vec2*)&pannelSize) {
-        m_viewportSize = { pannelSize.x, pannelSize.y };
-        m_viewportFrame->resize(m_viewportSize.x, m_viewportSize.y);
+    if (m_selectedScene.getNodePtr().get()) {
+        if (ImGui::Button("Run")) {
+            m_mode = EditorMode::Run;
+            Application::getInstance().getRootNodePtr()->activate();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Stop")) {
+            m_mode = EditorMode::Edit;
+            Application::getInstance().getRootNodePtr()->disable();
+        }
+        if (!ImGui::IsWindowDocked()) {
+            ImGui::PopStyleVar();
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2 { 100, 1000 });
+        }
+        ImVec2 pannelSize = ImGui::GetContentRegionAvail();
+        if (m_viewportSize != *(vec2*)&pannelSize) {
+            m_viewportSize = { pannelSize.x, pannelSize.y };
+            m_viewportFrame->resize(m_viewportSize.x, m_viewportSize.y);
+        }
+        ImGui::PopStyleVar();
+        auto textureID = m_viewportFrame->getColorTextureID();
+        ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 0, 0 }, ImVec2 { 1, 1 });
+    } else {
+        ImGui::PopStyleVar();
     }
-    ImGui::PopStyleVar();
-    auto textureID = m_viewportFrame->getColorTextureID();
-    ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 0, 0 }, ImVec2 { 1, 1 });
+
     ImGui::End();
 
     ImGui::Begin("Scene");
@@ -74,6 +92,10 @@ void EditorLayer::onImGuiRender()
         if (!m_selectedScene.load("TEST.glx")) {
             GLX_CORE_ERROR("Failed to load '{0}'", "TEST.glx");
         } else {
+            if (m_mode == EditorMode::Edit)
+                m_selectedScene.getNodePtr()->disable();
+            else
+                m_selectedScene.getNodePtr()->activate();
             Application::getInstance().setRootNode(m_selectedScene.getNodePtr());
         }
     }

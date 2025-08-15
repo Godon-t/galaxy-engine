@@ -78,13 +78,6 @@ void ImGuiLayer::begin()
         ImGuiID dockspaceID = ImGui::GetID("DockSpace");
         ImGui::DockSpace(dockspaceID);
 
-        if (ImGui::BeginMenuBar()) {
-            //     if (ImGui::BeginMenu("Je teste")) {
-            //         ImGui::EndMenu();
-            //     }
-            ImGui::EndMenuBar();
-        }
-
         ImGui::End();
     }
 }

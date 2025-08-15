@@ -6,10 +6,16 @@
 #include "editor/NodeList.hpp"
 
 namespace Galaxy {
+enum class EditorMode {
+    Edit,
+    Run
+};
+
 class EditorLayer : public Layer {
 public:
     EditorLayer()
-        : Layer("Editor layer") {};
+        : Layer("Editor layer")
+        , m_mode(EditorMode::Edit) {};
     ~EditorLayer() override;
 
     void onAttach() override;
@@ -25,5 +31,7 @@ private:
 
     vec2 m_viewportSize;
     FrameBuffer* m_viewportFrame;
+
+    EditorMode m_mode;
 };
 }

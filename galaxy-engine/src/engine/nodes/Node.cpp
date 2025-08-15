@@ -74,6 +74,8 @@ void Node::enterRoot()
 
 void Node::update(double delta)
 {
+    if (m_paused)
+        return;
     process(delta);
     for (auto&& child : m_children) {
         child->update(delta);
@@ -103,6 +105,9 @@ void Node::forceUpdateTransformAndChilds(const mat4& matrix)
 
 void Node::handleInput(const Event& event)
 {
+    if (m_paused)
+        return;
+
     handleInputFromTop(event);
     for (auto&& child : m_children) {
         child->handleInput(event);

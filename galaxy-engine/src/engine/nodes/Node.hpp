@@ -19,6 +19,7 @@ private:
     bool m_inRoot = false;
 
     static size_t s_rootID;
+    bool m_paused;
 
 protected:
     Node* m_parent = nullptr;
@@ -28,7 +29,8 @@ public:
     const size_t id;
     Node(std::string name = "Node")
         : m_name(name)
-        , id(s_rootID++) {};
+        , id(s_rootID++)
+        , m_paused(false) {};
     Node(const Node&) = delete; // Interdit la copie
     Node(Node&&)      = default;
 
@@ -65,6 +67,9 @@ public:
     virtual void handleInputFromBot(const Event& event) { }
 
     virtual void accept(NodeVisitor& visitor);
+
+    inline void activate() { m_paused = false; }
+    inline void disable() { m_paused = true; }
 
 protected:
     virtual void enteringRoot() { }

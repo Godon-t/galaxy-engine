@@ -15,7 +15,8 @@ class EditorLayer : public Layer {
 public:
     EditorLayer()
         : Layer("Editor layer")
-        , m_mode(EditorMode::Edit) {};
+        , m_mode(EditorMode::Edit)
+        , m_showAllNodes(false) {};
     ~EditorLayer() override;
 
     void onAttach() override;
@@ -33,6 +34,7 @@ private:
     FrameBuffer* m_viewportFrame;
 
     EditorMode m_mode;
+    bool m_showAllNodes;
 
     // Ref to nodes in Root
     std::shared_ptr<Node> m_rootEditorNode;

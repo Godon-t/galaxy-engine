@@ -28,7 +28,7 @@ protected:
     std::vector<std::shared_ptr<Node>> m_children; // Changement ici pour unique_ptr
 
 public:
-    static inline bool nodeExists(size_t id) { return s_nodeByIds.find(id) != s_nodeByIds.end(); }
+    static bool nodeExists(size_t id);
     static inline std::weak_ptr<Node> getNode(size_t id) { return s_nodeByIds[id]; }
 
     const size_t id;

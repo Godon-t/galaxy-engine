@@ -11,11 +11,10 @@ enum class FramebufferTextureFormat {
     // RED_INTEGER,
 
     // Depth/stencil
-    // DEPTH24STENCIL8,
+    DEPTH24STENCIL8,
 
     // Defaults
     // Depth = DEPTH24STENCIL8
-    Depth = RGBA8
 };
 
 class FrameBuffer {
@@ -33,7 +32,7 @@ public:
 
 private:
     FramebufferTextureFormat m_format;
-    unsigned int m_fbo;
+    unsigned int m_fbo, m_rbo;
     unsigned int m_attachedColor;
     int m_width, m_height;
 

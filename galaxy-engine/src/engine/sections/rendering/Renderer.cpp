@@ -29,9 +29,9 @@ Renderer::Renderer()
     glClearColor(1.f, 0.f, 0.2f, 0.0f);
 
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // glDepthFunc(GL_LEQUAL);
+    // glEnable(GL_BLEND);
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);

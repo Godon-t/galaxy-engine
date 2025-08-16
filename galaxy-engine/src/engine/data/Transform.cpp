@@ -24,7 +24,8 @@ Transform::Transform(Transform&& other) noexcept
 
 void Transform::computeModelMatrix(const mat4& parentGlobalModelMatrix)
 {
-    m_globalModelMatrix = parentGlobalModelMatrix * getLocalModelMatrix();
+    auto localMat       = getLocalModelMatrix();
+    m_globalModelMatrix = parentGlobalModelMatrix * localMat;
     dirty               = false;
 }
 

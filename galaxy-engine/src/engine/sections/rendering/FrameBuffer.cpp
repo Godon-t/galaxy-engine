@@ -21,6 +21,15 @@ void bindColorAttachmentTexture(GLuint* id, int width, int height, GLenum intern
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *id, 0);
 }
 
+void bindDepthAttachment(GLuint* id, int width, int height, GLenum format)
+{
+    glGenRenderbuffers(1, id);
+    glBindRenderbuffer(GL_RENDERBUFFER, *id);
+
+    glRenderbufferStorage(GL_RENDERBUFFER, format, width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *id);
+}
+
 FrameBuffer::FrameBuffer(int width, int height, FramebufferTextureFormat format)
 {
     m_format = format;
@@ -56,12 +65,15 @@ void FrameBuffer::invalidate()
 
     if (m_format == FramebufferTextureFormat::RGBA8) {
         bindColorAttachmentTexture(&m_attachedColor, m_width, m_height, GL_RGBA8, GL_RGBA);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_attachedColor, 0);
-        bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
-        GLX_CORE_ASSERT(complete, "Framebuffer not complete");
+    } else if (m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
+        bindColorAttachmentTexture(&m_attachedColor, m_width, m_height, GL_RGBA8, GL_RGBA);
+        bindDepthAttachment(&m_rbo, m_width, m_height, GL_DEPTH24_STENCIL8);
     } else {
         GLX_CORE_ASSERT(false, "Framebuffer format not handled");
     }
+
+    bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    GLX_CORE_ASSERT(complete, "Framebuffer not complete");
 
     checkOpenGLErrors("Frame buffer creation");
 }
@@ -69,6 +81,7 @@ void FrameBuffer::invalidate()
 void FrameBuffer::destroy()
 {
     glDeleteTextures(1, &m_attachedColor);
+    glDeleteRenderbuffers(1, &m_rbo);
     glDeleteFramebuffers(1, &m_fbo);
 }
 }

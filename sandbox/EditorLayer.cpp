@@ -27,7 +27,7 @@ void EditorLayer::onAttach()
     Application::getInstance().setRootNode(rootNode);
 
     auto& renderer  = Renderer::getInstance();
-    m_viewportFrame = new FrameBuffer(320, 180, FramebufferTextureFormat::RGBA8);
+    m_viewportFrame = new FrameBuffer(320, 180, FramebufferTextureFormat::DEPTH24STENCIL8);
 }
 
 void EditorLayer::onDetach()
@@ -95,8 +95,9 @@ void EditorLayer::onImGuiRender()
         ImGui::End();
     }
 
-    ImGui::Begin("Application state");
+    ImGui::Begin("App");
     ImGui::Text((std::string("FPS: ") + std::to_string(1.0 / Application::getInstance().getDelta())).c_str());
+    ImGui::Checkbox("Show all nodes", &m_showAllNodes);
     ImGui::End();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2 { 0, 0 });
@@ -133,7 +134,10 @@ void EditorLayer::onImGuiRender()
 
     ImGui::Begin("Scene");
 
-    m_nodeList.listNodes(*m_rootSceneNode.get());
+    if (m_showAllNodes)
+        m_nodeList.listNodes(*Application::getInstance().getRootNodePtr());
+    else
+        m_nodeList.listNodes(*m_rootSceneNode.get());
     if (Node::nodeExists(m_nodeList.selectedNodeId)) {
         m_editNode.selectNode(*Node::getNode(m_nodeList.selectedNodeId).lock().get());
     }
@@ -147,15 +151,17 @@ void EditorLayer::onEvent(Event& evt)
         if (!keyEvt.isPressed())
             return;
 
-        if (keyEvt.getKeyCode() == 90) {
-            m_editorCamera->translate(vec3(0, 0, 1));
+        vec3 translation(0);
+        if (keyEvt.getKeyCode() == 87) {
+            translation.z = 1;
         } else if (keyEvt.getKeyCode() == 83) {
-            m_editorCamera->translate(vec3(0, 0, -1));
-        } else if (keyEvt.getKeyCode() == 81) {
-            m_editorCamera->translate(vec3(-1, 0, 0));
+            translation.z = -1;
+        } else if (keyEvt.getKeyCode() == 65) {
+            translation.x = 1;
         } else if (keyEvt.getKeyCode() == 68) {
-            m_editorCamera->translate(vec3(1, 0, 0));
+            translation.x = -1;
         }
+        m_editorCamera->translate(translation);
     }
 }
 }

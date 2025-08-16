@@ -45,6 +45,12 @@ void Node::clearChilds()
     }
 }
 
+bool Node::nodeExists(size_t id)
+{
+    auto it = s_nodeByIds.find(id);
+    return it != s_nodeByIds.end() && !it->second.expired();
+}
+
 std::vector<Node*> Node::getChildren() const
 {
     // TODO: replace with an iterator

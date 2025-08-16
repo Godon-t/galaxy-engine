@@ -23,14 +23,12 @@ Application::Application()
     s_instance = this;
 
     WindowProps props = WindowProps();
-    actionManager     = std::make_unique<ActionManager>();
-
-    m_root          = std::make_unique<Root>();
-    m_terminated    = false;
-    m_window        = std::unique_ptr<Window>(Window::create(props));
-    m_layerStack    = LayerStack();
-    m_frameDuration = std::chrono::milliseconds(1000 / 60); // 60 fps
-    m_imGuiLayer    = new ImGuiLayer();
+    m_root            = std::make_unique<Root>();
+    m_terminated      = false;
+    m_window          = std::unique_ptr<Window>(Window::create(props));
+    m_layerStack      = LayerStack();
+    m_frameDuration   = std::chrono::milliseconds(1000 / 60); // 60 fps
+    m_imGuiLayer      = new ImGuiLayer();
     pushOverlay(m_imGuiLayer);
 
     m_window->setEventCallback([this](Event& event) {
@@ -40,9 +38,7 @@ Application::Application()
                 break;
         }
 
-        if (event.isInCategory(EventCategory::EventCategoryKeyboard)) {
-            actionManager->processInput((KeyEvent&)event);
-        } else if (event.isInCategory(EventCategory::EventCategoryApplication)) {
+        if (event.isInCategory(EventCategory::EventCategoryApplication)) {
             if (event.getEventType() == EventType::WindowClose) {
                 m_terminated = true;
             } else if (event.getEventType() == EventType::WindowResize) {
@@ -50,6 +46,8 @@ Application::Application()
                 GLX_CORE_INFO("Window resize ({0}, {1})", windowResize.getWidth(), windowResize.getHeight());
             }
         }
+
+        m_root->handleEvent(event);
     });
 }
 
@@ -68,11 +66,6 @@ void Application::pushOverlay(Layer* overlay)
 
 void Application::run()
 {
-    actionManager->addListener([this](ActionEvent inputAction) {
-        m_root->handleEvent(inputAction);
-        m_terminated = std::string(inputAction.getActionName()) == "exit";
-    });
-
     m_delta       = 0;
     auto lastTime = clock::now();
     do {
@@ -94,11 +87,15 @@ void Application::run()
 
         m_root->process(m_delta);
 
-        // auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(startTime - clock::now());
-        // if (elapsed < m_frameDuration)
-        //     std::this_thread::sleep_for(m_frameDuration - elapsed);
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(startTime - clock::now());
+        if (elapsed < m_frameDuration)
+            std::this_thread::sleep_for(m_frameDuration - elapsed);
 
     } while (!m_terminated);
+}
+void Application::terminate()
+{
+    m_terminated = true;
 }
 void Application::setRootNode(std::shared_ptr<Node> node)
 {

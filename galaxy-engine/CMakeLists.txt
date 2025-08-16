@@ -62,7 +62,7 @@ add_library(galaxy-engine
 	src/engine/core/Layer.cpp
 	src/engine/core/LayerStack.cpp
 
-	src/engine/event/ActionManager.cpp
+	src/engine/event/InputManager.cpp
 
 	src/engine/ImGui/ImGuiLayer.cpp
 

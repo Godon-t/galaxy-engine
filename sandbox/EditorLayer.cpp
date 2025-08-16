@@ -28,6 +28,12 @@ void EditorLayer::onAttach()
 
     auto& renderer  = Renderer::getInstance();
     m_viewportFrame = new FrameBuffer(320, 180, FramebufferTextureFormat::DEPTH24STENCIL8);
+
+    InputManager::addAction(Action(GLX_KEY_ESCAPE, "editor_exit"));
+    InputManager::addAction(Action(GLX_KEY_W, "editor_forward"));
+    InputManager::addAction(Action(GLX_KEY_S, "editor_backward"));
+    InputManager::addAction(Action(GLX_KEY_A, "editor_right"));
+    InputManager::addAction(Action(GLX_KEY_D, "editor_left"));
 }
 
 void EditorLayer::onDetach()
@@ -45,6 +51,7 @@ void EditorLayer::onUpdate()
             cameraTransform = CameraManager::getInstance().getCurrentCamTransform();
         } else {
             cameraTransform = m_editorCamera->getTransform()->getGlobalModelMatrix();
+            updateCamera();
         }
         renderer.beginSceneRender(cameraTransform);
 
@@ -146,22 +153,25 @@ void EditorLayer::onImGuiRender()
 
 void EditorLayer::onEvent(Event& evt)
 {
-    if (evt.isInCategory(EventCategory::EventCategoryKeyboard)) {
-        KeyEvent& keyEvt = (KeyEvent&)evt;
-        if (!keyEvt.isPressed())
-            return;
-
-        vec3 translation(0);
-        if (keyEvt.getKeyCode() == 87) {
-            translation.z = 1;
-        } else if (keyEvt.getKeyCode() == 83) {
-            translation.z = -1;
-        } else if (keyEvt.getKeyCode() == 65) {
-            translation.x = 1;
-        } else if (keyEvt.getKeyCode() == 68) {
-            translation.x = -1;
-        }
-        m_editorCamera->translate(translation);
+    if (evt.getEventType() == EventType::ActionInteract) {
+        ActionEvent& actEvt = (ActionEvent&)evt;
+        if (std::string(actEvt.getActionName()) == "editor_exit")
+            Application::getInstance().terminate();
     }
+}
+void EditorLayer::updateCamera()
+{
+    const float speed = 0.2f;
+    vec3 translation(0);
+    if (InputManager::isActionPressed("editor_forward"))
+        translation.z += speed;
+    if (InputManager::isActionPressed("editor_backward"))
+        translation.z -= speed;
+    if (InputManager::isActionPressed("editor_right"))
+        translation.x += speed;
+    if (InputManager::isActionPressed("editor_left"))
+        translation.x -= speed;
+
+    m_editorCamera->translate(translation);
 }
 }

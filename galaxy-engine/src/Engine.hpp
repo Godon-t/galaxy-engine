@@ -19,7 +19,9 @@
 #include "engine/sections/rendering/FrameBuffer.hpp"
 #include "engine/sections/rendering/Renderer.hpp"
 
+#include "engine/core/KeyCodes.hpp"
 #include "engine/event/ActionEvent.hpp"
+#include "engine/event/InputManager.hpp"
 #include "engine/event/KeyEvent.hpp"
 #include "engine/event/MouseEvent.hpp"
 #include "engine/event/WindowEvent.hpp"

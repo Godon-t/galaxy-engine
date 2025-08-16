@@ -1,6 +1,7 @@
 #include "LinuxWindow.hpp"
 
 #include "Log.hpp"
+#include "engine/event/InputManager.hpp"
 #include "engine/event/KeyEvent.hpp"
 #include "engine/event/MouseEvent.hpp"
 #include "engine/event/WindowEvent.hpp"
@@ -43,24 +44,33 @@ void LinuxWindow::key_input_callback(GLFWwindow* window, int key, int scancode, 
     if (it == data.KeyStates.end())
         data.KeyStates[key] = false;
 
+    bool clicked = false;
+    bool pressed = false;
+
     switch (action) {
     case GLFW_PRESS: {
-        bool clicked = data.KeyStates[key] == false;
+        clicked = data.KeyStates[key] == false;
         if (clicked)
             data.KeyStates[key] = true;
 
-        KeyEvent evt(key, true, clicked);
-        data.EventCallback(evt);
+        pressed = true;
         break;
     }
     case GLFW_RELEASE: {
         data.KeyStates[key] = false;
-        KeyEvent evt(key, false, false);
-        data.EventCallback(evt);
         break;
     }
     case GLFW_REPEAT:
+        pressed = true;
         break;
+    }
+
+    KeyEvent evt(key, pressed, clicked);
+    data.EventCallback(evt);
+
+    auto actionEvents = InputManager::processInput(evt);
+    for (auto& actEvt : actionEvents) {
+        data.EventCallback(actEvt);
     }
 }
 

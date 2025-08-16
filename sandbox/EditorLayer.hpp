@@ -40,5 +40,7 @@ private:
     std::shared_ptr<Node> m_rootEditorNode;
     std::shared_ptr<Camera> m_editorCamera;
     std::shared_ptr<Node> m_rootSceneNode;
+
+    void updateCamera();
 };
 }

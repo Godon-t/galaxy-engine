@@ -5,7 +5,6 @@
 #include "LayerStack.hpp"
 #include "Window.hpp"
 #include "engine/ImGui/ImGuiLayer.hpp"
-#include "engine/event/ActionManager.hpp"
 #include "engine/nodes/Root.hpp"
 
 #include <chrono>
@@ -20,12 +19,10 @@ public:
     void pushOverlay(Layer* overlay);
 
     void run();
+    void terminate();
 
     static inline Application& getInstance() { return *s_instance; }
     inline Window& getWindow() { return *m_window; }
-
-    // TODO: find a better place
-    std::unique_ptr<ActionManager> actionManager;
 
     void setRootNode(std::shared_ptr<Node> node);
     std::shared_ptr<Node> getRootNodePtr();

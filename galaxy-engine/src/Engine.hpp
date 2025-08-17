@@ -10,10 +10,12 @@
 #include "engine/nodes/Node.hpp"
 #include "engine/nodes/Node3D.hpp"
 #include "engine/nodes/NodeHelper.hpp"
-#include "engine/nodes/Scene.hpp"
 #include "engine/nodes/rendering/Camera.hpp"
 #include "engine/nodes/rendering/MeshInstance.hpp"
 #include "engine/nodes/visitors/NodeVisitor.hpp"
+
+#include "engine/project/Project.hpp"
+#include "engine/project/Scene.hpp"
 
 #include "engine/sections/rendering/CameraManager.hpp"
 #include "engine/sections/rendering/FrameBuffer.hpp"

@@ -68,7 +68,9 @@ add_library(galaxy-engine
 
 	src/engine/data/Transform.cpp
 
-	src/engine/nodes/Scene.cpp
+	src/engine/project/Scene.cpp
+	src/engine/project/Project.cpp
+	
 	src/engine/nodes/NodeHelper.cpp
 	src/engine/nodes/Node.cpp
 	src/engine/nodes/Node3D.cpp
@@ -101,6 +103,7 @@ target_include_directories(galaxy-engine PUBLIC src/engine/core)
 target_precompile_headers(galaxy-engine PUBLIC src/engine/core/pch.hpp)
 target_include_directories(galaxy-engine PUBLIC external/glm-0.9.7.1)
 target_include_directories(galaxy-engine PUBLIC external/stbi)
+target_include_directories(galaxy-engine PUBLIC external/uuid)
 
 # TODO: move to right spot
 add_subdirectory(external/imgui)

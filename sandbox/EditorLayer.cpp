@@ -34,6 +34,13 @@ void EditorLayer::onAttach()
     InputManager::addAction(Action(GLX_KEY_S, "editor_backward"));
     InputManager::addAction(Action(GLX_KEY_A, "editor_right"));
     InputManager::addAction(Action(GLX_KEY_D, "editor_left"));
+
+    std::string projectPath(".gproj");
+    if (!Project::load(projectPath)) {
+        GLX_ERROR("Can't load project '{0}'", projectPath);
+        Project::create(".gproj");
+        Application::getInstance().terminate();
+    }
 }
 
 void EditorLayer::onDetach()
@@ -43,8 +50,15 @@ void EditorLayer::onDetach()
 
 void EditorLayer::onUpdate()
 {
+    if (Project::isSceneValid(m_selectedSceneId)) {
+        m_selectedScene = &Project::loadScene(m_selectedSceneId);
+    } else {
+        m_selectedScene = nullptr;
+        return;
+    }
+
     m_viewportFrame->bind();
-    if (m_selectedScene.getNodePtr()) {
+    if (m_selectedScene->getNodePtr()) {
         auto& renderer = Renderer::getInstance();
         mat4 cameraTransform;
         if (m_mode == EditorMode::Run) {
@@ -55,7 +69,7 @@ void EditorLayer::onUpdate()
         }
         renderer.beginSceneRender(cameraTransform);
 
-        m_selectedScene.getNodePtr()->draw();
+        m_selectedScene->getNodePtr()->draw();
 
         renderer.endSceneRender();
         renderer.renderFrame();
@@ -84,16 +98,29 @@ void EditorLayer::onImGuiRender()
 
         ImGui::BeginMenuBar();
         if (ImGui::BeginMenu("File")) {
-            if (m_selectedScene.isValid() && ImGui::MenuItem("Save")) {
-                m_selectedScene.save();
+            if (m_selectedScene->isValid() && ImGui::MenuItem("Save")) {
+                m_selectedScene->save();
             }
-            if (ImGui::MenuItem("Load")) {
-                if (!m_selectedScene.load("TEST.glx")) {
-                    GLX_CORE_ERROR("Failed to load '{0}'", "TEST.glx");
-                } else {
-                    m_rootSceneNode->clearChilds();
-                    m_rootSceneNode->addChild(m_selectedScene.getNodePtr());
+            ImGui::MenuItem("New scene");
+            {
+                static char sceneName[128];
+                ImGui::InputText("Scene's path: ", sceneName, IM_ARRAYSIZE(sceneName));
+                if (ImGui::Button("OK")) {
+                    m_selectedScene   = &Project::createScene(std::string(sceneName));
+                    m_selectedSceneId = m_selectedScene->getUuid();
                 }
+            }
+            if (ImGui::BeginMenu("Load")) {
+                int i = 0;
+                for (auto& scene : Project::getPaths()) {
+                    if (ImGui::MenuItem(std::string(scene.second + "##" + std::to_string(i++)).c_str())) {
+                        m_selectedScene   = &Project::loadScene(scene.first);
+                        m_selectedSceneId = m_selectedScene->getUuid();
+                        m_rootSceneNode->clearChilds();
+                        m_rootSceneNode->addChild(m_selectedScene->getNodePtr());
+                    }
+                }
+                ImGui::EndMenu();
             }
             ImGui::EndMenu();
         }
@@ -107,37 +134,37 @@ void EditorLayer::onImGuiRender()
     ImGui::Checkbox("Show all nodes", &m_showAllNodes);
     ImGui::End();
 
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2 { 0, 0 });
-    ImGui::Begin("Viewport");
-    if (m_selectedScene.getNodePtr().get()) {
-        if (ImGui::Button("Run")) {
-            m_mode = EditorMode::Run;
-            m_rootSceneNode->activate();
-            m_rootEditorNode->disable();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Stop")) {
-            m_mode = EditorMode::Edit;
-            m_rootSceneNode->disable();
-            m_rootEditorNode->activate();
-        }
-        if (!ImGui::IsWindowDocked()) {
-            ImGui::PopStyleVar();
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2 { 100, 1000 });
-        }
-        ImVec2 pannelSize = ImGui::GetContentRegionAvail();
-        if (m_viewportSize != *(vec2*)&pannelSize) {
-            m_viewportSize = { pannelSize.x, pannelSize.y };
-            m_viewportFrame->resize(m_viewportSize.x, m_viewportSize.y);
-        }
-        ImGui::PopStyleVar();
-        auto textureID = m_viewportFrame->getColorTextureID();
-        ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 0, 0 }, ImVec2 { 1, 1 });
-    } else {
-        ImGui::PopStyleVar();
-    }
+    // ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2 { 0, 0 });
+    // ImGui::Begin("Viewport");
+    // if (m_selectedScene && m_selectedScene->getNodePtr().get()) {
+    //     if (ImGui::Button("Run")) {
+    //         m_mode = EditorMode::Run;
+    //         m_rootSceneNode->activate();
+    //         m_rootEditorNode->disable();
+    //     }
+    //     ImGui::SameLine();
+    //     if (ImGui::Button("Stop")) {
+    //         m_mode = EditorMode::Edit;
+    //         m_rootSceneNode->disable();
+    //         m_rootEditorNode->activate();
+    //     }
+    //     if (!ImGui::IsWindowDocked()) {
+    //         ImGui::PopStyleVar();
+    //         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2 { 100, 1000 });
+    //     }
+    //     ImVec2 pannelSize = ImGui::GetContentRegionAvail();
+    //     if (m_viewportSize != *(vec2*)&pannelSize) {
+    //         m_viewportSize = { pannelSize.x, pannelSize.y };
+    //         m_viewportFrame->resize(m_viewportSize.x, m_viewportSize.y);
+    //     }
+    //     ImGui::PopStyleVar();
+    //     auto textureID = m_viewportFrame->getColorTextureID();
+    //     ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 0, 0 }, ImVec2 { 1, 1 });
+    // } else {
+    //     ImGui::PopStyleVar();
+    // }
 
-    ImGui::End();
+    // ImGui::End();
 
     ImGui::Begin("Scene");
 

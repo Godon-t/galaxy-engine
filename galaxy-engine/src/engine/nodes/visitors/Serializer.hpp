@@ -1,7 +1,7 @@
 #pragma once
 
 #include "NodeVisitor.hpp"
-#include "engine/nodes/Scene.hpp"
+#include "engine/project/Scene.hpp"
 #include "pch.hpp"
 
 #include <yaml-cpp/yaml.h>

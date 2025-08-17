@@ -26,7 +26,10 @@ public:
     void onEvent(Event& evt) override;
 
 private:
-    Scene m_selectedScene;
+    // Used to ask Project if the scene is still valid
+    uuid m_selectedSceneId;
+    Scene* m_selectedScene;
+
     NodeListPanel m_nodeList;
     NodeEditPanel m_editNode;
 

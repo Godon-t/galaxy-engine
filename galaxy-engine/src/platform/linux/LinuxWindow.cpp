@@ -127,7 +127,6 @@ void LinuxWindow::init(const WindowProps& props)
 
     m_window = glfwCreateWindow(props.Width, props.Height, props.Title.c_str(), NULL, NULL);
     glfwSetWindowSizeCallback(m_window, framebuffer_size_callback);
-    // TODO: understand how this work
     glfwSetWindowUserPointer(m_window, &m_data);
 
     GLX_CORE_ASSERT(m_window != NULL, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version");
@@ -141,6 +140,8 @@ void LinuxWindow::init(const WindowProps& props)
     glfwSetMouseButtonCallback(m_window, mouse_button_callback);
     glfwSetCursorPosCallback(m_window, mouse_motion_callback);
     glfwSetWindowCloseCallback(m_window, window_close_callback);
+
+    glfwSetWindowPos(m_window, m_data.Width / 2, m_data.Height / 2);
 
     // glfwSetCursorPos(m_window, 1024 / 2, 768 / 2);
 }

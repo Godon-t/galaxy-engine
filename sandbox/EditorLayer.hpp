@@ -45,5 +45,7 @@ private:
     std::shared_ptr<Node> m_rootSceneNode;
 
     void updateCamera();
+    void displayMenuBar(bool validScene);
+    void displayViewport(bool sceneSelected);
 };
 }

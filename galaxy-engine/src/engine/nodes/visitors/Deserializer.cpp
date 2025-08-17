@@ -65,7 +65,7 @@ bool SceneDeSerializer::deserialize(Scene& targetScene, const char* path)
             std::shared_ptr<Node> sceneRoot = std::move(constructNode(nodeType));
             sceneRoot->accept(*this);
 
-            targetScene.load(sceneRoot);
+            targetScene.setNodePtr(sceneRoot);
         }
 
         return true;

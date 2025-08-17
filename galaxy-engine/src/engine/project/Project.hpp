@@ -21,8 +21,9 @@ public:
 
     static void create(const std::string& path);
 
-    inline static Scene& loadScene(uuid id) { return getInstance()._loadScene(getInstance().m_projectPath + getInstance().getPath(id), id); }
+    inline static Scene& loadScene(uuid id) { return getInstance()._loadScene(getInstance().getPath(id), id); }
     inline static Scene& createScene(std::string path) { return getInstance()._createScene(path); }
+    inline static void saveScene(uuid id) { getInstance()._saveScene(id); }
     inline static bool isSceneValid(uuid id) { return getInstance().m_paths.find(id) != getInstance().m_paths.end(); }
 
 private:
@@ -32,12 +33,18 @@ private:
     std::string _getPath(const uuid&);
     bool _updatePath(const uuid&, const std::string& newPath);
     bool _load(const std::string& path);
+
     Scene& _loadScene(std::string path, uuid id);
     Scene& _createScene(std::string path);
+    void _saveScene(uuid id);
+
+    inline std::string getSceneFullPath(std::string& scenePath) { return m_projectFolderPath + scenePath; }
+
     bool _save();
 
     UUIDv4::UUIDGenerator<std::mt19937_64> m_uuidGenerator;
     std::string m_name;
+    std::string m_projectFolderPath;
     std::string m_projectPath;
     std::unordered_map<uuid, std::string> m_paths;
 

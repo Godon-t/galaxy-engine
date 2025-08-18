@@ -69,6 +69,7 @@ add_library(galaxy-engine
 	src/engine/data/Transform.cpp
 
 	src/engine/project/Project.cpp
+	src/engine/project/uuid.cpp
 	
 	src/engine/nodes/NodeHelper.cpp
 	src/engine/nodes/Node.cpp

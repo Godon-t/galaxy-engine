@@ -1,8 +1,11 @@
 #include "Texture.hpp"
 
 #include "Core.hpp"
-#include "OpenglHelper.hpp"
+#include "engine/sections/rendering/OpenglHelper.hpp"
 #include "gl_headers.hpp"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stbi.h"
 
 namespace Galaxy {
 int Texture::s_currentFreeActivationInt = 0;
@@ -21,14 +24,49 @@ Texture::Texture(int width, int height, GLenum format)
 
     // glGenerateTextureMipmap(m_id);
 
-    m_initialized = true;
-
     checkOpenGLErrors("Texture init");
+}
+
+bool Texture::load(const std::string& path)
+{
+    glActiveTexture(GL_TEXTURE0 + getAvailableActivationInt());
+    glBindTexture(GL_TEXTURE_2D, m_id);
+
+    unsigned char* textureData;
+    int textureChannels;
+    textureData = stbi_load(path.c_str(), &m_width, &m_height, &textureChannels, 0);
+
+    if (!textureData) {
+        GLX_CORE_ERROR("Failed to load: '{0}'", path);
+    }
+
+    GLenum format = GL_RGB;
+    switch (textureChannels) {
+    case 1:
+        format = GL_RED;
+        break;
+    case 3:
+        format = GL_RGB;
+        break;
+    case 4:
+        format = GL_RGBA;
+        break;
+    default:
+        GLX_CORE_ERROR("Warning: Unsupported texture format, defaulting to GL_RGB\n");
+    }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, format, m_width, m_height, 0, format, GL_UNSIGNED_BYTE, textureData);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(textureData);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    return true;
 }
 
 bool Texture::load(const unsigned char* data, size_t size, int width, int height, int channels)
 {
-    if (m_initialized)
+    if (getState() == ResourceState::LOADED)
         destroy();
 
     unsigned char* imageData = nullptr;
@@ -67,8 +105,6 @@ bool Texture::load(const unsigned char* data, size_t size, int width, int height
     // if (size > 0 && height == 0 && imageData)
     //     stbi_image_free(imageData);
 
-    m_initialized = true;
-
     checkOpenGLErrors("Texture load");
     return true;
 }
@@ -83,6 +119,5 @@ void Texture::activate(int textureLocation)
 void Texture::destroy()
 {
     glDeleteTextures(1, &m_id);
-    m_initialized = false;
 }
 }

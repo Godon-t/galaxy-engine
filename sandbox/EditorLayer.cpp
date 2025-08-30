@@ -198,6 +198,11 @@ void EditorLayer::onImGuiRender()
         m_editNode.selectNode(*Node::getNode(m_nodeList.selectedNodeId).lock().get());
     }
     ImGui::End();
+
+    // Add a "Albedo.jpg" in build folder
+    auto texHandle         = ResourceManager::getInstance().load<Texture>("./Albedo.jpg");
+    const Texture& texture = texHandle.getResource();
+    ImGui::Image(reinterpret_cast<void*>(texture.getId()), ImVec2 { texture.getWidth(), texture.getHeight() }, ImVec2 { 0, 0 }, ImVec2 { 1, 1 });
 }
 
 void EditorLayer::onEvent(Event& evt)

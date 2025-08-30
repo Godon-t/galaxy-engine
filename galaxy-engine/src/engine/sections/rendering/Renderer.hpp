@@ -9,6 +9,17 @@
 
 namespace Galaxy {
 class Renderer {
+public:
+    static Renderer& getInstance();
+
+    void beginSceneRender(mat4& camTransform);
+    void submit(const Transform& transform, renderID meshID);
+    void endSceneRender();
+    void renderFrame();
+
+    renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices);
+    void clearMesh(renderID meshID);
+
 private:
     Program m_mainProgram;
 
@@ -24,16 +35,5 @@ private:
 private:
     Renderer();
     ~Renderer();
-
-public:
-    static Renderer& getInstance();
-
-    void beginSceneRender(mat4& camTransform);
-    void submit(const Transform& transform, renderID meshID);
-    void endSceneRender();
-    void renderFrame();
-
-    renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices);
-    void clearMesh(renderID meshID);
 };
 }

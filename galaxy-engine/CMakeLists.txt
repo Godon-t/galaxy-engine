@@ -85,9 +85,9 @@ add_library(galaxy-engine
 	src/engine/sections/rendering/Renderer.cpp
 	src/engine/sections/rendering/VisualInstance.cpp
 	src/engine/sections/rendering/CameraManager.cpp
-	src/engine/sections/rendering/Texture.cpp
 	src/engine/sections/rendering/FrameBuffer.cpp
-
+	
+	src/engine/resource/Texture.cpp
 
 	common/shader.cpp
 )

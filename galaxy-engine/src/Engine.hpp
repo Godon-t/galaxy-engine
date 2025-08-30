@@ -17,6 +17,8 @@
 #include "engine/project/Project.hpp"
 #include "engine/project/Scene.hpp"
 
+#include "engine/resource/ResourceManager.hpp"
+
 #include "engine/sections/rendering/CameraManager.hpp"
 #include "engine/sections/rendering/FrameBuffer.hpp"
 #include "engine/sections/rendering/Renderer.hpp"

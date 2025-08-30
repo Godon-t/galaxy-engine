@@ -10,6 +10,7 @@
 #include "engine/event/WindowEvent.hpp"
 #include "engine/nodes/rendering/Camera.hpp"
 #include "engine/nodes/rendering/MeshInstance.hpp"
+#include "engine/resource/ResourceManager.hpp"
 #include "engine/sections/rendering/Renderer.hpp"
 
 namespace Galaxy {
@@ -72,6 +73,8 @@ void Application::run()
         auto startTime = clock::now();
         m_delta        = std::chrono::duration<double>(startTime - lastTime).count();
         lastTime       = startTime;
+
+        ResourceManager::getInstance().updatePendingLoads();
 
         for (Layer* layer : m_layerStack) {
             layer->onUpdate();

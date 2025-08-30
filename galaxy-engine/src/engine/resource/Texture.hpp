@@ -9,12 +9,12 @@ struct Texture : public ResourceBase {
 
     Texture(int width, int height, unsigned int format);
     bool load(const std::string& file) override;
-
     bool load(const unsigned char* data,
         size_t size,
         int width,
         int height,
         int channels);
+    void onLoadFinish() override;
 
     void activate(int textureLocation);
 
@@ -31,6 +31,9 @@ private:
     unsigned int m_id;
     int m_width;
     int m_height;
+
+    int m_format;
+    unsigned char* m_data;
 
     static int s_currentFreeActivationInt;
 };

@@ -18,7 +18,7 @@ public:
     // bool isReady();
     // bool isLoaded();
     // bool isLoading();
-    ResourceState getState() const;
+    inline ResourceState getState() const { return m_resource->getState(); }
 
 protected:
     std::shared_ptr<ResourceBase> m_resource;

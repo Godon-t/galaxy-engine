@@ -200,9 +200,21 @@ void EditorLayer::onImGuiRender()
     ImGui::End();
 
     // Add a "Albedo.jpg" in build folder
-    auto texHandle         = ResourceManager::getInstance().load<Texture>("./Albedo.jpg");
-    const Texture& texture = texHandle.getResource();
-    ImGui::Image(reinterpret_cast<void*>(texture.getId()), ImVec2 { texture.getWidth(), texture.getHeight() }, ImVec2 { 0, 0 }, ImVec2 { 1, 1 });
+    // auto texHandle = ResourceManager::getInstance().load<Texture>("./Albedo.jpg");
+    // if (texHandle.getState() == ResourceState::LOADED) {
+    //     const Texture& texture = texHandle.getResource();
+    //     ImGui::Begin("Image 1");
+    //     ImGui::Image(reinterpret_cast<void*>(texture.getId()), ImVec2 { texture.getWidth(), texture.getHeight() }, ImVec2 { 0, 0 }, ImVec2 { 1, 1 });
+    //     ImGui::End();
+    // }
+
+    // auto texHandle2 = ResourceManager::getInstance().load<Texture>("./Albedo2.jpg");
+    // if (texHandle2.getState() == ResourceState::LOADED) {
+    //     const Texture& texture = texHandle2.getResource();
+    //     ImGui::Begin("Image 2");
+    //     ImGui::Image(reinterpret_cast<void*>(texture.getId()), ImVec2 { texture.getWidth(), texture.getHeight() }, ImVec2 { 0, 0 }, ImVec2 { 1, 1 });
+    //     ImGui::End();
+    // }
 }
 
 void EditorLayer::onEvent(Event& evt)

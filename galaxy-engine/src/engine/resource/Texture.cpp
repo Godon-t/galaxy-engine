@@ -29,37 +29,27 @@ Texture::Texture(int width, int height, GLenum format)
 
 bool Texture::load(const std::string& path)
 {
-    glActiveTexture(GL_TEXTURE0 + getAvailableActivationInt());
-    glBindTexture(GL_TEXTURE_2D, m_id);
-
-    unsigned char* textureData;
     int textureChannels;
-    textureData = stbi_load(path.c_str(), &m_width, &m_height, &textureChannels, 0);
+    m_data = stbi_load(path.c_str(), &m_width, &m_height, &textureChannels, 0);
 
-    if (!textureData) {
-        GLX_CORE_ERROR("Failed to load: '{0}'", path);
-    }
-
-    GLenum format = GL_RGB;
+    m_format = GL_RGB;
     switch (textureChannels) {
     case 1:
-        format = GL_RED;
+        m_format = GL_RED;
         break;
     case 3:
-        format = GL_RGB;
+        m_format = GL_RGB;
         break;
     case 4:
-        format = GL_RGBA;
+        m_format = GL_RGBA;
         break;
     default:
         GLX_CORE_ERROR("Warning: Unsupported texture format, defaulting to GL_RGB\n");
     }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format, m_width, m_height, 0, format, GL_UNSIGNED_BYTE, textureData);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    stbi_image_free(textureData);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
+    if (!m_data) {
+        GLX_CORE_ERROR("Failed to load: '{0}'", path);
+    }
 
     return true;
 }
@@ -107,6 +97,18 @@ bool Texture::load(const unsigned char* data, size_t size, int width, int height
 
     checkOpenGLErrors("Texture load");
     return true;
+}
+
+void Texture::onLoadFinish()
+{
+    glActiveTexture(GL_TEXTURE0 + getAvailableActivationInt());
+    glBindTexture(GL_TEXTURE_2D, m_id);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, m_format, m_width, m_height, 0, m_format, GL_UNSIGNED_BYTE, m_data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(m_data);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void Texture::activate(int textureLocation)

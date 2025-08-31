@@ -83,6 +83,8 @@ add_library(galaxy-engine
 	src/engine/sections/rendering/OpenglHelper.cpp
 	src/engine/sections/rendering/Program.cpp
 	src/engine/sections/rendering/Renderer.cpp
+	src/engine/sections/rendering/Backend.cpp
+	src/engine/sections/rendering/Frontend.cpp
 	src/engine/sections/rendering/VisualInstance.cpp
 	src/engine/sections/rendering/CameraManager.cpp
 	src/engine/sections/rendering/FrameBuffer.cpp

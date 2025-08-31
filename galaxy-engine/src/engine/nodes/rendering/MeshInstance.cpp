@@ -46,7 +46,7 @@ void MeshInstance::process(double delta)
 void MeshInstance::draw()
 {
     Node3D::draw();
-    Renderer::getInstance().submit(*getTransform(), m_renderId);
+    Renderer::getInstance().submit(m_renderId, *getTransform());
 }
 
 void MeshInstance::accept(Galaxy::NodeVisitor& visitor)

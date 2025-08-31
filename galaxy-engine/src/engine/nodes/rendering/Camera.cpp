@@ -2,6 +2,7 @@
 
 #include "Camera.hpp"
 
+#include "engine/sections/rendering/CameraManager.hpp"
 #include "engine/sections/rendering/Renderer.hpp"
 
 namespace Galaxy {

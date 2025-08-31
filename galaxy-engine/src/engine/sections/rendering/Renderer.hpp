@@ -1,8 +1,7 @@
 #pragma once
 
-#include "CameraManager.hpp"
-#include "Program.hpp"
-#include "VisualInstance.hpp"
+#include "Backend.hpp"
+#include "Frontend.hpp"
 
 #include "engine/data/Transform.hpp"
 #include "engine/types/Render.hpp"
@@ -13,7 +12,8 @@ public:
     static Renderer& getInstance();
 
     void beginSceneRender(mat4& camTransform);
-    void submit(const Transform& transform, renderID meshID);
+    void submit(renderID meshID, const Transform& transform);
+
     void endSceneRender();
     void renderFrame();
 
@@ -21,19 +21,14 @@ public:
     void clearMesh(renderID meshID);
 
 private:
-    Program m_mainProgram;
-
-    mat4 m_viewMatrix;
-
-    // TODO: Doesn't work anymore with how the renderer work (pointless)
-    std::vector<VisualInstance> m_visuInstances;
-    size_t instanceCount = 0; // Idx of the last added element
-    std::unordered_map<renderID, size_t> m_instanceIdToVisuIdx;
-    std::unordered_map<size_t, renderID> m_visuIdxToInstanceId;
-    std::stack<renderID> m_freeIds;
-
-private:
     Renderer();
     ~Renderer();
+
+    // TODO: double buffering of commands not used currently (no multithreading)
+    std::vector<std::vector<RenderCommand>> m_commandBuffers;
+    int m_frontCommandBufferIdx;
+
+    Frontend m_frontend;
+    Backend m_backend;
 };
 }

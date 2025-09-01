@@ -3,7 +3,7 @@
 #include "Scene.hpp"
 #include "pch.hpp"
 
-#include "uuid.hpp"
+#include "UUID.hpp"
 
 namespace Galaxy {
 class Scene;
@@ -41,7 +41,6 @@ private:
 
     bool _save();
 
-    UUIDv4::UUIDGenerator<std::mt19937_64> m_uuidGenerator;
     std::string m_name;
     std::string m_projectFolderPath;
     std::string m_projectPath;

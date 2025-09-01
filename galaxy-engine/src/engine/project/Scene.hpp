@@ -2,8 +2,8 @@
 
 #include "pch.hpp"
 
+#include "UUID.hpp"
 #include "engine/nodes/Node.hpp"
-#include "uuid.hpp"
 
 namespace Galaxy {
 class Scene {

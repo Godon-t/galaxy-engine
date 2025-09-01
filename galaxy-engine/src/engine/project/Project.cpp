@@ -17,7 +17,7 @@ Project& Project::getInstance()
 
 uuid Project::_registerNewPath(const std::string& path)
 {
-    uuid pathId     = m_uuidGenerator.getUUID();
+    uuid pathId;
     m_paths[pathId] = path;
     return pathId;
 }
@@ -58,7 +58,7 @@ bool Project::_load(const std::string& path)
 
     m_name = data["Name"].as<std::string>();
     for (auto scene : data["Scenes"]) {
-        uuid sceneId          = uuidFromString(scene["Id"].as<std::string>());
+        uuid sceneId(scene["Id"].as<uint64_t>());
         std::string scenePath = scene["Path"].as<std::string>();
 
         m_paths[sceneId] = scenePath;
@@ -112,7 +112,7 @@ bool Project::_save()
     yaml << YAML::Key << "Scenes" << YAML::Value << YAML::BeginSeq;
     for (auto& value : m_paths) {
         yaml << YAML::BeginMap;
-        yaml << YAML::Key << "Id" << YAML::Value << uuidToString(value.first);
+        yaml << YAML::Key << "Id" << YAML::Value << value.first;
         yaml << YAML::Key << "Path" << YAML::Value << value.second;
         yaml << YAML::EndMap;
     }

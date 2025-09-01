@@ -55,8 +55,7 @@ bool SceneDeSerializer::deserialize(Scene& targetScene, const char* path)
         std::string sceneName = m_data["Scene"].as<std::string>();
         GLX_CORE_TRACE("Deserializing scene '{0}'", sceneName);
 
-        std::string strUuid = m_data["Id"].as<std::string>();
-        targetScene.setUuid(uuidFromString(strUuid));
+        targetScene.setUuid(m_data["Id"].as<uint64_t>());
 
         auto nodeHierarchy = m_data["Root"];
         if (nodeHierarchy) {

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(GalaxyProject)
 
 # set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -fsanitize=address -fstack-protector -D_FORTIFY_SOURCE=2")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O1")
 set(CMAKE_C_FLAGS_DEBUG "-g -O0")
 set(CMAKE_BUILD_TYPE Debug)
 
@@ -10,8 +10,6 @@ option(BUILD_SANDBOX "Build the sandbox application" ON)
 option(GALAXY_ENABLE_ASSERTS "Enable assertions" ON)
 
 #list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/external/rpavlik-cmake-modules-fe2273")
-
-add_compile_options(-msse4.1 -msse4.2 -mavx2)
 
 # Ajout du sous-projet moteur
 add_subdirectory(galaxy-engine)

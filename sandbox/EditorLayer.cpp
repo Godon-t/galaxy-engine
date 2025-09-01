@@ -182,8 +182,19 @@ void EditorLayer::onImGuiRender()
     }
 
     ImGui::Begin("App");
-    ImGui::Text((std::string("FPS: ") + std::to_string(1.0 / Application::getInstance().getDelta())).c_str());
+
+    double fps = 1.0 / Application::getInstance().getDelta();
+
+    static std::vector<float> fpsHistory(300, 0.0f);
+    static size_t offset = 0;
+
+    fpsHistory[offset] = (float)fps;
+    offset             = (offset + 1) % fpsHistory.size();
+
+    ImGui::Text("FPS: %.1f", fps);
+    ImGui::PlotHistogram("FPS history", fpsHistory.data(), fpsHistory.size(), offset, nullptr, 0.0f, 60.0f, ImVec2(0, 100));
     ImGui::Checkbox("Show all nodes", &m_showAllNodes);
+
     ImGui::End();
 
     displayViewport(validScene);
@@ -204,14 +215,6 @@ void EditorLayer::onImGuiRender()
     // if (texHandle.getState() == ResourceState::LOADED) {
     //     const Texture& texture = texHandle.getResource();
     //     ImGui::Begin("Image 1");
-    //     ImGui::Image(reinterpret_cast<void*>(texture.getId()), ImVec2 { texture.getWidth(), texture.getHeight() }, ImVec2 { 0, 0 }, ImVec2 { 1, 1 });
-    //     ImGui::End();
-    // }
-
-    // auto texHandle2 = ResourceManager::getInstance().load<Texture>("./Albedo2.jpg");
-    // if (texHandle2.getState() == ResourceState::LOADED) {
-    //     const Texture& texture = texHandle2.getResource();
-    //     ImGui::Begin("Image 2");
     //     ImGui::Image(reinterpret_cast<void*>(texture.getId()), ImVec2 { texture.getWidth(), texture.getHeight() }, ImVec2 { 0, 0 }, ImVec2 { 1, 1 });
     //     ImGui::End();
     // }

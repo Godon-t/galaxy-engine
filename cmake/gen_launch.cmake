@@ -1,5 +1,5 @@
 # cmake/gen_launch.cmake
-file(WRITE "${OUT}" "#!/bin/bash\n${EXE}\n")
+file(WRITE "${OUT}" "#!/bin/bash\n${EXE} ${ARGS}\n")
 # Marquer exécutable sous UNIX
 if(UNIX)
   file(CHMOD "${OUT}" FILE_PERMISSIONS

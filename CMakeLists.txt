@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(GalaxyProject)
 
 # set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -fsanitize=address -fstack-protector -D_FORTIFY_SOURCE=2")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O1")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_C_FLAGS_DEBUG "-g -O0")
 set(CMAKE_BUILD_TYPE Debug)
 
@@ -22,6 +22,7 @@ if(BUILD_SANDBOX)
 		OUTPUT  "${CMAKE_BINARY_DIR}/launch-sandbox.sh"
 		COMMAND "${CMAKE_COMMAND}" -DOUT=${CMAKE_BINARY_DIR}/launch-sandbox.sh
 								-DEXE="$<TARGET_FILE:sandbox>"
+								-DARGS="${CMAKE_SOURCE_DIR}/project/.gproj"
 								-P "${CMAKE_SOURCE_DIR}/cmake/gen_launch.cmake"
 		DEPENDS sandbox
 		COMMENT "Génération du script launch-sandbox.sh"

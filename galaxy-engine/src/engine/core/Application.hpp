@@ -43,5 +43,5 @@ private:
     std::shared_ptr<Root> m_root;
 };
 
-Application* createApplication();
+Application* createApplication(int argc, char const* argv[]);
 } // namespace Galaxy

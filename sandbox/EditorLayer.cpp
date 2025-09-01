@@ -5,6 +5,17 @@
 #include <imgui.h>
 
 namespace Galaxy {
+EditorLayer::EditorLayer(const char* projectPath)
+    : Layer("Editor layer")
+    , m_mode(EditorMode::Edit)
+    , m_showAllNodes(false)
+{
+    if (!Project::load(projectPath)) {
+        GLX_ERROR("Can't load project '{0}', creating one", projectPath);
+        Project::create(projectPath);
+    }
+}
+
 EditorLayer::~EditorLayer()
 {
 }
@@ -34,13 +45,6 @@ void EditorLayer::onAttach()
     InputManager::addAction(Action(GLX_KEY_S, "editor_backward"));
     InputManager::addAction(Action(GLX_KEY_A, "editor_right"));
     InputManager::addAction(Action(GLX_KEY_D, "editor_left"));
-
-    std::string projectPath(".gproj");
-    if (!Project::load(projectPath)) {
-        GLX_ERROR("Can't load project '{0}'", projectPath);
-        Project::create(".gproj");
-        Application::getInstance().terminate();
-    }
 }
 
 void EditorLayer::onDetach()
@@ -204,7 +208,7 @@ void EditorLayer::onImGuiRender()
     if (m_showAllNodes)
         m_nodeList.listNodes(*Application::getInstance().getRootNodePtr());
     else if (validScene)
-        m_nodeList.listNodes(*m_rootSceneNode.get());
+        m_nodeList.listNodes(*m_selectedScene->getNodePtr().get());
     if (Node::nodeExists(m_nodeList.selectedNodeId)) {
         m_editNode.selectNode(*Node::getNode(m_nodeList.selectedNodeId).lock().get());
     }

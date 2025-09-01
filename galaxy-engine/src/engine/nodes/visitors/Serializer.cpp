@@ -38,9 +38,11 @@ void SceneSerializer::serialize(Scene& scene, const char* outputPath)
     m_yaml << YAML::Key << "Scene" << YAML::Value << "Name";
     m_yaml << YAML::Key << "Id" << YAML::Value << scene.getUuid();
 
-    m_yaml << YAML::Key << "Root" << YAML::BeginMap;
-    scene.getNodePtr()->accept(*this);
-    m_yaml << YAML::EndMap;
+    if (scene.getNodePtr().get() != nullptr) {
+        m_yaml << YAML::Key << "Root" << YAML::BeginMap;
+        scene.getNodePtr()->accept(*this);
+        m_yaml << YAML::EndMap;
+    }
 
     m_yaml << YAML::EndMap;
 

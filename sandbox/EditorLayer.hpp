@@ -13,10 +13,7 @@ enum class EditorMode {
 
 class EditorLayer : public Layer {
 public:
-    EditorLayer()
-        : Layer("Editor layer")
-        , m_mode(EditorMode::Edit)
-        , m_showAllNodes(false) {};
+    EditorLayer(const char* projectPath = "");
     ~EditorLayer() override;
 
     void onAttach() override;

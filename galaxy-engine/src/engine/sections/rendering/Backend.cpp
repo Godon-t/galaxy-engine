@@ -60,9 +60,10 @@ renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<sho
 
 void Backend::clearMesh(renderID meshID)
 {
-    size_t idxToDelete = m_instanceIdToVisuIdx[meshID];
-
     instanceCount--;
+    if (instanceCount == 0)
+        return;
+    size_t idxToDelete = m_instanceIdToVisuIdx[meshID];
 
     renderID movedMeshID               = m_visuIdxToInstanceId[instanceCount];
     m_instanceIdToVisuIdx[movedMeshID] = idxToDelete;

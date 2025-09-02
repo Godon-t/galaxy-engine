@@ -49,7 +49,7 @@ renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<sho
 
     renderID meshID                = m_freeIds.top();
     size_t listIdx                 = instanceCount;
-    m_visuInstances[listIdx]       = std::move(meshInstance);
+    m_visuInstances[listIdx]       = std::make_pair(std::move(meshInstance), 1);
     m_visuIdxToInstanceId[listIdx] = meshID;
     m_instanceIdToVisuIdx[meshID]  = listIdx;
 
@@ -58,11 +58,54 @@ renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<sho
     return meshID;
 }
 
+renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh)
+{
+    size_t handleID = reinterpret_cast<size_t>(&mesh.getResource());
+    auto it         = m_resourceTable.find(handleID);
+    if (it != m_resourceTable.end()) {
+        m_visuInstances[it->second].second++;
+        return it->second;
+    }
+
+    if (m_freeIds.size() == 0) {
+        GLX_CORE_ERROR("No more free renderIDs");
+        return -1;
+    }
+
+    renderID meshID = m_freeIds.top();
+    size_t listIdx  = instanceCount;
+
+    m_visuInstances[listIdx]       = std::make_pair(VisualInstance(), 1);
+    m_visuIdxToInstanceId[listIdx] = meshID;
+    m_instanceIdToVisuIdx[meshID]  = listIdx;
+
+    m_freeIds.pop();
+    instanceCount++;
+
+    m_resourceTable[handleID] = meshID;
+    m_idToResource[meshID]    = mesh;
+
+    mesh.getResource().onLoaded([this, listIdx, meshID] {
+        const auto& meshRes = m_idToResource[meshID].getResource();
+        auto& meshInstance  = m_visuInstances[listIdx].first;
+        meshInstance.init(
+            meshRes.getVertices(),
+            meshRes.getIndices());
+    });
+
+    return meshID;
+}
+
 void Backend::clearMesh(renderID meshID)
 {
+    m_visuInstances[meshID].second--;
+    if (m_visuInstances[meshID].second > 0)
+        return;
+
     instanceCount--;
     if (instanceCount == 0)
         return;
+
     size_t idxToDelete = m_instanceIdToVisuIdx[meshID];
 
     renderID movedMeshID               = m_visuIdxToInstanceId[instanceCount];
@@ -72,6 +115,9 @@ void Backend::clearMesh(renderID meshID)
     m_visuInstances[idxToDelete] = std::move(m_visuInstances[instanceCount]);
 
     m_freeIds.emplace(meshID);
+
+    m_resourceTable.erase(reinterpret_cast<size_t>(&m_idToResource[meshID].getResource()));
+    m_idToResource.erase(meshID);
 }
 
 void Backend::processCommands(std::vector<RenderCommand>& commands)
@@ -100,7 +146,7 @@ void Backend::processCommand(RenderCommand& command)
     case RenderCommandType::draw: {
         auto& modelMatrix = command.draw.model;
         m_mainProgram.updateModelMatrix(modelMatrix);
-        m_visuInstances[m_instanceIdToVisuIdx[command.draw.instanceId]].draw();
+        m_visuInstances[m_instanceIdToVisuIdx[command.draw.instanceId]].first.draw();
         break;
     }
     default:

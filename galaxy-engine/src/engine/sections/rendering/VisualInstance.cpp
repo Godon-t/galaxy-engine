@@ -50,7 +50,7 @@ VisualInstance& VisualInstance::operator=(VisualInstance&& other)
 
     return *this;
 }
-void VisualInstance::init(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices)
+void VisualInstance::init(const std::vector<Vertex>& vertices, const std::vector<short unsigned int>& indices)
 {
     m_nbOfIndices = indices.size();
 

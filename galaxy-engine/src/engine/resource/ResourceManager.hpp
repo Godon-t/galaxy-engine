@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Mesh.hpp"
 #include "ResourceMaker.hpp"
 #include "Texture.hpp"
 #include "engine/core/ThreadPool.hpp"
@@ -54,7 +55,7 @@ public:
         std::unique_lock<std::mutex> lock(m_pendingLoadMutex);
         while (!m_loadedResources.empty()) {
             auto& resource = m_loadedResources.front();
-            resource->onLoadFinish();
+            resource->notifyLoaded();
             resource->m_state = ResourceState::LOADED;
             m_loadedResources.pop();
         }
@@ -65,6 +66,7 @@ private:
         : m_threadPool(resourcePoolSize)
     {
         registerMaker<Texture>();
+        registerMaker<Mesh>();
     }
     ThreadPool m_threadPool;
     std::mutex m_pendingLoadMutex;

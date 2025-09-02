@@ -14,7 +14,6 @@ struct Texture : public ResourceBase {
         int width,
         int height,
         int channels);
-    void onLoadFinish() override;
 
     void activate(int textureLocation);
 

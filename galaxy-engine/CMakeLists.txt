@@ -90,6 +90,7 @@ add_library(galaxy-engine
 	src/engine/sections/rendering/FrameBuffer.cpp
 	
 	src/engine/resource/Texture.cpp
+	src/engine/resource/Mesh.cpp
 
 	common/shader.cpp
 )

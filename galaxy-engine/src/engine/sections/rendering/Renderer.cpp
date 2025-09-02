@@ -54,6 +54,11 @@ renderID Renderer::instanciateMesh(std::vector<Vertex>& vertices, std::vector<sh
     return m_backend.instanciateMesh(vertices, indices);
 }
 
+renderID Renderer::instanciateMesh(ResourceHandle<Mesh> mesh)
+{
+    return m_backend.instanciateMesh(mesh);
+}
+
 void Renderer::clearMesh(renderID meshID)
 {
     m_backend.clearMesh(meshID);

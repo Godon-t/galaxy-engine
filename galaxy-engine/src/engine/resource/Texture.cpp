@@ -99,17 +99,18 @@ bool Texture::load(const unsigned char* data, size_t size, int width, int height
     return true;
 }
 
-void Texture::onLoadFinish()
-{
-    glActiveTexture(GL_TEXTURE0 + getAvailableActivationInt());
-    glBindTexture(GL_TEXTURE_2D, m_id);
+// TODO: Create what needed in renderer
+//  void Texture::onLoadFinish()
+//  {
+//      glActiveTexture(GL_TEXTURE0 + getAvailableActivationInt());
+//      glBindTexture(GL_TEXTURE_2D, m_id);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, m_format, m_width, m_height, 0, m_format, GL_UNSIGNED_BYTE, m_data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    stbi_image_free(m_data);
+//     glTexImage2D(GL_TEXTURE_2D, 0, m_format, m_width, m_height, 0, m_format, GL_UNSIGNED_BYTE, m_data);
+//     glGenerateMipmap(GL_TEXTURE_2D);
+//     stbi_image_free(m_data);
 
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
+//     glBindTexture(GL_TEXTURE_2D, 0);
+// }
 
 void Texture::activate(int textureLocation)
 {

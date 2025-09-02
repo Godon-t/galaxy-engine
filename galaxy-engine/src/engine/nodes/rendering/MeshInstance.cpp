@@ -2,6 +2,8 @@
 
 #include "MeshInstance.hpp"
 
+#include "engine/project/Project.hpp"
+#include "engine/resource/ResourceManager.hpp"
 #include "engine/sections/rendering/Renderer.hpp"
 #include "engine/sections/rendering/VisualInstance.hpp"
 
@@ -10,12 +12,12 @@ void MeshInstance::generateTriangle()
 {
     std::vector<Vertex> triangleVertices;
     Vertex v1, v2, v3;
-    v1.m_position = vec3(-1, -1, 0);
-    v1.m_texCoord = vec2(0, 0);
-    v2.m_position = vec3(1, -1, 0);
-    v2.m_texCoord = vec2(1, 0);
-    v3.m_position = vec3(1, 1, 0);
-    v3.m_texCoord = vec2(0, 1);
+    v1.position = vec3(-1, -1, 0);
+    v1.texCoord = vec2(0, 0);
+    v2.position = vec3(1, -1, 0);
+    v2.texCoord = vec2(1, 0);
+    v3.position = vec3(1, 1, 0);
+    v3.texCoord = vec2(0, 1);
 
     triangleVertices.push_back(v1);
     triangleVertices.push_back(v2);
@@ -36,7 +38,9 @@ MeshInstance::~MeshInstance()
 
 void MeshInstance::enteredRoot()
 {
-    generateTriangle();
+    auto meshRes = ResourceManager::getInstance().load<Mesh>(Project::getProjectRootPath() + std::string("Cube.gltf"));
+    m_renderId   = Renderer::getInstance().instanciateMesh(meshRes);
+    // generateTriangle();
 }
 
 void MeshInstance::process(double delta)

@@ -18,6 +18,7 @@ public:
     void renderFrame();
 
     renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices);
+    renderID instanciateMesh(ResourceHandle<Mesh> mesh);
     void clearMesh(renderID meshID);
 
 private:

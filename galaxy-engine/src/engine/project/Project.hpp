@@ -25,6 +25,8 @@ public:
     inline static void saveScene(uuid id) { getInstance()._saveScene(id); }
     inline static bool isSceneValid(uuid id) { return getInstance().m_paths.find(id) != getInstance().m_paths.end(); }
 
+    inline static std::string getProjectRootPath() { return getInstance().m_projectFolderPath; }
+
 private:
     static Project& getInstance();
 

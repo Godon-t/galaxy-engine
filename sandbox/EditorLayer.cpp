@@ -45,6 +45,9 @@ void EditorLayer::onAttach()
     InputManager::addAction(Action(GLX_KEY_S, "editor_backward"));
     InputManager::addAction(Action(GLX_KEY_A, "editor_right"));
     InputManager::addAction(Action(GLX_KEY_D, "editor_left"));
+
+    InputManager::addAction(Action(GLX_KEY_Q, "editor_down"));
+    InputManager::addAction(Action(GLX_KEY_E, "editor_up"));
 }
 
 void EditorLayer::onDetach()
@@ -258,6 +261,11 @@ void EditorLayer::updateCamera()
         translation -= leftVec;
     if (InputManager::isActionPressed("editor_left"))
         translation += leftVec;
+    if (InputManager::isActionPressed("editor_up")) {
+        translation += vec3(0, 1, 0);
+    }
+    if (InputManager::isActionPressed("editor_down"))
+        translation -= vec3(0, 1, 0);
 
     m_editorCamera->translate(translation * m_cameraSpeed);
 }

@@ -96,6 +96,13 @@ void LinuxWindow::mouse_motion_callback(GLFWwindow* window, double x, double y)
     data.EventCallback(evt);
 }
 
+void LinuxWindow::mouse_scroll_callback(GLFWwindow* window, double xOffset, double yOffset)
+{
+    WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+    MouseScrollEvent evt(xOffset, yOffset);
+    data.EventCallback(evt);
+}
+
 void LinuxWindow::window_close_callback(GLFWwindow* window)
 {
     WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
@@ -139,6 +146,7 @@ void LinuxWindow::init(const WindowProps& props)
     glfwSetCharCallback(m_window, char_callback);
     glfwSetMouseButtonCallback(m_window, mouse_button_callback);
     glfwSetCursorPosCallback(m_window, mouse_motion_callback);
+    glfwSetScrollCallback(m_window, mouse_scroll_callback);
     glfwSetWindowCloseCallback(m_window, window_close_callback);
 
     glfwSetWindowPos(m_window, m_data.Width / 2, m_data.Height / 2);

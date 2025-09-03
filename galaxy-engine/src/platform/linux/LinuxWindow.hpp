@@ -28,6 +28,7 @@ private:
     static void char_callback(GLFWwindow* window, unsigned int codePoint);
     static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
     static void mouse_motion_callback(GLFWwindow* window, double x, double y);
+    static void mouse_scroll_callback(GLFWwindow* window, double xOffset, double yOffset);
     static void window_close_callback(GLFWwindow* window);
 
 private:

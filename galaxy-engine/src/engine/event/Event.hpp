@@ -11,6 +11,7 @@ enum class EventType {
     CharEmit,
     MouseButtonInteract,
     MouseMotion,
+    MouseScroll,
     ActionInteract
 };
 enum EventCategory {

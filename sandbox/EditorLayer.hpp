@@ -41,6 +41,8 @@ private:
     std::shared_ptr<Camera> m_editorCamera;
     std::shared_ptr<Node> m_rootSceneNode;
 
+    float m_cameraSpeed = 0.15f;
+
     void updateCamera();
     void displayMenuBar(bool validScene);
     void displayViewport(bool sceneSelected);

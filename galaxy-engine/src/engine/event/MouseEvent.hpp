@@ -45,4 +45,22 @@ private:
     double m_x;
     double m_y;
 };
+
+class MouseScrollEvent : public Event {
+public:
+    MouseScrollEvent(double xOffset, double yOffset)
+        : m_xOffset(xOffset)
+        , m_yOffset(yOffset)
+    {
+    }
+    double getXOffset() const { return m_xOffset; }
+    double getYOffset() const { return m_yOffset; }
+
+    EVENT_CLASS_TYPE(MouseScroll)
+    EVENT_CLASS_CATEGORY(EventCategoryInput | EventCategoryMouse)
+
+private:
+    double m_xOffset;
+    double m_yOffset;
+};
 }

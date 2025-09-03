@@ -230,20 +230,23 @@ void EditorLayer::onEvent(Event& evt)
         ActionEvent& actEvt = (ActionEvent&)evt;
         if (std::string(actEvt.getActionName()) == "editor_exit")
             Application::getInstance().terminate();
+    } else if (evt.getEventType() == EventType::MouseScroll) {
+        MouseScrollEvent& scrollEvt = (MouseScrollEvent&)evt;
+        m_cameraSpeed += scrollEvt.getYOffset() * 0.001;
+        m_cameraSpeed = m_cameraSpeed <= 0 ? 0.0001 : m_cameraSpeed;
     }
 }
 void EditorLayer::updateCamera()
 {
-    const float speed = 0.2f;
     vec3 translation(0);
     if (InputManager::isActionPressed("editor_forward"))
-        translation.z += speed;
+        translation.z += m_cameraSpeed;
     if (InputManager::isActionPressed("editor_backward"))
-        translation.z -= speed;
+        translation.z -= m_cameraSpeed;
     if (InputManager::isActionPressed("editor_right"))
-        translation.x -= speed;
+        translation.x -= m_cameraSpeed;
     if (InputManager::isActionPressed("editor_left"))
-        translation.x += speed;
+        translation.x += m_cameraSpeed;
 
     m_editorCamera->translate(translation);
 }

@@ -31,4 +31,9 @@ void Camera::setCurrent(bool state)
     CameraManager::getInstance().updateCurrent(id, state);
     m_current = state;
 }
+vec3 Camera::getForward() const
+{
+    vec3 fwd = vec3(0, 0, -1);
+    return normalize(getTransform()->getLocalRotationQuat() * fwd);
+}
 }

@@ -89,10 +89,14 @@ void LinuxWindow::mouse_button_callback(GLFWwindow* window, int button, int acti
     data.EventCallback(evt);
 }
 
+static double prevMouseX = 0.0;
+static double prevMouseY = 0.0;
 void LinuxWindow::mouse_motion_callback(GLFWwindow* window, double x, double y)
 {
     WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-    MouseMotionEvent evt(x, y);
+    MouseMotionEvent evt(x, y, x - prevMouseX, y - prevMouseY);
+    prevMouseX = x;
+    prevMouseY = y;
     data.EventCallback(evt);
 }
 

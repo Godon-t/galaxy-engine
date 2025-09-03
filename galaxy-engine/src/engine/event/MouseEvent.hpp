@@ -30,20 +30,26 @@ private:
 class MouseMotionEvent : public Event {
 public:
     inline double getX() const { return m_x; }
+    inline double getDeltaX() const { return m_deltaX; }
     inline double getY() const { return m_y; }
+    inline double getDeltaY() const { return m_deltaY; }
 
     EVENT_CLASS_TYPE(MouseMotion)
     EVENT_CLASS_CATEGORY(EventCategoryInput | EventCategoryMouse)
 
-    MouseMotionEvent(double x, double y)
+    MouseMotionEvent(double x, double y, double deltaX, double deltaY)
         : m_x(x)
         , m_y(y)
+        , m_deltaX(deltaX)
+        , m_deltaY(deltaY)
     {
     }
 
 private:
     double m_x;
+    double m_deltaX;
     double m_y;
+    double m_deltaY;
 };
 
 class MouseScrollEvent : public Event {

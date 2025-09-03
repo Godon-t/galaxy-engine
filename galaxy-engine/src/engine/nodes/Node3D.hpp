@@ -17,6 +17,7 @@ public:
     {
     }
     Transform* getTransform() { return &m_transform; }
+    const Transform* getTransform() const { return &m_transform; }
     void setTransform(Transform& transform) { m_transform = transform; }
     void updateTransformAndChilds(const mat4& matrix) override;
 

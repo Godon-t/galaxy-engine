@@ -234,20 +234,31 @@ void EditorLayer::onEvent(Event& evt)
         MouseScrollEvent& scrollEvt = (MouseScrollEvent&)evt;
         m_cameraSpeed += scrollEvt.getYOffset() * 0.001;
         m_cameraSpeed = m_cameraSpeed <= 0 ? 0.0001 : m_cameraSpeed;
+    } else if (evt.getEventType() == EventType::MouseMotion && m_rightClickDown) {
+        MouseMotionEvent& mouseMotion = (MouseMotionEvent&)evt;
+        m_editorCamera->getTransform()->localRotateX(mouseMotion.getDeltaY() * 0.001);
+        m_editorCamera->getTransform()->localRotateY(mouseMotion.getDeltaX() * 0.001);
+    } else if (evt.getEventType() == EventType::MouseButtonInteract) {
+        MouseButtonEvent& mouseBtn = (MouseButtonEvent&)evt;
+        if (mouseBtn.getButton() == 1) {
+            m_rightClickDown = mouseBtn.isPressed();
+        }
     }
 }
 void EditorLayer::updateCamera()
 {
     vec3 translation(0);
+    vec3 forwardVec = m_editorCamera->getForward();
+    vec3 leftVec    = cross(forwardVec, vec3(0, 1, 0));
     if (InputManager::isActionPressed("editor_forward"))
-        translation.z += m_cameraSpeed;
+        translation -= forwardVec;
     if (InputManager::isActionPressed("editor_backward"))
-        translation.z -= m_cameraSpeed;
+        translation += forwardVec;
     if (InputManager::isActionPressed("editor_right"))
-        translation.x -= m_cameraSpeed;
+        translation -= leftVec;
     if (InputManager::isActionPressed("editor_left"))
-        translation.x += m_cameraSpeed;
+        translation += leftVec;
 
-    m_editorCamera->translate(translation);
+    m_editorCamera->translate(translation * m_cameraSpeed);
 }
 }

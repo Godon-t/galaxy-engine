@@ -125,12 +125,57 @@ vec3 Transform::getLocalRotation() const
     return degrees(eulerAngles(m_rotationQuat));
 }
 
+quat Transform::getLocalRotationQuat() const
+{
+    return m_rotationQuat;
+}
+
 void Transform::rotate(vec3 rotations)
 {
     vec3 rad       = radians(rotations);
     quat dq        = quat(rad);
     m_rotationQuat = normalize(dq * m_rotationQuat);
     dirty          = true;
+}
+
+void Transform::rotate(float angle, vec3 axis)
+{
+    quat rot       = angleAxis(angle, axis);
+    m_rotationQuat = rot * m_rotationQuat;
+    dirty          = true;
+}
+
+void Transform::globalRotateX(float angle)
+{
+    rotate(angle, vec3(1, 0, 0));
+}
+
+void Transform::globalRotateY(float angle)
+{
+    rotate(angle, vec3(0, 1, 0));
+}
+
+void Transform::globalRotateZ(float angle)
+{
+    rotate(angle, vec3(0, 0, 1));
+}
+
+void Transform::localRotateX(float angle)
+{
+    vec3 axis = m_rotationQuat * vec3(1, 0, 0);
+    rotate(angle, axis);
+}
+
+void Transform::localRotateY(float angle)
+{
+    vec3 axis = m_rotationQuat * vec3(0, 1, 0);
+    rotate(angle, axis);
+}
+
+void Transform::localRotateZ(float angle)
+{
+    vec3 axis = m_rotationQuat * vec3(0, 0, 1);
+    rotate(angle, axis);
 }
 
 // void Transform::scale(vec3 s)

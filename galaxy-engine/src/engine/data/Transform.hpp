@@ -38,10 +38,21 @@ public:
     void setLocalRotation(const vec3& rotationAngles);
     void setLocalRotation(const quat& q);
     vec3 getLocalRotation() const;
+    quat getLocalRotationQuat() const;
 
     // vec3 applyRotation(vec3 vector);
 
     void rotate(vec3 r);
+    void rotate(float angle, vec3 axis);
+
+    void globalRotateX(float angle);
+    void globalRotateY(float angle);
+    void globalRotateZ(float angle);
+
+    void localRotateX(float angle);
+    void localRotateY(float angle);
+    void localRotateZ(float angle);
+
     void translate(vec3 t);
     // void scale(vec3 s);
 

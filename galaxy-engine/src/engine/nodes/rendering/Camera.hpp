@@ -24,5 +24,7 @@ public:
     void setCurrent(bool state);
 
     inline virtual void draw() override { Node3D::draw(); }
+
+    vec3 getForward() const;
 };
 }

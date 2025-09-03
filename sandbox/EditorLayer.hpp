@@ -41,7 +41,8 @@ private:
     std::shared_ptr<Camera> m_editorCamera;
     std::shared_ptr<Node> m_rootSceneNode;
 
-    float m_cameraSpeed = 0.15f;
+    float m_cameraSpeed   = 0.15f;
+    bool m_rightClickDown = false;
 
     void updateCamera();
     void displayMenuBar(bool validScene);

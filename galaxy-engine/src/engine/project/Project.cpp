@@ -9,28 +9,47 @@
 #include <yaml-cpp/yaml.h>
 
 namespace Galaxy {
+constexpr ProjectPathTypes ProjectPathTypesArray[] = {
+    ProjectPathTypes::SCENE,
+    ProjectPathTypes::RESOURCE
+};
+inline const char* toString(ProjectPathTypes type)
+{
+    switch (type) {
+    case ProjectPathTypes::SCENE:
+        return "Scenes";
+    case ProjectPathTypes::RESOURCE:
+        return "Resources";
+    default:
+        return "";
+    }
+}
+
 Project& Project::getInstance()
 {
     static Project instance;
     return instance;
 }
 
-uuid Project::_registerNewPath(const std::string& path)
+uuid Project::_registerNewPath(ProjectPathTypes type, const std::string& path)
 {
     uuid pathId;
-    m_paths[pathId] = path;
+    m_paths[type][pathId]     = path;
+    m_reversePathSearch[path] = pathId;
     return pathId;
 }
 
-std::string Project::_getPath(const uuid& id)
+std::string Project::_getPath(ProjectPathTypes type, const uuid& id)
 {
-    return m_paths[id];
+    return m_paths[type][id];
 }
 
-bool Project::_updatePath(const uuid& id, const std::string& newPath)
+bool Project::_updatePath(ProjectPathTypes type, const uuid& id, const std::string& newPath)
 {
-    if (m_paths.find(id) != m_paths.end()) {
-        m_paths[id] = newPath;
+    if (m_paths[type].find(id) != m_paths[type].end()) {
+        m_reversePathSearch.erase(m_paths[type][id]);
+        m_paths[type][id]            = newPath;
+        m_reversePathSearch[newPath] = id;
         return true;
     }
 
@@ -57,11 +76,17 @@ bool Project::_load(const std::string& path)
         return false;
 
     m_name = data["Name"].as<std::string>();
-    for (auto scene : data["Scenes"]) {
-        uuid sceneId(scene["Id"].as<uint64_t>());
-        std::string scenePath = scene["Path"].as<std::string>();
 
-        m_paths[sceneId] = scenePath;
+    for (auto& type : ProjectPathTypesArray) {
+        std::string typeStr = toString(type);
+
+        for (auto pathData : data[typeStr.c_str()]) {
+            uuid pathId(pathData["Id"].as<uint64_t>());
+            std::string pathStr = pathData["Path"].as<std::string>();
+
+            m_paths[type][pathId]        = pathStr;
+            m_reversePathSearch[pathStr] = pathId;
+        }
     }
 
     return true;
@@ -84,14 +109,15 @@ Scene& Project::_createScene(std::string path)
     std::string fullPath = getSceneFullPath(path);
 
     std::string scenePath = path;
-    uuid sceneId          = _registerNewPath(path);
+    uuid sceneId          = _registerNewPath(ProjectPathTypes::SCENE, path);
 
     m_scenes[sceneId] = Scene();
     m_scenes[sceneId].setUuid(sceneId);
     // TODO: offer a node selection for the first node
     m_scenes[sceneId].setNodePtr(std::make_shared<Node>());
 
-    m_paths[sceneId] = scenePath;
+    m_paths[ProjectPathTypes::SCENE][sceneId] = scenePath;
+    m_reversePathSearch[scenePath]            = sceneId;
 
     serializer.serialize(m_scenes[sceneId], fullPath.c_str());
     return m_scenes[sceneId];
@@ -100,7 +126,12 @@ Scene& Project::_createScene(std::string path)
 void Project::_saveScene(uuid id)
 {
     SceneSerializer serializer;
-    serializer.serialize(m_scenes[id], getSceneFullPath(m_paths[id]).c_str());
+    serializer.serialize(m_scenes[id], getSceneFullPath(m_paths[ProjectPathTypes::SCENE][id]).c_str());
+}
+
+std::unordered_map<uuid, std::string>& Project::_getPaths(ProjectPathTypes type)
+{
+    return m_paths[type];
 }
 
 bool Project::_save()
@@ -109,14 +140,18 @@ bool Project::_save()
     yaml << YAML::BeginMap;
     yaml << YAML::Key << "Name" << YAML::Value << "UI";
 
-    yaml << YAML::Key << "Scenes" << YAML::Value << YAML::BeginSeq;
-    for (auto& value : m_paths) {
-        yaml << YAML::BeginMap;
-        yaml << YAML::Key << "Id" << YAML::Value << value.first;
-        yaml << YAML::Key << "Path" << YAML::Value << value.second;
-        yaml << YAML::EndMap;
+    for (const auto& [type, assoc] : m_paths) {
+        std::string typeStr = toString(type);
+
+        yaml << YAML::Key << typeStr << YAML::Value << YAML::BeginSeq;
+        for (auto& value : m_paths[type]) {
+            yaml << YAML::BeginMap;
+            yaml << YAML::Key << "Id" << YAML::Value << value.first;
+            yaml << YAML::Key << "Path" << YAML::Value << value.second;
+            yaml << YAML::EndMap;
+        }
+        yaml << YAML::EndSeq;
     }
-    yaml << YAML::EndSeq;
     yaml << YAML::EndMap;
 
     for (auto& scene : m_scenes) {
@@ -134,5 +169,10 @@ void Project::create(const std::string& path)
 {
     getInstance().m_projectPath = path;
     save();
+}
+bool Project::isSceneValid(uuid id)
+{
+    auto& paths = getInstance().m_paths[ProjectPathTypes::SCENE];
+    return paths.find(id) != paths.end();
 }
 } // namespace Galaxy

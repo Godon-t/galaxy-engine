@@ -1,5 +1,7 @@
 #pragma once
 
+#include "engine/project/UUID.hpp"
+
 #include <atomic>
 
 namespace Galaxy {
@@ -30,7 +32,8 @@ public:
         }
     }
 
-    ResourceState getState() { return m_state; }
+    inline ResourceState getState() { return m_state; }
+    inline uuid getResourceID() { return m_resourceID; }
 
 private:
     void notifyLoaded()
@@ -42,6 +45,7 @@ private:
 
     std::atomic<ResourceState> m_state { ResourceState::EMPTY };
     std::vector<std::function<void()>> m_loadedCallbacks;
+    uuid m_resourceID;
 
     friend class ResourceManager;
 };

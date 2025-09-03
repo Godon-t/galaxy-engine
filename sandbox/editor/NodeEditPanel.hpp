@@ -30,6 +30,10 @@ public:
     void visit(MultiMeshInstance& node)
     {
         visit(static_cast<Node3D&>(node));
+
+        if (ImGui::Button("Load test helmet")) {
+            node.loadMesh(std::string("FlightHelmet/FlightHelmet.gltf"));
+        }
     }
     void visit(Camera& node)
     {

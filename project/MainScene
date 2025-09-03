@@ -12,6 +12,8 @@ Root:
             Position: [0, 0, 0]
             Rotation: [0, -0, 0]
             Scale: [1, 1, 1]
+          MeshResourceID: 1104960638724291676
+          SurfaceIndex: 0
         - Type: MeshInstance
           Childs:
             []
@@ -19,6 +21,8 @@ Root:
             Position: [0, 0, 0]
             Rotation: [0, -0, 0]
             Scale: [1, 1, 1]
+          MeshResourceID: 1104960638724291676
+          SurfaceIndex: 1
         - Type: MeshInstance
           Childs:
             []
@@ -26,6 +30,8 @@ Root:
             Position: [0, 0, 0]
             Rotation: [0, -0, 0]
             Scale: [1, 1, 1]
+          MeshResourceID: 1104960638724291676
+          SurfaceIndex: 2
         - Type: MeshInstance
           Childs:
             []
@@ -33,6 +39,8 @@ Root:
             Position: [0, 0, 0]
             Rotation: [0, -0, 0]
             Scale: [1, 1, 1]
+          MeshResourceID: 1104960638724291676
+          SurfaceIndex: 3
         - Type: MeshInstance
           Childs:
             []
@@ -40,6 +48,8 @@ Root:
             Position: [0, 0, 0]
             Rotation: [0, -0, 0]
             Scale: [1, 1, 1]
+          MeshResourceID: 1104960638724291676
+          SurfaceIndex: 4
         - Type: MeshInstance
           Childs:
             []
@@ -47,49 +57,9 @@ Root:
             Position: [0, 0, 0]
             Rotation: [0, -0, 0]
             Scale: [1, 1, 1]
-        - Type: MeshInstance
-          Childs:
-            []
-          Transform:
-            Position: [0, 0, 0]
-            Rotation: [0, -0, 0]
-            Scale: [1, 1, 1]
-        - Type: MeshInstance
-          Childs:
-            []
-          Transform:
-            Position: [0, 0, 0]
-            Rotation: [0, -0, 0]
-            Scale: [1, 1, 1]
-        - Type: MeshInstance
-          Childs:
-            []
-          Transform:
-            Position: [0, 0, 0]
-            Rotation: [0, -0, 0]
-            Scale: [1, 1, 1]
-        - Type: MeshInstance
-          Childs:
-            []
-          Transform:
-            Position: [0, 0, 0]
-            Rotation: [0, -0, 0]
-            Scale: [1, 1, 1]
-        - Type: MeshInstance
-          Childs:
-            []
-          Transform:
-            Position: [0, 0, 0]
-            Rotation: [0, -0, 0]
-            Scale: [1, 1, 1]
-        - Type: MeshInstance
-          Childs:
-            []
-          Transform:
-            Position: [0, 0, 0]
-            Rotation: [0, -0, 0]
-            Scale: [1, 1, 1]
+          MeshResourceID: 1104960638724291676
+          SurfaceIndex: 5
       Transform:
-        Position: [0, -0.600000024, 1]
+        Position: [0, -0.699999988, 2]
         Rotation: [0, -0, 0]
         Scale: [1, 1, 1]

@@ -4,21 +4,16 @@
 
 #include "engine/nodes/Node3D.hpp"
 
+#include "engine/project/UUID.hpp"
+
 namespace Galaxy {
 class MeshInstance : public Node3D {
-private:
-    renderID m_renderId;
-    bool m_renderIDInitialized = false;
-
-protected:
-    virtual void enteringRoot() override {};
-    virtual void enteredRoot() override;
-
 public:
     void generateTriangle();
 
     MeshInstance(std::string name = "MeshInstance")
         : Node3D(name)
+        , m_meshSurfaceIdx(-1)
     {
     }
     ~MeshInstance() override;
@@ -28,5 +23,19 @@ public:
 
     void accept(Galaxy::NodeVisitor& visitor) override;
     void loadMesh(std::string path, int surfaceIdx);
+
+    inline int getSurfaceIdx() const { return m_meshSurfaceIdx; }
+    inline uuid getMeshResourceID() const { return m_meshResourceID; }
+
+protected:
+    virtual void enteringRoot() override {};
+    virtual void enteredRoot() override;
+
+private:
+    renderID m_renderId;
+    bool m_renderIDInitialized = false;
+
+    uuid m_meshResourceID;
+    int m_meshSurfaceIdx;
 };
 }

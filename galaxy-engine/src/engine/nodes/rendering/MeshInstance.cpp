@@ -64,5 +64,8 @@ void MeshInstance::loadMesh(std::string path, int surfaceIdx)
     auto res              = ResourceManager::getInstance().load<Mesh>(path);
     m_renderId            = Renderer::getInstance().instanciateMesh(res, surfaceIdx);
     m_renderIDInitialized = true;
+
+    m_meshResourceID = res.getResource().getResourceID();
+    m_meshSurfaceIdx = surfaceIdx;
 }
 } // namespace Galaxy

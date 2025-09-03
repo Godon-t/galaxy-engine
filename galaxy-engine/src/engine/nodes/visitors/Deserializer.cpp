@@ -10,6 +10,7 @@
 #include "engine/nodes/rendering/Camera.hpp"
 #include "engine/nodes/rendering/MeshInstance.hpp"
 #include "engine/nodes/rendering/MultiMeshInstance.hpp"
+#include "engine/project/Project.hpp"
 #include "engine/types/Math.hpp"
 
 using namespace math;
@@ -113,6 +114,17 @@ void SceneDeSerializer::visit(Camera& node)
 void SceneDeSerializer::visit(MeshInstance& node)
 {
     visit(static_cast<Node3D&>(node));
+
+    if (m_currentYAMLNode["MeshResourceID"] && m_currentYAMLNode["SurfaceIndex"]) {
+        uuid pathId(m_currentYAMLNode["MeshResourceID"].as<uint64_t>());
+        std::string meshPath = Project::getPath(ProjectPathTypes::RESOURCE, pathId);
+        int surfaceIdx       = m_currentYAMLNode["SurfaceIndex"].as<int>();
+
+        if (surfaceIdx == -1)
+            return;
+
+        node.loadMesh(meshPath, surfaceIdx);
+    }
 }
 void SceneDeSerializer::visit(MultiMeshInstance& node)
 {

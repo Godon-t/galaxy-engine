@@ -8,8 +8,6 @@
 namespace Galaxy {
 void MultiMeshInstance::enteredRoot()
 {
-    std::string helmetPath = Project::getProjectRootPath() + std::string("FlightHelmet/FlightHelmet.gltf");
-    loadMesh(helmetPath);
 }
 
 MultiMeshInstance::~MultiMeshInstance()
@@ -31,7 +29,7 @@ void MultiMeshInstance::loadMesh(std::string path)
     auto meshRes = ResourceManager::getInstance().load<Mesh>(path);
 
     meshRes.getResource().onLoaded([this, path] {
-        // clearChilds();
+        clearChilds();
 
         auto meshRes = ResourceManager::getInstance().load<Mesh>(path);
         int subCount = meshRes.getResource().getSubMeshesCount();

@@ -94,7 +94,7 @@ void EditorLayer::displayMenuBar(bool validScene)
             newScene = true;
         if (ImGui::BeginMenu("Load")) {
             int i = 0;
-            for (auto& scene : Project::getPaths()) {
+            for (auto& scene : Project::getPaths(ProjectPathTypes::SCENE)) {
                 if (ImGui::MenuItem(std::string(scene.second + "##" + std::to_string(i++)).c_str())) {
                     m_selectedScene   = &Project::loadScene(scene.first);
                     m_selectedSceneId = m_selectedScene->getUuid();

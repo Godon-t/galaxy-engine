@@ -4,6 +4,7 @@
 #include "ResourceMaker.hpp"
 #include "Texture.hpp"
 #include "engine/core/ThreadPool.hpp"
+#include "engine/project/Project.hpp"
 
 #include <queue>
 
@@ -35,10 +36,16 @@ public:
 
         std::shared_ptr<ResourceBase> resource = makerIt->second->createResourcePtr();
         resource->m_state                      = ResourceState::LOADING;
-        cache[path]                            = resource;
+        if (Project::doesPathExist(path)) {
+            resource->m_resourceID = Project::getPathId(path);
+        } else {
+            resource->m_resourceID = Project::registerNewPath(ProjectPathTypes::RESOURCE, path);
+        }
+        cache[path] = resource;
 
         m_threadPool.enqueue([resource, maker = makerIt->second.get(), path, this] {
-            if (maker->loadResource(resource, path)) {
+            std::string absPath = Project::getProjectRootPath() + path;
+            if (maker->loadResource(resource, absPath)) {
                 std::unique_lock<std::mutex> lock(m_pendingLoadMutex);
                 m_loadedResources.push(resource);
             } else {

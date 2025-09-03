@@ -1,4 +1,7 @@
 Name: UI
+Resources:
+  - Id: 1104960638724291676
+    Path: FlightHelmet/FlightHelmet.gltf
 Scenes:
   - Id: 7857652255564026288
     Path: MainScene

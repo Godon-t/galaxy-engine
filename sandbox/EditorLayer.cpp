@@ -253,20 +253,19 @@ void EditorLayer::updateCamera()
     vec3 translation(0);
     vec3 forwardVec = m_editorCamera->getForward();
     vec3 leftVec    = cross(forwardVec, vec3(0, 1, 0));
+    forwardVec *= m_cameraSpeed;
+    leftVec *= m_cameraSpeed;
     if (InputManager::isActionPressed("editor_forward"))
-        translation -= forwardVec;
+        m_editorCamera->translate(-forwardVec);
     if (InputManager::isActionPressed("editor_backward"))
-        translation += forwardVec;
+        m_editorCamera->translate(forwardVec);
     if (InputManager::isActionPressed("editor_right"))
-        translation -= leftVec;
+        m_editorCamera->translate(-leftVec);
     if (InputManager::isActionPressed("editor_left"))
-        translation += leftVec;
-    if (InputManager::isActionPressed("editor_up")) {
-        translation += vec3(0, 1, 0);
-    }
+        m_editorCamera->translate(leftVec);
+    if (InputManager::isActionPressed("editor_up"))
+        m_editorCamera->translate(vec3(0, 1, 0));
     if (InputManager::isActionPressed("editor_down"))
-        translation -= vec3(0, 1, 0);
-
-    m_editorCamera->translate(translation * m_cameraSpeed);
+        m_editorCamera->translate(vec3(0, -1, 0));
 }
 }

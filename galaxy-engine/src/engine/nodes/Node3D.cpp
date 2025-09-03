@@ -12,7 +12,7 @@ void Node3D::updateTransformAndChilds(const mat4& matrix)
     }
 
     for (auto&& child : m_children) {
-        child->updateTransformAndChilds(mat);
+        child->updateTransformAndChilds(m_transform.getGlobalModelMatrix());
     }
 }
 

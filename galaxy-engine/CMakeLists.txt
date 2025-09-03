@@ -78,6 +78,7 @@ add_library(galaxy-engine
 	src/engine/nodes/visitors/Serializer.cpp
 	src/engine/nodes/visitors/Deserializer.cpp
 	src/engine/nodes/rendering/MeshInstance.cpp
+	src/engine/nodes/rendering/MultiMeshInstance.cpp
 	src/engine/nodes/rendering/Camera.cpp
 
 	src/engine/sections/rendering/OpenglHelper.cpp

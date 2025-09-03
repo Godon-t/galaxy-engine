@@ -27,6 +27,10 @@ public:
     {
         visit(static_cast<Node3D&>(node));
     }
+    void visit(MultiMeshInstance& node)
+    {
+        visit(static_cast<Node3D&>(node));
+    }
     void visit(Camera& node)
     {
         visit(static_cast<Node3D&>(node));

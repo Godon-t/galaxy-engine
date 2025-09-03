@@ -12,6 +12,7 @@
 #include "engine/nodes/NodeHelper.hpp"
 #include "engine/nodes/rendering/Camera.hpp"
 #include "engine/nodes/rendering/MeshInstance.hpp"
+#include "engine/nodes/rendering/MultiMeshInstance.hpp"
 #include "engine/nodes/visitors/NodeVisitor.hpp"
 
 #include "engine/project/Project.hpp"

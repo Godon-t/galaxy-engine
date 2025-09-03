@@ -58,7 +58,7 @@ public:
         return m_children.empty();
     }
 
-    void destroy();
+    void destroy(bool destroyByParent = false);
 
     void enterRoot();
 

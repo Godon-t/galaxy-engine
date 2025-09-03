@@ -6,6 +6,7 @@
 #include "engine/nodes/Node3D.hpp"
 #include "engine/nodes/rendering/Camera.hpp"
 #include "engine/nodes/rendering/MeshInstance.hpp"
+#include "engine/nodes/rendering/MultiMeshInstance.hpp"
 #include "engine/types/Math.hpp"
 
 #include <fstream>
@@ -79,6 +80,10 @@ void SceneSerializer::visit(Camera& node)
 }
 
 void SceneSerializer::visit(MeshInstance& node)
+{
+    visit(static_cast<Node3D&>(node));
+}
+void SceneSerializer::visit(MultiMeshInstance& node)
 {
     visit(static_cast<Node3D&>(node));
 }

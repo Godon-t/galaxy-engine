@@ -58,13 +58,19 @@ renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<sho
     return meshID;
 }
 
-renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh)
+renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 {
-    size_t handleID = reinterpret_cast<size_t>(&mesh.getResource());
-    auto it         = m_resourceTable.find(handleID);
-    if (it != m_resourceTable.end()) {
-        m_visuInstances[it->second].second++;
-        return it->second;
+    size_t handleID    = reinterpret_cast<size_t>(&mesh.getResource());
+    auto it            = m_resourceTable.find(handleID);
+    bool resourceExist = it != m_resourceTable.end();
+    if (resourceExist) {
+        auto& activesSubMeshes = it->second.activesSubMeshes;
+        auto subMeshIt         = activesSubMeshes.find(surfaceIdx);
+        if (subMeshIt != activesSubMeshes.end()) {
+            renderID subMeshID = activesSubMeshes[surfaceIdx];
+            m_visuInstances[subMeshID].second++;
+            return subMeshID;
+        }
     }
 
     if (m_freeIds.size() == 0) {
@@ -72,28 +78,34 @@ renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh)
         return -1;
     }
 
-    renderID meshID = m_freeIds.top();
-    size_t listIdx  = instanceCount;
+    renderID visualID = m_freeIds.top();
+    size_t listIdx    = instanceCount;
 
-    m_visuInstances[listIdx]       = std::make_pair(VisualInstance(), 1);
-    m_visuIdxToInstanceId[listIdx] = meshID;
-    m_instanceIdToVisuIdx[meshID]  = listIdx;
+    m_visuInstances[listIdx]        = std::make_pair(VisualInstance(), 1);
+    m_visuIdxToInstanceId[listIdx]  = visualID;
+    m_instanceIdToVisuIdx[visualID] = listIdx;
 
     m_freeIds.pop();
     instanceCount++;
 
-    m_resourceTable[handleID] = meshID;
-    m_idToResource[meshID]    = mesh;
+    if (!resourceExist) {
+        MeshHandle meshHandle;
+        meshHandle.mesh           = mesh;
+        m_resourceTable[handleID] = meshHandle;
+    }
+    m_idToResource[visualID] = handleID;
 
-    mesh.getResource().onLoaded([this, listIdx, meshID] {
-        const auto& meshRes = m_idToResource[meshID].getResource();
+    m_resourceTable[handleID].activesSubMeshes[surfaceIdx] = visualID;
+
+    mesh.getResource().onLoaded([this, listIdx, visualID, surfaceIdx] {
+        const auto& meshRes = m_resourceTable[m_idToResource[visualID]].mesh.getResource();
         auto& meshInstance  = m_visuInstances[listIdx].first;
         meshInstance.init(
-            meshRes.getVertices(),
-            meshRes.getIndices());
+            meshRes.getVertices(surfaceIdx),
+            meshRes.getIndices(surfaceIdx));
     });
 
-    return meshID;
+    return visualID;
 }
 
 void Backend::clearMesh(renderID meshID)
@@ -116,8 +128,26 @@ void Backend::clearMesh(renderID meshID)
 
     m_freeIds.emplace(meshID);
 
-    m_resourceTable.erase(reinterpret_cast<size_t>(&m_idToResource[meshID].getResource()));
-    m_idToResource.erase(meshID);
+    auto& subMeshes = m_resourceTable[m_idToResource[meshID]].activesSubMeshes;
+    if (subMeshes.size() <= 1) {
+        // The resource is no longer used
+        m_resourceTable.erase(m_idToResource[meshID]);
+        m_idToResource.erase(meshID);
+    } else {
+        // We just clear one surface instance
+        int surfaceToErase = -1;
+        for (auto subMesh : subMeshes) {
+            if (subMesh.second == meshID) {
+                surfaceToErase = subMesh.first;
+            }
+        }
+        if (surfaceToErase == -1) {
+            GLX_CORE_ERROR("Could not clear subMesh visual instance: Mesh surface not found");
+        } else {
+
+            subMeshes.erase(surfaceToErase);
+        }
+    }
 }
 
 void Backend::processCommands(std::vector<RenderCommand>& commands)

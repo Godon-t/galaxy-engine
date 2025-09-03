@@ -5,7 +5,6 @@
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
-#include <assimp/scene.h>
 
 #include <filesystem>
 
@@ -44,16 +43,27 @@ bool Mesh::readGltf(const std::string& filePath)
         return false;
     }
 
+    m_subMeshes.resize(scene->mNumMeshes);
+    for (int i = 0; i < scene->mNumMeshes; i++) {
+        extractSubMesh(scene, i);
+    }
+
+    return true;
+}
+
+void Mesh::extractSubMesh(const aiScene* scene, int surface)
+{
     std::vector<math::vec3> indexed_vertices;
     std::vector<math::vec2> tex_coords;
 
-    aiMesh* mesh = scene->mMeshes[meshIdx];
+    aiMesh* mesh            = scene->mMeshes[surface];
+    SubMesh& currentSubMesh = m_subMeshes[surface];
 
     // Add indices
     for (unsigned int faceIdx = 0; faceIdx < mesh->mNumFaces; ++faceIdx) {
         aiFace& face = mesh->mFaces[faceIdx];
         for (unsigned int k = 0; k < face.mNumIndices; ++k) {
-            m_indices.push_back(face.mIndices[k]);
+            currentSubMesh.m_indices.push_back(face.mIndices[k]);
         }
     }
 
@@ -71,16 +81,15 @@ bool Mesh::readGltf(const std::string& filePath)
         }
     }
 
-    m_vertices.resize(indexed_vertices.size());
+    currentSubMesh.m_vertices.resize(indexed_vertices.size());
 
     for (int i = 0; i < indexed_vertices.size(); ++i) {
         Vertex v;
         v.position = indexed_vertices[i];
         v.texCoord = tex_coords[i];
 
-        m_vertices[i] = v;
+        currentSubMesh.m_vertices[i] = v;
     }
-    return true;
 }
 
 } // namespace Galaxy

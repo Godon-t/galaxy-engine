@@ -9,6 +9,7 @@
 #include "engine/nodes/NodeHelper.hpp"
 #include "engine/nodes/rendering/Camera.hpp"
 #include "engine/nodes/rendering/MeshInstance.hpp"
+#include "engine/nodes/rendering/MultiMeshInstance.hpp"
 #include "engine/types/Math.hpp"
 
 using namespace math;
@@ -110,6 +111,10 @@ void SceneDeSerializer::visit(Camera& node)
     visit(static_cast<Node3D&>(node));
 }
 void SceneDeSerializer::visit(MeshInstance& node)
+{
+    visit(static_cast<Node3D&>(node));
+}
+void SceneDeSerializer::visit(MultiMeshInstance& node)
 {
     visit(static_cast<Node3D&>(node));
 }

@@ -18,5 +18,6 @@ public:
     void visit(Node3D& node) override;
     void visit(Camera& node) override;
     void visit(MeshInstance& node) override;
+    void visit(MultiMeshInstance& node) override;
 };
 }

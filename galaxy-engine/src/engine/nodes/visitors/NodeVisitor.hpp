@@ -5,6 +5,7 @@ class Node;
 class Node3D;
 class Camera;
 class MeshInstance;
+class MultiMeshInstance;
 
 class NodeVisitor {
 public:
@@ -12,5 +13,6 @@ public:
     virtual void visit(Node3D& node) {};
     virtual void visit(Camera& node) {};
     virtual void visit(MeshInstance& node) {};
+    virtual void visit(MultiMeshInstance& node) {};
 };
 }

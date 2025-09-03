@@ -45,6 +45,10 @@ public:
     {
         visit(static_cast<Node3D&>(node));
     }
+    void visit(MultiMeshInstance& node) override
+    {
+        visit(static_cast<Node3D&>(node));
+    }
 
 private:
     AddNodeMenu m_addNodeMenu;

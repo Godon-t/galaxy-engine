@@ -54,9 +54,9 @@ public:
     {
         std::unique_lock<std::mutex> lock(m_pendingLoadMutex);
         while (!m_loadedResources.empty()) {
-            auto& resource = m_loadedResources.front();
-            resource->notifyLoaded();
+            auto& resource    = m_loadedResources.front();
             resource->m_state = ResourceState::LOADED;
+            resource->notifyLoaded();
             m_loadedResources.pop();
         }
     }

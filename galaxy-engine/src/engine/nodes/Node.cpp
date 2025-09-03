@@ -30,9 +30,9 @@ void Node::addChild(std::shared_ptr<Node> child)
 void Node::removeChild(Node* component)
 {
     for (auto it = m_children.begin(); it != m_children.end(); ++it) {
-        if (it->get() == component) { // Vérifie si l'enfant correspond
-            it->get()->setParent(nullptr); // Déconnecte le parent
-            m_children.erase(it); // Enlève l'enfant du vecteur
+        if (it->get() == component) {
+            it->get()->setParent(nullptr);
+            m_children.erase(it);
             break;
         }
     }
@@ -40,9 +40,10 @@ void Node::removeChild(Node* component)
 
 void Node::clearChilds()
 {
-    for (auto& child : m_children) {
+    for (auto child : m_children) {
         child->destroy();
     }
+    m_children.clear();
 }
 
 bool Node::nodeExists(size_t id)
@@ -67,14 +68,14 @@ size_t Node::getChildCount() const
     return m_children.size();
 }
 
-void Node::destroy()
+void Node::destroy(bool destroyByParent)
 {
-    m_children.clear();
+    clearChilds();
 
-    if (m_parent != nullptr) {
+    if (!destroyByParent && m_parent != nullptr) {
         m_parent->removeChild(this);
-        m_parent = nullptr;
     }
+    m_parent = nullptr;
 }
 
 void Node::enterRoot()

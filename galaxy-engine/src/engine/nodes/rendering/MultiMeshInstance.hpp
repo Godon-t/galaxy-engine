@@ -1,32 +1,24 @@
 #pragma once
 
-#include "engine/types/Render.hpp"
-
 #include "engine/nodes/Node3D.hpp"
 
 namespace Galaxy {
-class MeshInstance : public Node3D {
-private:
-    renderID m_renderId;
-    bool m_renderIDInitialized = false;
-
+class MultiMeshInstance : public Node3D {
 protected:
     virtual void enteringRoot() override {};
     virtual void enteredRoot() override;
 
 public:
-    void generateTriangle();
-
-    MeshInstance(std::string name = "MeshInstance")
+    MultiMeshInstance(std::string name = "MultiMeshInstance")
         : Node3D(name)
     {
     }
-    ~MeshInstance() override;
+    ~MultiMeshInstance() override;
 
     void process(double delta) override;
     virtual void draw() override;
 
     void accept(Galaxy::NodeVisitor& visitor) override;
-    void loadMesh(std::string path, int surfaceIdx);
+    void loadMesh(std::string path);
 };
 }

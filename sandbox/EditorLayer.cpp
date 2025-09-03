@@ -152,7 +152,7 @@ void EditorLayer::displayViewport(bool validScene)
         }
         ImGui::PopStyleVar();
         auto textureID = m_viewportFrame->getColorTextureID();
-        ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 0, 0 }, ImVec2 { 1, 1 });
+        ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 1, 1 }, ImVec2 { 0, 0 });
     } else {
         ImGui::PopStyleVar();
     }
@@ -241,9 +241,9 @@ void EditorLayer::updateCamera()
     if (InputManager::isActionPressed("editor_backward"))
         translation.z -= speed;
     if (InputManager::isActionPressed("editor_right"))
-        translation.x += speed;
-    if (InputManager::isActionPressed("editor_left"))
         translation.x -= speed;
+    if (InputManager::isActionPressed("editor_left"))
+        translation.x += speed;
 
     m_editorCamera->translate(translation);
 }

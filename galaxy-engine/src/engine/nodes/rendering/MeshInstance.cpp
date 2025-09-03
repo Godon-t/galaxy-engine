@@ -33,14 +33,13 @@ void MeshInstance::generateTriangle()
 
 MeshInstance::~MeshInstance()
 {
-    Renderer::getInstance().clearMesh(m_renderId);
+    if (m_renderIDInitialized) {
+        Renderer::getInstance().clearMesh(m_renderId);
+    }
 }
 
 void MeshInstance::enteredRoot()
 {
-    auto meshRes = ResourceManager::getInstance().load<Mesh>(Project::getProjectRootPath() + std::string("Cube.gltf"));
-    m_renderId   = Renderer::getInstance().instanciateMesh(meshRes);
-    // generateTriangle();
 }
 
 void MeshInstance::process(double delta)
@@ -50,11 +49,20 @@ void MeshInstance::process(double delta)
 void MeshInstance::draw()
 {
     Node3D::draw();
-    Renderer::getInstance().submit(m_renderId, *getTransform());
+    if (m_renderIDInitialized) {
+        Renderer::getInstance().submit(m_renderId, *getTransform());
+    }
 }
 
 void MeshInstance::accept(Galaxy::NodeVisitor& visitor)
 {
     visitor.visit(*this);
+}
+
+void MeshInstance::loadMesh(std::string path, int surfaceIdx)
+{
+    auto res              = ResourceManager::getInstance().load<Mesh>(path);
+    m_renderId            = Renderer::getInstance().instanciateMesh(res, surfaceIdx);
+    m_renderIDInitialized = true;
 }
 } // namespace Galaxy

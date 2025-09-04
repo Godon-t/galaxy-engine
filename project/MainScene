@@ -61,5 +61,5 @@ Root:
           SurfaceIndex: 5
       Transform:
         Position: [0, -0.699999988, 2]
-        Rotation: [0, -0, 0]
+        Rotation: [180, -5.00895658e-06, 180]
         Scale: [1, 1, 1]

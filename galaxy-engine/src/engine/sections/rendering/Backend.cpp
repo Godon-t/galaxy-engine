@@ -7,13 +7,8 @@
 
 namespace Galaxy {
 Backend::Backend(size_t maxSize)
+    : m_visualInstances(maxSize)
 {
-    m_visuInstances.resize(maxSize);
-
-    for (size_t i = 0; i < maxSize; i++) {
-        m_freeIds.push(i);
-    }
-
     GLenum error = glGetError();
 
     checkOpenGLErrors("error before glewInit");
@@ -41,20 +36,12 @@ Backend::Backend(size_t maxSize)
 renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices)
 {
 
-    if (m_freeIds.size() == 0)
+    if (!m_visualInstances.canAddInstance())
         return -1;
 
-    VisualInstance meshInstance;
-    meshInstance.init(vertices, indices);
+    renderID meshID = m_visualInstances.createResourceInstance();
+    m_visualInstances.get(meshID)->init(vertices, indices);
 
-    renderID meshID                = m_freeIds.top();
-    size_t listIdx                 = instanceCount;
-    m_visuInstances[listIdx]       = std::make_pair(std::move(meshInstance), 1);
-    m_visuIdxToInstanceId[listIdx] = meshID;
-    m_instanceIdToVisuIdx[meshID]  = listIdx;
-
-    m_freeIds.pop();
-    instanceCount++;
     return meshID;
 }
 
@@ -68,25 +55,12 @@ renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
         auto subMeshIt         = activesSubMeshes.find(surfaceIdx);
         if (subMeshIt != activesSubMeshes.end()) {
             renderID subMeshID = activesSubMeshes[surfaceIdx];
-            m_visuInstances[subMeshID].second++;
+            m_visualInstances.increaseCount(subMeshID);
             return subMeshID;
         }
     }
 
-    if (m_freeIds.size() == 0) {
-        GLX_CORE_ERROR("No more free renderIDs");
-        return -1;
-    }
-
-    renderID visualID = m_freeIds.top();
-    size_t listIdx    = instanceCount;
-
-    m_visuInstances[listIdx]        = std::make_pair(VisualInstance(), 1);
-    m_visuIdxToInstanceId[listIdx]  = visualID;
-    m_instanceIdToVisuIdx[visualID] = listIdx;
-
-    m_freeIds.pop();
-    instanceCount++;
+    renderID visualID = m_visualInstances.createResourceInstance();
 
     if (!resourceExist) {
         MeshHandle meshHandle;
@@ -97,10 +71,9 @@ renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 
     m_resourceTable[handleID].activesSubMeshes[surfaceIdx] = visualID;
 
-    mesh.getResource().onLoaded([this, listIdx, visualID, surfaceIdx] {
+    mesh.getResource().onLoaded([this, visualID, surfaceIdx] {
         const auto& meshRes = m_resourceTable[m_idToResource[visualID]].mesh.getResource();
-        auto& meshInstance  = m_visuInstances[listIdx].first;
-        meshInstance.init(
+        m_visualInstances.get(visualID)->init(
             meshRes.getVertices(surfaceIdx),
             meshRes.getIndices(surfaceIdx));
     });
@@ -110,23 +83,8 @@ renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 
 void Backend::clearMesh(renderID meshID)
 {
-    m_visuInstances[meshID].second--;
-    if (m_visuInstances[meshID].second > 0)
+    if (!m_visualInstances.tryRemove(meshID))
         return;
-
-    instanceCount--;
-    if (instanceCount == 0)
-        return;
-
-    size_t idxToDelete = m_instanceIdToVisuIdx[meshID];
-
-    renderID movedMeshID               = m_visuIdxToInstanceId[instanceCount];
-    m_instanceIdToVisuIdx[movedMeshID] = idxToDelete;
-    m_visuIdxToInstanceId[idxToDelete] = movedMeshID;
-
-    m_visuInstances[idxToDelete] = std::move(m_visuInstances[instanceCount]);
-
-    m_freeIds.emplace(meshID);
 
     auto& subMeshes = m_resourceTable[m_idToResource[meshID]].activesSubMeshes;
     if (subMeshes.size() <= 1) {
@@ -176,7 +134,7 @@ void Backend::processCommand(RenderCommand& command)
     case RenderCommandType::draw: {
         auto& modelMatrix = command.draw.model;
         m_mainProgram.updateModelMatrix(modelMatrix);
-        m_visuInstances[m_instanceIdToVisuIdx[command.draw.instanceId]].first.draw();
+        m_visualInstances.get(command.draw.instanceId)->draw();
         break;
     }
     default:

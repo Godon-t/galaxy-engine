@@ -2,9 +2,10 @@
 #include "pch.hpp"
 
 #include "gl_headers.hpp"
-#include <common/shader.hpp>
 
 #include "OpenglHelper.hpp"
+
+#include "common/shader.hpp"
 
 using namespace math;
 namespace Galaxy {

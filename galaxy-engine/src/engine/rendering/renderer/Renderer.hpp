@@ -3,8 +3,8 @@
 #include "Backend.hpp"
 #include "Frontend.hpp"
 
-#include "engine/data/Transform.hpp"
-#include "engine/types/Render.hpp"
+#include "data/Transform.hpp"
+#include "types/Render.hpp"
 
 namespace Galaxy {
 class Renderer {

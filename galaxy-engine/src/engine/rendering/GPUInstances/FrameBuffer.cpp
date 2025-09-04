@@ -1,8 +1,8 @@
 #include "FrameBuffer.hpp"
 
 #include "Core.hpp"
-#include "OpenglHelper.hpp"
 #include "gl_headers.hpp"
+#include "rendering/OpenglHelper.hpp"
 
 namespace Galaxy {
 void bindColorAttachmentTexture(GLuint* id, int width, int height, GLenum internalFormat, GLenum format)

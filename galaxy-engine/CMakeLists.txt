@@ -81,16 +81,16 @@ add_library(galaxy-engine
 	src/engine/nodes/rendering/MultiMeshInstance.cpp
 	src/engine/nodes/rendering/Camera.cpp
 
-	src/engine/sections/rendering/OpenglHelper.cpp
-	src/engine/sections/rendering/Program.cpp
-	src/engine/sections/rendering/Renderer.cpp
-	src/engine/sections/rendering/Backend.cpp
-	src/engine/sections/rendering/Frontend.cpp
-	src/engine/sections/rendering/VisualInstance.cpp
-	src/engine/sections/rendering/CameraManager.cpp
-	src/engine/sections/rendering/FrameBuffer.cpp
+	src/engine/rendering/OpenglHelper.cpp
+	src/engine/rendering/Program.cpp
+	src/engine/rendering/renderer/Renderer.cpp
+	src/engine/rendering/renderer/Backend.cpp
+	src/engine/rendering/renderer/Frontend.cpp
+	src/engine/rendering/CameraManager.cpp
+	src/engine/rendering/GPUInstances/VisualInstance.cpp
+	src/engine/rendering/GPUInstances/FrameBuffer.cpp
 	
-	src/engine/resource/Texture.cpp
+	src/engine/resource/Image.cpp
 	src/engine/resource/Mesh.cpp
 
 	common/shader.cpp
@@ -103,8 +103,11 @@ target_compile_definitions(galaxy-engine PUBLIC
 target_compile_definitions(galaxy-engine PRIVATE GALAXY_ENGINE_BUILD)
 
 target_include_directories(galaxy-engine PUBLIC src)
+target_include_directories(galaxy-engine PUBLIC src/engine)
 target_include_directories(galaxy-engine PUBLIC src/engine/core)
+
 target_precompile_headers(galaxy-engine PUBLIC src/engine/core/pch.hpp)
+
 target_include_directories(galaxy-engine PUBLIC external/glm-0.9.7.1)
 target_include_directories(galaxy-engine PUBLIC external/stbi)
 

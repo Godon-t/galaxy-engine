@@ -1,7 +1,7 @@
 #include "CameraManager.hpp"
 
-#include "engine/types/Math.hpp"
 #include "pch.hpp"
+#include "types/Math.hpp"
 
 using namespace math;
 

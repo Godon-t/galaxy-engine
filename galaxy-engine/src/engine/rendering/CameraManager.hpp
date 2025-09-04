@@ -1,7 +1,7 @@
 #pragma once
 
-#include "engine/data/Transform.hpp"
-#include "engine/types/Render.hpp"
+#include "data/Transform.hpp"
+#include "types/Render.hpp"
 
 #include <list>
 

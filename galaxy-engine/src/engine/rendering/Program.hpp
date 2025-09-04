@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/types/Math.hpp"
+#include "types/Math.hpp"
 
 using namespace math;
 

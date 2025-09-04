@@ -2,8 +2,8 @@
 
 #include "pch.hpp"
 
-#include "CameraManager.hpp"
 #include "Core.hpp"
+#include "rendering/CameraManager.hpp"
 
 namespace Galaxy {
 Renderer::Renderer()

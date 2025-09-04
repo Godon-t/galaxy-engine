@@ -1,8 +1,8 @@
 #include "VisualInstance.hpp"
 #include "pch.hpp"
 
-#include "OpenglHelper.hpp"
 #include "gl_headers.hpp"
+#include "rendering/OpenglHelper.hpp"
 
 namespace Galaxy {
 VisualInstance::VisualInstance()

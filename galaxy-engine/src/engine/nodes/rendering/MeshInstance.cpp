@@ -2,10 +2,10 @@
 
 #include "MeshInstance.hpp"
 
-#include "engine/project/Project.hpp"
-#include "engine/resource/ResourceManager.hpp"
-#include "engine/sections/rendering/Renderer.hpp"
-#include "engine/sections/rendering/VisualInstance.hpp"
+#include "project/Project.hpp"
+#include "rendering/GPUInstances/VisualInstance.hpp"
+#include "rendering/renderer/Renderer.hpp"
+#include "resource/ResourceManager.hpp"
 
 namespace Galaxy {
 void MeshInstance::generateTriangle()

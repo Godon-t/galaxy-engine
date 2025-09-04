@@ -1,7 +1,7 @@
 #pragma once
 
-#include "engine/types/Math.hpp"
-#include "engine/types/Render.hpp"
+#include "types/Math.hpp"
+#include "types/Render.hpp"
 
 namespace Galaxy {
 enum RenderCommandType {

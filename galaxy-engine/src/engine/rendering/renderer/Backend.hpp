@@ -1,12 +1,13 @@
 #pragma once
 
-#include "Program.hpp"
 #include "RenderCommand.hpp"
-#include "VisualInstance.hpp"
-#include "engine/core/Log.hpp"
-#include "engine/resource/Mesh.hpp"
-#include "engine/resource/ResourceHandle.hpp"
-#include "engine/types/Render.hpp"
+#include "core/Log.hpp"
+#include "rendering/GPUInstances/Texture.hpp"
+#include "rendering/GPUInstances/VisualInstance.hpp"
+#include "rendering/Program.hpp"
+#include "resource/Mesh.hpp"
+#include "resource/ResourceHandle.hpp"
+#include "types/Render.hpp"
 
 namespace Galaxy {
 
@@ -112,5 +113,6 @@ private:
     Program m_mainProgram;
 
     RenderGpuResourceTable<VisualInstance> m_visualInstances;
+    // RenderGpuResourceTable<Texture> m_textureInstances;
 };
 } // namespace Galaxy

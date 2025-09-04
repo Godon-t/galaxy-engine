@@ -1,9 +1,9 @@
 #include "Backend.hpp"
 
 #include "Helper.hpp"
-#include "OpenglHelper.hpp"
-#include "engine/core/Log.hpp"
+#include "Log.hpp"
 #include "gl_headers.hpp"
+#include "rendering/OpenglHelper.hpp"
 
 namespace Galaxy {
 Backend::Backend(size_t maxSize)

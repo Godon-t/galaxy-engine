@@ -2,8 +2,8 @@
 
 #include "Camera.hpp"
 
-#include "engine/sections/rendering/CameraManager.hpp"
-#include "engine/sections/rendering/Renderer.hpp"
+#include "rendering/CameraManager.hpp"
+#include "rendering/renderer/Renderer.hpp"
 
 namespace Galaxy {
 Camera::Camera(std::string name)

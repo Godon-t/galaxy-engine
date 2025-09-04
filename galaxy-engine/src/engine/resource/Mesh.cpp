@@ -1,7 +1,7 @@
 #include "Mesh.hpp"
 
-#include "engine/core/Log.hpp"
-#include "engine/types/Math.hpp"
+#include "core/Log.hpp"
+#include "types/Math.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -27,6 +27,12 @@ bool Mesh::load(const std::string& file)
     }
 
     return true;
+}
+
+bool Mesh::load(const unsigned char* data, size_t size)
+{
+    GLX_CORE_ERROR("Load data directly not implemented in mesh!");
+    return false;
 }
 
 bool Mesh::readGltf(const std::string& filePath)

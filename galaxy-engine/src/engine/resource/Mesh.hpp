@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Resource.hpp"
-#include "engine/types/Render.hpp"
 #include "pch.hpp"
+#include "types/Render.hpp"
 
 #include <assimp/scene.h>
 
@@ -15,6 +15,7 @@ struct SubMesh {
 class Mesh : public ResourceBase {
 public:
     bool load(const std::string& file) override;
+    bool load(const unsigned char* data, size_t size) override;
 
     inline const std::vector<Vertex>& getVertices(int surface = 0) const { return m_subMeshes[surface].m_vertices; }
     inline const std::vector<unsigned short>& getIndices(int surface = 0) const { return m_subMeshes[surface].m_indices; }

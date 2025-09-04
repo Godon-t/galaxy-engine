@@ -15,6 +15,7 @@ public:
     void clear(math::vec4& color);
     void setViewMatrix(math::mat4& view);
     void setProjectionMatrix(math::mat4& projection);
+    void bindTexture(renderID textureInstanceID, char* uniformName);
 
     void setCommandBuffer(std::vector<RenderCommand>& newBuffer);
 

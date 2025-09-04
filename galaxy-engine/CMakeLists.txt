@@ -88,6 +88,7 @@ add_library(galaxy-engine
 	src/engine/rendering/renderer/Frontend.cpp
 	src/engine/rendering/CameraManager.cpp
 	src/engine/rendering/GPUInstances/VisualInstance.cpp
+	src/engine/rendering/GPUInstances/Texture.cpp
 	src/engine/rendering/GPUInstances/FrameBuffer.cpp
 	
 	src/engine/resource/Image.cpp

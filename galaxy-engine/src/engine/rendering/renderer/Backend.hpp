@@ -5,6 +5,7 @@
 #include "rendering/GPUInstances/Texture.hpp"
 #include "rendering/GPUInstances/VisualInstance.hpp"
 #include "rendering/Program.hpp"
+#include "resource/Image.hpp"
 #include "resource/Mesh.hpp"
 #include "resource/ResourceHandle.hpp"
 #include "types/Render.hpp"
@@ -16,7 +17,7 @@ class RenderGpuResourceTable {
 public:
     RenderGpuResourceTable(int maxSize = 512)
     {
-        m_resourcesInstance.resize(maxSize);
+        m_renderIdToInstance.reserve(maxSize);
         for (size_t i = 0; i < maxSize; i++) {
             m_freeIds.push(i);
         }
@@ -24,22 +25,11 @@ public:
 
     bool tryRemove(renderID idToRemove)
     {
-        m_resourcesInstance[idToRemove].second--;
-        if (m_resourcesInstance[idToRemove].second > 0)
+        m_renderIdToInstance[idToRemove].second--;
+        if (m_renderIdToInstance[idToRemove].second > 0)
             return false;
 
-        m_instanceCount--;
-        if (m_instanceCount == 0)
-            return false;
-
-        // Was the last use gpuResource, we erase
-        size_t idxToDelete = m_renderIdToResourceIdx[idToRemove];
-
-        renderID movedMeshID                 = m_resourceIdxToRenderId[m_instanceCount];
-        m_renderIdToResourceIdx[movedMeshID] = idxToDelete;
-        m_resourceIdxToRenderId[idxToDelete] = movedMeshID;
-
-        m_resourcesInstance[idxToDelete] = std::move(m_resourcesInstance[m_instanceCount]);
+        m_renderIdToInstance.erase(idToRemove);
 
         m_freeIds.emplace(idToRemove);
         return true;
@@ -53,38 +43,29 @@ public:
         }
 
         renderID createdID = m_freeIds.top();
-        size_t listIdx     = m_instanceCount;
 
-        m_resourcesInstance[listIdx]       = std::make_pair(T(), 1);
-        m_resourceIdxToRenderId[listIdx]   = createdID;
-        m_renderIdToResourceIdx[createdID] = listIdx;
+        m_renderIdToInstance[createdID] = std::make_pair(T(), 1);
 
         m_freeIds.pop();
-        m_instanceCount++;
 
         return createdID;
     }
 
     void increaseCount(renderID id)
     {
-        m_resourcesInstance[id].second++;
+        m_renderIdToInstance[id].second++;
     }
 
     T* get(renderID id)
     {
-        auto resourceIdx = m_renderIdToResourceIdx[id];
-        return &m_resourcesInstance[resourceIdx].first;
+        return &m_renderIdToInstance[id].first;
     }
 
     bool canAddInstance() { return m_freeIds.size() > 0; }
 
 private:
-    size_t m_instanceCount = 0;
-    std::unordered_map<renderID, size_t> m_renderIdToResourceIdx;
-    std::unordered_map<size_t, renderID> m_resourceIdxToRenderId;
+    std::unordered_map<renderID, std::pair<T, size_t>> m_renderIdToInstance;
     std::stack<renderID> m_freeIds;
-
-    std::vector<std::pair<T, size_t>> m_resourcesInstance;
 };
 
 class Backend {
@@ -95,6 +76,8 @@ public:
     renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices);
     void clearMesh(renderID meshID);
 
+    renderID instanciateTexture(ResourceHandle<Image> image);
+
     void processCommands(std::vector<RenderCommand>& commands);
 
 private:
@@ -103,16 +86,21 @@ private:
         std::unordered_map<int, renderID> activesSubMeshes;
     };
 
+    struct ImageHandle {
+        ResourceHandle<Image> image;
+        renderID textureID;
+    };
+
     void processCommand(RenderCommand& command);
 
-    std::unordered_map<size_t, MeshHandle> m_resourceTable;
+    std::unordered_map<size_t, MeshHandle> m_meshResourceTable;
     std::unordered_map<renderID, size_t> m_idToResource;
+    RenderGpuResourceTable<VisualInstance> m_visualInstances;
 
-    // std::vector<std::pair<VisualInstance, size_t>> m_visuInstances;
+    std::unordered_map<size_t, ImageHandle> m_imageResourceTable;
+    std::unordered_map<renderID, size_t> m_idToImageResource;
+    RenderGpuResourceTable<Texture> m_textureInstances;
 
     Program m_mainProgram;
-
-    RenderGpuResourceTable<VisualInstance> m_visualInstances;
-    // RenderGpuResourceTable<Texture> m_textureInstances;
 };
 } // namespace Galaxy

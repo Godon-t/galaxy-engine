@@ -50,6 +50,7 @@ void MeshInstance::draw()
 {
     Node3D::draw();
     if (m_renderIDInitialized) {
+        Renderer::getInstance().bindTexture(m_textureID, "testTexture");
         Renderer::getInstance().submit(m_renderId, *getTransform());
     }
 }
@@ -67,5 +68,8 @@ void MeshInstance::loadMesh(std::string path, int surfaceIdx)
 
     m_meshResourceID = res.getResource().getResourceID();
     m_meshSurfaceIdx = surfaceIdx;
+
+    auto texRes = ResourceManager::getInstance().load<Image>("Cube_BaseColor.png");
+    m_textureID = Renderer::getInstance().instanciateTexture(texRes);
 }
 } // namespace Galaxy

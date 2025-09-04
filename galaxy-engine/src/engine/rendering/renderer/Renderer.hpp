@@ -13,6 +13,7 @@ public:
 
     void beginSceneRender(mat4& camTransform);
     void submit(renderID meshID, const Transform& transform);
+    void bindTexture(renderID textureInstanceID, char* uniformName);
 
     void endSceneRender();
     void renderFrame();
@@ -20,6 +21,8 @@ public:
     renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices);
     renderID instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx = 0);
     void clearMesh(renderID meshID);
+
+    renderID instanciateTexture(ResourceHandle<Image> image);
 
 private:
     Renderer();

@@ -33,6 +33,7 @@ protected:
 
 private:
     renderID m_renderId;
+    renderID m_textureID;
     bool m_renderIDInitialized = false;
 
     uuid m_meshResourceID;

@@ -37,6 +37,11 @@ void Renderer::submit(renderID meshID, const Transform& transform)
     m_frontend.submit(meshID, transform);
 }
 
+void Renderer::bindTexture(renderID textureInstanceID, char* uniformName)
+{
+    m_frontend.bindTexture(textureInstanceID, uniformName);
+}
+
 void Renderer::endSceneRender()
 {
 }
@@ -62,5 +67,9 @@ renderID Renderer::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 void Renderer::clearMesh(renderID meshID)
 {
     m_backend.clearMesh(meshID);
+}
+renderID Renderer::instanciateTexture(ResourceHandle<Image> image)
+{
+    return m_backend.instanciateTexture(image);
 }
 }

@@ -7,8 +7,9 @@ namespace Galaxy {
 enum RenderCommandType {
     setView,
     setProjection,
+    clear,
     draw,
-    clear
+    bindTexture
 };
 
 struct SetViewCommand {
@@ -30,6 +31,11 @@ struct ClearCommand {
     math::vec4 color;
 };
 
+struct BindTextureCommand {
+    renderID instanceID;
+    char* uniformName;
+};
+
 struct RenderCommand {
     RenderCommand()
         : type(RenderCommandType::draw)
@@ -41,8 +47,9 @@ struct RenderCommand {
     union {
         SetViewCommand setView;
         SetProjectionCommand setProjection;
-        DrawCommand draw;
         ClearCommand clear;
+        DrawCommand draw;
+        BindTextureCommand bindTexture;
     };
 };
 } // namespace Galaxy

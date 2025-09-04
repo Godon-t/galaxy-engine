@@ -55,6 +55,19 @@ void Frontend::setProjectionMatrix(math::mat4& projection)
     m_frontBuffer.push_back(command);
 }
 
+void Frontend::bindTexture(renderID textureInstanceID, char* uniformName)
+{
+    BindTextureCommand bindTextureCommand;
+    bindTextureCommand.instanceID  = textureInstanceID;
+    bindTextureCommand.uniformName = uniformName;
+
+    RenderCommand command;
+    command.type        = RenderCommandType::bindTexture;
+    command.bindTexture = bindTextureCommand;
+
+    m_frontBuffer.push_back(command);
+}
+
 void Frontend::setCommandBuffer(std::vector<RenderCommand>& newBuffer)
 {
     m_frontBuffer = newBuffer;

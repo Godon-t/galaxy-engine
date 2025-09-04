@@ -48,8 +48,8 @@ renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<sho
 renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 {
     size_t handleID    = reinterpret_cast<size_t>(&mesh.getResource());
-    auto it            = m_resourceTable.find(handleID);
-    bool resourceExist = it != m_resourceTable.end();
+    auto it            = m_meshResourceTable.find(handleID);
+    bool resourceExist = it != m_meshResourceTable.end();
     if (resourceExist) {
         auto& activesSubMeshes = it->second.activesSubMeshes;
         auto subMeshIt         = activesSubMeshes.find(surfaceIdx);
@@ -64,15 +64,15 @@ renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 
     if (!resourceExist) {
         MeshHandle meshHandle;
-        meshHandle.mesh           = mesh;
-        m_resourceTable[handleID] = meshHandle;
+        meshHandle.mesh               = mesh;
+        m_meshResourceTable[handleID] = meshHandle;
     }
     m_idToResource[visualID] = handleID;
 
-    m_resourceTable[handleID].activesSubMeshes[surfaceIdx] = visualID;
+    m_meshResourceTable[handleID].activesSubMeshes[surfaceIdx] = visualID;
 
     mesh.getResource().onLoaded([this, visualID, surfaceIdx] {
-        const auto& meshRes = m_resourceTable[m_idToResource[visualID]].mesh.getResource();
+        const auto& meshRes = m_meshResourceTable[m_idToResource[visualID]].mesh.getResource();
         m_visualInstances.get(visualID)->init(
             meshRes.getVertices(surfaceIdx),
             meshRes.getIndices(surfaceIdx));
@@ -86,10 +86,10 @@ void Backend::clearMesh(renderID meshID)
     if (!m_visualInstances.tryRemove(meshID))
         return;
 
-    auto& subMeshes = m_resourceTable[m_idToResource[meshID]].activesSubMeshes;
+    auto& subMeshes = m_meshResourceTable[m_idToResource[meshID]].activesSubMeshes;
     if (subMeshes.size() <= 1) {
         // The resource is no longer used
-        m_resourceTable.erase(m_idToResource[meshID]);
+        m_meshResourceTable.erase(m_idToResource[meshID]);
         m_idToResource.erase(meshID);
     } else {
         // We just clear one surface instance
@@ -108,12 +108,39 @@ void Backend::clearMesh(renderID meshID)
     }
 }
 
+renderID Backend::instanciateTexture(ResourceHandle<Image> image)
+{
+    size_t handleID    = reinterpret_cast<size_t>(&image.getResource());
+    auto it            = m_imageResourceTable.find(handleID);
+    bool resourceExist = it != m_imageResourceTable.end();
+    if (resourceExist) {
+        return it->second.textureID;
+    }
+
+    renderID textureID = m_textureInstances.createResourceInstance();
+    ImageHandle handle;
+    handle.textureID               = textureID;
+    handle.image                   = image;
+    m_imageResourceTable[handleID] = handle;
+    m_idToImageResource[textureID] = handleID;
+
+    image.getResource().onLoaded([this, textureID] {
+        size_t resourceIdx = m_idToImageResource[textureID];
+        const auto& imgRes = m_imageResourceTable[resourceIdx].image.getResource();
+        m_textureInstances.get(textureID)->init(imgRes.getData(), imgRes.getWidth(), imgRes.getHeight(), imgRes.getNbChannels());
+    });
+
+    return textureID;
+}
+
 void Backend::processCommands(std::vector<RenderCommand>& commands)
 {
     m_mainProgram.use();
     for (auto& command : commands) {
         processCommand(command);
     }
+
+    Texture::resetActivationInts();
 }
 
 void Backend::processCommand(RenderCommand& command)
@@ -135,6 +162,14 @@ void Backend::processCommand(RenderCommand& command)
         auto& modelMatrix = command.draw.model;
         m_mainProgram.updateModelMatrix(modelMatrix);
         m_visualInstances.get(command.draw.instanceId)->draw();
+        break;
+    }
+    case RenderCommandType::bindTexture: {
+        auto uniLoc        = glGetUniformLocation(m_mainProgram.programID, command.bindTexture.uniformName);
+        auto useTextureLoc = glGetUniformLocation(m_mainProgram.programID, "useTexture");
+        m_textureInstances.get(command.bindTexture.instanceID)->activate(uniLoc);
+        glUniform1i(useTextureLoc, 1);
+        checkOpenGLErrors("Bind texture");
         break;
     }
     default:

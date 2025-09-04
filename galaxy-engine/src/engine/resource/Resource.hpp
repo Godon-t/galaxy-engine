@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/project/UUID.hpp"
+#include "project/UUID.hpp"
 
 #include <atomic>
 
@@ -20,8 +20,9 @@ public:
     virtual ~ResourceBase() = default;
 
     // Called in a separate thread
-    virtual bool load(const std::string& file) = 0;
-    // virtual bool reload()                      = 0;
+    virtual bool load(const std::string& file)                = 0;
+    virtual bool load(const unsigned char* data, size_t size) = 0;
+    // virtual bool reload()                     = 0;
 
     void onLoaded(std::function<void()> callback)
     {
@@ -45,6 +46,8 @@ private:
 
     std::atomic<ResourceState> m_state { ResourceState::EMPTY };
     std::vector<std::function<void()>> m_loadedCallbacks;
+
+    bool m_isInternal = false;
     uuid m_resourceID;
 
     friend class ResourceManager;

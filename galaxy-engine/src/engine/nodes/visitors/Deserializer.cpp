@@ -10,6 +10,7 @@
 #include "engine/nodes/rendering/Camera.hpp"
 #include "engine/nodes/rendering/MeshInstance.hpp"
 #include "engine/nodes/rendering/MultiMeshInstance.hpp"
+#include "engine/nodes/rendering/Sprite3D.hpp"
 #include "engine/project/Project.hpp"
 #include "engine/types/Math.hpp"
 
@@ -127,6 +128,10 @@ void SceneDeSerializer::visit(MeshInstance& node)
     }
 }
 void SceneDeSerializer::visit(MultiMeshInstance& node)
+{
+    visit(static_cast<Node3D&>(node));
+}
+void SceneDeSerializer::visit(Sprite3D& node)
 {
     visit(static_cast<Node3D&>(node));
 }

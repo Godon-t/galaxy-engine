@@ -35,6 +35,10 @@ public:
             node.loadMesh(std::string("FlightHelmet/FlightHelmet.gltf"));
         }
     }
+    void visit(Sprite3D& node)
+    {
+        visit(static_cast<Node3D&>(node));
+    }
     void visit(Camera& node)
     {
         visit(static_cast<Node3D&>(node));

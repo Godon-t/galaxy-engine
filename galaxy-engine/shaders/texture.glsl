@@ -1,4 +1,5 @@
 #type vertex
+
 #version 330 core
 
 layout(location = 0) in vec3 vertices_position_modelspace;
@@ -16,7 +17,7 @@ void main()
     gl_Position = projection * view * model * vec4(vertices_position_modelspace, 1);
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////
 
 #type fragment
 #version 330 core
@@ -24,7 +25,9 @@ void main()
 in vec2 texCoords;
 out vec4 color;
 
+uniform sampler2D sampledTexture;
+
 void main()
 {
-    color = vec4(0.2f, texCoords, 1.f);
+    color = vec4(texture(sampledTexture, texCoords).rgb, 1.0);
 }

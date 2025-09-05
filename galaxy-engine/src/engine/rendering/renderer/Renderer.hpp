@@ -11,6 +11,10 @@ class Renderer {
 public:
     static Renderer& getInstance();
 
+    void changeUsedProgram(BaseProgramEnum prog);
+
+    void setProjectionMatrix(math::mat4& projection);
+
     void beginSceneRender(mat4& camTransform);
     void submit(renderID meshID, const Transform& transform);
     void bindTexture(renderID textureInstanceID, char* uniformName);

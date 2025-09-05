@@ -24,6 +24,7 @@ public:
 
     mat4 getCurrentCamTransform();
 
+    static mat4 processProjectionMatrix(vec2 viewPortDimmensions);
     static mat4 processViewMatrix(mat4& transform);
     static inline CameraManager& getInstance() { return *s_instance; }
 };

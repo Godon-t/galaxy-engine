@@ -16,10 +16,14 @@ public:
     void setViewMatrix(math::mat4& view);
     void setProjectionMatrix(math::mat4& projection);
     void bindTexture(renderID textureInstanceID, char* uniformName);
+    void changeUsedProgram(BaseProgramEnum program);
 
     void setCommandBuffer(std::vector<RenderCommand>& newBuffer);
 
 private:
     std::vector<RenderCommand>& m_frontBuffer;
+
+    mat4 m_projMat;
+    mat4 m_viewMat;
 };
 } // namespace Galaxy

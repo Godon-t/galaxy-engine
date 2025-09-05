@@ -1,5 +1,7 @@
 Name: UI
 Resources:
+  - Id: 7180534471162177048
+    Path: Cube_BaseColor.png
   - Id: 1104960638724291676
     Path: FlightHelmet/FlightHelmet.gltf
 Scenes:

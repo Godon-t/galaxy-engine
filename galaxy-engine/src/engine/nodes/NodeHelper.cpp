@@ -4,6 +4,7 @@
 #include "rendering/Camera.hpp"
 #include "rendering/MeshInstance.hpp"
 #include "rendering/MultiMeshInstance.hpp"
+#include "rendering/Sprite3D.hpp"
 
 namespace Galaxy {
 std::unique_ptr<Node> constructNode(std::string& type)
@@ -18,6 +19,8 @@ std::unique_ptr<Node> constructNode(std::string& type)
         return std::make_unique<MultiMeshInstance>();
     } else if (type == "Camera") {
         return std::make_unique<Camera>();
+    } else if (type == "Sprite3D") {
+        return std::make_unique<Sprite3D>();
     } else {
         GLX_CORE_ERROR("Unknown type '{0}'", type);
         return nullptr;

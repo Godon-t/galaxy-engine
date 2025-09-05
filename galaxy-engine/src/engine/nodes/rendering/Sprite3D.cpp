@@ -13,7 +13,8 @@ Sprite3D::~Sprite3D()
 void Sprite3D::draw()
 {
     if (m_initialized) {
-        Renderer::getInstance().bindTexture(m_textureID, "sprite");
+        Renderer::getInstance().changeUsedProgram(BaseProgramEnum::TEXTURE);
+        Renderer::getInstance().bindTexture(m_textureID, "sampledTexture");
         Renderer::getInstance().submit(m_rectID, m_transform);
     }
 }
@@ -32,8 +33,10 @@ void Sprite3D::loadTexture(std::string path)
     m_textureID   = Renderer::getInstance().instanciateTexture(resource);
 
     resource.getResource().onLoaded([this, path] {
-        auto res = ResourceManager::getInstance().load<Image>(path);
-        m_rectID = generateRect(vec2(res.getResource().getWidth(), res.getResource().getHeight()));
+        auto res      = ResourceManager::getInstance().load<Image>(path);
+        float max     = (float)std::max(res.getResource().getWidth(), res.getResource().getHeight());
+        m_rectID      = generateRect(vec2(res.getResource().getWidth() / max, res.getResource().getHeight() / max));
+        m_initialized = true;
     });
 }
 void Sprite3D::enteredRoot()
@@ -55,7 +58,7 @@ renderID Sprite3D::generateRect(vec2 dimmensions)
     v3.position = vec3(-half.x, -half.y, 0);
     v3.texCoord = vec2(0, 1);
 
-    v4.position = vec3(half.x, half.y, 0);
+    v4.position = vec3(half.x, -half.y, 0);
     v4.texCoord = vec2(1, 1);
 
     vertices.push_back(v1);
@@ -69,10 +72,9 @@ renderID Sprite3D::generateRect(vec2 dimmensions)
     indices.push_back(1);
 
     indices.push_back(1);
-    indices.push_back(3);
     indices.push_back(2);
+    indices.push_back(3);
 
-    m_rectID = Renderer::getInstance().instanciateMesh(vertices, indices);
-    return renderID();
+    return Renderer::getInstance().instanciateMesh(vertices, indices);
 }
 } // namespace Galaxy

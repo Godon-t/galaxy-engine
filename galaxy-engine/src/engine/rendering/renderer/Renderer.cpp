@@ -24,12 +24,22 @@ Renderer& Renderer::getInstance()
     return renderer;
 }
 
+void Renderer::setProjectionMatrix(math::mat4& projection)
+{
+    m_frontend.setProjectionMatrix(projection);
+}
+
 void Renderer::beginSceneRender(mat4& camTransform)
 {
     auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
     m_frontend.clear(clearColor);
     auto viewMatrix = CameraManager::processViewMatrix(camTransform);
     m_frontend.setViewMatrix(viewMatrix);
+}
+
+void Renderer::changeUsedProgram(BaseProgramEnum prog)
+{
+    m_frontend.changeUsedProgram(prog);
 }
 
 void Renderer::submit(renderID meshID, const Transform& transform)

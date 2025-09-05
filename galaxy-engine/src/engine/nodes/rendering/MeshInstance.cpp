@@ -18,6 +18,7 @@ MeshInstance::~MeshInstance()
 void MeshInstance::draw()
 {
     if (m_initialized) {
+        Renderer::getInstance().changeUsedProgram(BaseProgramEnum::PBR);
         Renderer::getInstance().submit(m_renderId, *getTransform());
     }
 }

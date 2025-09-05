@@ -103,5 +103,7 @@ private:
     RenderGpuResourceTable<Texture> m_textureInstances;
 
     Program m_mainProgram;
+    Program m_textureProgram;
+    Program* m_activeProgram;
 };
 } // namespace Galaxy

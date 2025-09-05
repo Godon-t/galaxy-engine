@@ -48,6 +48,10 @@ void EditorLayer::onAttach()
 
     InputManager::addAction(Action(GLX_KEY_Q, "editor_down"));
     InputManager::addAction(Action(GLX_KEY_E, "editor_up"));
+
+    Renderer::getInstance().changeUsedProgram(BaseProgramEnum::PBR);
+    mat4 proj = CameraManager::processProjectionMatrix(vec2(320, 180));
+    Renderer::getInstance().setProjectionMatrix(proj);
 }
 
 void EditorLayer::onDetach()
@@ -216,15 +220,6 @@ void EditorLayer::onImGuiRender()
         m_editNode.selectNode(*Node::getNode(m_nodeList.selectedNodeId).lock().get());
     }
     ImGui::End();
-
-    // Add a "Albedo.jpg" in build folder
-    // auto texHandle = ResourceManager::getInstance().load<Texture>("./Albedo.jpg");
-    // if (texHandle.getState() == ResourceState::LOADED) {
-    //     const Texture& texture = texHandle.getResource();
-    //     ImGui::Begin("Image 1");
-    //     ImGui::Image(reinterpret_cast<void*>(texture.getId()), ImVec2 { texture.getWidth(), texture.getHeight() }, ImVec2 { 0, 0 }, ImVec2 { 1, 1 });
-    //     ImGui::End();
-    // }
 }
 
 void EditorLayer::onEvent(Event& evt)
@@ -246,6 +241,10 @@ void EditorLayer::onEvent(Event& evt)
         if (mouseBtn.getButton() == 1) {
             m_rightClickDown = mouseBtn.isPressed();
         }
+    } else if (evt.getEventType() == EventType::WindowResize) {
+        WindowResizeEvent& resize = (WindowResizeEvent&)evt;
+        mat4 proj                 = CameraManager::processProjectionMatrix(vec2(resize.getWidth(), resize.getHeight()));
+        Renderer::getInstance().setProjectionMatrix(proj);
     }
 }
 void EditorLayer::updateCamera()

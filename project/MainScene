@@ -61,5 +61,12 @@ Root:
           SurfaceIndex: 5
       Transform:
         Position: [0, -0.699999988, 2]
-        Rotation: [180, -5.00895658e-06, 180]
+        Rotation: [180, -5.00895749e-06, 180]
+        Scale: [1, 1, 1]
+    - Type: Sprite3D
+      Childs:
+        []
+      Transform:
+        Position: [1, 0, 2]
+        Rotation: [0, -0, 0]
         Scale: [1, 1, 1]

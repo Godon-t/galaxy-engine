@@ -41,6 +41,8 @@ void Frontend::setViewMatrix(math::mat4& view)
     command.setView = setViewCommand;
 
     m_frontBuffer.push_back(command);
+
+    m_viewMat = view;
 }
 
 void Frontend::setProjectionMatrix(math::mat4& projection)
@@ -53,6 +55,8 @@ void Frontend::setProjectionMatrix(math::mat4& projection)
     command.setProjection = setProjectionCommand;
 
     m_frontBuffer.push_back(command);
+
+    m_projMat = projection;
 }
 
 void Frontend::bindTexture(renderID textureInstanceID, char* uniformName)
@@ -66,6 +70,19 @@ void Frontend::bindTexture(renderID textureInstanceID, char* uniformName)
     command.bindTexture = bindTextureCommand;
 
     m_frontBuffer.push_back(command);
+}
+
+void Frontend::changeUsedProgram(BaseProgramEnum program)
+{
+    SetActiveProgramCommand setActiveProgramCommand;
+    setActiveProgramCommand.program = program;
+    RenderCommand progCommand;
+    progCommand.type             = RenderCommandType::setActiveProgram;
+    progCommand.setActiveProgram = setActiveProgramCommand;
+
+    m_frontBuffer.push_back(progCommand);
+    setProjectionMatrix(m_projMat);
+    setViewMatrix(m_viewMat);
 }
 
 void Frontend::setCommandBuffer(std::vector<RenderCommand>& newBuffer)

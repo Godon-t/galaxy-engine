@@ -49,6 +49,10 @@ public:
     {
         visit(static_cast<Node3D&>(node));
     }
+    void visit(Sprite3D& node) override
+    {
+        visit(static_cast<Node3D&>(node));
+    }
 
 private:
     AddNodeMenu m_addNodeMenu;

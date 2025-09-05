@@ -5,6 +5,7 @@
 
 namespace Galaxy {
 enum RenderCommandType {
+    setActiveProgram,
     setView,
     setProjection,
     clear,
@@ -36,6 +37,14 @@ struct BindTextureCommand {
     char* uniformName;
 };
 
+enum BaseProgramEnum {
+    PBR,
+    TEXTURE
+};
+struct SetActiveProgramCommand {
+    BaseProgramEnum program;
+};
+
 struct RenderCommand {
     RenderCommand()
         : type(RenderCommandType::draw)
@@ -45,6 +54,7 @@ struct RenderCommand {
 
     RenderCommandType type;
     union {
+        SetActiveProgramCommand setActiveProgram;
         SetViewCommand setView;
         SetProjectionCommand setProjection;
         ClearCommand clear;

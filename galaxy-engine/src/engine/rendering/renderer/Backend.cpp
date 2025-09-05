@@ -28,14 +28,14 @@ Backend::Backend(size_t maxSize)
     // glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);
 
-    m_mainProgram = std::move(Program(engineRes("shaders/test.glsl")));
+    m_mainProgram    = std::move(Program(engineRes("shaders/test.glsl")));
+    m_textureProgram = std::move(Program(engineRes("shaders/texture.glsl")));
 
     checkOpenGLErrors("Renderer constructor");
 }
 
 renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices)
 {
-
     if (!m_visualInstances.canAddInstance())
         return -1;
 
@@ -145,7 +145,6 @@ void Backend::clearTexture(renderID textureID)
 
 void Backend::processCommands(std::vector<RenderCommand>& commands)
 {
-    m_mainProgram.use();
     for (auto& command : commands) {
         processCommand(command);
     }
@@ -156,6 +155,17 @@ void Backend::processCommands(std::vector<RenderCommand>& commands)
 void Backend::processCommand(RenderCommand& command)
 {
     switch (command.type) {
+    case RenderCommandType::setActiveProgram: {
+        if (command.setActiveProgram.program == BaseProgramEnum::TEXTURE)
+            m_activeProgram = &m_textureProgram;
+        else if (command.setActiveProgram.program == BaseProgramEnum::PBR)
+            m_activeProgram = &m_mainProgram;
+        else
+            GLX_CORE_ASSERT(false, "unknown asked program!");
+
+        m_activeProgram->use();
+        break;
+    }
     case RenderCommandType::clear: {
         auto& clearColor = command.clear.color;
         glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
@@ -163,20 +173,19 @@ void Backend::processCommand(RenderCommand& command)
         break;
     }
     case RenderCommandType::setView:
-        m_mainProgram.updateViewMatrix(command.setView.view);
+        m_activeProgram->updateViewMatrix(command.setView.view);
         break;
     case RenderCommandType::setProjection:
-        m_mainProgram.updateProjectionMatrix(command.setProjection.projection);
+        m_activeProgram->updateProjectionMatrix(command.setProjection.projection);
         break;
     case RenderCommandType::draw: {
         auto& modelMatrix = command.draw.model;
-        m_mainProgram.updateModelMatrix(modelMatrix);
+        m_activeProgram->updateModelMatrix(modelMatrix);
         m_visualInstances.get(command.draw.instanceId)->draw();
         break;
     }
     case RenderCommandType::bindTexture: {
-        auto uniLoc = glGetUniformLocation(m_mainProgram.getProgramID(), command.bindTexture.uniformName);
-        m_mainProgram.setUniform("useTexture", 1);
+        auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.bindTexture.uniformName);
         m_textureInstances.get(command.bindTexture.instanceID)->activate(uniLoc);
         checkOpenGLErrors("Bind texture");
         break;

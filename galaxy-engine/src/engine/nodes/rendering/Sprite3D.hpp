@@ -5,7 +5,7 @@
 #include "types/Render.hpp"
 
 namespace Galaxy {
-class Sprite3D : Node3D {
+class Sprite3D : public Node3D {
 public:
     Sprite3D(std::string name = "Sprite3D")
         : Node3D(name)

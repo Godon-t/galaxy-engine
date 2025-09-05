@@ -18,9 +18,6 @@ Camera::~Camera()
 {
     CameraManager::getInstance().unregisterCam(id);
 }
-void Camera::handleInputFromBot(const Event& event)
-{
-}
 
 void Camera::accept(Galaxy::NodeVisitor& visitor)
 {

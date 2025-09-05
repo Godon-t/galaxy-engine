@@ -72,4 +72,8 @@ renderID Renderer::instanciateTexture(ResourceHandle<Image> image)
 {
     return m_backend.instanciateTexture(image);
 }
+void Renderer::clearTexture(renderID textureID)
+{
+    m_backend.clearTexture(textureID);
+}
 }

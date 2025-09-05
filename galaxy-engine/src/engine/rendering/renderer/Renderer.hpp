@@ -23,6 +23,7 @@ public:
     void clearMesh(renderID meshID);
 
     renderID instanciateTexture(ResourceHandle<Image> image);
+    void clearTexture(renderID textureID);
 
 private:
     Renderer();

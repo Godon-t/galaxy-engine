@@ -18,7 +18,6 @@ public:
     Camera(std::string name = "Camera");
     ~Camera() override;
 
-    void handleInputFromBot(const Event& input) override;
     void accept(Galaxy::NodeVisitor& visitor) override;
 
     void setCurrent(bool state);

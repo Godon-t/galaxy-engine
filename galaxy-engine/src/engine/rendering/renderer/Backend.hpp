@@ -77,6 +77,7 @@ public:
     void clearMesh(renderID meshID);
 
     renderID instanciateTexture(ResourceHandle<Image> image);
+    void clearTexture(renderID textureID);
 
     void processCommands(std::vector<RenderCommand>& commands);
 

@@ -6,16 +6,6 @@
 #include "engine/resource/ResourceManager.hpp"
 
 namespace Galaxy {
-void MultiMeshInstance::enteredRoot()
-{
-}
-
-MultiMeshInstance::~MultiMeshInstance()
-{
-}
-void MultiMeshInstance::process(double delta)
-{
-}
 void MultiMeshInstance::draw()
 {
     Node3D::draw();

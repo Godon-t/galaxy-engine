@@ -9,16 +9,14 @@
 namespace Galaxy {
 class MeshInstance : public Node3D {
 public:
-    void generateTriangle();
-
     MeshInstance(std::string name = "MeshInstance")
         : Node3D(name)
         , m_meshSurfaceIdx(-1)
+        , m_initialized(false)
     {
     }
     ~MeshInstance() override;
 
-    void process(double delta) override;
     virtual void draw() override;
 
     void accept(Galaxy::NodeVisitor& visitor) override;
@@ -27,14 +25,10 @@ public:
     inline int getSurfaceIdx() const { return m_meshSurfaceIdx; }
     inline uuid getMeshResourceID() const { return m_meshResourceID; }
 
-protected:
-    virtual void enteringRoot() override {};
-    virtual void enteredRoot() override;
-
 private:
     renderID m_renderId;
-    renderID m_textureID;
-    bool m_renderIDInitialized = false;
+
+    bool m_initialized;
 
     uuid m_meshResourceID;
     int m_meshSurfaceIdx;

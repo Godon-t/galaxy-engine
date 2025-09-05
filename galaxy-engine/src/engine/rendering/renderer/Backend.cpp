@@ -133,6 +133,16 @@ renderID Backend::instanciateTexture(ResourceHandle<Image> image)
     return textureID;
 }
 
+void Backend::clearTexture(renderID textureID)
+{
+    if (!m_textureInstances.tryRemove(textureID))
+        return;
+
+    size_t imgID = m_idToImageResource[textureID];
+    m_imageResourceTable.erase(imgID);
+    m_idToImageResource.erase(textureID);
+}
+
 void Backend::processCommands(std::vector<RenderCommand>& commands)
 {
     m_mainProgram.use();

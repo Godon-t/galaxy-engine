@@ -28,7 +28,7 @@ Backend::Backend(size_t maxSize)
     // glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);
 
-    m_mainProgram = std::move(Program(engineRes("shaders/vertex.glsl"), engineRes("shaders/fragment.glsl")));
+    m_mainProgram = std::move(Program(engineRes("shaders/test.glsl")));
 
     checkOpenGLErrors("Renderer constructor");
 }
@@ -175,10 +175,9 @@ void Backend::processCommand(RenderCommand& command)
         break;
     }
     case RenderCommandType::bindTexture: {
-        auto uniLoc        = glGetUniformLocation(m_mainProgram.programID, command.bindTexture.uniformName);
-        auto useTextureLoc = glGetUniformLocation(m_mainProgram.programID, "useTexture");
+        auto uniLoc = glGetUniformLocation(m_mainProgram.getProgramID(), command.bindTexture.uniformName);
+        m_mainProgram.setUniform("useTexture", 1);
         m_textureInstances.get(command.bindTexture.instanceID)->activate(uniLoc);
-        glUniform1i(useTextureLoc, 1);
         checkOpenGLErrors("Bind texture");
         break;
     }

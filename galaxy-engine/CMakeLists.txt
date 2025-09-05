@@ -94,8 +94,6 @@ add_library(galaxy-engine
 	
 	src/engine/resource/Image.cpp
 	src/engine/resource/Mesh.cpp
-
-	common/shader.cpp
 )
 
 target_compile_definitions(galaxy-engine PUBLIC
@@ -125,8 +123,6 @@ set_target_properties(galaxy-engine PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUI
 
 
 
-
-SOURCE_GROUP(common REGULAR_EXPRESSION ".*/common/.*" )
 SOURCE_GROUP(shaders REGULAR_EXPRESSION ".*/.*shader$" )
 
 

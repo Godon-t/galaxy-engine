@@ -1,27 +1,115 @@
 #include "Program.hpp"
+
+#include "Log.hpp"
+#include "OpenglHelper.hpp"
 #include "pch.hpp"
 
 #include "gl_headers.hpp"
 
-#include "OpenglHelper.hpp"
-
-#include "common/shader.hpp"
+#include <fstream>
+#include <sstream>
 
 using namespace math;
 namespace Galaxy {
-Program::Program(const char* vertexPath, const char* fragmentPath)
+static GLenum shaderTypeFromString(const std::string& type)
 {
-    programID = LoadShaders(vertexPath, fragmentPath);
-    glUseProgram(programID);
+    if (type == "vertex")
+        return GL_VERTEX_SHADER;
+    else if (type == "fragment")
+        return GL_FRAGMENT_SHADER;
 
-    m_modelLocation      = glGetUniformLocation(programID, "model");
-    m_viewLocation       = glGetUniformLocation(programID, "view");
-    m_projectionLocation = glGetUniformLocation(programID, "projection");
+    return 0;
+}
+void Program::compile(unsigned int shaderID, const char* content)
+{
+    // printf("Compiling shader : %s\n", vertex_file_path);
+    char const* sourcePointer = content;
+    glShaderSource(shaderID, 1, &sourcePointer, NULL);
+    glCompileShader(shaderID);
 
-    // glm::mat4 p = Camera::getInstance().getP();
-    // updateProjectionMatrix(p);
-    // glm::mat4 camProj = Camera::getInstance().getP();
-    // updateProjectionMatrix(camProj);
+    // Check Shader
+    GLint Result = GL_FALSE;
+    int InfoLogLength;
+    glGetShaderiv(shaderID, GL_COMPILE_STATUS, &Result);
+    glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+    if (InfoLogLength > 0) {
+        std::vector<char> VertexShaderErrorMessage(InfoLogLength + 1);
+        glGetShaderInfoLog(shaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
+        printf("%s\n", &VertexShaderErrorMessage[0]);
+    }
+}
+
+std::unordered_map<unsigned int, std::string> Program::preProcess(const std::string& source)
+{
+    std::unordered_map<unsigned int, std::string> res;
+
+    const char* typeToken  = "#type";
+    size_t typeTokenLength = strlen(typeToken);
+    size_t pos             = source.find(typeToken, 0);
+    while (pos != std::string::npos) {
+        size_t eol = source.find_first_of("\r\n", pos);
+        GLX_CORE_ASSERT(eol != std::string::npos, "Syntax error");
+        size_t begin     = pos + typeTokenLength + 1;
+        std::string type = source.substr(begin, eol - begin);
+
+        unsigned int typeEnum = shaderTypeFromString(type);
+        GLX_CORE_ASSERT(typeEnum != 0, "Unknown shader type '{0}'", type);
+
+        size_t nextLinePos = source.find_first_not_of("\r\n", eol);
+        pos                = source.find(typeToken, nextLinePos);
+        res[typeEnum]      = source.substr(
+            nextLinePos,
+            pos - (nextLinePos == source.size() ? source.size() - 1 : nextLinePos));
+    }
+
+    return res;
+}
+
+void Program::link(unsigned int vertID, unsigned int fragID)
+{
+    m_programID = glCreateProgram();
+    glAttachShader(m_programID, vertID);
+    glAttachShader(m_programID, fragID);
+    glLinkProgram(m_programID);
+
+    // check
+    GLint Result = GL_FALSE;
+    int InfoLogLength;
+    glGetProgramiv(m_programID, GL_LINK_STATUS, &Result);
+    glGetProgramiv(m_programID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+    if (InfoLogLength > 0) {
+        std::vector<char> ProgramErrorMessage(InfoLogLength + 1);
+        glGetProgramInfoLog(m_programID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
+        printf("%s\n", &ProgramErrorMessage[0]);
+    }
+
+    glDetachShader(m_programID, vertID);
+    glDetachShader(m_programID, fragID);
+
+    glDeleteShader(vertID);
+    glDeleteShader(fragID);
+}
+
+void Program::init(const char* vertexContent, const char* fragmentContent)
+{
+    GLuint VertexShaderID   = glCreateShader(GL_VERTEX_SHADER);
+    GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+
+    GLX_CORE_INFO("Compiling vertex shader");
+    compile(VertexShaderID, vertexContent);
+
+    GLX_CORE_INFO("Compiling fragment shader");
+    compile(FragmentShaderID, fragmentContent);
+
+    GLX_CORE_INFO("Linking program");
+    link(VertexShaderID, FragmentShaderID);
+
+    glUseProgram(m_programID);
+
+    m_modelLocation      = glGetUniformLocation(m_programID, "model");
+    m_viewLocation       = glGetUniformLocation(m_programID, "view");
+    m_projectionLocation = glGetUniformLocation(m_programID, "projection");
+
     mat4 view = lookAt(vec3(0, 0, 0), vec3(0, 0, -1), vec3(0, 1, 0));
     updateViewMatrix(view);
     mat4 projection = perspective(radians(45.f), 16.f / 9.f, 0.1f, 999.0f);
@@ -29,15 +117,41 @@ Program::Program(const char* vertexPath, const char* fragmentPath)
     checkOpenGLErrors("Program initialization");
 }
 
-Program::Program(const std::string& vertexPath, const std::string& fragmentPath)
-    : Program(vertexPath.c_str(), fragmentPath.c_str())
+Program::Program(const char* vertexContent, const char* fragmentContent)
 {
+    init(vertexContent, fragmentContent);
+}
+
+Program::Program(const std::string& vertexContent, const std::string& fragmentContent)
+{
+    init(vertexContent.c_str(), fragmentContent.c_str());
+}
+
+Program::Program(const std::string& shaderPath)
+{
+    // Read the Vertex Shader code from the file
+    std::string shaderCode;
+    std::ifstream shaderStream(shaderPath, std::ios::in);
+
+    if (!shaderStream.is_open()) {
+        GLX_CORE_ERROR("Can't open shader '{0}'", shaderPath);
+        return;
+    }
+
+    std::stringstream sstr;
+    sstr << shaderStream.rdbuf();
+    shaderCode = sstr.str();
+    shaderStream.close();
+
+    auto shaders = preProcess(shaderCode);
+
+    init(shaders[GL_VERTEX_SHADER].c_str(), shaders[GL_FRAGMENT_SHADER].c_str());
 }
 
 Program::Program(Program&& other) noexcept
 {
-    programID            = other.programID;
-    other.programID      = 0;
+    m_programID          = other.m_programID;
+    other.m_programID    = 0;
     m_modelLocation      = other.m_modelLocation;
     m_viewLocation       = other.m_viewLocation;
     m_projectionLocation = other.m_projectionLocation;
@@ -45,8 +159,8 @@ Program::Program(Program&& other) noexcept
 
 Program& Program::operator=(Program&& other) noexcept
 {
-    programID            = other.programID;
-    other.programID      = 0;
+    m_programID          = other.m_programID;
+    other.m_programID    = 0;
     m_modelLocation      = other.m_modelLocation;
     m_viewLocation       = other.m_viewLocation;
     m_projectionLocation = other.m_projectionLocation;
@@ -55,8 +169,8 @@ Program& Program::operator=(Program&& other) noexcept
 
 Program::~Program()
 {
-    if (programID != 0)
-        glDeleteProgram(programID);
+    if (m_programID != 0)
+        glDeleteProgram(m_programID);
 }
 
 void Program::updateViewMatrix(const mat4& v)
@@ -74,17 +188,17 @@ void Program::updateModelMatrix(const mat4& model)
 
 void Program::use()
 {
-    glUseProgram(programID);
+    glUseProgram(m_programID);
     checkOpenGLErrors("Program usage");
 }
 
 void Program::setUniform(const char* uniformName, float value)
 {
-    glUniform1f(glGetUniformLocation(programID, uniformName), value);
+    glUniform1f(glGetUniformLocation(m_programID, uniformName), value);
 }
 
 void Program::setUniform(const char* uniformName, int value)
 {
-    glUniform1i(glGetUniformLocation(programID, uniformName), value);
+    glUniform1i(glGetUniformLocation(m_programID, uniformName), value);
 }
 }

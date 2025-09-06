@@ -69,7 +69,7 @@ void Mesh::extractSubMesh(const aiScene* scene, int surface)
     for (unsigned int faceIdx = 0; faceIdx < mesh->mNumFaces; ++faceIdx) {
         aiFace& face = mesh->mFaces[faceIdx];
         for (unsigned int k = 0; k < face.mNumIndices; ++k) {
-            currentSubMesh.m_indices.push_back(face.mIndices[k]);
+            currentSubMesh.indices.push_back(face.mIndices[k]);
         }
     }
 
@@ -87,14 +87,14 @@ void Mesh::extractSubMesh(const aiScene* scene, int surface)
         }
     }
 
-    currentSubMesh.m_vertices.resize(indexed_vertices.size());
+    currentSubMesh.vertices.resize(indexed_vertices.size());
 
     for (int i = 0; i < indexed_vertices.size(); ++i) {
         Vertex v;
         v.position = indexed_vertices[i];
         v.texCoord = tex_coords[i];
 
-        currentSubMesh.m_vertices[i] = v;
+        currentSubMesh.vertices[i] = v;
     }
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Resource.hpp"
+#include "types/Render.hpp"
 
 namespace Galaxy {
 struct Image : public ResourceBase {
@@ -15,6 +16,10 @@ struct Image : public ResourceBase {
     inline int getNbChannels() const { return m_nbChannels; }
     inline unsigned char* getData() const { return m_data; }
 
+    inline void notifyGpuInstanceDestroyed() { m_textureID = 0; }
+    inline renderID getTextureID() const { return m_textureID; }
+    inline void setTextureID(renderID id) { m_textureID = id; }
+
     void destroy();
 
 private:
@@ -22,5 +27,7 @@ private:
     int m_height;
     unsigned char* m_data;
     int m_nbChannels;
+
+    renderID m_textureID = 0;
 };
 }

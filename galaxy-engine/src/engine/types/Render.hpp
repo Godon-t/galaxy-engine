@@ -4,8 +4,8 @@
 
 #include <cstddef>
 
-using renderID = size_t;
 using camID    = size_t;
+using renderID = size_t;
 
 struct Vertex {
     math::vec3 position;

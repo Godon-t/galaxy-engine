@@ -18,7 +18,8 @@ public:
     RenderGpuResourceTable(int maxSize = 512)
     {
         m_renderIdToInstance.reserve(maxSize);
-        for (size_t i = 0; i < maxSize; i++) {
+        // 0 reserved for invalid renderID
+        for (size_t i = 1; i <= maxSize; i++) {
             m_freeIds.push(i);
         }
     }
@@ -73,7 +74,7 @@ public:
     Backend(size_t maxSize = 512);
 
     renderID instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx);
-    renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices);
+    renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices, std::function<void()> destroyCallback = nullptr);
     void clearMesh(renderID meshID);
 
     renderID instanciateTexture(ResourceHandle<Image> image);
@@ -82,25 +83,13 @@ public:
     void processCommands(std::vector<RenderCommand>& commands);
 
 private:
-    struct MeshHandle {
-        ResourceHandle<Mesh> mesh;
-        std::unordered_map<int, renderID> activesSubMeshes;
-    };
-
-    struct ImageHandle {
-        ResourceHandle<Image> image;
-        renderID textureID;
-    };
-
     void processCommand(RenderCommand& command);
 
-    std::unordered_map<size_t, MeshHandle> m_meshResourceTable;
-    std::unordered_map<renderID, size_t> m_idToResource;
     RenderGpuResourceTable<VisualInstance> m_visualInstances;
-
-    std::unordered_map<size_t, ImageHandle> m_imageResourceTable;
-    std::unordered_map<renderID, size_t> m_idToImageResource;
     RenderGpuResourceTable<Texture> m_textureInstances;
+
+    // Will invalidate renderID for things outside of Node that store a renderID
+    std::unordered_map<renderID, std::function<void()>> m_gpuDestroyNotifications;
 
     Program m_mainProgram;
     Program m_textureProgram;

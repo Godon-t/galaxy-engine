@@ -34,7 +34,7 @@ Backend::Backend(size_t maxSize)
     checkOpenGLErrors("Renderer constructor");
 }
 
-renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices)
+renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices, std::function<void()> destroyCallback)
 {
     if (!m_visualInstances.canAddInstance())
         return -1;
@@ -42,41 +42,31 @@ renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<sho
     renderID meshID = m_visualInstances.createResourceInstance();
     m_visualInstances.get(meshID)->init(vertices, indices);
 
+    if (destroyCallback) {
+        m_gpuDestroyNotifications[meshID] = destroyCallback;
+    }
+
     return meshID;
 }
 
 renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 {
-    size_t handleID    = reinterpret_cast<size_t>(&mesh.getResource());
-    auto it            = m_meshResourceTable.find(handleID);
-    bool resourceExist = it != m_meshResourceTable.end();
-    if (resourceExist) {
-        auto& activesSubMeshes = it->second.activesSubMeshes;
-        auto subMeshIt         = activesSubMeshes.find(surfaceIdx);
-        if (subMeshIt != activesSubMeshes.end()) {
-            renderID subMeshID = activesSubMeshes[surfaceIdx];
-            m_visualInstances.increaseCount(subMeshID);
-            return subMeshID;
-        }
+    renderID subMeshID = mesh.getResource().getVisualID(surfaceIdx);
+    if (subMeshID != 0) {
+        m_visualInstances.increaseCount(subMeshID);
+        return subMeshID;
     }
 
     renderID visualID = m_visualInstances.createResourceInstance();
 
-    if (!resourceExist) {
-        MeshHandle meshHandle;
-        meshHandle.mesh               = mesh;
-        m_meshResourceTable[handleID] = meshHandle;
-    }
-    m_idToResource[visualID] = handleID;
-
-    m_meshResourceTable[handleID].activesSubMeshes[surfaceIdx] = visualID;
-
-    mesh.getResource().onLoaded([this, visualID, surfaceIdx] {
-        const auto& meshRes = m_meshResourceTable[m_idToResource[visualID]].mesh.getResource();
+    mesh.getResource().onLoaded([this, mesh, visualID, surfaceIdx] {
+        const auto& meshRes = mesh.getResource();
         m_visualInstances.get(visualID)->init(
             meshRes.getVertices(surfaceIdx),
             meshRes.getIndices(surfaceIdx));
     });
+
+    m_gpuDestroyNotifications[visualID] = [surfaceIdx, mesh] mutable { mesh.getResource().notifyGpuInstanceDestroyed(surfaceIdx); };
 
     return visualID;
 }
@@ -86,49 +76,29 @@ void Backend::clearMesh(renderID meshID)
     if (!m_visualInstances.tryRemove(meshID))
         return;
 
-    auto& subMeshes = m_meshResourceTable[m_idToResource[meshID]].activesSubMeshes;
-    if (subMeshes.size() <= 1) {
-        // The resource is no longer used
-        m_meshResourceTable.erase(m_idToResource[meshID]);
-        m_idToResource.erase(meshID);
-    } else {
-        // We just clear one surface instance
-        int surfaceToErase = -1;
-        for (auto subMesh : subMeshes) {
-            if (subMesh.second == meshID) {
-                surfaceToErase = subMesh.first;
-            }
-        }
-        if (surfaceToErase == -1) {
-            GLX_CORE_ERROR("Could not clear subMesh visual instance: Mesh surface not found");
-        } else {
-
-            subMeshes.erase(surfaceToErase);
-        }
+    auto it = m_gpuDestroyNotifications.find(meshID);
+    if (it != m_gpuDestroyNotifications.end()) {
+        it->second();
+        m_gpuDestroyNotifications.erase(meshID);
     }
 }
 
 renderID Backend::instanciateTexture(ResourceHandle<Image> image)
 {
-    size_t handleID    = reinterpret_cast<size_t>(&image.getResource());
-    auto it            = m_imageResourceTable.find(handleID);
-    bool resourceExist = it != m_imageResourceTable.end();
-    if (resourceExist) {
-        return it->second.textureID;
+    renderID existingID = image.getResource().getTextureID();
+    if (existingID != 0) {
+        m_textureInstances.increaseCount(existingID);
+        return existingID;
     }
 
     renderID textureID = m_textureInstances.createResourceInstance();
-    ImageHandle handle;
-    handle.textureID               = textureID;
-    handle.image                   = image;
-    m_imageResourceTable[handleID] = handle;
-    m_idToImageResource[textureID] = handleID;
 
-    image.getResource().onLoaded([this, textureID] {
-        size_t resourceIdx = m_idToImageResource[textureID];
-        const auto& imgRes = m_imageResourceTable[resourceIdx].image.getResource();
+    image.getResource().onLoaded([this, image, textureID] {
+        const auto& imgRes = image.getResource();
         m_textureInstances.get(textureID)->init(imgRes.getData(), imgRes.getWidth(), imgRes.getHeight(), imgRes.getNbChannels());
     });
+
+    m_gpuDestroyNotifications[textureID] = [image] mutable { image.getResource().notifyGpuInstanceDestroyed(); };
 
     return textureID;
 }
@@ -138,9 +108,11 @@ void Backend::clearTexture(renderID textureID)
     if (!m_textureInstances.tryRemove(textureID))
         return;
 
-    size_t imgID = m_idToImageResource[textureID];
-    m_imageResourceTable.erase(imgID);
-    m_idToImageResource.erase(textureID);
+    auto it = m_gpuDestroyNotifications.find(textureID);
+    if (it != m_gpuDestroyNotifications.end()) {
+        it->second();
+        m_gpuDestroyNotifications.erase(textureID);
+    }
 }
 
 void Backend::processCommands(std::vector<RenderCommand>& commands)

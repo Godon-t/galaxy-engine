@@ -41,7 +41,7 @@ void Node::removeChild(Node* component)
 void Node::clearChilds()
 {
     for (auto child : m_children) {
-        child->destroy();
+        child->destroy(true);
     }
     m_children.clear();
 }

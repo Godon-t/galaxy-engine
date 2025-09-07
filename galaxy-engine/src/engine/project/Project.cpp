@@ -165,6 +165,14 @@ bool Project::_save()
     return true;
 }
 
+void Project::extractExtension(std::string& input, std::string& filePath, std::string& fileExtension)
+{
+    std::filesystem::path path(input.c_str());
+
+    fileExtension = path.extension().string();
+    filePath      = path.stem();
+}
+
 void Project::create(const std::string& path)
 {
     getInstance().m_projectPath = path;

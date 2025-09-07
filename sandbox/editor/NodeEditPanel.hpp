@@ -50,9 +50,11 @@ public:
         if (ImGui::DragFloat3("Position", &position[0])) {
             transform.setLocalPosition(position);
         }
-        vec3 rotation = transform.getLocalRotation();
-        if (ImGui::DragFloat3("Rotation", &rotation[0])) {
-            transform.setLocalRotation(rotation);
+        vec3 startRotation    = transform.getLocalRotation() / (M_PI / 180.f);
+        vec3 modifiedRotation = startRotation;
+        if (ImGui::DragFloat3("Rotation", &modifiedRotation[0], 0.1f)) {
+            // transform.rotate((modifiedRotation - startRotation) * (M_PI / 180.f));
+            transform.setLocalRotation(modifiedRotation * (M_PI / 180.f));
         }
         vec3 scale = transform.getLocalScale();
         if (ImGui::DragFloat3("Scale", &scale[0])) {

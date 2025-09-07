@@ -8,6 +8,7 @@ Transform::Transform()
     , m_scale(1.0f)
     , m_rotationQuat(1.0f, 0.f, 0.f, 0.f)
     , m_rotationOrder(XYZ)
+    , m_rotationEuler(0, 0, 0)
     , dirty(true)
 {
 }
@@ -19,6 +20,7 @@ Transform::Transform(Transform&& other) noexcept
     , m_globalModelMatrix(std::move(other.m_globalModelMatrix))
     , dirty(other.dirty)
     , m_rotationOrder(other.m_rotationOrder)
+    , m_rotationEuler(other.m_rotationEuler)
 {
 }
 
@@ -87,14 +89,15 @@ vec3 Transform::getGlobalScale(vec3 value) const
 
 void Transform::setLocalRotation(const vec3& rotationAngles)
 {
+    m_rotationEuler       = rotationAngles;
     const mat4 transformX = math::rotate(mat4(1.0f),
-        radians(rotationAngles.x),
+        rotationAngles.x,
         vec3(1.0f, 0.0f, 0.0f));
     const mat4 transformY = math::rotate(mat4(1.0f),
-        radians(rotationAngles.y),
+        rotationAngles.y,
         vec3(0.0f, 1.0f, 0.0f));
     const mat4 transformZ = math::rotate(mat4(1.0f),
-        radians(rotationAngles.z),
+        rotationAngles.z,
         vec3(0.0f, 0.0f, 1.0f));
 
     mat4 rotationMatrix;
@@ -116,13 +119,14 @@ void Transform::setLocalRotation(const vec3& rotationAngles)
 
 void Transform::setLocalRotation(const quat& q)
 {
-    m_rotationQuat = q;
-    dirty          = true;
+    m_rotationQuat  = q;
+    m_rotationEuler = eulerAngles(m_rotationQuat);
+    dirty           = true;
 }
 
 vec3 Transform::getLocalRotation() const
 {
-    return degrees(eulerAngles(m_rotationQuat));
+    return m_rotationEuler;
 }
 
 quat Transform::getLocalRotationQuat() const
@@ -132,17 +136,38 @@ quat Transform::getLocalRotationQuat() const
 
 void Transform::rotate(vec3 rotations)
 {
-    vec3 rad       = radians(rotations);
-    quat dq        = quat(rad);
-    m_rotationQuat = normalize(dq * m_rotationQuat);
-    dirty          = true;
+    switch (m_rotationOrder) {
+    case YXZ:
+        localRotateY(rotations.y);
+        localRotateX(rotations.x);
+        localRotateZ(rotations.z);
+        break;
+    case XYZ:
+        localRotateX(rotations.x);
+        localRotateY(rotations.y);
+        localRotateZ(rotations.z);
+        break;
+    case ZYX:
+        localRotateZ(rotations.z);
+        localRotateY(rotations.y);
+        localRotateX(rotations.x);
+        break;
+    }
 }
 
 void Transform::rotate(float angle, vec3 axis)
 {
-    quat rot       = angleAxis(angle, axis);
-    m_rotationQuat = rot * m_rotationQuat;
-    dirty          = true;
+    quat rot        = angleAxis(angle, axis);
+    m_rotationQuat  = rot * m_rotationQuat;
+    m_rotationEuler = eulerAngles(m_rotationQuat);
+    dirty           = true;
+}
+
+void Transform::globalRotate(vec3 r)
+{
+    globalRotateX(r.x);
+    globalRotateY(r.y);
+    globalRotateZ(r.z);
 }
 
 void Transform::globalRotateX(float angle)

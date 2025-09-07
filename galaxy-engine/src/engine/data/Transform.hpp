@@ -16,6 +16,8 @@ private:
     mat4 m_globalModelMatrix = mat4(1.f);
     quat m_rotationQuat      = quat();
 
+    vec3 m_rotationEuler = vec3(0, 0, 0);
+
     RotationOrderEnum m_rotationOrder = YXZ;
 
 public:
@@ -43,6 +45,7 @@ public:
     // vec3 applyRotation(vec3 vector);
 
     void rotate(vec3 r);
+    void globalRotate(vec3 r);
     void rotate(float angle, vec3 axis);
 
     void globalRotateX(float angle);
@@ -68,6 +71,7 @@ public:
         m_globalModelMatrix = other.m_globalModelMatrix;
         dirty               = other.dirty;
         m_rotationOrder     = other.m_rotationOrder;
+        m_rotationEuler     = other.m_rotationEuler;
         return *this;
     }
     Transform& operator=(Transform&& other) noexcept
@@ -79,6 +83,7 @@ public:
             m_globalModelMatrix = std::move(other.m_globalModelMatrix);
             dirty               = other.dirty;
             m_rotationOrder     = other.m_rotationOrder;
+            m_rotationEuler     = other.m_rotationEuler;
 
             other.dirty = true;
         }

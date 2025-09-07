@@ -51,15 +51,15 @@ public:
     inline uuid getResourceID() { return m_resourceID; }
     inline bool isInternal() { return m_isInternal; }
 
+    virtual bool loadExtern(const std::string& path) = 0;
+    virtual bool loadGres(const std::string& file)   = 0;
+    virtual bool import(const std::string& file)     = 0;
+
 protected:
     std::string m_resourcePath;
     uuid m_resourceID;
 
 private:
-    virtual bool loadExtern(const std::string& path) = 0;
-    virtual bool loadGres(const std::string& file)   = 0;
-    virtual bool import(const std::string& file)     = 0;
-
     void notifyLoaded()
     {
         for (auto& cb : m_loadedCallbacks)
@@ -74,8 +74,8 @@ private:
     bool m_isInternal = false;
 
     friend class ResourceManager;
-    friend class ResourecSerializer;
-    friend class ResourecDeserializer;
+    friend class ResourceSerializer;
+    friend class ResourceDeserializer;
 };
 
 }

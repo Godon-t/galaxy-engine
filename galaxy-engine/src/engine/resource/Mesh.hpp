@@ -15,8 +15,8 @@ struct SubMesh {
 
 class Mesh : public ResourceBase {
 public:
-    bool load(const std::string& file) override;
     bool load(const unsigned char* data, size_t size) override;
+    bool save() override;
 
     inline const std::vector<Vertex>& getVertices(int surface = 0) const { return m_subMeshes[surface].vertices; }
     inline const std::vector<unsigned short>& getIndices(int surface = 0) const { return m_subMeshes[surface].indices; }
@@ -29,6 +29,10 @@ public:
     inline int getSubMeshesCount() const { return m_subMeshes.size(); }
 
 private:
+    bool loadExtern(const std::string& file) override;
+    bool loadGres(const std::string& file) override;
+    bool import(const std::string& file) override;
+
     bool readGltf(const std::string& filePath);
     void extractSubMesh(const aiScene* scene, int surface = 0);
     std::string m_gltfPath;

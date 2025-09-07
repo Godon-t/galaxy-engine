@@ -24,7 +24,7 @@ public:
     inline static uuid getPathId(const std::string& path) { return getInstance().m_reversePathSearch.find(path)->second; }
     inline static uuid registerNewPath(ProjectPathTypes type, const std::string& path) { return getInstance()._registerNewPath(type, path); }
 
-    void extractExtension(std::string& input, std::string& filePath, std::string& fileExtension);
+    static void extractExtension(const std::string& input, std::string& filePath, std::string& fileExtension);
 
     inline static void setName(const std::string& name) { getInstance().m_name = name; }
 

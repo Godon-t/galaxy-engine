@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Image.hpp"
-
 namespace Galaxy {
-class ResourceDeSerializer {
-    static bool deserialize(Image& image, std::string& filePath);
-}
+class Image;
+
+class ResourceDeserializer {
+public:
+    static bool deserialize(Image& image, const std::string& filePath);
+};
 } // namespace Galaxy

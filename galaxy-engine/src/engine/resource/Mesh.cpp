@@ -10,7 +10,7 @@
 
 namespace Galaxy {
 
-bool Mesh::load(const std::string& file)
+bool Mesh::loadExtern(const std::string& file)
 {
     std::filesystem::path filePath(file.c_str());
 
@@ -29,9 +29,27 @@ bool Mesh::load(const std::string& file)
     return true;
 }
 
+bool Mesh::loadGres(const std::string& file)
+{
+    GLX_CORE_ASSERT(false, "Not implemented");
+    return false;
+}
+
+bool Mesh::import(const std::string& file)
+{
+    GLX_CORE_ASSERT(false, "Not implemented");
+    return false;
+}
+
 bool Mesh::load(const unsigned char* data, size_t size)
 {
-    GLX_CORE_ERROR("Load data directly not implemented in mesh!");
+    GLX_CORE_ASSERT(false, "Not implemented");
+    return false;
+}
+
+bool Mesh::save()
+{
+    GLX_CORE_ASSERT(false, "Not implemented");
     return false;
 }
 

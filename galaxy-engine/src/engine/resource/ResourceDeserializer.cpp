@@ -1,10 +1,13 @@
 #include "ResourceDeserializer.hpp"
 
+#include "Image.hpp"
+#include "Log.hpp"
+
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
 namespace Galaxy {
-bool ResourceDeSerializer::deserialize(Image& image, std::string& path)
+bool ResourceDeserializer::deserialize(Image& image, const std::string& path)
 {
     YAML::Node data;
 

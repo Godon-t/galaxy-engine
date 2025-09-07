@@ -165,7 +165,7 @@ bool Project::_save()
     return true;
 }
 
-void Project::extractExtension(std::string& input, std::string& filePath, std::string& fileExtension)
+void Project::extractExtension(const std::string& input, std::string& filePath, std::string& fileExtension)
 {
     std::filesystem::path path(input.c_str());
 

@@ -64,8 +64,8 @@ bool Image::loadExtern(const std::string& path)
     if (getState() == ResourceState::LOADED)
         destroy();
 
-    m_data = stbi_load(path.c_str(), &m_width, &m_height, &m_nbChannels, 0);
-    m_relativeExternalFilePath(path);
+    m_data                     = stbi_load(path.c_str(), &m_width, &m_height, &m_nbChannels, 0);
+    m_relativeExternalFilePath = path;
 
     if (!m_data) {
         GLX_CORE_ERROR("Failed to load: '{0}'", path);

@@ -10,7 +10,6 @@ struct Image : public ResourceBase {
     Image(int width, int height, int nbChannels);
     bool load(const unsigned char* data, size_t size) override;
     bool save() override;
-    bool import(const std::string& file) override;
 
     inline int getWidth() const { return m_width; }
     inline int getHeight() const { return m_height; }
@@ -25,10 +24,11 @@ struct Image : public ResourceBase {
 
     void destroy();
 
-private:
-    bool loadExtern(const std::string& path) override;
+    bool import(const std::string& file) override;
     bool loadGres(const std::string& file) override;
+    bool loadExtern(const std::string& path) override;
 
+private:
     int m_width;
     int m_height;
     unsigned char* m_data;

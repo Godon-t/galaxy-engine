@@ -1,5 +1,8 @@
 #include "ResourceSerializer.hpp"
 
+#include "Image.hpp"
+
+#include <fstream>
 #include <yaml-cpp/yaml.h>
 
 namespace Galaxy {

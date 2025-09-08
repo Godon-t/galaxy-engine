@@ -17,6 +17,11 @@ struct ResourceAccess {
             return false;
 
         ImGui::Begin("Resources");
+        if (ImGui::Button("Close")) {
+            ImGui::End();
+            m_showResourceMenu = false;
+            return false;
+        }
         for (auto& path : paths) {
             if (ImGui::MenuItem(path.second.c_str())) {
                 selectedResourceID   = path.first;

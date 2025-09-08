@@ -5,6 +5,7 @@
 #include "editor/NodeEditPanel.hpp"
 #include "editor/NodeListPanel.hpp"
 #include "editor/ResourceAccess.hpp"
+#include "editor/imfilebrowser.h"
 
 namespace Galaxy {
 enum class EditorMode {
@@ -31,6 +32,7 @@ private:
     NodeListPanel m_nodeList;
     NodeEditPanel m_editNode;
     ResourceAccess m_resourceAccess;
+    ImGui::FileBrowser m_fileDialog;
 
     vec2 m_viewportSize;
     FrameBuffer* m_viewportFrame;

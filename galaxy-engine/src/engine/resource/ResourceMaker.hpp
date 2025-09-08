@@ -35,8 +35,10 @@ class ResourceMaker : public IResourceMaker {
         path += std::string(".gres");
         uuid resourceID = Project::registerNewPath(ProjectPathTypes::RESOURCE, path);
 
-        resource->initGres(path, resourceID);
-        resource->save();
+        bool success = resource->initGres(path, resourceID, file) && resource->save();
+        if (success)
+            Project::savePaths();
+        return success;
     }
 
     std::shared_ptr<ResourceBase> createResourcePtr() const override

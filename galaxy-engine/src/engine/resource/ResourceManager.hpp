@@ -18,9 +18,11 @@ public:
     }
 
     template <typename ResourceType>
-    void registerMaker()
+    void registerMaker(std::string extension)
     {
-        makers[typeid(ResourceType).hash_code()] = std::make_unique<ResourceMaker<ResourceType>>();
+        size_t id                     = typeid(ResourceType).hash_code();
+        m_makers[id]                  = std::make_unique<ResourceMaker<ResourceType>>();
+        m_extensionToMaker[extension] = id;
     }
 
     template <typename ResourceType>
@@ -31,8 +33,8 @@ public:
             return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(it->second));
         }
 
-        auto makerIt = makers.find(typeid(ResourceType).hash_code());
-        GLX_CORE_ASSERT(makerIt != makers.end(), "No resource maker for file: '{0}'", path);
+        auto makerIt = m_makers.find(typeid(ResourceType).hash_code());
+        GLX_CORE_ASSERT(makerIt != m_makers.end(), "No resource maker for file: '{0}'", path);
 
         std::shared_ptr<ResourceBase> resource = makerIt->second->createResourcePtr();
         resource->m_state                      = ResourceState::LOADING;
@@ -56,6 +58,24 @@ public:
         return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(resource));
     }
 
+    bool import(const std::string& path)
+    {
+        std::string pathWithoutExtension, extension;
+        Project::extractExtension(path, pathWithoutExtension, extension);
+
+        auto makerIt = m_makers.find(m_extensionToMaker[extension]);
+        GLX_CORE_ASSERT(makerIt != m_makers.end(), "No resource maker for file: '{0}'", path);
+
+        std::shared_ptr<ResourceBase> resource = makerIt->second->createResourcePtr();
+        resource->m_state                      = ResourceState::LOADING;
+
+        makerIt->second->import(resource, path);
+        resource->m_state = ResourceState::LOADED;
+
+        cache[resource->getPath()] = resource;
+        return true;
+    }
+
     void updatePendingLoads()
     {
         std::unique_lock<std::mutex> lock(m_pendingLoadMutex);
@@ -71,13 +91,14 @@ private:
     ResourceManager()
         : m_threadPool(resourcePoolSize)
     {
-        registerMaker<Image>();
-        registerMaker<Mesh>();
+        registerMaker<Image>(".png");
+        registerMaker<Mesh>(".gltf");
     }
     ThreadPool m_threadPool;
     std::mutex m_pendingLoadMutex;
 
-    std::unordered_map<size_t, std::unique_ptr<IResourceMaker>> makers;
+    std::unordered_map<size_t, std::unique_ptr<IResourceMaker>> m_makers;
+    std::unordered_map<std::string, size_t> m_extensionToMaker;
     std::unordered_map<std::string, std::shared_ptr<ResourceBase>> cache;
     std::queue<std::shared_ptr<ResourceBase>> m_loadedResources;
 };

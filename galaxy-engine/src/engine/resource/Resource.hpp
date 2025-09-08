@@ -41,6 +41,7 @@ public:
     inline ResourceState getState() { return m_state; }
     inline uuid getResourceID() { return m_resourceID; }
     inline bool isInternal() { return m_isInternal; }
+    inline std::string getPath() const { return m_resourcePath; }
 
 protected:
     std::string m_resourcePath;

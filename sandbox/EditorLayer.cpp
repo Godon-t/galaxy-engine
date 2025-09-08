@@ -32,6 +32,8 @@ void EditorLayer::onAttach()
     m_rootEditorNode->addChild(m_editorCamera);
     m_rootEditorNode->activate();
 
+    m_fileDialog.SetDirectory(Project::getProjectRootPath());
+
     m_rootSceneNode = std::make_shared<Node>("RootScene");
     m_rootSceneNode->disable();
 
@@ -115,9 +117,25 @@ void EditorLayer::displayMenuBar(bool validScene)
             }
             ImGui::EndMenu();
         }
+        if (ImGui::MenuItem("Import file")) {
+            m_fileDialog.Open();
+        }
         ImGui::EndMenu();
     }
     ImGui::EndMenuBar();
+
+    m_fileDialog.Display();
+
+    if (m_fileDialog.HasSelected()) {
+        std::string filePath = m_fileDialog.GetSelected().string();
+        if (ResourceManager::getInstance().import(filePath)) {
+            ResourceAccess::paths = Project::getPaths(ProjectPathTypes::RESOURCE);
+            GLX_INFO("File imported");
+        } else {
+            GLX_ERROR("Error importing '{0}'", filePath);
+        }
+        m_fileDialog.ClearSelected();
+    }
 
     if (newScene) {
         ImGui::Begin("New Scene window");

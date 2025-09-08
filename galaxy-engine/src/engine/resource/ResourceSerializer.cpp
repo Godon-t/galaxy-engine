@@ -8,7 +8,7 @@
 #include <yaml-cpp/yaml.h>
 
 namespace Galaxy {
-bool ResourceSerializer::serialize(Image& image, std::string& outputPath)
+bool ResourceSerializer::serialize(Image& image)
 {
     YAML::Emitter yaml;
     yaml << YAML::BeginMap;
@@ -20,11 +20,11 @@ bool ResourceSerializer::serialize(Image& image, std::string& outputPath)
 
     yaml << YAML::EndMap;
 
-    std::ofstream fout(Project::getProjectRootPath() + outputPath);
+    std::ofstream fout(Project::getProjectRootPath() + Project::getPath(ProjectPathTypes::RESOURCE, image.getResourceID()));
     fout << yaml.c_str();
     return true;
 }
-bool ResourceSerializer::serialize(Mesh& mesh, std::string& outputPath)
+bool ResourceSerializer::serialize(Mesh& mesh)
 {
     YAML::Emitter yaml;
     yaml << YAML::BeginMap;
@@ -36,7 +36,7 @@ bool ResourceSerializer::serialize(Mesh& mesh, std::string& outputPath)
 
     yaml << YAML::EndMap;
 
-    std::ofstream fout(Project::getProjectRootPath() + outputPath);
+    std::ofstream fout(Project::getProjectRootPath() + Project::getPath(ProjectPathTypes::RESOURCE, mesh.getResourceID()));
     fout << yaml.c_str();
     return true;
 }

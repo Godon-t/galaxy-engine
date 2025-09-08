@@ -25,6 +25,7 @@ public:
 
     inline static uuid registerNewPath(ProjectPathTypes type, const std::string& path) { return getInstance()._registerNewPath(type, path); }
     inline static bool deletePath(ProjectPathTypes type, uuid pathId) { return getInstance()._deletePath(type, pathId); }
+    inline static void savePaths() { getInstance()._savePaths(); }
 
     static void extractExtension(const std::string& input, std::string& filePath, std::string& fileExtension);
 
@@ -44,6 +45,7 @@ private:
 
     uuid _registerNewPath(ProjectPathTypes type, const std::string& path);
     bool _deletePath(ProjectPathTypes type, uuid pathId);
+    void _savePaths();
 
     std::string _getPath(ProjectPathTypes type, const uuid&);
     bool _updatePath(ProjectPathTypes type, const uuid&, const std::string& newPath);

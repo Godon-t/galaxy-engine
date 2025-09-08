@@ -15,68 +15,41 @@ Image::Image(int width, int height, int nbChannels)
 {
 }
 
-bool Image::load(const unsigned char* data, size_t size)
+bool Image::load(YAML::Node& data)
 {
-    if (getState() == ResourceState::LOADED)
-        destroy();
-
-    m_data = stbi_load_from_memory(data, size, &m_width, &m_height, &m_nbChannels, 0);
-
-    if (!m_data) {
-        GLX_CORE_ERROR("Failed to load embedded texture from memory");
-        return false;
-    }
-
-    return true;
+    return ResourceDeserializer::deserialize(*this, data);
 }
 
 bool Image::save()
 {
-    return ResourceSerializer::serialize(*this, m_resourcePath);
-}
-
-bool Image::import(const std::string& file)
-{
-    GLX_CORE_ASSERT(loadExtern(file), "Failed to import");
-
-    std::string path, extension;
-    Project::extractExtension(file, path, extension);
-    path += std::string(".gres");
-
-    m_resourcePath             = path;
-    m_relativeExternalFilePath = file;
-
-    if (save()) {
-        // Succesfully created resource file
-        Project::deletePath(ProjectPathTypes::RESOURCE, m_resourceID);
-        m_resourceID = Project::registerNewPath(ProjectPathTypes::RESOURCE, m_resourcePath);
-        return true;
-    } else {
-        return false;
-    }
+    return ResourceSerializer::serialize(*this);
 }
 
 void Image::destroy()
 {
     stbi_image_free(m_data);
 }
+bool Image::initGres(const std::string& path, uuid resourceID, const std::string& externalPath)
+{
+    if (externalPath == std::string(""))
+        return false;
+
+    m_resourceID   = resourceID;
+    m_resourcePath = path;
+    return loadExtern(externalPath);
+}
+
 bool Image::loadExtern(const std::string& path)
 {
-    if (getState() == ResourceState::LOADED)
-        destroy();
-
-    m_data                     = stbi_load((Project::getProjectRootPath() + path).c_str(), &m_width, &m_height, &m_nbChannels, 0);
     m_relativeExternalFilePath = path;
     m_isInternal               = false;
 
+    m_data = stbi_load((Project::getProjectRootPath() + path).c_str(), &m_width, &m_height, &m_nbChannels, 0);
     if (!m_data) {
         GLX_CORE_ERROR("Failed to load: '{0}'", path);
     }
 
     return true;
 }
-bool Image::loadGres(const std::string& file)
-{
-    return ResourceDeserializer::deserialize(*this, file);
-}
+
 }

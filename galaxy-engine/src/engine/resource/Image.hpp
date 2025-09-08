@@ -8,8 +8,12 @@ struct Image : public ResourceBase {
     Image() {};
 
     Image(int width, int height, int nbChannels);
-    bool load(const unsigned char* data, size_t size) override;
+
+    bool initGres(const std::string& path, uuid resourceID, const std::string& externalPath = "") override;
+    bool load(YAML::Node& data) override;
     bool save() override;
+
+    bool loadExtern(const std::string& path);
 
     inline int getWidth() const { return m_width; }
     inline int getHeight() const { return m_height; }
@@ -23,10 +27,6 @@ struct Image : public ResourceBase {
     inline std::string getExternalFilePath() { return m_relativeExternalFilePath; }
 
     void destroy();
-
-    bool import(const std::string& file) override;
-    bool loadGres(const std::string& file) override;
-    bool loadExtern(const std::string& path) override;
 
 private:
     int m_width;

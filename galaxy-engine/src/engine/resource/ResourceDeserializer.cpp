@@ -5,20 +5,9 @@
 #include "Mesh.hpp"
 #include "project/Project.hpp"
 
-#include <fstream>
-#include <yaml-cpp/yaml.h>
-
 namespace Galaxy {
-bool ResourceDeserializer::deserialize(Image& image, const std::string& path)
+bool ResourceDeserializer::deserialize(Image& image, YAML::Node& data)
 {
-    YAML::Node data;
-
-    std::ifstream stream(Project::getProjectRootPath() + path);
-    std::stringstream strStream;
-    strStream << stream.rdbuf();
-
-    data = YAML::Load(strStream.str());
-
     if (!data["Type"] || data["Type"].as<std::string>() != std::string("Image")) {
         GLX_CORE_ERROR("File unsupported");
         return false;
@@ -30,16 +19,8 @@ bool ResourceDeserializer::deserialize(Image& image, const std::string& path)
 
     return false;
 }
-bool ResourceDeserializer::deserialize(Mesh& mesh, const std::string& filePath)
+bool ResourceDeserializer::deserialize(Mesh& mesh, YAML::Node& data)
 {
-    YAML::Node data;
-
-    std::ifstream stream(Project::getProjectRootPath() + filePath);
-    std::stringstream strStream;
-    strStream << stream.rdbuf();
-
-    data = YAML::Load(strStream.str());
-
     if (!data["Type"] || data["Type"].as<std::string>() != std::string("Mesh")) {
         GLX_CORE_ERROR("File unsupported");
         return false;

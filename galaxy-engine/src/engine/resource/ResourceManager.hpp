@@ -56,36 +56,6 @@ public:
         return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(resource));
     }
 
-    // Internal resource, path is just for caching. The resource should exist within another one
-    template <typename ResourceType>
-    ResourceHandle<ResourceType> load(const std::string& path, const unsigned char* data, size_t size)
-    {
-        auto it = cache.find(path);
-        if (it != cache.end()) {
-            return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(it->second));
-        }
-
-        auto makerIt = makers.find(typeid(ResourceType).hash_code());
-        GLX_CORE_ASSERT(makerIt != makers.end(), "No resource maker for file: '{0}'", path);
-
-        std::shared_ptr<ResourceBase> resource = makerIt->second->createResourcePtr();
-        resource->m_state                      = ResourceState::LOADING;
-        resource->m_isInternal                 = true;
-        cache[path]                            = resource;
-
-        m_threadPool.enqueue([resource, maker = makerIt->second.get(), path, this, data, size] {
-            if (maker->loadResource(resource, data, size)) {
-                std::unique_lock<std::mutex> lock(m_pendingLoadMutex);
-                m_loadedResources.push(resource);
-            } else {
-                GLX_CORE_ERROR("Failed to load resource '{0}'", path);
-                resource->m_state = ResourceState::FAILED;
-            }
-        });
-
-        return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(resource));
-    }
-
     void updatePendingLoads()
     {
         std::unique_lock<std::mutex> lock(m_pendingLoadMutex);

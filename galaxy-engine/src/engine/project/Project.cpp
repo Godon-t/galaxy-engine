@@ -47,6 +47,29 @@ bool Project::_deletePath(ProjectPathTypes type, uuid pathId)
     return true;
 }
 
+void Project::_savePaths()
+{
+    YAML::Emitter yaml;
+    yaml << YAML::BeginMap;
+    yaml << YAML::Key << "Name" << YAML::Value << "UI";
+
+    for (const auto& [type, assoc] : m_paths) {
+        std::string typeStr = toString(type);
+
+        yaml << YAML::Key << typeStr << YAML::Value << YAML::BeginSeq;
+        for (auto& value : m_paths[type]) {
+            yaml << YAML::BeginMap;
+            yaml << YAML::Key << "Id" << YAML::Value << value.first;
+            yaml << YAML::Key << "Path" << YAML::Value << value.second;
+            yaml << YAML::EndMap;
+        }
+        yaml << YAML::EndSeq;
+    }
+    yaml << YAML::EndMap;
+    std::ofstream fout(m_projectPath);
+    fout << yaml.c_str();
+}
+
 std::string Project::_getPath(ProjectPathTypes type, const uuid& id)
 {
     return m_paths[type][id];
@@ -144,23 +167,7 @@ std::unordered_map<uuid, std::string>& Project::_getPaths(ProjectPathTypes type)
 
 bool Project::_save()
 {
-    YAML::Emitter yaml;
-    yaml << YAML::BeginMap;
-    yaml << YAML::Key << "Name" << YAML::Value << "UI";
-
-    for (const auto& [type, assoc] : m_paths) {
-        std::string typeStr = toString(type);
-
-        yaml << YAML::Key << typeStr << YAML::Value << YAML::BeginSeq;
-        for (auto& value : m_paths[type]) {
-            yaml << YAML::BeginMap;
-            yaml << YAML::Key << "Id" << YAML::Value << value.first;
-            yaml << YAML::Key << "Path" << YAML::Value << value.second;
-            yaml << YAML::EndMap;
-        }
-        yaml << YAML::EndSeq;
-    }
-    yaml << YAML::EndMap;
+    _savePaths();
 
     for (auto& scene : m_scenes) {
         if (scene.second.getNodePtr()) {
@@ -168,8 +175,6 @@ bool Project::_save()
         }
     }
 
-    std::ofstream fout(m_projectPath);
-    fout << yaml.c_str();
     return true;
 }
 

@@ -35,41 +35,24 @@ bool Mesh::loadExtern(const std::string& filePath)
     return true;
 }
 
-bool Mesh::loadGres(const std::string& file)
+bool Mesh::initGres(const std::string& path, uuid resourceID, const std::string& externalPath)
 {
-    return ResourceDeserializer::deserialize(*this, file);
-}
-
-bool Mesh::import(const std::string& file)
-{
-    GLX_CORE_ASSERT(loadExtern(file), "Failed to import");
-
-    std::string path, extension;
-    Project::extractExtension(file, path, extension);
-    path += std::string(".gres");
-
+    m_resourceID   = resourceID;
     m_resourcePath = path;
-    m_gltfPath     = file;
 
-    if (save()) {
-        // Succesfully created resource file
-        Project::deletePath(ProjectPathTypes::RESOURCE, m_resourceID);
-        m_resourceID = Project::registerNewPath(ProjectPathTypes::RESOURCE, m_resourcePath);
-        return true;
-    } else {
-        return false;
-    }
-}
+    loadExtern(externalPath);
 
-bool Mesh::load(const unsigned char* data, size_t size)
-{
-    GLX_CORE_ASSERT(false, "Not implemented");
     return false;
 }
 
 bool Mesh::save()
 {
-    return ResourceSerializer::serialize(*this, m_resourcePath);
+    return ResourceSerializer::serialize(*this);
+}
+
+bool Mesh::load(YAML::Node& data)
+{
+    return ResourceDeserializer::deserialize(*this, data);
 }
 
 void Mesh::extractSubMesh(const aiScene* scene, int surface)

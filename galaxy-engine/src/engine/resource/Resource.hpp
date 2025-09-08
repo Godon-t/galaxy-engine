@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <filesystem>
+#include <yaml-cpp/yaml.h>
 
 namespace Galaxy {
 class ResourceManager;
@@ -23,19 +24,9 @@ public:
     virtual ~ResourceBase() = default;
 
     // Called in a separate thread
-    bool load(const std::string& file)
-    {
-        std::filesystem::path filePath(file.c_str());
-
-        std::string fileExtension = filePath.extension().string();
-        if (fileExtension == std::string(".gres"))
-            return loadGres(file);
-        else {
-            return import(file);
-        }
-    }
-    virtual bool load(const unsigned char* data, size_t size) = 0;
-    virtual bool save()                                       = 0;
+    virtual bool load(YAML::Node& data)                                                                   = 0;
+    virtual bool initGres(const std::string& path, uuid resourceID, const std::string& externalPath = "") = 0;
+    virtual bool save()                                                                                   = 0;
     // virtual bool reload()                     = 0;
 
     void onLoaded(std::function<void()> callback)
@@ -50,10 +41,6 @@ public:
     inline ResourceState getState() { return m_state; }
     inline uuid getResourceID() { return m_resourceID; }
     inline bool isInternal() { return m_isInternal; }
-
-    virtual bool loadExtern(const std::string& path) = 0;
-    virtual bool loadGres(const std::string& file)   = 0;
-    virtual bool import(const std::string& file)     = 0;
 
 protected:
     std::string m_resourcePath;

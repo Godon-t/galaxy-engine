@@ -6,17 +6,22 @@
 
 namespace Galaxy {
 struct ResourceAccess {
+    static std::unordered_map<Galaxy::uuid, std::string> paths;
+
     uuid selectedResourceID;
     std::string selectedResourcePath;
 
-    bool chooseResource()
+    bool begin()
     {
+        if (!m_showResourceMenu)
+            return false;
+
         ImGui::Begin("Resources");
-        auto paths = Project::getPaths(ProjectPathTypes::RESOURCE);
         for (auto& path : paths) {
             if (ImGui::MenuItem(path.second.c_str())) {
                 selectedResourceID   = path.first;
                 selectedResourcePath = path.second;
+                m_showResourceMenu   = false;
                 ImGui::End();
                 return true;
             }
@@ -24,5 +29,13 @@ struct ResourceAccess {
         ImGui::End();
         return false;
     }
+
+    void show()
+    {
+        m_showResourceMenu = true;
+    }
+
+private:
+    bool m_showResourceMenu;
 };
 } // namespace Galaxy

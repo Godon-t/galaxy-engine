@@ -1,10 +1,12 @@
 #include "EditorLayer.hpp"
+#include "Engine.hpp"
 #include "editor/NodeListPanel.hpp"
-#include <Engine.hpp>
 
 #include <imgui.h>
 
 namespace Galaxy {
+std::unordered_map<Galaxy::uuid, std::string> ResourceAccess::paths;
+
 EditorLayer::EditorLayer(const char* projectPath)
     : Layer("Editor layer")
     , m_mode(EditorMode::Edit)
@@ -13,6 +15,8 @@ EditorLayer::EditorLayer(const char* projectPath)
     if (!Project::load(projectPath)) {
         GLX_ERROR("Can't load project '{0}', creating one", projectPath);
         Project::create(projectPath);
+    } else {
+        ResourceAccess::paths = Project::getPaths(ProjectPathTypes::RESOURCE);
     }
 }
 
@@ -206,14 +210,10 @@ void EditorLayer::onImGuiRender()
     ImGui::PlotHistogram("FPS history", fpsHistory.data(), fpsHistory.size(), offset, nullptr, 0.0f, 60.0f, ImVec2(0, 100));
     ImGui::Checkbox("Show all nodes", &m_showAllNodes);
 
-    static bool showResourceMenu = false;
     if (ImGui::Button("Test resource"))
-        showResourceMenu = true;
-    if (showResourceMenu) {
-        showResourceMenu = !m_resourceAccess.chooseResource();
-        if (!showResourceMenu) {
-            GLX_INFO("Selected resource! '{0}'", m_resourceAccess.selectedResourcePath);
-        }
+        m_resourceAccess.show();
+    if (m_resourceAccess.begin()) {
+        GLX_INFO("Selected resource! '{0}'", m_resourceAccess.selectedResourcePath);
     }
 
     ImGui::End();

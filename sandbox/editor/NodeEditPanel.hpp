@@ -1,6 +1,8 @@
 #pragma once
 
-#include <Engine.hpp>
+#include "Engine.hpp"
+#include "ResourceAccess.hpp"
+
 #include <imgui.h>
 
 using namespace math;
@@ -31,9 +33,10 @@ public:
     {
         visit(static_cast<Node3D&>(node));
 
-        if (ImGui::Button("Load test helmet")) {
-            node.loadMesh(std::string("FlightHelmet/FlightHelmet.gltf"));
-        }
+        if (ImGui::Button("Load mesh"))
+            m_resourceAccess.show();
+        if (m_resourceAccess.begin())
+            node.loadMesh(m_resourceAccess.selectedResourcePath);
     }
     void visit(Sprite3D& node)
     {
@@ -61,5 +64,7 @@ public:
             transform.setLocalScale(scale);
         }
     }
+
+    ResourceAccess m_resourceAccess;
 };
 }

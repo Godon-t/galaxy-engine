@@ -44,8 +44,7 @@ public:
         cache[path] = resource;
 
         m_threadPool.enqueue([resource, maker = makerIt->second.get(), path, this] {
-            std::string absPath = Project::getProjectRootPath() + path;
-            if (maker->loadResource(resource, absPath)) {
+            if (maker->loadResource(resource, path)) {
                 std::unique_lock<std::mutex> lock(m_pendingLoadMutex);
                 m_loadedResources.push(resource);
             } else {

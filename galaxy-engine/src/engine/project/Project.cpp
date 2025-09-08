@@ -39,6 +39,14 @@ uuid Project::_registerNewPath(ProjectPathTypes type, const std::string& path)
     return pathId;
 }
 
+bool Project::_deletePath(ProjectPathTypes type, uuid pathId)
+{
+    auto pathStr = m_paths[type][pathId];
+    m_reversePathSearch.erase(pathStr);
+    m_paths[type].erase(pathId);
+    return true;
+}
+
 std::string Project::_getPath(ProjectPathTypes type, const uuid& id)
 {
     return m_paths[type][id];

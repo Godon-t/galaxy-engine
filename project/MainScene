@@ -10,63 +10,63 @@ Root:
             []
           Transform:
             Position: [0, 0, 0]
-            Rotation: [0, -0, 0]
+            Rotation: [0, 0, 0]
             Scale: [1, 1, 1]
-          MeshResourceID: 1104960638724291676
+          MeshResourceID: 9892828831256405557
           SurfaceIndex: 0
         - Type: MeshInstance
           Childs:
             []
           Transform:
             Position: [0, 0, 0]
-            Rotation: [0, -0, 0]
+            Rotation: [0, 0, 0]
             Scale: [1, 1, 1]
-          MeshResourceID: 1104960638724291676
+          MeshResourceID: 9892828831256405557
           SurfaceIndex: 1
         - Type: MeshInstance
           Childs:
             []
           Transform:
             Position: [0, 0, 0]
-            Rotation: [0, -0, 0]
+            Rotation: [0, 0, 0]
             Scale: [1, 1, 1]
-          MeshResourceID: 1104960638724291676
+          MeshResourceID: 9892828831256405557
           SurfaceIndex: 2
         - Type: MeshInstance
           Childs:
             []
           Transform:
             Position: [0, 0, 0]
-            Rotation: [0, -0, 0]
+            Rotation: [0, 0, 0]
             Scale: [1, 1, 1]
-          MeshResourceID: 1104960638724291676
+          MeshResourceID: 9892828831256405557
           SurfaceIndex: 3
         - Type: MeshInstance
           Childs:
             []
           Transform:
             Position: [0, 0, 0]
-            Rotation: [0, -0, 0]
+            Rotation: [0, 0, 0]
             Scale: [1, 1, 1]
-          MeshResourceID: 1104960638724291676
+          MeshResourceID: 9892828831256405557
           SurfaceIndex: 4
         - Type: MeshInstance
           Childs:
             []
           Transform:
             Position: [0, 0, 0]
-            Rotation: [0, -0, 0]
+            Rotation: [0, 0, 0]
             Scale: [1, 1, 1]
-          MeshResourceID: 1104960638724291676
+          MeshResourceID: 9892828831256405557
           SurfaceIndex: 5
       Transform:
         Position: [0, -0.699999988, 2]
-        Rotation: [180, -5.00895749e-06, 180]
+        Rotation: [0, 3.14159274, 0]
         Scale: [1, 1, 1]
     - Type: Sprite3D
       Childs:
         []
       Transform:
         Position: [1, 0, 2]
-        Rotation: [0, -0, 0]
+        Rotation: [0, 0, 0]
         Scale: [1, 1, 1]

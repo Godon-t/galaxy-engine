@@ -22,7 +22,9 @@ public:
     inline static bool updatePath(ProjectPathTypes type, const uuid& id, const std::string& newPath) { return getInstance()._updatePath(type, id, newPath); }
     inline static bool doesPathExist(const std::string& path) { return getInstance().m_reversePathSearch.find(path) != getInstance().m_reversePathSearch.end(); }
     inline static uuid getPathId(const std::string& path) { return getInstance().m_reversePathSearch.find(path)->second; }
+
     inline static uuid registerNewPath(ProjectPathTypes type, const std::string& path) { return getInstance()._registerNewPath(type, path); }
+    inline static bool deletePath(ProjectPathTypes type, uuid pathId) { return getInstance()._deletePath(type, pathId); }
 
     static void extractExtension(const std::string& input, std::string& filePath, std::string& fileExtension);
 
@@ -41,6 +43,8 @@ private:
     static Project& getInstance();
 
     uuid _registerNewPath(ProjectPathTypes type, const std::string& path);
+    bool _deletePath(ProjectPathTypes type, uuid pathId);
+
     std::string _getPath(ProjectPathTypes type, const uuid&);
     bool _updatePath(ProjectPathTypes type, const uuid&, const std::string& newPath);
     bool _load(const std::string& path);

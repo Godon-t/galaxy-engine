@@ -58,6 +58,8 @@ public:
 protected:
     std::string m_resourcePath;
     uuid m_resourceID;
+    // TODO: Unclear
+    bool m_isInternal = false;
 
 private:
     void notifyLoaded()
@@ -69,9 +71,6 @@ private:
 
     std::atomic<ResourceState> m_state { ResourceState::EMPTY };
     std::vector<std::function<void()>> m_loadedCallbacks;
-
-    // TODO: Unclear
-    bool m_isInternal = false;
 
     friend class ResourceManager;
     friend class ResourceSerializer;

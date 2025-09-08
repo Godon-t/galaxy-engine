@@ -28,12 +28,13 @@ public:
     inline void notifyGpuInstanceDestroyed(int surfaceIdx) { m_subMeshes[surfaceIdx].visualID = 0; }
     inline int getSubMeshesCount() const { return m_subMeshes.size(); }
 
-private:
+    inline std::string getExternalFilePath() { return m_gltfPath; }
+
     bool loadExtern(const std::string& file) override;
     bool loadGres(const std::string& file) override;
     bool import(const std::string& file) override;
 
-    bool readGltf(const std::string& filePath);
+private:
     void extractSubMesh(const aiScene* scene, int surface = 0);
     std::string m_gltfPath;
 

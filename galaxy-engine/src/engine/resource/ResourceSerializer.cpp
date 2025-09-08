@@ -1,6 +1,8 @@
 #include "ResourceSerializer.hpp"
 
 #include "Image.hpp"
+#include "Mesh.hpp"
+#include "project/Project.hpp"
 
 #include <fstream>
 #include <yaml-cpp/yaml.h>
@@ -18,8 +20,24 @@ bool ResourceSerializer::serialize(Image& image, std::string& outputPath)
 
     yaml << YAML::EndMap;
 
-    std::ofstream fout(outputPath);
+    std::ofstream fout(Project::getProjectRootPath() + outputPath);
     fout << yaml.c_str();
-    return false;
+    return true;
+}
+bool ResourceSerializer::serialize(Mesh& mesh, std::string& outputPath)
+{
+    YAML::Emitter yaml;
+    yaml << YAML::BeginMap;
+    yaml << YAML::Key << "Type" << YAML::Value << "Mesh";
+
+    if (!mesh.isInternal()) {
+        yaml << YAML::Key << "ExternalFile" << YAML::Value << mesh.getExternalFilePath();
+    }
+
+    yaml << YAML::EndMap;
+
+    std::ofstream fout(Project::getProjectRootPath() + outputPath);
+    fout << yaml.c_str();
+    return true;
 }
 } // namespace Galaxy

@@ -48,6 +48,7 @@ bool Image::import(const std::string& file)
 
     if (save()) {
         // Succesfully created resource file
+        Project::deletePath(ProjectPathTypes::RESOURCE, m_resourceID);
         m_resourceID = Project::registerNewPath(ProjectPathTypes::RESOURCE, m_resourcePath);
         return true;
     } else {
@@ -64,8 +65,9 @@ bool Image::loadExtern(const std::string& path)
     if (getState() == ResourceState::LOADED)
         destroy();
 
-    m_data                     = stbi_load(path.c_str(), &m_width, &m_height, &m_nbChannels, 0);
+    m_data                     = stbi_load((Project::getProjectRootPath() + path).c_str(), &m_width, &m_height, &m_nbChannels, 0);
     m_relativeExternalFilePath = path;
+    m_isInternal               = false;
 
     if (!m_data) {
         GLX_CORE_ERROR("Failed to load: '{0}'", path);

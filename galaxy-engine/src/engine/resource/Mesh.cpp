@@ -1,6 +1,7 @@
 #include "Mesh.hpp"
 
 #include "core/Log.hpp"
+#include "project/Project.hpp"
 #include "types/Math.hpp"
 
 #include <assimp/Importer.hpp>
@@ -10,56 +11,16 @@
 
 namespace Galaxy {
 
-bool Mesh::loadExtern(const std::string& file)
+bool Mesh::loadExtern(const std::string& filePath)
 {
-    std::filesystem::path filePath(file.c_str());
+    m_gltfPath   = filePath;
+    m_isInternal = false;
 
-    std::string fileExtension = filePath.extension().string();
-    if (fileExtension == std::string(".gltf")) {
-        return readGltf(file);
-    } else if (fileExtension == std::string(".gres")) {
-        // Resource file already exist, we can retrieve settings
-        GLX_CORE_ERROR("gres loading not implemented yet!");
-        return false;
-    } else {
-        GLX_CORE_ERROR("Unknown file format '{0}' for mesh loading", fileExtension);
-        return false;
-    }
-
-    return true;
-}
-
-bool Mesh::loadGres(const std::string& file)
-{
-    GLX_CORE_ASSERT(false, "Not implemented");
-    return false;
-}
-
-bool Mesh::import(const std::string& file)
-{
-    GLX_CORE_ASSERT(false, "Not implemented");
-    return false;
-}
-
-bool Mesh::load(const unsigned char* data, size_t size)
-{
-    GLX_CORE_ASSERT(false, "Not implemented");
-    return false;
-}
-
-bool Mesh::save()
-{
-    GLX_CORE_ASSERT(false, "Not implemented");
-    return false;
-}
-
-bool Mesh::readGltf(const std::string& filePath)
-{
     const int meshIdx = 0;
 
     Assimp::Importer importer;
 
-    const aiScene* scene = importer.ReadFile(filePath.c_str(),
+    const aiScene* scene = importer.ReadFile((Project::getProjectRootPath() + filePath).c_str(),
         aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_FlipUVs);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -71,8 +32,44 @@ bool Mesh::readGltf(const std::string& filePath)
     for (int i = 0; i < scene->mNumMeshes; i++) {
         extractSubMesh(scene, i);
     }
-
     return true;
+}
+
+bool Mesh::loadGres(const std::string& file)
+{
+    return ResourceDeserializer::deserialize(*this, file);
+}
+
+bool Mesh::import(const std::string& file)
+{
+    GLX_CORE_ASSERT(loadExtern(file), "Failed to import");
+
+    std::string path, extension;
+    Project::extractExtension(file, path, extension);
+    path += std::string(".gres");
+
+    m_resourcePath = path;
+    m_gltfPath     = file;
+
+    if (save()) {
+        // Succesfully created resource file
+        Project::deletePath(ProjectPathTypes::RESOURCE, m_resourceID);
+        m_resourceID = Project::registerNewPath(ProjectPathTypes::RESOURCE, m_resourcePath);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool Mesh::load(const unsigned char* data, size_t size)
+{
+    GLX_CORE_ASSERT(false, "Not implemented");
+    return false;
+}
+
+bool Mesh::save()
+{
+    return ResourceSerializer::serialize(*this, m_resourcePath);
 }
 
 void Mesh::extractSubMesh(const aiScene* scene, int surface)

@@ -83,7 +83,7 @@ void SceneSerializer::visit(Camera& node)
 void SceneSerializer::visit(MeshInstance& node)
 {
     visit(static_cast<Node3D&>(node));
-    m_yaml << YAML::Key << "MeshResourceID" << YAML::Value << node.getMeshResourceID();
+    m_yaml << YAML::Key << "MeshResourceID" << YAML::Value << node.getMeshResource().getResource().getResourceID();
     m_yaml << YAML::Key << "SurfaceIndex" << YAML::Value << node.getSurfaceIdx();
 }
 void SceneSerializer::visit(MultiMeshInstance& node)

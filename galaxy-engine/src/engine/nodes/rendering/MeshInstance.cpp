@@ -23,20 +23,23 @@ void MeshInstance::draw()
     }
 }
 
-void MeshInstance::accept(Galaxy::NodeVisitor& visitor)
+void MeshInstance::accept(NodeVisitor& visitor)
 {
     visitor.visit(*this);
 }
 
-void MeshInstance::loadMesh(std::string path, int surfaceIdx)
+void MeshInstance::loadMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 {
-    auto res = ResourceManager::getInstance().load<Mesh>(path);
-    res.getResource().onLoaded([this, res, surfaceIdx] {
+    if (m_renderId != 0) {
+        Renderer::getInstance().clearMesh(m_renderId);
+    }
+
+    mesh.getResource().onLoaded([this, mesh, surfaceIdx] {
         m_initialized = true;
-        m_renderId    = Renderer::getInstance().instanciateMesh(res, surfaceIdx);
+        m_renderId    = Renderer::getInstance().instanciateMesh(mesh, surfaceIdx);
     });
 
-    m_meshResourceID = res.getResource().getResourceID();
+    m_meshResource   = mesh;
     m_meshSurfaceIdx = surfaceIdx;
 }
 } // namespace Galaxy

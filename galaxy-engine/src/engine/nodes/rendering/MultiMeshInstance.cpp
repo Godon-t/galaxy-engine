@@ -25,7 +25,7 @@ void MultiMeshInstance::loadMesh(std::string path)
         int subCount = meshRes.getResource().getSubMeshesCount();
         for (int i = 0; i < subCount; i++) {
             std::shared_ptr<MeshInstance> meshInstance = std::make_shared<MeshInstance>();
-            meshInstance->loadMesh(path, i);
+            meshInstance->loadMesh(meshRes, i);
             addChild(meshInstance);
         }
     });

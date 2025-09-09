@@ -1,10 +1,9 @@
 #pragma once
 
-#include "engine/types/Render.hpp"
-
-#include "engine/nodes/Node3D.hpp"
-
-#include "engine/project/UUID.hpp"
+#include "nodes/Node3D.hpp"
+#include "project/UUID.hpp"
+#include "resource/ResourceManager.hpp"
+#include "types/Render.hpp"
 
 namespace Galaxy {
 class MeshInstance : public Node3D {
@@ -19,18 +18,20 @@ public:
 
     virtual void draw() override;
 
-    void accept(Galaxy::NodeVisitor& visitor) override;
-    void loadMesh(std::string path, int surfaceIdx);
+    void accept(NodeVisitor& visitor) override;
+    void loadMesh(ResourceHandle<Mesh> mesh, int surfaceIdx);
 
     inline int getSurfaceIdx() const { return m_meshSurfaceIdx; }
-    inline uuid getMeshResourceID() const { return m_meshResourceID; }
+
+    inline ResourceHandle<Mesh> getMeshResource() const { return m_meshResource; }
 
 private:
     renderID m_renderId;
 
     bool m_initialized;
 
-    uuid m_meshResourceID;
+    ResourceHandle<Mesh> m_meshResource;
+
     int m_meshSurfaceIdx;
 };
 }

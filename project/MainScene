@@ -70,3 +70,12 @@ Root:
         Position: [1, 0, 2]
         Rotation: [0, 0, 0]
         Scale: [1, 1, 1]
+    - Type: MeshInstance
+      Childs:
+        []
+      Transform:
+        Position: [0, 0, 2]
+        Rotation: [0, 3.14159274, 0]
+        Scale: [1, 1, 1]
+      MeshResourceID: 9892828831256405557
+      SurfaceIndex: 0

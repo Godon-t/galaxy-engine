@@ -28,6 +28,20 @@ public:
     void visit(MeshInstance& node)
     {
         visit(static_cast<Node3D&>(node));
+
+        ImGui::SeparatorText("Mesh resource");
+
+        if (ImGui::Button("Load mesh"))
+            m_resourceAccess.show();
+        if (m_resourceAccess.begin()) {
+            auto meshRes = ResourceManager::getInstance().load<Mesh>(m_resourceAccess.selectedResourcePath);
+            node.loadMesh(meshRes, 0);
+        }
+
+        int surfaceIdx = node.getSurfaceIdx();
+        if (ImGui::InputInt("Surface idx", &surfaceIdx)) {
+            node.loadMesh(node.getMeshResource(), surfaceIdx);
+        }
     }
     void visit(MultiMeshInstance& node)
     {

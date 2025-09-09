@@ -21,7 +21,7 @@ bool Image::load(YAML::Node& data)
     return ResourceDeserializer::deserialize(*this, data);
 }
 
-bool Image::save()
+bool Image::save(bool recursive)
 {
     return ResourceSerializer::serialize(*this);
 }

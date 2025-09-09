@@ -25,8 +25,8 @@ public:
     virtual ~ResourceBase() = default;
 
     // Called in a separate thread
-    virtual bool load(YAML::Node& data) = 0;
-    virtual bool save()                 = 0;
+    virtual bool load(YAML::Node& data)      = 0;
+    virtual bool save(bool recursive = true) = 0;
     // virtual bool reload()                     = 0;
 
     void onLoaded(std::function<void()> callback)

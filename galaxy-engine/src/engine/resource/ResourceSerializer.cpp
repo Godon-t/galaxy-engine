@@ -1,6 +1,7 @@
 #include "ResourceSerializer.hpp"
 
 #include "Image.hpp"
+#include "Log.hpp"
 #include "Material.hpp"
 #include "Mesh.hpp"
 #include "project/Project.hpp"
@@ -17,6 +18,7 @@ bool ResourceSerializer::serialize(Image& image)
 
     if (!image.isInternal()) {
         yaml << YAML::Key << "ExternalFile" << YAML::Value << image.getExternalFilePath();
+        GLX_CORE_INFO("Serializing: {0}", image.getExternalFilePath());
     }
 
     yaml << YAML::EndMap;

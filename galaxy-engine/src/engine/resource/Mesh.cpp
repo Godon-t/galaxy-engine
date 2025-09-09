@@ -35,7 +35,7 @@ bool Mesh::loadExtern(const std::string& filePath)
     return true;
 }
 
-bool Mesh::save()
+bool Mesh::save(bool recursive)
 {
     return ResourceSerializer::serialize(*this);
 }

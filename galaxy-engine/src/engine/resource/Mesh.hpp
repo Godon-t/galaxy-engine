@@ -18,7 +18,7 @@ struct SubMesh {
 
 class Mesh : public ResourceBase {
 public:
-    bool save() override;
+    bool save(bool recursive = true) override;
     bool load(YAML::Node& data) override;
 
     bool loadExtern(const std::string& file);

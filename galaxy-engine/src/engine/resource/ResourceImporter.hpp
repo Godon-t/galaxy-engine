@@ -31,7 +31,7 @@ struct ResourceImporter {
         resource->m_resourcePath = resPath;
         resource->loadExtern(externPath);
 
-        if (resource->save()) {
+        if (resource->save(false)) {
             return resourceID;
         } else {
             return 0;
@@ -83,40 +83,40 @@ struct ResourceImporter {
         std::string texturePath;
         texturePath = getTexturePath(material, aiTextureType_BASE_COLOR);
         if (texturePath[0] != '*' && texturePath != "") {
-            uuid imageID                 = importImage(texturePath);
+            uuid imageID                 = importImage(gltfPath + "/" + texturePath);
             resource->m_images[ALBEDO]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
             resource->m_useImage[ALBEDO] = true;
         }
 
         texturePath = getTexturePath(material, aiTextureType_SPECULAR);
         if (texturePath[0] != '*' && texturePath != "") {
-            uuid imageID                   = importImage(texturePath);
+            uuid imageID                   = importImage(gltfPath + "/" + texturePath);
             resource->m_images[METALLIC]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
             resource->m_useImage[METALLIC] = true;
         }
 
         texturePath = getTexturePath(material, aiTextureType_NORMALS);
         if (texturePath[0] != '*' && texturePath != "") {
-            uuid imageID                 = importImage(texturePath);
+            uuid imageID                 = importImage(gltfPath + "/" + texturePath);
             resource->m_images[NORMAL]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
             resource->m_useImage[NORMAL] = true;
         }
 
         texturePath = getTexturePath(material, aiTextureType_SHININESS);
         if (texturePath[0] != '*' && texturePath != "") {
-            uuid imageID                    = importImage(texturePath);
+            uuid imageID                    = importImage(gltfPath + "/" + texturePath);
             resource->m_images[ROUGHNESS]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
             resource->m_useImage[ROUGHNESS] = true;
         }
 
         texturePath = getTexturePath(material, aiTextureType_AMBIENT);
         if (texturePath[0] != '*' && texturePath != "") {
-            uuid imageID             = importImage(texturePath);
+            uuid imageID             = importImage(gltfPath + "/" + texturePath);
             resource->m_images[AO]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
             resource->m_useImage[AO] = true;
         }
 
-        if (resource->save()) {
+        if (resource->save(false)) {
             return resourceID;
         } else {
             return 0;
@@ -170,7 +170,7 @@ struct ResourceImporter {
         }
 
         resource->onLoaded([resource] {
-            resource->save();
+            resource->save(false);
         });
 
         return resourceID;

@@ -10,7 +10,7 @@ struct Image : public ResourceBase {
     Image(int width, int height, int nbChannels);
 
     bool load(YAML::Node& data) override;
-    bool save() override;
+    bool save(bool recursive = true) override;
 
     bool loadExtern(const std::string& path);
 

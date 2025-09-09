@@ -27,13 +27,14 @@ public:
         m_useImage.fill(false);
     }
 
-    bool save() override
+    bool save(bool recursive = true) override
     {
-        for (int i = 0; i < m_useImage.size(); i++) {
-            if (m_useImage[i]) {
-                m_images[i].getResource().save();
+        if (recursive)
+            for (int i = 0; i < m_useImage.size(); i++) {
+                if (m_useImage[i]) {
+                    m_images[i].getResource().save();
+                }
             }
-        }
         return ResourceSerializer::serialize(*this);
     }
     bool load(YAML::Node& data) override

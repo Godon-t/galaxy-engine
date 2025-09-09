@@ -1,6 +1,7 @@
 #include "Image.hpp"
 
 #include "Core.hpp"
+#include "Log.hpp"
 #include "ResourceSerializer.hpp"
 #include "project/Project.hpp"
 
@@ -35,9 +36,12 @@ bool Image::loadExtern(const std::string& path)
     m_relativeExternalFilePath = path;
     m_isInternal               = false;
 
-    m_data = stbi_load((Project::getProjectRootPath() + path).c_str(), &m_width, &m_height, &m_nbChannels, 0);
+    std::string filePath = Project::getProjectRootPath() + path;
+
+    m_data = stbi_load(filePath.c_str(), &m_width, &m_height, &m_nbChannels, 0);
     if (!m_data) {
         GLX_CORE_ERROR("Failed to load: '{0}'", path);
+        return false;
     }
 
     return true;

@@ -45,7 +45,8 @@ public:
         } else {
             resource->m_resourceID = Project::registerNewPath(ProjectPathTypes::RESOURCE, path);
         }
-        cache[path] = resource;
+        resource->m_resourcePath = path;
+        cache[path]              = resource;
 
         m_threadPool.enqueue([resource, maker = makerIt->second.get(), path, this] {
             if (maker->loadResource(resource, path)) {

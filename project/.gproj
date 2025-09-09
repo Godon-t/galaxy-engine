@@ -1,11 +1,9 @@
 Name: UI
 Resources:
-  - Id: 10745181866684537142
+  - Id: 16373607252495793075
     Path: Cube_BaseColor.gres
   - Id: 9892828831256405557
     Path: FlightHelmet.gres
-  - Id: 8260667037650694799
-    Path: Cube_MetallicRoughness.gres
 Scenes:
   - Id: 7857652255564026288
     Path: MainScene

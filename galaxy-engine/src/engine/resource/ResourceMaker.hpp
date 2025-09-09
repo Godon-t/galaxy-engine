@@ -11,7 +11,6 @@ class IResourceMaker {
 public:
     virtual bool loadResource(std::shared_ptr<ResourceBase> resource, const std::string& path) const = 0;
     virtual std::shared_ptr<ResourceBase> createResourcePtr() const                                  = 0;
-    virtual bool import(std::shared_ptr<ResourceBase> resource, const std::string& file) const       = 0;
 };
 
 template <typename ResourceType>
@@ -27,18 +26,6 @@ class ResourceMaker : public IResourceMaker {
         data = YAML::Load(strStream.str());
 
         return resource->load(data);
-    }
-    bool import(std::shared_ptr<ResourceBase> resource, const std::string& file) const override
-    {
-        std::string path, extension;
-        Project::extractExtension(file, path, extension);
-        path += std::string(".gres");
-        uuid resourceID = Project::registerNewPath(ProjectPathTypes::RESOURCE, path);
-
-        bool success = resource->initGres(path, resourceID, file) && resource->save();
-        if (success)
-            Project::savePaths();
-        return success;
     }
 
     std::shared_ptr<ResourceBase> createResourcePtr() const override

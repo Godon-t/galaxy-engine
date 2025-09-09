@@ -1,6 +1,7 @@
 #include "ResourceSerializer.hpp"
 
 #include "Image.hpp"
+#include "Material.hpp"
 #include "Mesh.hpp"
 #include "project/Project.hpp"
 
@@ -23,6 +24,28 @@ bool ResourceSerializer::serialize(Image& image)
     std::ofstream fout(Project::getProjectRootPath() + Project::getPath(ProjectPathTypes::RESOURCE, image.getResourceID()));
     fout << yaml.c_str();
     return true;
+}
+bool ResourceSerializer::serialize(Material& material)
+{
+    YAML::Emitter yaml;
+    yaml << YAML::BeginMap;
+    yaml << YAML::Key << "Type" << YAML::Value << "Material";
+
+    yaml << YAML::Key << "Images" << YAML::BeginMap;
+
+    std::unordered_map<TextureType, std::string> textureTypeToStr;
+    textureTypeToStr[ALBEDO]    = "Albedo";
+    textureTypeToStr[ROUGHNESS] = "Roughness";
+    textureTypeToStr[METALLIC]  = "Metallic";
+    textureTypeToStr[NORMAL]    = "Normal";
+    textureTypeToStr[AO]        = "Ao";
+    for (auto& keyVal : textureTypeToStr) {
+        if (material.canUseImage(keyVal.first)) {
+            yaml << YAML::Key << keyVal.second << YAML::Value << material.getImage(keyVal.first).getResource().getResourceID();
+        }
+    }
+    yaml << YAML::EndMap;
+    return false;
 }
 bool ResourceSerializer::serialize(Mesh& mesh)
 {

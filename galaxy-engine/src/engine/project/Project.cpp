@@ -165,6 +165,14 @@ std::unordered_map<uuid, std::string>& Project::_getPaths(ProjectPathTypes type)
     return m_paths[type];
 }
 
+std::string Project::_toRelativePath(const std::string& absoluteFile)
+{
+    std::filesystem::path filePath(absoluteFile);
+    std::filesystem::path rootPath(getProjectRootPath());
+
+    return std::filesystem::relative(filePath, rootPath).string();
+}
+
 bool Project::_save()
 {
     _savePaths();

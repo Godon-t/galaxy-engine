@@ -10,6 +10,7 @@
 
 namespace Galaxy {
 class ResourceManager;
+class ResourceImporter;
 
 enum ResourceState {
     EMPTY,
@@ -24,9 +25,8 @@ public:
     virtual ~ResourceBase() = default;
 
     // Called in a separate thread
-    virtual bool load(YAML::Node& data)                                                                   = 0;
-    virtual bool initGres(const std::string& path, uuid resourceID, const std::string& externalPath = "") = 0;
-    virtual bool save()                                                                                   = 0;
+    virtual bool load(YAML::Node& data) = 0;
+    virtual bool save()                 = 0;
     // virtual bool reload()                     = 0;
 
     void onLoaded(std::function<void()> callback)
@@ -61,6 +61,7 @@ private:
     std::vector<std::function<void()>> m_loadedCallbacks;
 
     friend class ResourceManager;
+    friend class ResourceImporter;
     friend class ResourceSerializer;
     friend class ResourceDeserializer;
 };

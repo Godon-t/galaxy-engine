@@ -35,16 +35,6 @@ bool Mesh::loadExtern(const std::string& filePath)
     return true;
 }
 
-bool Mesh::initGres(const std::string& path, uuid resourceID, const std::string& externalPath)
-{
-    m_resourceID   = resourceID;
-    m_resourcePath = path;
-
-    loadExtern(externalPath);
-
-    return false;
-}
-
 bool Mesh::save()
 {
     return ResourceSerializer::serialize(*this);

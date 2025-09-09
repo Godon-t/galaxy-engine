@@ -39,6 +39,7 @@ public:
     static bool isSceneValid(uuid id);
 
     inline static std::string getProjectRootPath() { return getInstance().m_projectFolderPath; }
+    inline static std::string toRelativePath(const std::string& absoluteFile) { return getInstance()._toRelativePath(absoluteFile); }
 
 private:
     static Project& getInstance();
@@ -58,6 +59,7 @@ private:
     std::unordered_map<uuid, std::string>& _getPaths(ProjectPathTypes type);
 
     inline std::string getSceneFullPath(std::string& scenePath) { return m_projectFolderPath + scenePath; }
+    std::string _toRelativePath(const std::string& absoluteFile);
 
     bool _save();
 

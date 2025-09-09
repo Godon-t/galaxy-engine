@@ -9,7 +9,6 @@ struct Image : public ResourceBase {
 
     Image(int width, int height, int nbChannels);
 
-    bool initGres(const std::string& path, uuid resourceID, const std::string& externalPath = "") override;
     bool load(YAML::Node& data) override;
     bool save() override;
 

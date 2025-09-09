@@ -117,9 +117,8 @@ void EditorLayer::displayMenuBar(bool validScene)
             }
             ImGui::EndMenu();
         }
-        if (ImGui::MenuItem("Import file")) {
+        if (ImGui::MenuItem("Import file"))
             m_fileDialog.Open();
-        }
         ImGui::EndMenu();
     }
     ImGui::EndMenuBar();
@@ -127,8 +126,9 @@ void EditorLayer::displayMenuBar(bool validScene)
     m_fileDialog.Display();
 
     if (m_fileDialog.HasSelected()) {
-        std::string filePath = m_fileDialog.GetSelected().string();
-        if (ResourceManager::getInstance().import(filePath)) {
+        std::string filePath = Project::toRelativePath(m_fileDialog.GetSelected().string());
+
+        if (ResourceImporter::import(filePath)) {
             ResourceAccess::paths = Project::getPaths(ProjectPathTypes::RESOURCE);
             GLX_INFO("File imported");
         } else {

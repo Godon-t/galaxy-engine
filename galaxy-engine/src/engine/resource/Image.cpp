@@ -29,15 +29,6 @@ void Image::destroy()
 {
     stbi_image_free(m_data);
 }
-bool Image::initGres(const std::string& path, uuid resourceID, const std::string& externalPath)
-{
-    if (externalPath == std::string(""))
-        return false;
-
-    m_resourceID   = resourceID;
-    m_resourcePath = path;
-    return loadExtern(externalPath);
-}
 
 bool Image::loadExtern(const std::string& path)
 {

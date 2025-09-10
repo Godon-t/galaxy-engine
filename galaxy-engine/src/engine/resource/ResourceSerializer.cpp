@@ -12,13 +12,13 @@
 namespace Galaxy {
 bool ResourceSerializer::serialize(Image& image)
 {
+    GLX_CORE_INFO("Serializing: {0}", image.getExternalFilePath());
     YAML::Emitter yaml;
     yaml << YAML::BeginMap;
     yaml << YAML::Key << "Type" << YAML::Value << "Image";
 
     if (!image.isInternal()) {
         yaml << YAML::Key << "ExternalFile" << YAML::Value << image.getExternalFilePath();
-        GLX_CORE_INFO("Serializing: {0}", image.getExternalFilePath());
     }
 
     yaml << YAML::EndMap;
@@ -29,6 +29,8 @@ bool ResourceSerializer::serialize(Image& image)
 }
 bool ResourceSerializer::serialize(Material& material)
 {
+    GLX_CORE_INFO("Serializing: {0}", material.getPath());
+
     YAML::Emitter yaml;
     yaml << YAML::BeginMap;
     yaml << YAML::Key << "Type" << YAML::Value << "Material";
@@ -54,6 +56,8 @@ bool ResourceSerializer::serialize(Material& material)
 }
 bool ResourceSerializer::serialize(Mesh& mesh)
 {
+    GLX_CORE_INFO("Serializing: {0}", mesh.getPath());
+
     YAML::Emitter yaml;
     yaml << YAML::BeginMap;
     yaml << YAML::Key << "Type" << YAML::Value << "Mesh";

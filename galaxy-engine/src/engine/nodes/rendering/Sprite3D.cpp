@@ -41,7 +41,7 @@ void Sprite3D::loadTexture(std::string path)
 }
 void Sprite3D::enteredRoot()
 {
-    loadTexture(std::string("Cube_BaseColor.png"));
+    loadTexture(std::string("Cube_BaseColor.gres"));
 }
 renderID Sprite3D::generateRect(vec2 dimmensions)
 {

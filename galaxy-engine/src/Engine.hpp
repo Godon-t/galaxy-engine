@@ -19,6 +19,7 @@
 #include "project/Project.hpp"
 #include "project/Scene.hpp"
 
+#include "resource/ResourceImporter.hpp"
 #include "resource/ResourceManager.hpp"
 
 #include "rendering/CameraManager.hpp"

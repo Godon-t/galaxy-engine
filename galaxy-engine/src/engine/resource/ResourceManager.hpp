@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Image.hpp"
+#include "Material.hpp"
 #include "Mesh.hpp"
 #include "ResourceMaker.hpp"
 #include "ThreadPool.hpp"
@@ -9,6 +10,8 @@
 #include <queue>
 
 namespace Galaxy {
+class ResourceImporter;
+
 class ResourceManager {
 public:
     static ResourceManager& getInstance()
@@ -20,7 +23,8 @@ public:
     template <typename ResourceType>
     void registerMaker()
     {
-        makers[typeid(ResourceType).hash_code()] = std::make_unique<ResourceMaker<ResourceType>>();
+        size_t id    = typeid(ResourceType).hash_code();
+        m_makers[id] = std::make_unique<ResourceMaker<ResourceType>>();
     }
 
     template <typename ResourceType>
@@ -31,8 +35,8 @@ public:
             return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(it->second));
         }
 
-        auto makerIt = makers.find(typeid(ResourceType).hash_code());
-        GLX_CORE_ASSERT(makerIt != makers.end(), "No resource maker for file: '{0}'", path);
+        auto makerIt = m_makers.find(typeid(ResourceType).hash_code());
+        GLX_CORE_ASSERT(makerIt != m_makers.end(), "No resource maker for file: '{0}'", path);
 
         std::shared_ptr<ResourceBase> resource = makerIt->second->createResourcePtr();
         resource->m_state                      = ResourceState::LOADING;
@@ -41,41 +45,11 @@ public:
         } else {
             resource->m_resourceID = Project::registerNewPath(ProjectPathTypes::RESOURCE, path);
         }
-        cache[path] = resource;
+        resource->m_resourcePath = path;
+        cache[path]              = resource;
 
         m_threadPool.enqueue([resource, maker = makerIt->second.get(), path, this] {
-            std::string absPath = Project::getProjectRootPath() + path;
-            if (maker->loadResource(resource, absPath)) {
-                std::unique_lock<std::mutex> lock(m_pendingLoadMutex);
-                m_loadedResources.push(resource);
-            } else {
-                GLX_CORE_ERROR("Failed to load resource '{0}'", path);
-                resource->m_state = ResourceState::FAILED;
-            }
-        });
-
-        return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(resource));
-    }
-
-    // Internal resource, path is just for caching. The resource should exist within another one
-    template <typename ResourceType>
-    ResourceHandle<ResourceType> load(const std::string& path, const unsigned char* data, size_t size)
-    {
-        auto it = cache.find(path);
-        if (it != cache.end()) {
-            return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(it->second));
-        }
-
-        auto makerIt = makers.find(typeid(ResourceType).hash_code());
-        GLX_CORE_ASSERT(makerIt != makers.end(), "No resource maker for file: '{0}'", path);
-
-        std::shared_ptr<ResourceBase> resource = makerIt->second->createResourcePtr();
-        resource->m_state                      = ResourceState::LOADING;
-        resource->m_isInternal                 = true;
-        cache[path]                            = resource;
-
-        m_threadPool.enqueue([resource, maker = makerIt->second.get(), path, this, data, size] {
-            if (maker->loadResource(resource, data, size)) {
+            if (maker->loadResource(resource, path)) {
                 std::unique_lock<std::mutex> lock(m_pendingLoadMutex);
                 m_loadedResources.push(resource);
             } else {
@@ -99,16 +73,19 @@ public:
     }
 
 private:
+    friend class ResourceImporter;
+
     ResourceManager()
         : m_threadPool(resourcePoolSize)
     {
         registerMaker<Image>();
         registerMaker<Mesh>();
+        registerMaker<Material>();
     }
     ThreadPool m_threadPool;
     std::mutex m_pendingLoadMutex;
 
-    std::unordered_map<size_t, std::unique_ptr<IResourceMaker>> makers;
+    std::unordered_map<size_t, std::unique_ptr<IResourceMaker>> m_makers;
     std::unordered_map<std::string, std::shared_ptr<ResourceBase>> cache;
     std::queue<std::shared_ptr<ResourceBase>> m_loadedResources;
 };

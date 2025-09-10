@@ -1,11 +1,15 @@
 #pragma once
 
+#include "ResourceSerializer.hpp"
 #include "project/UUID.hpp"
 
 #include <atomic>
+#include <filesystem>
+#include <yaml-cpp/yaml.h>
 
 namespace Galaxy {
 class ResourceManager;
+class ResourceImporter;
 
 enum ResourceState {
     EMPTY,
@@ -20,8 +24,8 @@ public:
     virtual ~ResourceBase() = default;
 
     // Called in a separate thread
-    virtual bool load(const std::string& file)                = 0;
-    virtual bool load(const unsigned char* data, size_t size) = 0;
+    virtual bool load(YAML::Node& data)      = 0;
+    virtual bool save(bool recursive = true) = 0;
     // virtual bool reload()                     = 0;
 
     void onLoaded(std::function<void()> callback)
@@ -35,6 +39,14 @@ public:
 
     inline ResourceState getState() { return m_state; }
     inline uuid getResourceID() { return m_resourceID; }
+    inline bool isInternal() { return m_isInternal; }
+    inline std::string getPath() const { return m_resourcePath; }
+
+protected:
+    std::string m_resourcePath;
+    uuid m_resourceID;
+    // TODO: Unclear
+    bool m_isInternal = false;
 
 private:
     void notifyLoaded()
@@ -47,10 +59,9 @@ private:
     std::atomic<ResourceState> m_state { ResourceState::EMPTY };
     std::vector<std::function<void()>> m_loadedCallbacks;
 
-    bool m_isInternal = false;
-    uuid m_resourceID;
-
     friend class ResourceManager;
+    friend class ResourceImporter;
+    friend class ResourceSerializer;
 };
 
 }

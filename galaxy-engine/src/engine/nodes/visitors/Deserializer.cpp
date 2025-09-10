@@ -124,7 +124,8 @@ void SceneDeSerializer::visit(MeshInstance& node)
         if (surfaceIdx == -1)
             return;
 
-        node.loadMesh(meshPath, surfaceIdx);
+        auto meshResource = ResourceManager::getInstance().load<Mesh>(meshPath);
+        node.loadMesh(meshResource, surfaceIdx);
     }
 }
 void SceneDeSerializer::visit(MultiMeshInstance& node)

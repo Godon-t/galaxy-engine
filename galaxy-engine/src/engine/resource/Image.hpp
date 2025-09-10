@@ -8,8 +8,11 @@ struct Image : public ResourceBase {
     Image() {};
 
     Image(int width, int height, int nbChannels);
-    bool load(const std::string& file) override;
-    bool load(const unsigned char* data, size_t size) override;
+
+    bool load(YAML::Node& data) override;
+    bool save(bool recursive = true) override;
+
+    bool loadExtern(const std::string& path);
 
     inline int getWidth() const { return m_width; }
     inline int getHeight() const { return m_height; }
@@ -20,6 +23,8 @@ struct Image : public ResourceBase {
     inline renderID getTextureID() const { return m_textureID; }
     inline void setTextureID(renderID id) { m_textureID = id; }
 
+    inline std::string getExternalFilePath() { return m_relativeExternalFilePath; }
+
     void destroy();
 
 private:
@@ -27,6 +32,8 @@ private:
     int m_height;
     unsigned char* m_data;
     int m_nbChannels;
+
+    std::string m_relativeExternalFilePath;
 
     renderID m_textureID = 0;
 };

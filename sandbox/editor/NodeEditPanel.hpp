@@ -1,6 +1,8 @@
 #pragma once
 
-#include <Engine.hpp>
+#include "Engine.hpp"
+#include "ResourceAccess.hpp"
+
 #include <imgui.h>
 
 using namespace math;
@@ -26,14 +28,29 @@ public:
     void visit(MeshInstance& node)
     {
         visit(static_cast<Node3D&>(node));
+
+        ImGui::SeparatorText("Mesh resource");
+
+        if (ImGui::Button("Load mesh"))
+            m_resourceAccess.show();
+        if (m_resourceAccess.begin()) {
+            auto meshRes = ResourceManager::getInstance().load<Mesh>(m_resourceAccess.selectedResourcePath);
+            node.loadMesh(meshRes, 0);
+        }
+
+        int surfaceIdx = node.getSurfaceIdx();
+        if (ImGui::InputInt("Surface idx", &surfaceIdx)) {
+            node.loadMesh(node.getMeshResource(), surfaceIdx);
+        }
     }
     void visit(MultiMeshInstance& node)
     {
         visit(static_cast<Node3D&>(node));
 
-        if (ImGui::Button("Load test helmet")) {
-            node.loadMesh(std::string("FlightHelmet/FlightHelmet.gltf"));
-        }
+        if (ImGui::Button("Load mesh"))
+            m_resourceAccess.show();
+        if (m_resourceAccess.begin())
+            node.loadMesh(m_resourceAccess.selectedResourcePath);
     }
     void visit(Sprite3D& node)
     {
@@ -61,5 +78,7 @@ public:
             transform.setLocalScale(scale);
         }
     }
+
+    ResourceAccess m_resourceAccess;
 };
 }

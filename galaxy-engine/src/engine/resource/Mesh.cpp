@@ -1,6 +1,8 @@
 #include "Mesh.hpp"
 
+#include "ResourceManager.hpp"
 #include "core/Log.hpp"
+#include "project/Project.hpp"
 #include "types/Math.hpp"
 
 #include <assimp/Importer.hpp>
@@ -10,38 +12,16 @@
 
 namespace Galaxy {
 
-bool Mesh::load(const std::string& file)
+bool Mesh::loadExtern(const std::string& filePath)
 {
-    std::filesystem::path filePath(file.c_str());
+    m_gltfPath   = filePath;
+    m_isInternal = false;
 
-    std::string fileExtension = filePath.extension().string();
-    if (fileExtension == std::string(".gltf")) {
-        return readGltf(file);
-    } else if (fileExtension == std::string(".gres")) {
-        // Resource file already exist, we can retrieve settings
-        GLX_CORE_ERROR("gres loading not implemented yet!");
-        return false;
-    } else {
-        GLX_CORE_ERROR("Unknown file format '{0}' for mesh loading", fileExtension);
-        return false;
-    }
-
-    return true;
-}
-
-bool Mesh::load(const unsigned char* data, size_t size)
-{
-    GLX_CORE_ERROR("Load data directly not implemented in mesh!");
-    return false;
-}
-
-bool Mesh::readGltf(const std::string& filePath)
-{
     const int meshIdx = 0;
 
     Assimp::Importer importer;
 
-    const aiScene* scene = importer.ReadFile(filePath.c_str(),
+    const aiScene* scene = importer.ReadFile((Project::getProjectRootPath() + filePath).c_str(),
         aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_FlipUVs);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -53,7 +33,36 @@ bool Mesh::readGltf(const std::string& filePath)
     for (int i = 0; i < scene->mNumMeshes; i++) {
         extractSubMesh(scene, i);
     }
+    return true;
+}
 
+bool Mesh::save(bool recursive)
+{
+    return ResourceSerializer::serialize(*this);
+}
+
+bool Mesh::load(YAML::Node& data)
+{
+    if (!data["Type"] || data["Type"].as<std::string>() != std::string("Mesh")) {
+        GLX_CORE_ERROR("File unsupported");
+        return false;
+    }
+
+    if (data["ExternalFile"]) {
+        if (!loadExtern(data["ExternalFile"].as<std::string>()))
+            return false;
+    }
+
+    if (data["SubMeshes"]) {
+        for (int i = 0; i < data["SubMeshes"].size(); i++) {
+            auto subMesh               = data["SubMeshes"][i];
+            m_subMeshes[i].hasMaterial = subMesh["HasMaterial"].as<bool>();
+            if (hasMaterial(i)) {
+                uuid materialID         = subMesh["MaterialID"].as<uint64_t>();
+                m_subMeshes[i].material = ResourceManager::getInstance().load<Material>(Project::getPath(ProjectPathTypes::RESOURCE, materialID));
+            }
+        }
+    }
     return true;
 }
 

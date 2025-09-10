@@ -92,8 +92,10 @@ add_library(galaxy-engine
 	src/engine/rendering/GPUInstances/Texture.cpp
 	src/engine/rendering/GPUInstances/FrameBuffer.cpp
 	
+	src/engine/resource/ResourceSerializer.cpp
 	src/engine/resource/Image.cpp
 	src/engine/resource/Mesh.cpp
+	src/engine/resource/Material.cpp
 )
 
 target_compile_definitions(galaxy-engine PUBLIC

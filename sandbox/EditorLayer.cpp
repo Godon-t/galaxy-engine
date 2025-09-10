@@ -1,10 +1,12 @@
 #include "EditorLayer.hpp"
+#include "Engine.hpp"
 #include "editor/NodeListPanel.hpp"
-#include <Engine.hpp>
 
 #include <imgui.h>
 
 namespace Galaxy {
+std::unordered_map<Galaxy::uuid, std::string> ResourceAccess::paths;
+
 EditorLayer::EditorLayer(const char* projectPath)
     : Layer("Editor layer")
     , m_mode(EditorMode::Edit)
@@ -13,6 +15,8 @@ EditorLayer::EditorLayer(const char* projectPath)
     if (!Project::load(projectPath)) {
         GLX_ERROR("Can't load project '{0}', creating one", projectPath);
         Project::create(projectPath);
+    } else {
+        ResourceAccess::paths = Project::getPaths(ProjectPathTypes::RESOURCE);
     }
 }
 
@@ -27,6 +31,8 @@ void EditorLayer::onAttach()
     m_editorCamera->setCurrent(false);
     m_rootEditorNode->addChild(m_editorCamera);
     m_rootEditorNode->activate();
+
+    m_fileDialog.SetDirectory(Project::getProjectRootPath());
 
     m_rootSceneNode = std::make_shared<Node>("RootScene");
     m_rootSceneNode->disable();
@@ -111,9 +117,25 @@ void EditorLayer::displayMenuBar(bool validScene)
             }
             ImGui::EndMenu();
         }
+        if (ImGui::MenuItem("Import file"))
+            m_fileDialog.Open();
         ImGui::EndMenu();
     }
     ImGui::EndMenuBar();
+
+    m_fileDialog.Display();
+
+    if (m_fileDialog.HasSelected()) {
+        std::string filePath = Project::toRelativePath(m_fileDialog.GetSelected().string());
+
+        if (ResourceImporter::import(filePath)) {
+            ResourceAccess::paths = Project::getPaths(ProjectPathTypes::RESOURCE);
+            GLX_INFO("File imported");
+        } else {
+            GLX_ERROR("Error importing '{0}'", filePath);
+        }
+        m_fileDialog.ClearSelected();
+    }
 
     if (newScene) {
         ImGui::Begin("New Scene window");
@@ -205,6 +227,12 @@ void EditorLayer::onImGuiRender()
     ImGui::Text("FPS: %.1f", fps);
     ImGui::PlotHistogram("FPS history", fpsHistory.data(), fpsHistory.size(), offset, nullptr, 0.0f, 60.0f, ImVec2(0, 100));
     ImGui::Checkbox("Show all nodes", &m_showAllNodes);
+
+    if (ImGui::Button("Test resource"))
+        m_resourceAccess.show();
+    if (m_resourceAccess.begin()) {
+        GLX_INFO("Selected resource! '{0}'", m_resourceAccess.selectedResourcePath);
+    }
 
     ImGui::End();
 

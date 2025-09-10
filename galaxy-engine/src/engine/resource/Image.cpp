@@ -1,6 +1,9 @@
 #include "Image.hpp"
 
 #include "Core.hpp"
+#include "Log.hpp"
+#include "ResourceSerializer.hpp"
+#include "project/Project.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stbi.h"
@@ -13,38 +16,44 @@ Image::Image(int width, int height, int nbChannels)
 {
 }
 
-bool Image::load(const std::string& path)
+bool Image::load(YAML::Node& data)
 {
-    if (getState() == ResourceState::LOADED)
-        destroy();
-
-    m_data = stbi_load(path.c_str(), &m_width, &m_height, &m_nbChannels, 0);
-
-    if (!m_data) {
-        GLX_CORE_ERROR("Failed to load: '{0}'", path);
-    }
-
-    return true;
-}
-
-bool Image::load(const unsigned char* data, size_t size)
-{
-    if (getState() == ResourceState::LOADED)
-        destroy();
-
-    m_data = stbi_load_from_memory(data, size, &m_width, &m_height, &m_nbChannels, 0);
-
-    if (!m_data) {
-        GLX_CORE_ERROR("Failed to load embedded texture from memory");
+    if (!data["Type"] || data["Type"].as<std::string>() != std::string("Image")) {
+        GLX_CORE_ERROR("File unsupported");
         return false;
     }
 
-    return true;
+    if (data["ExternalFile"]) {
+        return loadExtern(data["ExternalFile"].as<std::string>());
+    }
+
+    return false;
+}
+
+bool Image::save(bool recursive)
+{
+    return ResourceSerializer::serialize(*this);
 }
 
 void Image::destroy()
 {
     stbi_image_free(m_data);
+}
+
+bool Image::loadExtern(const std::string& path)
+{
+    m_relativeExternalFilePath = path;
+    m_isInternal               = false;
+
+    std::string filePath = Project::getProjectRootPath() + path;
+
+    m_data = stbi_load(filePath.c_str(), &m_width, &m_height, &m_nbChannels, 0);
+    if (!m_data) {
+        GLX_CORE_ERROR("Failed to load: '{0}'", path);
+        return false;
+    }
+
+    return true;
 }
 
 }

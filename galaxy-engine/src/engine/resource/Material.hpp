@@ -1,63 +1,49 @@
 #pragma once
 
+#include "Image.hpp"
+#include "Log.hpp"
 #include "Resource.hpp"
+#include "ResourceHandle.hpp"
+#include "types/Math.hpp"
+
+#include <assimp/scene.h>
 
 namespace Galaxy {
-void extractMaterial(Material& mat, aiMesh* mesh, const aiScene* scene)
-{
-    if (mesh->mMaterialIndex >= 0) {
-        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-
-        auto albedoMaps = loadMaterialTextures(material, aiTextureType_BASE_COLOR, scene);
-        if (!albedoMaps.empty()) {
-            mat.albedoTex          = albedoMaps[0];
-            mat.albedoTex->visible = true;
-        } else
-            mat.albedoTex = Texture::emptyTexture;
-
-        auto specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, scene);
-        if (!specularMaps.empty()) {
-            mat.metallicTex          = specularMaps[0];
-            mat.metallicTex->visible = true;
-        } else
-            mat.metallicTex = Texture::emptyTexture;
-
-        auto normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, scene);
-        if (normalMaps.empty())
-            normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, scene);
-        if (!normalMaps.empty()) {
-            mat.normalTex          = normalMaps[0];
-            mat.normalTex->visible = true;
-        } else
-            mat.normalTex = Texture::emptyTexture;
-
-        auto roughnessMaps = loadMaterialTextures(material, aiTextureType_SHININESS, scene);
-        if (!roughnessMaps.empty()) {
-            mat.roughnessTex          = roughnessMaps[0];
-            mat.roughnessTex->visible = true;
-        } else
-            mat.roughnessTex = Texture::emptyTexture;
-
-        auto aoMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, scene);
-        if (!aoMaps.empty()) {
-            mat.aoTex          = aoMaps[0];
-            mat.aoTex->visible = true;
-        } else
-            mat.aoTex = Texture::emptyTexture;
-    }
-}
-
-struct subMat {
+enum TextureType {
+    ALBEDO,
+    NORMAL,
+    METALLIC,
+    ROUGHNESS,
+    AO,
+    COUNT
 };
 
-class Material : ResourceBase {
+class MaterialsExtractor;
+
+class Material : public ResourceBase {
 public:
-    bool load(const std::string& file) override;
+    Material();
+
+    bool save(bool recursive = true) override;
+    bool load(YAML::Node& data) override;
+
+    inline bool canUseImage(TextureType type) const { return m_useImage[type]; }
+    ResourceHandle<Image> getImage(TextureType type) const { return m_images[type]; }
+    inline renderID getRenderID() const { return m_materialRenderID; }
+
+    void setImage(TextureType type, ResourceHandle<Image> image);
 
 private:
-    bool readGltf(const std::string& filePath);
-    std::string m_gltfPath;
+    friend class ResourceImporter;
 
-    std::vector<SubMesh> m_subMeshes;
+    math::vec3 m_albedo = { 1.f, 0.7f, 0.77f };
+    float m_metallic    = 0.5f;
+    float m_roughness   = 0.5f;
+    float m_ao          = 1.0f;
+
+    renderID m_materialRenderID;
+
+    std::array<bool, TextureType::COUNT> m_useImage;
+    std::array<ResourceHandle<Image>, TextureType::COUNT> m_images;
 };
 } // namespace Galaxy

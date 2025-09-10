@@ -1,5 +1,6 @@
 #include "Mesh.hpp"
 
+#include "ResourceManager.hpp"
 #include "core/Log.hpp"
 #include "project/Project.hpp"
 #include "types/Math.hpp"
@@ -42,7 +43,27 @@ bool Mesh::save(bool recursive)
 
 bool Mesh::load(YAML::Node& data)
 {
-    return ResourceDeserializer::deserialize(*this, data);
+    if (!data["Type"] || data["Type"].as<std::string>() != std::string("Mesh")) {
+        GLX_CORE_ERROR("File unsupported");
+        return false;
+    }
+
+    if (data["ExternalFile"]) {
+        if (!loadExtern(data["ExternalFile"].as<std::string>()))
+            return false;
+    }
+
+    if (data["SubMeshes"]) {
+        for (int i = 0; i < data["SubMeshes"].size(); i++) {
+            auto subMesh               = data["SubMeshes"][i];
+            m_subMeshes[i].hasMaterial = subMesh["HasMaterial"].as<bool>();
+            if (hasMaterial(i)) {
+                uuid materialID         = subMesh["MaterialID"].as<uint64_t>();
+                m_subMeshes[i].material = ResourceManager::getInstance().load<Material>(Project::getPath(ProjectPathTypes::RESOURCE, materialID));
+            }
+        }
+    }
+    return true;
 }
 
 void Mesh::extractSubMesh(const aiScene* scene, int surface)

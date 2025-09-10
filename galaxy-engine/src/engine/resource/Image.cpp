@@ -18,7 +18,16 @@ Image::Image(int width, int height, int nbChannels)
 
 bool Image::load(YAML::Node& data)
 {
-    return ResourceDeserializer::deserialize(*this, data);
+    if (!data["Type"] || data["Type"].as<std::string>() != std::string("Image")) {
+        GLX_CORE_ERROR("File unsupported");
+        return false;
+    }
+
+    if (data["ExternalFile"]) {
+        return loadExtern(data["ExternalFile"].as<std::string>());
+    }
+
+    return false;
 }
 
 bool Image::save(bool recursive)

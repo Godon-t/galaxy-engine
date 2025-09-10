@@ -22,35 +22,16 @@ class MaterialsExtractor;
 
 class Material : public ResourceBase {
 public:
-    Material()
-    {
-        m_useImage.fill(false);
-    }
+    Material();
 
-    bool save(bool recursive = true) override
-    {
-        if (recursive)
-            for (int i = 0; i < m_useImage.size(); i++) {
-                if (m_useImage[i]) {
-                    m_images[i].getResource().save();
-                }
-            }
-        return ResourceSerializer::serialize(*this);
-    }
-    bool load(YAML::Node& data) override
-    {
-        GLX_CORE_ASSERT(false, "No material loading implemented!");
-    }
+    bool save(bool recursive = true) override;
+    bool load(YAML::Node& data) override;
 
     inline bool canUseImage(TextureType type) const { return m_useImage[type]; }
     ResourceHandle<Image> getImage(TextureType type) const { return m_images[type]; }
     inline renderID getRenderID() const { return m_materialRenderID; }
 
-    void setImage(TextureType type, ResourceHandle<Image> image)
-    {
-        m_useImage[type] = true;
-        m_images[type]   = image;
-    }
+    void setImage(TextureType type, ResourceHandle<Image> image);
 
 private:
     friend class ResourceImporter;

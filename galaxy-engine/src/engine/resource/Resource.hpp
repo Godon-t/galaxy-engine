@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ResourceDeserializer.hpp"
 #include "ResourceSerializer.hpp"
 #include "project/UUID.hpp"
 
@@ -63,7 +62,6 @@ private:
     friend class ResourceManager;
     friend class ResourceImporter;
     friend class ResourceSerializer;
-    friend class ResourceDeserializer;
 };
 
 }

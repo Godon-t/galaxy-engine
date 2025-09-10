@@ -165,15 +165,17 @@ struct ResourceImporter {
         for (int i = 0; i < scene->mNumMeshes; i++) {
             resource->extractSubMesh(scene, i);
             uuid materialID = importMaterial(externPath, scene->mMeshes[i]->mMaterialIndex);
-            if (materialID != 0)
-                resource->m_subMeshes[i].material = rmInstance.load<Material>(Project::getPath(ProjectPathTypes::RESOURCE, materialID));
+            if (materialID != 0) {
+                resource->m_subMeshes[i].hasMaterial = true;
+                resource->m_subMeshes[i].material    = rmInstance.load<Material>(Project::getPath(ProjectPathTypes::RESOURCE, materialID));
+            }
         }
 
-        resource->onLoaded([resource] {
-            resource->save(false);
-        });
-
-        return resourceID;
+        if (resource->save(false)) {
+            return resourceID;
+        } else {
+            return 0;
+        }
     }
 
     static bool import(const std::string& file)

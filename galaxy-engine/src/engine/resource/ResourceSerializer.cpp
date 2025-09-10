@@ -47,7 +47,10 @@ bool ResourceSerializer::serialize(Material& material)
         }
     }
     yaml << YAML::EndMap;
-    return false;
+
+    std::ofstream fout(Project::getProjectRootPath() + Project::getPath(ProjectPathTypes::RESOURCE, material.getResourceID()));
+    fout << yaml.c_str();
+    return true;
 }
 bool ResourceSerializer::serialize(Mesh& mesh)
 {
@@ -59,6 +62,17 @@ bool ResourceSerializer::serialize(Mesh& mesh)
         yaml << YAML::Key << "ExternalFile" << YAML::Value << mesh.getExternalFilePath();
     }
 
+    yaml << YAML::Key << "SubMeshes" << YAML::BeginSeq;
+    for (int i = 0; i < mesh.getSubMeshesCount(); i++) {
+        yaml << YAML::BeginMap;
+        yaml << YAML::Key << "HasMaterial" << YAML::Value << mesh.hasMaterial(i);
+        if (mesh.hasMaterial(i)) {
+            yaml << YAML::Key << "MaterialID" << YAML::Value << mesh.getMaterial(i).getResource().m_resourceID;
+        }
+        yaml << YAML::EndMap;
+    }
+
+    yaml << YAML::EndSeq;
     yaml << YAML::EndMap;
 
     std::ofstream fout(Project::getProjectRootPath() + Project::getPath(ProjectPathTypes::RESOURCE, mesh.getResourceID()));

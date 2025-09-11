@@ -61,8 +61,20 @@ public:
         return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(resource));
     }
 
+    void clearUnusedResources()
+    {
+        for (auto it = cache.begin(); it != cache.end();) {
+            if (it->second.use_count() == 1) {
+                it = cache.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
     void updatePendingLoads()
     {
+        static int previousFrameCount = 0;
         std::unique_lock<std::mutex> lock(m_pendingLoadMutex);
         while (!m_loadedResources.empty()) {
             auto& resource    = m_loadedResources.front();
@@ -70,7 +82,15 @@ public:
             resource->notifyLoaded();
             m_loadedResources.pop();
         }
+
+        previousFrameCount++;
+        if (previousFrameCount > 20) {
+            ResourceManager::getInstance().clearUnusedResources();
+            previousFrameCount = 0;
+        }
     }
+
+    inline int getResourceCount() { return cache.size(); }
 
 private:
     friend class ResourceImporter;

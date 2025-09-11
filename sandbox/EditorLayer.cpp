@@ -224,6 +224,7 @@ void EditorLayer::onImGuiRender()
     fpsHistory[offset] = (float)fps;
     offset             = (offset + 1) % fpsHistory.size();
 
+    ImGui::Text("Resource count: %.1i", ResourceManager::getInstance().getResourceCount());
     ImGui::Text("FPS: %.1f", fps);
     ImGui::PlotHistogram("FPS history", fpsHistory.data(), fpsHistory.size(), offset, nullptr, 0.0f, 60.0f, ImVec2(0, 100));
     ImGui::Checkbox("Show all nodes", &m_showAllNodes);

@@ -80,19 +80,7 @@ struct ResourceImporter {
         }
 
         aiMaterial* material = scene->mMaterials[idx];
-        std::string texturePath;
-        texturePath = getTexturePath(material, aiTextureType_BASE_COLOR);
-        if (texturePath[0] != '*' && texturePath != "") {
-            uuid imageID                 = importImage(gltfPath + "/" + texturePath);
-            resource->m_images[ALBEDO]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
-            resource->m_useImage[ALBEDO] = true;
-            aiColor3D color(0.f, 0.f, 0.f);
-            if (material->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) {
-                resource->m_albedo = vec3(color.r, color.g, color.b);
-            }
-        }
-
-        auto tryImport = [&resource, &material, &gltfPath, &rmInstance](aiTextureType aiType, TextureType glxType) {
+        auto tryImport       = [&resource, &material, &gltfPath, &rmInstance](aiTextureType aiType, TextureType glxType) {
             std::string texturePath = getTexturePath(material, aiType);
             if (texturePath[0] != '*' && texturePath != "") {
                 uuid imageID                  = importImage(gltfPath + "/" + texturePath);
@@ -101,6 +89,11 @@ struct ResourceImporter {
             }
         };
 
+        tryImport(aiTextureType_BASE_COLOR, ALBEDO);
+        aiColor3D color(0.f, 0.f, 0.f);
+        if (material->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) {
+            resource->m_albedo = vec3(color.r, color.g, color.b);
+        }
         tryImport(aiTextureType_SPECULAR, METALLIC);
         tryImport(aiTextureType_NORMALS, NORMAL);
         tryImport(aiTextureType_SHININESS, ROUGHNESS);

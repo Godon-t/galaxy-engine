@@ -43,7 +43,7 @@ public:
         if (Project::doesPathExist(path)) {
             resource->m_resourceID = Project::getPathId(path);
         } else {
-            resource->m_resourceID = Project::registerNewPath(ProjectPathTypes::RESOURCE, path);
+            GLX_CORE_ASSERT(false, "Resource does not exist !");
         }
         resource->m_resourcePath = path;
         cache[path]              = resource;

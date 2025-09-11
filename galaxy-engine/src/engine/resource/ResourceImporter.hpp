@@ -92,33 +92,19 @@ struct ResourceImporter {
             }
         }
 
-        texturePath = getTexturePath(material, aiTextureType_SPECULAR);
-        if (texturePath[0] != '*' && texturePath != "") {
-            uuid imageID                   = importImage(gltfPath + "/" + texturePath);
-            resource->m_images[METALLIC]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
-            resource->m_useImage[METALLIC] = true;
-        }
+        auto tryImport = [&resource, &material, &gltfPath, &rmInstance](aiTextureType aiType, TextureType glxType) {
+            std::string texturePath = getTexturePath(material, aiType);
+            if (texturePath[0] != '*' && texturePath != "") {
+                uuid imageID                  = importImage(gltfPath + "/" + texturePath);
+                resource->m_images[glxType]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
+                resource->m_useImage[glxType] = true;
+            }
+        };
 
-        texturePath = getTexturePath(material, aiTextureType_NORMALS);
-        if (texturePath[0] != '*' && texturePath != "") {
-            uuid imageID                 = importImage(gltfPath + "/" + texturePath);
-            resource->m_images[NORMAL]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
-            resource->m_useImage[NORMAL] = true;
-        }
-
-        texturePath = getTexturePath(material, aiTextureType_SHININESS);
-        if (texturePath[0] != '*' && texturePath != "") {
-            uuid imageID                    = importImage(gltfPath + "/" + texturePath);
-            resource->m_images[ROUGHNESS]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
-            resource->m_useImage[ROUGHNESS] = true;
-        }
-
-        texturePath = getTexturePath(material, aiTextureType_AMBIENT);
-        if (texturePath[0] != '*' && texturePath != "") {
-            uuid imageID             = importImage(gltfPath + "/" + texturePath);
-            resource->m_images[AO]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
-            resource->m_useImage[AO] = true;
-        }
+        tryImport(aiTextureType_SPECULAR, METALLIC);
+        tryImport(aiTextureType_NORMALS, NORMAL);
+        tryImport(aiTextureType_SHININESS, ROUGHNESS);
+        tryImport(aiTextureType_AMBIENT, AO);
 
         if (resource->save(false)) {
             return resourceID;

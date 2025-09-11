@@ -1,41 +1,41 @@
 Name: UI
 Resources:
-  - Id: 2552791056224925052
+  - Id: 4596298481325978985
+    Path: FlightHelmet_material_4.gres
+  - Id: 13445726136476575137
+    Path: FlightHelmet_Materials_MetalPartsMat_Normal.gres
+  - Id: 14749351957727154420
+    Path: FlightHelmet_Materials_MetalPartsMat_BaseColor.gres
+  - Id: 5001985101254342308
+    Path: FlightHelmet_Materials_GlassPlasticMat_Normal.gres
+  - Id: 2463157285526210860
     Path: FlightHelmet_Materials_LensesMat_BaseColor.gres
-  - Id: 620813569493523599
+  - Id: 6299670274240066856
+    Path: FlightHelmet_material_0.gres
+  - Id: 8192258315938426429
     Path: FlightHelmet_material_5.gres
-  - Id: 2562868842271169290
-    Path: FlightHelmet_Materials_LeatherPartsMat_BaseColor.gres
-  - Id: 6163269968455584637
-    Path: FlightHelmet_Materials_LeatherPartsMat_Normal.gres
-  - Id: 7560863790860410936
-    Path: FlightHelmet_material_3.gres
-  - Id: 9621888504554463923
-    Path: FlightHelmet.gres
-  - Id: 9030902573420177757
-    Path: FlightHelmet_Materials_LensesMat_Normal.gres
+  - Id: 9322432004924797145
+    Path: FlightHelmet_Materials_RubberWoodMat_BaseColor.gres
   - Id: 16373607252495793075
     Path: Cube_BaseColor.gres
-  - Id: 15648557356242338960
-    Path: FlightHelmet_material_0.gres
-  - Id: 6932341420037994800
-    Path: FlightHelmet_Materials_RubberWoodMat_BaseColor.gres
-  - Id: 8645876890698652956
+  - Id: 1194152204337554298
+    Path: FlightHelmet.gres
+  - Id: 15374288490827376923
     Path: FlightHelmet_Materials_RubberWoodMat_Normal.gres
-  - Id: 934477070285000359
-    Path: FlightHelmet_material_4.gres
-  - Id: 15689641379037017826
+  - Id: 5760255903429817536
     Path: FlightHelmet_material_1.gres
-  - Id: 14698910967286805877
+  - Id: 4509565864308233527
+    Path: FlightHelmet_material_3.gres
+  - Id: 15102230745542108193
+    Path: FlightHelmet_Materials_LensesMat_Normal.gres
+  - Id: 11409921020618827693
+    Path: FlightHelmet_Materials_LeatherPartsMat_BaseColor.gres
+  - Id: 3197521966046018086
     Path: FlightHelmet_material_2.gres
-  - Id: 490414299603050289
+  - Id: 11964516455534756618
+    Path: FlightHelmet_Materials_LeatherPartsMat_Normal.gres
+  - Id: 5291252226107495534
     Path: FlightHelmet_Materials_GlassPlasticMat_BaseColor.gres
-  - Id: 16404416961305142431
-    Path: FlightHelmet_Materials_GlassPlasticMat_Normal.gres
-  - Id: 2575335156003265153
-    Path: FlightHelmet_Materials_MetalPartsMat_BaseColor.gres
-  - Id: 4352111324055988536
-    Path: FlightHelmet_Materials_MetalPartsMat_Normal.gres
 Scenes:
   - Id: 7857652255564026288
     Path: MainScene

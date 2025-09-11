@@ -72,6 +72,18 @@ void Frontend::bindTexture(renderID textureInstanceID, char* uniformName)
     m_frontBuffer.push_back(command);
 }
 
+void Frontend::bindMaterial(renderID materialRenderID)
+{
+    BindMaterialCommand bindMaterialCommand;
+    bindMaterialCommand.materialRenderID = materialRenderID;
+
+    RenderCommand command;
+    command.type         = RenderCommandType::bindMaterial;
+    command.bindMaterial = bindMaterialCommand;
+
+    m_frontBuffer.push_back(command);
+}
+
 void Frontend::changeUsedProgram(BaseProgramEnum program)
 {
     SetActiveProgramCommand setActiveProgramCommand;

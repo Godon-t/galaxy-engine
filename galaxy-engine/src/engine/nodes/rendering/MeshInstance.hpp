@@ -11,7 +11,8 @@ public:
     MeshInstance(std::string name = "MeshInstance")
         : Node3D(name)
         , m_meshSurfaceIdx(-1)
-        , m_initialized(false)
+        , m_renderId(0)
+        , m_materialId(0)
     {
     }
     ~MeshInstance() override;
@@ -27,8 +28,7 @@ public:
 
 private:
     renderID m_renderId;
-
-    bool m_initialized;
+    renderID m_materialId;
 
     ResourceHandle<Mesh> m_meshResource;
 

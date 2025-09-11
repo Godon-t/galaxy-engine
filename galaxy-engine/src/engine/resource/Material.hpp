@@ -35,6 +35,7 @@ public:
 
 private:
     friend class ResourceImporter;
+    friend class ResourceSerializer;
 
     math::vec3 m_albedo = { 1.f, 0.7f, 0.77f };
     float m_metallic    = 0.5f;

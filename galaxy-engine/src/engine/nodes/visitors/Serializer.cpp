@@ -2,13 +2,14 @@
 
 #include "Log.hpp"
 
-#include "engine/nodes/Node.hpp"
-#include "engine/nodes/Node3D.hpp"
-#include "engine/nodes/rendering/Camera.hpp"
-#include "engine/nodes/rendering/MeshInstance.hpp"
-#include "engine/nodes/rendering/MultiMeshInstance.hpp"
-#include "engine/nodes/rendering/Sprite3D.hpp"
-#include "engine/types/Math.hpp"
+#include "common/YamlTranslation.hpp"
+#include "nodes/Node.hpp"
+#include "nodes/Node3D.hpp"
+#include "nodes/rendering/Camera.hpp"
+#include "nodes/rendering/MeshInstance.hpp"
+#include "nodes/rendering/MultiMeshInstance.hpp"
+#include "nodes/rendering/Sprite3D.hpp"
+#include "types/Math.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -16,22 +17,6 @@
 using namespace math;
 
 #include <yaml-cpp/yaml.h>
-
-namespace YAML {
-Emitter& operator<<(Emitter& out, const vec3& v)
-{
-    out << Flow;
-    out << BeginSeq << v.x << v.y << v.z << EndSeq;
-    return out;
-}
-
-Emitter& operator<<(Emitter& out, const vec4& v)
-{
-    out << Flow;
-    out << BeginSeq << v.x << v.y << v.z << v.w << EndSeq;
-    return out;
-}
-}
 
 namespace Galaxy {
 void SceneSerializer::serialize(Scene& scene, const char* outputPath)

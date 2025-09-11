@@ -2,14 +2,14 @@ Type: Mesh
 ExternalFile: FlightHelmet/FlightHelmet.gltf
 SubMeshes:
   - HasMaterial: true
-    MaterialID: 15648557356242338960
+    MaterialID: 6299670274240066856
   - HasMaterial: true
-    MaterialID: 15689641379037017826
+    MaterialID: 5760255903429817536
   - HasMaterial: true
-    MaterialID: 14698910967286805877
+    MaterialID: 3197521966046018086
   - HasMaterial: true
-    MaterialID: 7560863790860410936
+    MaterialID: 4509565864308233527
   - HasMaterial: true
-    MaterialID: 934477070285000359
+    MaterialID: 4596298481325978985
   - HasMaterial: true
-    MaterialID: 620813569493523599
+    MaterialID: 8192258315938426429

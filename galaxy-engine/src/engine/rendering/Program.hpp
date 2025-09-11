@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GPUInstances/MaterialInstance.hpp"
+#include "GPUInstances/Texture.hpp"
 #include "pch.hpp"
 #include "types/Math.hpp"
 
@@ -39,5 +41,17 @@ public:
     void use();
     void setUniform(const char* uniformName, float value);
     void setUniform(const char* uniformName, int value);
+};
+
+class ProgramPBR : public Program {
+public:
+    ProgramPBR() = default;
+    ProgramPBR(std::string path);
+    void updateMaterial(MaterialInstance& mat, std::array<Texture, TextureType::COUNT>& materialTextures);
+
+private:
+    unsigned int albedoLocation, metallicLocation, roughnessLocation, aoLocation;
+    unsigned int albedoTexLocation, metallicTexLocation, roughnessTexLocation, aoTexLocation, normalTexLocation;
+    unsigned int useAlbedoMapLocation, useNormalMapLocation, useMetallicMapLocation, useRoughnessMapLocation, useAoMapLocation;
 };
 }

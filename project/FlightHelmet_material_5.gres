@@ -1,4 +1,6 @@
 Type: Material
 Images:
-  Normal: 9030902573420177757
-  Albedo: 2552791056224925052
+  Normal: 15102230745542108193
+  Albedo: 2463157285526210860
+Constants:
+  Albedo: [1, 1, 1]

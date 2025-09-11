@@ -86,6 +86,10 @@ struct ResourceImporter {
             uuid imageID                 = importImage(gltfPath + "/" + texturePath);
             resource->m_images[ALBEDO]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
             resource->m_useImage[ALBEDO] = true;
+            aiColor3D color(0.f, 0.f, 0.f);
+            if (material->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) {
+                resource->m_albedo = vec3(color.r, color.g, color.b);
+            }
         }
 
         texturePath = getTexturePath(material, aiTextureType_SPECULAR);

@@ -16,6 +16,7 @@ public:
     void setViewMatrix(math::mat4& view);
     void setProjectionMatrix(math::mat4& projection);
     void bindTexture(renderID textureInstanceID, char* uniformName);
+    void bindMaterial(renderID materialRenderID);
     void changeUsedProgram(BaseProgramEnum program);
 
     void setCommandBuffer(std::vector<RenderCommand>& newBuffer);

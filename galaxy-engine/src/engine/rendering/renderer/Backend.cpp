@@ -8,6 +8,8 @@
 namespace Galaxy {
 Backend::Backend(size_t maxSize)
     : m_visualInstances(maxSize)
+    , m_textureInstances(maxSize)
+    , m_materialInstances(maxSize)
 {
     GLenum error = glGetError();
 
@@ -28,8 +30,8 @@ Backend::Backend(size_t maxSize)
     // glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);
 
-    m_mainProgram    = std::move(Program(engineRes("shaders/test.glsl")));
-    m_textureProgram = std::move(Program(engineRes("shaders/texture.glsl")));
+    m_mainProgram = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
+    // m_textureProgram = std::move(Program(engineRes("shaders/texture.glsl")));
 
     checkOpenGLErrors("Renderer constructor");
 }
@@ -115,6 +117,58 @@ void Backend::clearTexture(renderID textureID)
     }
 }
 
+renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
+{
+
+    renderID existingID = material.getResource().getRenderID();
+    if (existingID) {
+        m_materialInstances.increaseCount(existingID);
+        return existingID;
+    }
+
+    renderID materialID = m_materialInstances.createResourceInstance();
+
+    material.getResource().onLoaded([this, material, materialID] {
+        auto matInstance        = m_materialInstances.get(materialID);
+        const auto& matResource = material.getResource();
+
+        matInstance->useImage[ALBEDO] = matResource.canUseImage(ALBEDO);
+        if (matInstance->useImage[ALBEDO]) {
+            matInstance->images[ALBEDO] = instanciateTexture(matResource.getImage(ALBEDO));
+        }
+        // matInstance->metallicUse = matResource.canUseImage(METALLIC);
+        // if (matInstance->metallicUse) {
+        //     matInstance->metallicId = instanciateTexture(matResource.getImage(METALLIC));
+        // }
+        // matInstance->roughnessUse = matResource.canUseImage(ROUGHNESS);
+        // if (matInstance->roughnessUse) {
+        //     matInstance->roughnessId = instanciateTexture(matResource.getImage(ROUGHNESS));
+        // }
+        // matInstance->normalUse = matResource.canUseImage(NORMAL);
+        // if (matInstance->normalUse) {
+        //     matInstance->normalId = instanciateTexture(matResource.getImage(NORMAL));
+        // }
+        // matInstance->aoUse = matResource.canUseImage(AO);
+        // if (matInstance->aoUse) {
+        //     matInstance->aoId = instanciateTexture(matResource.getImage(AO));
+        // }
+    });
+
+    return materialID;
+}
+
+void Backend::clearMaterial(renderID materialID)
+{
+    if (!m_materialInstances.tryRemove(materialID))
+        return;
+
+    auto it = m_gpuDestroyNotifications.find(materialID);
+    if (it != m_gpuDestroyNotifications.end()) {
+        it->second();
+        m_gpuDestroyNotifications.erase(materialID);
+    }
+}
+
 void Backend::processCommands(std::vector<RenderCommand>& commands)
 {
     for (auto& command : commands) {
@@ -124,48 +178,80 @@ void Backend::processCommands(std::vector<RenderCommand>& commands)
     Texture::resetActivationInts();
 }
 
+void Backend::processCommand(ClearCommand& clearCommand)
+{
+    auto& clearColor = clearCommand.color;
+    glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void Backend::processCommand(SetViewCommand& setViewCommand)
+{
+    m_mainProgram.updateViewMatrix(setViewCommand.view);
+}
+
+void Backend::processCommand(SetProjectionCommand& command)
+{
+    m_mainProgram.updateProjectionMatrix(command.projection);
+}
+
+void Backend::processCommand(SetActiveProgramCommand& command)
+{
+    // if (command.program == BaseProgramEnum::TEXTURE)
+    //     m_mainProgram = &m_textureProgram;
+    // else if (command.program == BaseProgramEnum::PBR)
+    //     m_mainProgram = &m_mainProgram;
+    // else
+    //     GLX_CORE_ASSERT(false, "unknown asked program!");
+
+    m_mainProgram.use();
+}
+
+void Backend::processCommand(DrawCommand& command)
+{
+    auto& modelMatrix = command.model;
+    m_mainProgram.updateModelMatrix(modelMatrix);
+    m_visualInstances.get(command.instanceId)->draw();
+}
+
+void Backend::processCommand(BindTextureCommand& command)
+{
+    auto uniLoc = glGetUniformLocation(m_mainProgram.getProgramID(), command.uniformName);
+    m_textureInstances.get(command.instanceID)->activate(uniLoc);
+    checkOpenGLErrors("Bind texture");
+}
+
+void Backend::processCommand(BindMaterialCommand& command)
+{
+    // GLX_CORE_ASSERT(m_activeProgram == &m_mainProgram, "PBR Program not active!");
+    MaterialInstance& material = *m_materialInstances.get(command.materialRenderID);
+    std::array<Texture, TextureType::COUNT> materialTextures;
+    if (material.useImage[TextureType::ALBEDO]) {
+        materialTextures[TextureType::ALBEDO] = *m_textureInstances.get(material.images[TextureType::ALBEDO]);
+    }
+    m_mainProgram.updateMaterial(material, materialTextures);
+
+    checkOpenGLErrors("Bind material");
+}
+
 void Backend::processCommand(RenderCommand& command)
 {
-    switch (command.type) {
-    case RenderCommandType::setActiveProgram: {
-        if (command.setActiveProgram.program == BaseProgramEnum::TEXTURE)
-            m_activeProgram = &m_textureProgram;
-        else if (command.setActiveProgram.program == BaseProgramEnum::PBR)
-            m_activeProgram = &m_mainProgram;
-        else
-            GLX_CORE_ASSERT(false, "unknown asked program!");
-
-        m_activeProgram->use();
-        break;
-    }
-    case RenderCommandType::clear: {
-        auto& clearColor = command.clear.color;
-        glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        break;
-    }
-    case RenderCommandType::setView:
-        m_activeProgram->updateViewMatrix(command.setView.view);
-        break;
-    case RenderCommandType::setProjection:
-        m_activeProgram->updateProjectionMatrix(command.setProjection.projection);
-        break;
-    case RenderCommandType::draw: {
-        auto& modelMatrix = command.draw.model;
-        m_activeProgram->updateModelMatrix(modelMatrix);
-        m_visualInstances.get(command.draw.instanceId)->draw();
-        break;
-    }
-    case RenderCommandType::bindTexture: {
-        auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.bindTexture.uniformName);
-        m_textureInstances.get(command.bindTexture.instanceID)->activate(uniLoc);
-        checkOpenGLErrors("Bind texture");
-        break;
-    }
-    default:
+    if (command.type == RenderCommandType::setActiveProgram)
+        processCommand(command.setActiveProgram);
+    else if (command.type == RenderCommandType::clear)
+        processCommand(command.clear);
+    else if (command.type == RenderCommandType::setView)
+        processCommand(command.setView);
+    else if (command.type == RenderCommandType::setProjection)
+        processCommand(command.setProjection);
+    else if (command.type == RenderCommandType::draw)
+        processCommand(command.draw);
+    else if (command.type == RenderCommandType::bindTexture)
+        processCommand(command.bindTexture);
+    else if (command.type == RenderCommandType::bindMaterial)
+        processCommand(command.bindMaterial);
+    else
         GLX_CORE_ERROR("Unknown render command");
-        break;
-    }
 }
 
 } // namespace Galaxy

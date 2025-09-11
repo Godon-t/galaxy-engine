@@ -4,6 +4,7 @@
 #include "Log.hpp"
 #include "Material.hpp"
 #include "Mesh.hpp"
+#include "common/YamlTranslation.hpp"
 #include "project/Project.hpp"
 
 #include <fstream>
@@ -36,7 +37,6 @@ bool ResourceSerializer::serialize(Material& material)
     yaml << YAML::Key << "Type" << YAML::Value << "Material";
 
     yaml << YAML::Key << "Images" << YAML::BeginMap;
-
     std::unordered_map<TextureType, std::string> textureTypeToStr;
     textureTypeToStr[ALBEDO]    = "Albedo";
     textureTypeToStr[ROUGHNESS] = "Roughness";
@@ -48,6 +48,10 @@ bool ResourceSerializer::serialize(Material& material)
             yaml << YAML::Key << keyVal.second << YAML::Value << material.getImage(keyVal.first).getResource().getResourceID();
         }
     }
+    yaml << YAML::EndMap;
+
+    yaml << YAML::Key << "Constants" << YAML::BeginMap;
+    yaml << YAML::Key << "Albedo" << YAML::Value << material.m_albedo;
     yaml << YAML::EndMap;
 
     std::ofstream fout(Project::getProjectRootPath() + Project::getPath(ProjectPathTypes::RESOURCE, material.getResourceID()));

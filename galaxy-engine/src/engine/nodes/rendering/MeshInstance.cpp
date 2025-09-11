@@ -10,17 +10,18 @@
 namespace Galaxy {
 MeshInstance::~MeshInstance()
 {
-    if (m_initialized) {
+    if (m_renderId)
         Renderer::getInstance().clearMesh(m_renderId);
-    }
+    if (m_materialId)
+        Renderer::getInstance().clearMaterial(m_materialId);
 }
 
 void MeshInstance::draw()
 {
-    if (m_initialized) {
-        Renderer::getInstance().changeUsedProgram(BaseProgramEnum::PBR);
+    if (m_materialId)
+        Renderer::getInstance().bindMaterial(m_materialId);
+    if (m_renderId)
         Renderer::getInstance().submit(m_renderId, *getTransform());
-    }
 }
 
 void MeshInstance::accept(NodeVisitor& visitor)
@@ -35,8 +36,12 @@ void MeshInstance::loadMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
     }
 
     mesh.getResource().onLoaded([this, mesh, surfaceIdx] {
-        m_initialized = true;
-        m_renderId    = Renderer::getInstance().instanciateMesh(mesh, surfaceIdx);
+        m_renderId = Renderer::getInstance().instanciateMesh(mesh, surfaceIdx);
+
+        ResourceHandle<Material> mat = mesh.getResource().getMaterial(surfaceIdx);
+        mat.getResource().onLoaded([this, mat] {
+            m_materialId = Renderer::getInstance().instanciateMaterial(mat);
+        });
     });
 
     m_meshResource   = mesh;

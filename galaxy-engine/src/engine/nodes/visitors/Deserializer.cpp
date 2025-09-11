@@ -4,42 +4,18 @@
 #include <yaml-cpp/yaml.h>
 
 #include "Log.hpp"
-#include "engine/nodes/Node.hpp"
-#include "engine/nodes/Node3D.hpp"
-#include "engine/nodes/NodeHelper.hpp"
-#include "engine/nodes/rendering/Camera.hpp"
-#include "engine/nodes/rendering/MeshInstance.hpp"
-#include "engine/nodes/rendering/MultiMeshInstance.hpp"
-#include "engine/nodes/rendering/Sprite3D.hpp"
-#include "engine/project/Project.hpp"
-#include "engine/types/Math.hpp"
+#include "common/YamlTranslation.hpp"
+#include "nodes/Node.hpp"
+#include "nodes/Node3D.hpp"
+#include "nodes/NodeHelper.hpp"
+#include "nodes/rendering/Camera.hpp"
+#include "nodes/rendering/MeshInstance.hpp"
+#include "nodes/rendering/MultiMeshInstance.hpp"
+#include "nodes/rendering/Sprite3D.hpp"
+#include "project/Project.hpp"
+#include "types/Math.hpp"
 
 using namespace math;
-
-namespace YAML {
-template <>
-struct convert<vec3> {
-    static Node encode(const vec3& vec)
-    {
-        Node node;
-        node.push_back(vec.x);
-        node.push_back(vec.y);
-        node.push_back(vec.z);
-        return node;
-    }
-    static bool decode(const Node& node, vec3& rhs)
-    {
-        if (!node.IsSequence() || node.size() != 3) {
-            return false;
-        }
-
-        rhs.x = node[0].as<float>();
-        rhs.y = node[1].as<float>();
-        rhs.z = node[2].as<float>();
-        return true;
-    }
-};
-}
 
 namespace Galaxy {
 Galaxy::SceneDeSerializer::SceneDeSerializer()

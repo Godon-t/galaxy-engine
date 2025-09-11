@@ -86,4 +86,16 @@ void Renderer::clearTexture(renderID textureID)
 {
     m_backend.clearTexture(textureID);
 }
+renderID Renderer::instanciateMaterial(ResourceHandle<Material> material)
+{
+    return m_backend.instanciateMaterial(material);
+}
+void Renderer::bindMaterial(renderID materialID)
+{
+    m_frontend.bindMaterial(materialID);
+}
+void Renderer::clearMaterial(renderID materialID)
+{
+    m_backend.clearMaterial(materialID);
+}
 }

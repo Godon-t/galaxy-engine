@@ -29,6 +29,10 @@ public:
     renderID instanciateTexture(ResourceHandle<Image> image);
     void clearTexture(renderID textureID);
 
+    renderID instanciateMaterial(ResourceHandle<Material> material);
+    void bindMaterial(renderID materialID);
+    void clearMaterial(renderID materialID);
+
 private:
     Renderer();
     ~Renderer();

@@ -1,6 +1,7 @@
 #include "Material.hpp"
 
 #include "ResourceManager.hpp"
+#include "common/YamlTranslation.hpp"
 #include "project/Project.hpp"
 
 namespace Galaxy {
@@ -33,12 +34,17 @@ bool Material::load(YAML::Node& data)
     textureTypeToStr[METALLIC]  = "Metallic";
     textureTypeToStr[NORMAL]    = "Normal";
     textureTypeToStr[AO]        = "Ao";
+    auto images                 = data["Images"];
     for (auto& keyVal : textureTypeToStr) {
-        if (data[keyVal.second]) {
+        if (images[keyVal.second]) {
             m_useImage[keyVal.first] = true;
-            uuid imageID             = data[keyVal.second].as<uint64_t>();
+            uuid imageID             = images[keyVal.second].as<uint64_t>();
             m_images[keyVal.first]   = ResourceManager::getInstance().load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
         }
+    }
+
+    if (data["Constants"]) {
+        m_albedo = data["Constants"]["Albedo"].as<vec3>();
     }
 
     return true;

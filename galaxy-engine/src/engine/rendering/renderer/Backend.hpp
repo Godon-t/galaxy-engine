@@ -80,19 +80,28 @@ public:
     renderID instanciateTexture(ResourceHandle<Image> image);
     void clearTexture(renderID textureID);
 
+    renderID instanciateMaterial(ResourceHandle<Material> material);
+    void clearMaterial(renderID materialID);
+
     void processCommands(std::vector<RenderCommand>& commands);
 
 private:
     void processCommand(RenderCommand& command);
+    void processCommand(ClearCommand& command);
+    void processCommand(SetViewCommand& command);
+    void processCommand(SetProjectionCommand& command);
+    void processCommand(SetActiveProgramCommand& command);
+    void processCommand(DrawCommand& command);
+    void processCommand(BindTextureCommand& command);
+    void processCommand(BindMaterialCommand& command);
 
     RenderGpuResourceTable<VisualInstance> m_visualInstances;
     RenderGpuResourceTable<Texture> m_textureInstances;
+    RenderGpuResourceTable<MaterialInstance> m_materialInstances;
 
     // Will invalidate renderID for things outside of Node that store a renderID
     std::unordered_map<renderID, std::function<void()>> m_gpuDestroyNotifications;
 
-    Program m_mainProgram;
-    Program m_textureProgram;
-    Program* m_activeProgram;
+    ProgramPBR m_mainProgram;
 };
 } // namespace Galaxy

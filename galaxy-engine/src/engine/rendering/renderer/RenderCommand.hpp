@@ -10,7 +10,8 @@ enum RenderCommandType {
     setProjection,
     clear,
     draw,
-    bindTexture
+    bindTexture,
+    bindMaterial
 };
 
 struct SetViewCommand {
@@ -37,6 +38,10 @@ struct BindTextureCommand {
     char* uniformName;
 };
 
+struct BindMaterialCommand {
+    renderID materialRenderID;
+};
+
 enum BaseProgramEnum {
     PBR,
     TEXTURE
@@ -60,6 +65,7 @@ struct RenderCommand {
         ClearCommand clear;
         DrawCommand draw;
         BindTextureCommand bindTexture;
+        BindMaterialCommand bindMaterial;
     };
 };
 } // namespace Galaxy

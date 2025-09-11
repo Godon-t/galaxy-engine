@@ -132,26 +132,18 @@ renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
         auto matInstance        = m_materialInstances.get(materialID);
         const auto& matResource = material.getResource();
 
-        matInstance->useImage[ALBEDO] = matResource.canUseImage(ALBEDO);
-        if (matInstance->useImage[ALBEDO]) {
-            matInstance->images[ALBEDO] = instanciateTexture(matResource.getImage(ALBEDO));
-        }
-        // matInstance->metallicUse = matResource.canUseImage(METALLIC);
-        // if (matInstance->metallicUse) {
-        //     matInstance->metallicId = instanciateTexture(matResource.getImage(METALLIC));
-        // }
-        // matInstance->roughnessUse = matResource.canUseImage(ROUGHNESS);
-        // if (matInstance->roughnessUse) {
-        //     matInstance->roughnessId = instanciateTexture(matResource.getImage(ROUGHNESS));
-        // }
-        // matInstance->normalUse = matResource.canUseImage(NORMAL);
-        // if (matInstance->normalUse) {
-        //     matInstance->normalId = instanciateTexture(matResource.getImage(NORMAL));
-        // }
-        // matInstance->aoUse = matResource.canUseImage(AO);
-        // if (matInstance->aoUse) {
-        //     matInstance->aoId = instanciateTexture(matResource.getImage(AO));
-        // }
+        auto setupTexture = [this, &matInstance, &matResource](TextureType type) {
+            matInstance->useImage[type] = matResource.canUseImage(type);
+            if (matInstance->useImage[type]) {
+                matInstance->images[type] = instanciateTexture(matResource.getImage(type));
+            }
+        };
+
+        setupTexture(ALBEDO);
+        setupTexture(METALLIC);
+        setupTexture(ROUGHNESS);
+        setupTexture(NORMAL);
+        setupTexture(AO);
     });
 
     return materialID;
@@ -226,9 +218,16 @@ void Backend::processCommand(BindMaterialCommand& command)
     // GLX_CORE_ASSERT(m_activeProgram == &m_mainProgram, "PBR Program not active!");
     MaterialInstance& material = *m_materialInstances.get(command.materialRenderID);
     std::array<Texture, TextureType::COUNT> materialTextures;
-    if (material.useImage[TextureType::ALBEDO]) {
-        materialTextures[TextureType::ALBEDO] = *m_textureInstances.get(material.images[TextureType::ALBEDO]);
-    }
+    auto addTexture = [&material, &materialTextures, this](TextureType type) {
+        if (material.useImage[type]) {
+            materialTextures[type] = *m_textureInstances.get(material.images[type]);
+        }
+    };
+    addTexture(ALBEDO);
+    addTexture(NORMAL);
+    addTexture(METALLIC);
+    addTexture(ROUGHNESS);
+    addTexture(AO);
     m_mainProgram.updateMaterial(material, materialTextures);
 
     checkOpenGLErrors("Bind material");

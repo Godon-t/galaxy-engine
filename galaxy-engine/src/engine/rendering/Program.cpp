@@ -204,23 +204,23 @@ void Program::setUniform(const char* uniformName, int value)
 ProgramPBR::ProgramPBR(std::string path)
     : Program(path)
 {
-    auto programID = getProgramID();
-    albedoLocation = glGetUniformLocation(programID, "albedoVal");
-    // metallicLocation  = glGetUniformLocation(programID, "metallicVal");
-    // roughnessLocation = glGetUniformLocation(programID, "roughnessVal");
-    // aoLocation        = glGetUniformLocation(programID, "aoVal");
+    auto programID    = getProgramID();
+    albedoLocation    = glGetUniformLocation(programID, "albedoVal");
+    metallicLocation  = glGetUniformLocation(programID, "metallicVal");
+    roughnessLocation = glGetUniformLocation(programID, "roughnessVal");
+    aoLocation        = glGetUniformLocation(programID, "aoVal");
 
-    albedoTexLocation = glGetUniformLocation(programID, "albedoMap");
-    // metallicTexLocation  = glGetUniformLocation(programID, "metallicMap");
-    // aoTexLocation        = glGetUniformLocation(programID, "aoMap");
-    // normalTexLocation    = glGetUniformLocation(programID, "normalMap");
-    // roughnessTexLocation = glGetUniformLocation(programID, "roughnessMap");
+    albedoTexLocation    = glGetUniformLocation(programID, "albedoMap");
+    metallicTexLocation  = glGetUniformLocation(programID, "metallicMap");
+    aoTexLocation        = glGetUniformLocation(programID, "aoMap");
+    normalTexLocation    = glGetUniformLocation(programID, "normalMap");
+    roughnessTexLocation = glGetUniformLocation(programID, "roughnessMap");
 
-    useAlbedoMapLocation = glGetUniformLocation(programID, "useAlbedoMap");
-    // useNormalMapLocation    = glGetUniformLocation(programID, "useNormalMap");
-    // useMetallicMapLocation  = glGetUniformLocation(programID, "useMetallicMap");
-    // useRoughnessMapLocation = glGetUniformLocation(programID, "useRoughnessMap");
-    // useAoMapLocation        = glGetUniformLocation(programID, "useAoMap");
+    useAlbedoMapLocation    = glGetUniformLocation(programID, "useAlbedoMap");
+    useNormalMapLocation    = glGetUniformLocation(programID, "useNormalMap");
+    useMetallicMapLocation  = glGetUniformLocation(programID, "useMetallicMap");
+    useRoughnessMapLocation = glGetUniformLocation(programID, "useRoughnessMap");
+    useAoMapLocation        = glGetUniformLocation(programID, "useAoMap");
 }
 
 void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture, TextureType::COUNT>& materialTextures)
@@ -230,12 +230,16 @@ void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture, 
     // glUniform1f(aoLocation, material.ao);
     glUniform3f(albedoLocation, material.albedo[0], material.albedo[1], material.albedo[2]);
 
-    glUniform1i(useAlbedoMapLocation, material.useImage[ALBEDO]);
-    if (material.useImage[ALBEDO])
-        materialTextures[TextureType::ALBEDO].activate(albedoTexLocation);
-    // glUniform1i(useMetallicMapLocation, material.useImage[METALLIC]);
-    // glUniform1i(useRoughnessMapLocation, material.useImage[ROUGHNESS]);
-    // glUniform1i(useNormalMapLocation, material.useImage[NORMAL]);
-    // glUniform1i(useAoMapLocation, material.useImage[AO]);
+    auto activateTexture = [&material, &materialTextures](TextureType type, GLuint useLocation, GLuint mapLocation) {
+        glUniform1i(useLocation, material.useImage[type]);
+        if (material.useImage[type])
+            materialTextures[type].activate(mapLocation);
+    };
+
+    activateTexture(ALBEDO, useAlbedoMapLocation, albedoTexLocation);
+    activateTexture(METALLIC, useMetallicMapLocation, metallicTexLocation);
+    activateTexture(ROUGHNESS, useRoughnessMapLocation, roughnessTexLocation);
+    activateTexture(NORMAL, useNormalMapLocation, normalTexLocation);
+    activateTexture(AO, useAoMapLocation, aoTexLocation);
 }
 }

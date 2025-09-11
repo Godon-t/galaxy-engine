@@ -43,8 +43,8 @@ out vec4 color;
 
 void main()
 {
-    if (useAlbedoMap)
-        color = vec4(texture(albedoMap, texCoords).rgb, 1.0f);
+    if (useNormalMap)
+        color = vec4(texture(normalMap, texCoords).rgb, 1.0f);
     else
         color = vec4(albedoVal, 1.f);
 }

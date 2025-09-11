@@ -44,7 +44,10 @@ bool Material::load(YAML::Node& data)
     }
 
     if (data["Constants"]) {
-        m_albedo = data["Constants"]["Albedo"].as<vec3>();
+        m_albedo    = data["Constants"]["Albedo"].as<vec3>();
+        m_ambient   = data["Constants"]["Ambient"].as<float>();
+        m_roughness = data["Constants"]["Roughness"].as<float>();
+        m_metallic  = data["Constants"]["Metallic"].as<float>();
     }
 
     return true;

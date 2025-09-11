@@ -52,6 +52,9 @@ bool ResourceSerializer::serialize(Material& material)
 
     yaml << YAML::Key << "Constants" << YAML::BeginMap;
     yaml << YAML::Key << "Albedo" << YAML::Value << material.m_albedo;
+    yaml << YAML::Key << "Ambient" << YAML::Value << material.m_ambient;
+    yaml << YAML::Key << "Roughness" << YAML::Value << material.m_roughness;
+    yaml << YAML::Key << "Metallic" << YAML::Value << material.m_metallic;
     yaml << YAML::EndMap;
 
     std::ofstream fout(Project::getProjectRootPath() + Project::getPath(ProjectPathTypes::RESOURCE, material.getResourceID()));

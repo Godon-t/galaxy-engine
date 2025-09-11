@@ -144,6 +144,11 @@ renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
         setupTexture(ROUGHNESS);
         setupTexture(NORMAL);
         setupTexture(AO);
+
+        matInstance->albedo    = matResource.getAlbedo();
+        matInstance->metallic  = matResource.getMetallic();
+        matInstance->ambient   = matResource.getAmbient();
+        matInstance->roughness = matResource.getRoughness();
     });
 
     return materialID;

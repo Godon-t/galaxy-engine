@@ -94,9 +94,20 @@ struct ResourceImporter {
         if (material->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) {
             resource->m_albedo = vec3(color.r, color.g, color.b);
         }
+
+        float value = 0.f;
         tryImport(aiTextureType_SPECULAR, METALLIC);
+        if (material->Get(AI_MATKEY_METALLIC_FACTOR, value) == AI_SUCCESS) {
+            resource->m_metallic = value;
+        }
+
         tryImport(aiTextureType_NORMALS, NORMAL);
+
         tryImport(aiTextureType_SHININESS, ROUGHNESS);
+        if (material->Get(AI_MATKEY_ROUGHNESS_FACTOR, value) == AI_SUCCESS) {
+            resource->m_roughness = value;
+        }
+
         tryImport(aiTextureType_AMBIENT, AO);
 
         if (resource->save(false)) {

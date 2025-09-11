@@ -50,8 +50,8 @@ public:
     void updateMaterial(MaterialInstance& mat, std::array<Texture, TextureType::COUNT>& materialTextures);
 
 private:
-    unsigned int albedoLocation, metallicLocation, roughnessLocation, aoLocation;
-    unsigned int albedoTexLocation, metallicTexLocation, roughnessTexLocation, aoTexLocation, normalTexLocation;
-    unsigned int useAlbedoMapLocation, useNormalMapLocation, useMetallicMapLocation, useRoughnessMapLocation, useAoMapLocation;
+    unsigned int albedoLocation, metallicLocation, roughnessLocation, ambientLocation;
+    unsigned int albedoTexLocation, metallicTexLocation, roughnessTexLocation, ambientTexLocation, normalTexLocation;
+    unsigned int useAlbedoMapLocation, useNormalMapLocation, useMetallicMapLocation, useRoughnessMapLocation, useAmbientMapLocation;
 };
 }

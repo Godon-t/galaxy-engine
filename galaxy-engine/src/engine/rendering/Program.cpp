@@ -208,11 +208,11 @@ ProgramPBR::ProgramPBR(std::string path)
     albedoLocation    = glGetUniformLocation(programID, "albedoVal");
     metallicLocation  = glGetUniformLocation(programID, "metallicVal");
     roughnessLocation = glGetUniformLocation(programID, "roughnessVal");
-    aoLocation        = glGetUniformLocation(programID, "aoVal");
+    ambientLocation   = glGetUniformLocation(programID, "aoVal");
 
     albedoTexLocation    = glGetUniformLocation(programID, "albedoMap");
     metallicTexLocation  = glGetUniformLocation(programID, "metallicMap");
-    aoTexLocation        = glGetUniformLocation(programID, "aoMap");
+    ambientTexLocation   = glGetUniformLocation(programID, "aoMap");
     normalTexLocation    = glGetUniformLocation(programID, "normalMap");
     roughnessTexLocation = glGetUniformLocation(programID, "roughnessMap");
 
@@ -220,14 +220,14 @@ ProgramPBR::ProgramPBR(std::string path)
     useNormalMapLocation    = glGetUniformLocation(programID, "useNormalMap");
     useMetallicMapLocation  = glGetUniformLocation(programID, "useMetallicMap");
     useRoughnessMapLocation = glGetUniformLocation(programID, "useRoughnessMap");
-    useAoMapLocation        = glGetUniformLocation(programID, "useAoMap");
+    useAmbientMapLocation   = glGetUniformLocation(programID, "useAoMap");
 }
 
 void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture, TextureType::COUNT>& materialTextures)
 {
-    // glUniform1f(metallicLocation, material.metallic);
-    // glUniform1f(roughnessLocation, material.roughness);
-    // glUniform1f(aoLocation, material.ao);
+    glUniform1f(metallicLocation, material.metallic);
+    glUniform1f(roughnessLocation, material.roughness);
+    glUniform1f(ambientLocation, material.ambient);
     glUniform3f(albedoLocation, material.albedo[0], material.albedo[1], material.albedo[2]);
 
     auto activateTexture = [&material, &materialTextures](TextureType type, GLuint useLocation, GLuint mapLocation) {
@@ -240,6 +240,6 @@ void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture, 
     activateTexture(METALLIC, useMetallicMapLocation, metallicTexLocation);
     activateTexture(ROUGHNESS, useRoughnessMapLocation, roughnessTexLocation);
     activateTexture(NORMAL, useNormalMapLocation, normalTexLocation);
-    activateTexture(AO, useAoMapLocation, aoTexLocation);
+    activateTexture(AO, useAmbientMapLocation, ambientTexLocation);
 }
 }

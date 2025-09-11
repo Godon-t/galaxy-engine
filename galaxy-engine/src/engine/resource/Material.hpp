@@ -42,7 +42,7 @@ private:
     float m_roughness   = 0.5f;
     float m_ao          = 1.0f;
 
-    renderID m_materialRenderID;
+    renderID m_materialRenderID = 0;
 
     std::array<bool, TextureType::COUNT> m_useImage;
     std::array<ResourceHandle<Image>, TextureType::COUNT> m_images;

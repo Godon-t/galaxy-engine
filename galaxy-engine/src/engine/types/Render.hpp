@@ -10,4 +10,5 @@ using renderID = size_t;
 struct Vertex {
     math::vec3 position;
     math::vec2 texCoord;
+    math::vec3 normal;
 };

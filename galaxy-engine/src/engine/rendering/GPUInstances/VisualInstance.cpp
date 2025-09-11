@@ -74,6 +74,9 @@ void VisualInstance::init(const std::vector<Vertex>& vertices, const std::vector
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, vertexSize, (void*)(3 * sizeof(float)));
 
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, vertexSize, (void*)(5 * sizeof(float)));
+
     glBindVertexArray(0);
 
     checkOpenGLErrors("Visual instance init");

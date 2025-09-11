@@ -69,6 +69,7 @@ bool Mesh::load(YAML::Node& data)
 void Mesh::extractSubMesh(const aiScene* scene, int surface)
 {
     std::vector<math::vec3> indexed_vertices;
+    std::vector<math::vec3> normals;
     std::vector<math::vec2> tex_coords;
 
     aiMesh* mesh            = scene->mMeshes[surface];
@@ -85,14 +86,22 @@ void Mesh::extractSubMesh(const aiScene* scene, int surface)
     // Add vertex coords
     for (unsigned int vertexIdx = 0; vertexIdx < mesh->mNumVertices; ++vertexIdx) {
         aiVector3D vertex = mesh->mVertices[vertexIdx];
-        indexed_vertices.push_back(glm::vec3(vertex.x, vertex.y, vertex.z));
+        indexed_vertices.push_back(vec3(vertex.x, vertex.y, vertex.z));
     }
 
     // Add texture coords
     if (mesh->HasTextureCoords(0)) {
         for (unsigned int j = 0; j < mesh->mNumVertices; ++j) {
             aiVector3D tex_coord = mesh->mTextureCoords[0][j];
-            tex_coords.push_back(glm::vec2(tex_coord.x, tex_coord.y)); // Ajoute la coordonnée de texture
+            tex_coords.push_back(vec2(tex_coord.x, tex_coord.y));
+        }
+    }
+
+    // Add normals
+    if (mesh->HasNormals()) {
+        for (unsigned int j = 0; j < mesh->mNumVertices; ++j) {
+            aiVector3D normal = mesh->mNormals[j];
+            normals.push_back(vec3(normal.x, normal.y, normal.z));
         }
     }
 
@@ -102,6 +111,7 @@ void Mesh::extractSubMesh(const aiScene* scene, int surface)
         Vertex v;
         v.position = indexed_vertices[i];
         v.texCoord = tex_coords[i];
+        v.normal   = normals[i];
 
         currentSubMesh.vertices[i] = v;
     }

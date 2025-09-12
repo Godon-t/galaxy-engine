@@ -96,6 +96,7 @@ add_library(galaxy-engine
 	src/engine/resource/Image.cpp
 	src/engine/resource/Mesh.cpp
 	src/engine/resource/Material.cpp
+	src/engine/resource/Environment.cpp
 
 	src/engine/common/YamlTranslation.cpp
 )

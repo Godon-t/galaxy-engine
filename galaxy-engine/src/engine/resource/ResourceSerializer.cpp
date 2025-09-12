@@ -1,5 +1,6 @@
 #include "ResourceSerializer.hpp"
 
+#include "Environment.hpp"
 #include "Image.hpp"
 #include "Log.hpp"
 #include "Material.hpp"
@@ -13,7 +14,7 @@
 namespace Galaxy {
 bool ResourceSerializer::serialize(Image& image)
 {
-    GLX_CORE_INFO("Serializing: {0}", image.getExternalFilePath());
+    GLX_CORE_INFO("Serializing: {0}", image.getPath());
     YAML::Emitter yaml;
     yaml << YAML::BeginMap;
     yaml << YAML::Key << "Type" << YAML::Value << "Image";
@@ -25,6 +26,24 @@ bool ResourceSerializer::serialize(Image& image)
     yaml << YAML::EndMap;
 
     std::ofstream fout(Project::getProjectRootPath() + Project::getPath(ProjectPathTypes::RESOURCE, image.getResourceID()));
+    fout << yaml.c_str();
+    return true;
+}
+bool ResourceSerializer::serialize(Environment& env)
+{
+    GLX_CORE_INFO("Serializing: {0}", env.getPath());
+
+    YAML::Emitter yaml;
+    yaml << YAML::BeginMap;
+    yaml << YAML::Key << "Type" << YAML::Value << "Environment";
+
+    yaml << YAML::Key << "Skybox" << YAML::BeginSeq;
+    for (auto& image : env.m_skybox) {
+        yaml << image.getResource().getResourceID();
+    }
+    yaml << YAML::EndSeq;
+
+    std::ofstream fout(Project::getProjectRootPath() + Project::getPath(ProjectPathTypes::RESOURCE, env.getResourceID()));
     fout << yaml.c_str();
     return true;
 }

@@ -2,6 +2,7 @@
 
 #include <Engine.hpp>
 
+#include "editor/EnvironmentCreation.hpp"
 #include "editor/NodeEditPanel.hpp"
 #include "editor/NodeListPanel.hpp"
 #include "editor/ResourceAccess.hpp"
@@ -32,6 +33,7 @@ private:
     NodeListPanel m_nodeList;
     NodeEditPanel m_editNode;
     ResourceAccess m_resourceAccess;
+    EnvironmentCreation m_environmentCreation;
     ImGui::FileBrowser m_fileDialog;
 
     vec2 m_viewportSize;

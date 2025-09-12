@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Environment.hpp"
 #include "Image.hpp"
 #include "Material.hpp"
 #include "Mesh.hpp"
@@ -90,6 +91,21 @@ public:
         }
     }
 
+    template <typename ResourceType>
+    ResourceHandle<ResourceType> registerNewResource(ResourceType& res, const std::string& path)
+    {
+        auto makerIt = m_makers.find(typeid(ResourceType).hash_code());
+        GLX_CORE_ASSERT(makerIt != m_makers.end(), "No resource maker found");
+
+        std::shared_ptr<ResourceType> resource = std::make_shared<ResourceType>(std::move(res));
+
+        uuid resourceID          = Project::registerNewPath(ProjectPathTypes::RESOURCE, path);
+        resource->m_resourceID   = resourceID;
+        resource->m_resourcePath = path;
+
+        return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(resource));
+    }
+
     inline int getResourceCount() { return cache.size(); }
 
 private:
@@ -101,6 +117,7 @@ private:
         registerMaker<Image>();
         registerMaker<Mesh>();
         registerMaker<Material>();
+        registerMaker<Environment>();
     }
     ThreadPool m_threadPool;
     std::mutex m_pendingLoadMutex;

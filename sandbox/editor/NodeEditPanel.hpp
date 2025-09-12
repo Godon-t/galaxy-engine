@@ -33,7 +33,7 @@ public:
 
         if (ImGui::Button("Load mesh"))
             m_resourceAccess.show();
-        if (m_resourceAccess.begin()) {
+        if (m_resourceAccess.display()) {
             auto meshRes = ResourceManager::getInstance().load<Mesh>(m_resourceAccess.selectedResourcePath);
             node.loadMesh(meshRes, 0);
         }
@@ -49,7 +49,7 @@ public:
 
         if (ImGui::Button("Load mesh"))
             m_resourceAccess.show();
-        if (m_resourceAccess.begin())
+        if (m_resourceAccess.display())
             node.loadMesh(m_resourceAccess.selectedResourcePath);
     }
     void visit(Sprite3D& node)

@@ -119,11 +119,18 @@ void EditorLayer::displayMenuBar(bool validScene)
         }
         if (ImGui::MenuItem("Import file"))
             m_fileDialog.Open();
+        if (ImGui::MenuItem("Create resource"))
+            m_environmentCreation.show();
         ImGui::EndMenu();
     }
     ImGui::EndMenuBar();
 
     m_fileDialog.Display();
+
+    if (m_environmentCreation.display()) {
+        Project::savePaths();
+        ResourceAccess::paths = Project::getPaths(ProjectPathTypes::RESOURCE);
+    }
 
     if (m_fileDialog.HasSelected()) {
         std::string filePath = Project::toRelativePath(m_fileDialog.GetSelected().string());
@@ -231,7 +238,7 @@ void EditorLayer::onImGuiRender()
 
     if (ImGui::Button("Test resource"))
         m_resourceAccess.show();
-    if (m_resourceAccess.begin()) {
+    if (m_resourceAccess.display()) {
         GLX_INFO("Selected resource! '{0}'", m_resourceAccess.selectedResourcePath);
     }
 
@@ -263,7 +270,7 @@ void EditorLayer::onEvent(Event& evt)
         m_cameraSpeed = m_cameraSpeed <= 0 ? 0.0001 : m_cameraSpeed;
     } else if (evt.getEventType() == EventType::MouseMotion && m_rightClickDown) {
         MouseMotionEvent& mouseMotion = (MouseMotionEvent&)evt;
-        m_editorCamera->getTransform()->localRotateY(mouseMotion.getDeltaX() * 0.001);
+        m_editorCamera->getTransform()->globalRotateY(mouseMotion.getDeltaX() * 0.001);
         m_editorCamera->getTransform()->localRotateX(mouseMotion.getDeltaY() * 0.001);
     } else if (evt.getEventType() == EventType::MouseButtonInteract) {
         MouseButtonEvent& mouseBtn = (MouseButtonEvent&)evt;

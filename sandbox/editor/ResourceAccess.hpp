@@ -11,7 +11,7 @@ struct ResourceAccess {
     uuid selectedResourceID;
     std::string selectedResourcePath;
 
-    bool begin()
+    bool display()
     {
         if (!m_showResourceMenu)
             return false;

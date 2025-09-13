@@ -112,4 +112,7 @@ void SceneDeSerializer::visit(Sprite3D& node)
 {
     visit(static_cast<Node3D&>(node));
 }
+void SceneDeSerializer::visit(EnvironmentNode& node)
+{
+}
 } // namespace Galaxy

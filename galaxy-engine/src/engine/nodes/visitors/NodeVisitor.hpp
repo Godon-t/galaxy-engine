@@ -7,6 +7,7 @@ class Camera;
 class MeshInstance;
 class MultiMeshInstance;
 class Sprite3D;
+class EnvironmentNode;
 
 class NodeVisitor {
 public:
@@ -16,5 +17,6 @@ public:
     virtual void visit(MeshInstance& node) {};
     virtual void visit(MultiMeshInstance& node) {};
     virtual void visit(Sprite3D& node) {};
+    virtual void visit(EnvironmentNode& node) {};
 };
 }

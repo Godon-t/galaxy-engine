@@ -41,6 +41,8 @@ public:
     void use();
     void setUniform(const char* uniformName, float value);
     void setUniform(const char* uniformName, int value);
+
+    virtual ProgramType type() const = 0;
 };
 
 class ProgramPBR : public Program {
@@ -48,10 +50,21 @@ public:
     ProgramPBR() = default;
     ProgramPBR(std::string path);
     void updateMaterial(MaterialInstance& mat, std::array<Texture, TextureType::COUNT>& materialTextures);
+    ProgramType type() const override { return ProgramType::PBR; }
 
 private:
     unsigned int albedoLocation, metallicLocation, roughnessLocation, ambientLocation;
     unsigned int albedoTexLocation, metallicTexLocation, roughnessTexLocation, ambientTexLocation, normalTexLocation;
     unsigned int useAlbedoMapLocation, useNormalMapLocation, useMetallicMapLocation, useRoughnessMapLocation, useAmbientMapLocation;
+};
+
+class ProgramSkybox : public Program {
+public:
+    ProgramSkybox() = default;
+    ProgramSkybox(std::string path);
+    ProgramType type() const override { return ProgramType::SKYBOX; }
+
+private:
+    unsigned int m_skyboxMapLocation;
 };
 }

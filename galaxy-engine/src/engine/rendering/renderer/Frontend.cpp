@@ -72,6 +72,19 @@ void Frontend::bindTexture(renderID textureInstanceID, char* uniformName)
     m_frontBuffer.push_back(command);
 }
 
+void Frontend::bindCubemap(renderID cubemapInstanceID, char* uniformName)
+{
+    BindCubemapCommand bindCubemapCommand;
+    bindCubemapCommand.instanceID  = cubemapInstanceID;
+    bindCubemapCommand.uniformName = uniformName;
+
+    RenderCommand command;
+    command.type        = RenderCommandType::bindCubemap;
+    command.bindCubemap = bindCubemapCommand;
+
+    m_frontBuffer.push_back(command);
+}
+
 void Frontend::bindMaterial(renderID materialRenderID)
 {
     BindMaterialCommand bindMaterialCommand;
@@ -84,7 +97,7 @@ void Frontend::bindMaterial(renderID materialRenderID)
     m_frontBuffer.push_back(command);
 }
 
-void Frontend::changeUsedProgram(BaseProgramEnum program)
+void Frontend::changeUsedProgram(ProgramType program)
 {
     SetActiveProgramCommand setActiveProgramCommand;
     setActiveProgramCommand.program = program;

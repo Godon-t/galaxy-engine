@@ -3,6 +3,7 @@
 #include "Helper.hpp"
 #include "Log.hpp"
 #include "gl_headers.hpp"
+#include "pch.hpp"
 #include "rendering/OpenglHelper.hpp"
 
 namespace Galaxy {
@@ -30,7 +31,8 @@ Backend::Backend(size_t maxSize)
     // glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);
 
-    m_mainProgram = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
+    m_mainProgram   = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
+    m_skyboxProgram = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
     // m_textureProgram = std::move(Program(engineRes("shaders/texture.glsl")));
 
     checkOpenGLErrors("Renderer constructor");
@@ -39,7 +41,7 @@ Backend::Backend(size_t maxSize)
 renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices, std::function<void()> destroyCallback)
 {
     if (!m_visualInstances.canAddInstance())
-        return -1;
+        return 0;
 
     renderID meshID = m_visualInstances.createResourceInstance();
     m_visualInstances.get(meshID)->init(vertices, indices);
@@ -175,6 +177,83 @@ void Backend::processCommands(std::vector<RenderCommand>& commands)
     Texture::resetActivationInts();
 }
 
+renderID Backend::generateCube(float dimmension, bool inward, std::function<void()> destroyCallback)
+{
+    std::vector<Vertex> vertices;
+    std::vector<short unsigned int> indices;
+
+    vec3 half(dimmension / 2);
+    vertices.resize(8);
+    for (int i = 0; i < 8; ++i) {
+        vertices[i].position = vec3(
+            (i & 1 ? half.x : -half.x),
+            (i & 2 ? half.y : -half.y),
+            (i & 4 ? half.z : -half.z));
+        vertices[i].normal   = vec3();
+        vertices[i].texCoord = vec2();
+    }
+
+    std::array<unsigned int, 36> baseIndices = {
+        // +X
+        1, 5, 7, 1, 7, 3,
+        // -X
+        0, 2, 6, 0, 6, 4,
+        // +Y
+        2, 3, 7, 2, 7, 6,
+        // -Y
+        0, 4, 5, 0, 5, 1,
+        // +Z
+        4, 6, 7, 4, 7, 5,
+        // -Z
+        0, 1, 3, 0, 3, 2
+    };
+
+    indices.reserve(36);
+    for (size_t i = 0; i < baseIndices.size(); i += 3) {
+        if (inward) {
+            indices.push_back(baseIndices[i]);
+            indices.push_back(baseIndices[i + 2]);
+            indices.push_back(baseIndices[i + 1]);
+        } else {
+            indices.push_back(baseIndices[i]);
+            indices.push_back(baseIndices[i + 1]);
+            indices.push_back(baseIndices[i + 2]);
+        }
+    }
+
+    return instanciateMesh(vertices, indices, destroyCallback);
+}
+
+renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
+{
+    renderID cubemapID = m_cubemapInstances.createResourceInstance();
+
+    auto& cubemapInstance = *m_cubemapInstances.get(cubemapID);
+    glGenTextures(1, &cubemapInstance.cubemapID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
+
+    for (int i = 0; i < 6; i++) {
+        faces[i].getResource().onLoaded([faces, cubemapID, i] {
+            auto& faceResource = faces[i].getResource();
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
+
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                0, GL_RGB, faceResource.getWidth(), faceResource.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, faceResource.getData());
+            glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+        });
+    }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+    return cubemapID;
+}
+
 void Backend::processCommand(ClearCommand& clearCommand)
 {
     auto& clearColor = clearCommand.color;
@@ -184,43 +263,51 @@ void Backend::processCommand(ClearCommand& clearCommand)
 
 void Backend::processCommand(SetViewCommand& setViewCommand)
 {
-    m_mainProgram.updateViewMatrix(setViewCommand.view);
+    m_activeProgram->updateViewMatrix(setViewCommand.view);
 }
 
 void Backend::processCommand(SetProjectionCommand& command)
 {
-    m_mainProgram.updateProjectionMatrix(command.projection);
+    m_activeProgram->updateProjectionMatrix(command.projection);
 }
 
 void Backend::processCommand(SetActiveProgramCommand& command)
 {
-    // if (command.program == BaseProgramEnum::TEXTURE)
-    //     m_mainProgram = &m_textureProgram;
-    // else if (command.program == BaseProgramEnum::PBR)
-    //     m_mainProgram = &m_mainProgram;
-    // else
-    //     GLX_CORE_ASSERT(false, "unknown asked program!");
+    if (command.program == SKYBOX)
+        m_activeProgram = &m_skyboxProgram;
+    else if (command.program == PBR)
+        m_activeProgram = &m_mainProgram;
+    else
+        GLX_CORE_ASSERT(false, "unknown asked program!");
 
-    m_mainProgram.use();
+    m_activeProgram->use();
 }
 
 void Backend::processCommand(DrawCommand& command)
 {
     auto& modelMatrix = command.model;
-    m_mainProgram.updateModelMatrix(modelMatrix);
+    m_activeProgram->updateModelMatrix(modelMatrix);
     m_visualInstances.get(command.instanceId)->draw();
 }
 
 void Backend::processCommand(BindTextureCommand& command)
 {
-    auto uniLoc = glGetUniformLocation(m_mainProgram.getProgramID(), command.uniformName);
+    auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
     m_textureInstances.get(command.instanceID)->activate(uniLoc);
     checkOpenGLErrors("Bind texture");
 }
 
+void Backend::processCommand(BindCubemapCommand& command)
+{
+    auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
+    m_textureInstances.get(command.instanceID)->activate(uniLoc);
+    checkOpenGLErrors("Bind cubemap");
+}
+
 void Backend::processCommand(BindMaterialCommand& command)
 {
-    // GLX_CORE_ASSERT(m_activeProgram == &m_mainProgram, "PBR Program not active!");
+    GLX_CORE_ASSERT(m_activeProgram->type() == ProgramType::PBR, "PBR Program not active!");
+
     MaterialInstance& material = *m_materialInstances.get(command.materialRenderID);
     std::array<Texture, TextureType::COUNT> materialTextures;
     auto addTexture = [&material, &materialTextures, this](TextureType type) {
@@ -233,7 +320,8 @@ void Backend::processCommand(BindMaterialCommand& command)
     addTexture(METALLIC);
     addTexture(ROUGHNESS);
     addTexture(AO);
-    m_mainProgram.updateMaterial(material, materialTextures);
+
+    ((ProgramPBR*)m_activeProgram)->updateMaterial(material, materialTextures);
 
     checkOpenGLErrors("Bind material");
 }
@@ -252,6 +340,8 @@ void Backend::processCommand(RenderCommand& command)
         processCommand(command.draw);
     else if (command.type == RenderCommandType::bindTexture)
         processCommand(command.bindTexture);
+    else if (command.type == RenderCommandType::bindCubemap)
+        processCommand(command.bindCubemap);
     else if (command.type == RenderCommandType::bindMaterial)
         processCommand(command.bindMaterial);
     else

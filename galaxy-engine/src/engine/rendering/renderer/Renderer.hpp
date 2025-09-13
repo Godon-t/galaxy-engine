@@ -11,7 +11,7 @@ class Renderer {
 public:
     static Renderer& getInstance();
 
-    void changeUsedProgram(BaseProgramEnum prog);
+    void changeUsedProgram(ProgramType prog);
 
     void setProjectionMatrix(math::mat4& projection);
 
@@ -32,6 +32,10 @@ public:
     renderID instanciateMaterial(ResourceHandle<Material> material);
     void bindMaterial(renderID materialID);
     void clearMaterial(renderID materialID);
+
+    renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback);
+    renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces);
+    void bindCubemap(renderID cubemapInstanceID, char* uniformName);
 
 private:
     Renderer();

@@ -7,6 +7,12 @@
 using camID    = size_t;
 using renderID = size_t;
 
+enum ProgramType {
+    NONE,
+    PBR,
+    SKYBOX
+};
+
 struct Vertex {
     math::vec3 position;
     math::vec2 texCoord;

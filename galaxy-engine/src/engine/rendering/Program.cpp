@@ -168,8 +168,10 @@ Program& Program::operator=(Program&& other) noexcept
 
 Program::~Program()
 {
-    if (m_programID != 0)
+    if (m_programID != 0) {
         glDeleteProgram(m_programID);
+        m_programID = 0;
+    }
 }
 
 void Program::updateViewMatrix(const mat4& v)
@@ -241,5 +243,11 @@ void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture, 
     activateTexture(ROUGHNESS, useRoughnessMapLocation, roughnessTexLocation);
     activateTexture(NORMAL, useNormalMapLocation, normalTexLocation);
     activateTexture(AO, useAmbientMapLocation, ambientTexLocation);
+}
+
+ProgramSkybox::ProgramSkybox(std::string path)
+    : Program(path)
+{
+    m_skyboxMapLocation = glGetUniformLocation(getProgramID(), "skybox");
 }
 }

@@ -26,4 +26,10 @@ private:
 
     static int s_currentFreeActivationInt;
 };
+
+struct Cubemap {
+    unsigned int cubemapID;
+
+    void activate(int textureLocation);
+};
 } // namespace Galaxy

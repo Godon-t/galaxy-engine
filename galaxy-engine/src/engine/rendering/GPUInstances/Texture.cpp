@@ -61,4 +61,12 @@ void Texture::destroy()
     glDeleteTextures(1, &m_id);
 }
 
+void Cubemap::activate(int textureLocation)
+{
+    int actInt = Texture::getAvailableActivationInt();
+    glActiveTexture(GL_TEXTURE0 + actInt);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
+    glUniform1i(textureLocation, actInt);
+}
+
 } // namespace Galaxy

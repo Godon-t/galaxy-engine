@@ -37,7 +37,7 @@ void Renderer::beginSceneRender(mat4& camTransform)
     m_frontend.setViewMatrix(viewMatrix);
 }
 
-void Renderer::changeUsedProgram(BaseProgramEnum prog)
+void Renderer::changeUsedProgram(ProgramType prog)
 {
     m_frontend.changeUsedProgram(prog);
 }
@@ -86,6 +86,20 @@ void Renderer::clearTexture(renderID textureID)
 {
     m_backend.clearTexture(textureID);
 }
+
+renderID Renderer::generateCube(float dimmension, bool inward, std::function<void()> destroyCallback)
+{
+    return m_backend.generateCube(dimmension, inward, destroyCallback);
+}
+renderID Renderer::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
+{
+    return m_backend.instanciateCubemap(faces);
+}
+void Renderer::bindCubemap(renderID cubemapInstanceID, char* uniformName)
+{
+    return m_frontend.bindCubemap(cubemapInstanceID, uniformName);
+}
+
 renderID Renderer::instanciateMaterial(ResourceHandle<Material> material)
 {
     return m_backend.instanciateMaterial(material);

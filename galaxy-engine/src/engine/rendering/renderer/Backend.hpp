@@ -85,6 +85,9 @@ public:
 
     void processCommands(std::vector<RenderCommand>& commands);
 
+    renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback);
+    renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces);
+
 private:
     void processCommand(RenderCommand& command);
     void processCommand(ClearCommand& command);
@@ -93,15 +96,19 @@ private:
     void processCommand(SetActiveProgramCommand& command);
     void processCommand(DrawCommand& command);
     void processCommand(BindTextureCommand& command);
+    void processCommand(BindCubemapCommand& command);
     void processCommand(BindMaterialCommand& command);
 
     RenderGpuResourceTable<VisualInstance> m_visualInstances;
     RenderGpuResourceTable<Texture> m_textureInstances;
     RenderGpuResourceTable<MaterialInstance> m_materialInstances;
+    RenderGpuResourceTable<Cubemap> m_cubemapInstances;
 
     // Will invalidate renderID for things outside of Node that store a renderID
     std::unordered_map<renderID, std::function<void()>> m_gpuDestroyNotifications;
 
     ProgramPBR m_mainProgram;
+    ProgramSkybox m_skyboxProgram;
+    Program* m_activeProgram;
 };
 } // namespace Galaxy

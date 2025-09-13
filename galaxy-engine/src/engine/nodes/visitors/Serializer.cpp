@@ -6,6 +6,7 @@
 #include "nodes/Node.hpp"
 #include "nodes/Node3D.hpp"
 #include "nodes/rendering/Camera.hpp"
+#include "nodes/rendering/EnvironmentNode.hpp"
 #include "nodes/rendering/MeshInstance.hpp"
 #include "nodes/rendering/MultiMeshInstance.hpp"
 #include "nodes/rendering/Sprite3D.hpp"
@@ -78,5 +79,9 @@ void SceneSerializer::visit(MultiMeshInstance& node)
 void SceneSerializer::visit(Sprite3D& node)
 {
     visit(static_cast<Node3D&>(node));
+}
+void SceneSerializer::visit(EnvironmentNode& node)
+{
+    visit(static_cast<Node&>(node));
 }
 }

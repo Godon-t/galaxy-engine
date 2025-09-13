@@ -29,6 +29,8 @@ public:
         return ResourceSerializer::serialize(*this);
     }
 
+    inline std::array<ResourceHandle<Image>, 6> getSkybox() { return m_skybox; }
+
 private:
     friend class ResourceSerializer;
 

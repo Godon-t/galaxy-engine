@@ -60,6 +60,10 @@ public:
     {
         visit(static_cast<Node3D&>(node));
     }
+    void visit(EnvironmentNode& node)
+    {
+        visit(static_cast<Node&>(node));
+    }
     void transformEdit(Transform& transform)
     {
         ImGui::SeparatorText("Transform");

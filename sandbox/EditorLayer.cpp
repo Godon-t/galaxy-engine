@@ -55,7 +55,7 @@ void EditorLayer::onAttach()
     InputManager::addAction(Action(GLX_KEY_Q, "editor_down"));
     InputManager::addAction(Action(GLX_KEY_E, "editor_up"));
 
-    Renderer::getInstance().changeUsedProgram(BaseProgramEnum::PBR);
+    Renderer::getInstance().changeUsedProgram(PBR);
     mat4 proj = CameraManager::processProjectionMatrix(vec2(320, 180));
     Renderer::getInstance().setProjectionMatrix(proj);
 }

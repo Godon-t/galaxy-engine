@@ -11,6 +11,7 @@ enum RenderCommandType {
     clear,
     draw,
     bindTexture,
+    bindCubemap,
     bindMaterial
 };
 
@@ -38,16 +39,17 @@ struct BindTextureCommand {
     char* uniformName;
 };
 
+struct BindCubemapCommand {
+    renderID instanceID;
+    char* uniformName;
+};
+
 struct BindMaterialCommand {
     renderID materialRenderID;
 };
 
-enum BaseProgramEnum {
-    PBR,
-    TEXTURE
-};
 struct SetActiveProgramCommand {
-    BaseProgramEnum program;
+    ProgramType program;
 };
 
 struct RenderCommand {
@@ -65,6 +67,7 @@ struct RenderCommand {
         ClearCommand clear;
         DrawCommand draw;
         BindTextureCommand bindTexture;
+        BindCubemapCommand bindCubemap;
         BindMaterialCommand bindMaterial;
     };
 };

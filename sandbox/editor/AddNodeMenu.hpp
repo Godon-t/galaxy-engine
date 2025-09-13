@@ -6,7 +6,7 @@
 namespace Galaxy {
 class AddNodeMenu {
 private:
-    const std::vector<std::string> m_nodeTypes = { "Node", "Node3D", "Camera", "MeshInstance", "MultiMeshInstance", "Sprite3D" };
+    const std::vector<std::string> m_nodeTypes = { "Node", "Node3D", "Camera", "MeshInstance", "MultiMeshInstance", "Sprite3D", "EnvironmentNode" };
     std::string m_selectedNode;
 
 public:

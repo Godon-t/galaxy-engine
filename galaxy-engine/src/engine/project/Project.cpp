@@ -191,7 +191,13 @@ void Project::extractExtension(const std::string& input, std::string& filePath, 
     std::filesystem::path path(input.c_str());
 
     fileExtension = path.extension().string();
-    filePath      = path.stem();
+    filePath      = path.parent_path() / path.stem();
+}
+
+std::string Project::getFolderPath(const std::string& filePath)
+{
+    std::filesystem::path path(filePath.c_str());
+    return path.parent_path();
 }
 
 void Project::create(const std::string& path)

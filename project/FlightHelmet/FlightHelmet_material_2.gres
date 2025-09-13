@@ -1,0 +1,9 @@
+Type: Material
+Images:
+  Normal: 15114165534603728463
+  Albedo: 11461400905327480640
+Constants:
+  Albedo: [1, 1, 1]
+  Ambient: 1
+  Roughness: 1
+  Metallic: 1

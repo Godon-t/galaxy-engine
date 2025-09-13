@@ -29,7 +29,7 @@ void EnvironmentNode::enteredRoot()
         // m_env.getResource().m_skyboxCubemapID = m_skyboxCubemapID;
     });
 
-    m_cubeMeshID = Renderer::getInstance().generateCube(1.f, true, [] {});
+    m_cubeMeshID = Renderer::getInstance().generateCube(999.f, true, [] {});
 }
 
 } // namespace Galaxy

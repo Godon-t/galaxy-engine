@@ -79,11 +79,12 @@ struct ResourceImporter {
             return false;
         }
 
-        aiMaterial* material = scene->mMaterials[idx];
-        auto tryImport       = [&resource, &material, &gltfPath, &rmInstance](aiTextureType aiType, TextureType glxType) {
+        std::string folderPath = Project::getFolderPath(externPath);
+        aiMaterial* material   = scene->mMaterials[idx];
+        auto tryImport         = [&resource, &material, &folderPath, &rmInstance](aiTextureType aiType, TextureType glxType) {
             std::string texturePath = getTexturePath(material, aiType);
             if (texturePath[0] != '*' && texturePath != "") {
-                uuid imageID                  = importImage(gltfPath + "/" + texturePath);
+                uuid imageID                  = importImage(folderPath + "/" + texturePath);
                 resource->m_images[glxType]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
                 resource->m_useImage[glxType] = true;
             }

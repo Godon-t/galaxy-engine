@@ -79,6 +79,8 @@ void SceneSerializer::visit(MultiMeshInstance& node)
 void SceneSerializer::visit(Sprite3D& node)
 {
     visit(static_cast<Node3D&>(node));
+    if (node.getImageResourceID() != 0)
+        m_yaml << YAML::Key << "ImageID" << YAML::Value << node.getImageResourceID();
 }
 void SceneSerializer::visit(EnvironmentNode& node)
 {

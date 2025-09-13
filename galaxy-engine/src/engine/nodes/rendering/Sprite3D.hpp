@@ -10,6 +10,7 @@ public:
     Sprite3D(std::string name = "Sprite3D")
         : Node3D(name)
         , m_initialized(false)
+        , m_imageID(0)
     {
     }
     ~Sprite3D() override;

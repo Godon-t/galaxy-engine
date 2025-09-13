@@ -111,6 +111,12 @@ void SceneDeSerializer::visit(MultiMeshInstance& node)
 void SceneDeSerializer::visit(Sprite3D& node)
 {
     visit(static_cast<Node3D&>(node));
+
+    if (m_currentYAMLNode["ImageID"]) {
+        uuid imageID          = m_currentYAMLNode["ImageID"].as<uint64_t>();
+        std::string imagePath = Project::getPath(ProjectPathTypes::RESOURCE, imageID);
+        node.loadTexture(imagePath);
+    }
 }
 void SceneDeSerializer::visit(EnvironmentNode& node)
 {

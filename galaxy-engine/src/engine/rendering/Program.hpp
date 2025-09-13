@@ -58,6 +58,13 @@ private:
     unsigned int useAlbedoMapLocation, useNormalMapLocation, useMetallicMapLocation, useRoughnessMapLocation, useAmbientMapLocation;
 };
 
+class ProgramTexture : public Program {
+public:
+    ProgramTexture() = default;
+    ProgramTexture(std::string path);
+    ProgramType type() const override { return ProgramType::TEXTURE; }
+};
+
 class ProgramSkybox : public Program {
 public:
     ProgramSkybox() = default;

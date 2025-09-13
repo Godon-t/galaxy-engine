@@ -55,6 +55,12 @@ public:
     void visit(Sprite3D& node)
     {
         visit(static_cast<Node3D&>(node));
+
+        ImGui::SeparatorText("Image");
+        if (ImGui::Button("Load image"))
+            m_resourceAccess.show();
+        if (m_resourceAccess.display())
+            node.loadTexture(m_resourceAccess.selectedResourcePath);
     }
     void visit(Camera& node)
     {

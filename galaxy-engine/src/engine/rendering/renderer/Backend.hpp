@@ -109,6 +109,7 @@ private:
 
     ProgramPBR m_mainProgram;
     ProgramSkybox m_skyboxProgram;
+    ProgramTexture m_textureProgram;
     Program* m_activeProgram;
 };
 } // namespace Galaxy

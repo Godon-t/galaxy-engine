@@ -31,9 +31,9 @@ Backend::Backend(size_t maxSize)
     // glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);
 
-    m_mainProgram   = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
-    m_skyboxProgram = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
-    // m_textureProgram = std::move(Program(engineRes("shaders/texture.glsl")));
+    m_mainProgram    = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
+    m_skyboxProgram  = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
+    m_textureProgram = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
 
     checkOpenGLErrors("Renderer constructor");
 }
@@ -277,6 +277,8 @@ void Backend::processCommand(SetActiveProgramCommand& command)
         m_activeProgram = &m_skyboxProgram;
     else if (command.program == PBR)
         m_activeProgram = &m_mainProgram;
+    else if (command.program == TEXTURE)
+        m_activeProgram = &m_textureProgram;
     else
         GLX_CORE_ASSERT(false, "unknown asked program!");
 

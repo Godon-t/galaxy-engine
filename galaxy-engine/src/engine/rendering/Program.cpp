@@ -250,4 +250,8 @@ ProgramSkybox::ProgramSkybox(std::string path)
 {
     m_skyboxMapLocation = glGetUniformLocation(getProgramID(), "skybox");
 }
+ProgramTexture::ProgramTexture(std::string path)
+    : Program(path)
+{
+}
 }

@@ -13,9 +13,10 @@ Sprite3D::~Sprite3D()
 void Sprite3D::draw()
 {
     if (m_initialized) {
-        // Renderer::getInstance().changeUsedProgram(BaseProgramEnum::TEXTURE);
-        // Renderer::getInstance().bindTexture(m_textureID, "sampledTexture");
-        // Renderer::getInstance().submit(m_rectID, m_transform);
+        Renderer::getInstance().changeUsedProgram(TEXTURE);
+        Renderer::getInstance().bindTexture(m_textureID, "sampledTexture");
+        Renderer::getInstance().submit(m_rectID, m_transform);
+        Renderer::getInstance().changeUsedProgram(PBR);
     }
 }
 void Sprite3D::accept(Galaxy::NodeVisitor& visitor)

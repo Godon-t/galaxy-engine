@@ -10,7 +10,8 @@ using renderID = size_t;
 enum ProgramType {
     NONE,
     PBR,
-    SKYBOX
+    SKYBOX,
+    TEXTURE
 };
 
 struct Vertex {

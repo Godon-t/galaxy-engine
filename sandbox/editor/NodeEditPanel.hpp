@@ -69,6 +69,11 @@ public:
     void visit(EnvironmentNode& node)
     {
         visit(static_cast<Node&>(node));
+
+        ImGui::SeparatorText("Testing");
+        if (ImGui::Button("Render from center")) {
+            node.testingFunc();
+        }
     }
     void transformEdit(Transform& transform)
     {

@@ -61,12 +61,45 @@ void Texture::destroy()
     glDeleteTextures(1, &m_id);
 }
 
-void Cubemap::activate(int textureLocation)
+Cubemap::Cubemap()
 {
-    int actInt = Texture::getAvailableActivationInt();
-    glActiveTexture(GL_TEXTURE0 + actInt);
+    glGenTextures(1, &cubemapID);
+}
+
+void Cubemap::destroy()
+{
+    if (cubemapID)
+        glDeleteTextures(1, &cubemapID);
+}
+
+void Cubemap::allocateFaces(unsigned int res)
+{
+    checkOpenGLErrors("before Allocate faces");
+    resolution = res;
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
-    glUniform1i(textureLocation, actInt);
+    for (int i = 0; i < 6; i++) {
+        if (useFloat)
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F,
+                resolution, resolution, 0, GL_RGB, GL_FLOAT, nullptr);
+        else
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB,
+                resolution, resolution, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    }
+    // paramétrage par défaut
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    checkOpenGLErrors("Allocate faces");
+}
+
+void Cubemap::resize(unsigned int res)
+{
+    if (res != resolution)
+        allocateFaces(res);
 }
 
 } // namespace Galaxy

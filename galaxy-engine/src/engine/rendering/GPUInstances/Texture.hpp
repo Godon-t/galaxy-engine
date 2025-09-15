@@ -28,8 +28,14 @@ private:
 };
 
 struct Cubemap {
-    unsigned int cubemapID;
+    unsigned int cubemapID  = 0;
+    unsigned int resolution = 0;
+    bool useFloat           = false;
 
-    void activate(int textureLocation);
+    Cubemap();
+
+    void destroy();
+    void allocateFaces(unsigned int res);
+    void resize(unsigned int res);
 };
 } // namespace Galaxy

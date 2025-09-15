@@ -11,6 +11,7 @@
 #include "types/Render.hpp"
 
 namespace Galaxy {
+class Renderer;
 
 template <typename T>
 class RenderGpuResourceTable {
@@ -45,7 +46,7 @@ public:
 
         renderID createdID = m_freeIds.top();
 
-        m_renderIdToInstance[createdID] = std::make_pair(T(), 1);
+        m_renderIdToInstance.insert_or_assign(createdID, std::make_pair(T(), 1));
 
         m_freeIds.pop();
 
@@ -87,6 +88,7 @@ public:
 
     renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback);
     renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces);
+    renderID instanciateCubemap();
 
 private:
     void processCommand(RenderCommand& command);
@@ -111,5 +113,7 @@ private:
     ProgramSkybox m_skyboxProgram;
     ProgramTexture m_textureProgram;
     Program* m_activeProgram;
+
+    friend class Renderer;
 };
 } // namespace Galaxy

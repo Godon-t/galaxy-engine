@@ -37,7 +37,6 @@ FrameBuffer::FrameBuffer(int width, int height, FramebufferTextureFormat format)
     m_height = height;
     invalidate();
 }
-
 void FrameBuffer::bind()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -81,6 +80,42 @@ void FrameBuffer::invalidate()
 void FrameBuffer::destroy()
 {
     glDeleteTextures(1, &m_attachedColor);
+    glDeleteRenderbuffers(1, &m_rbo);
+    glDeleteFramebuffers(1, &m_fbo);
+}
+
+CubemapFrameBuffer::CubemapFrameBuffer(Cubemap& cubemap)
+    : m_cubemap(cubemap)
+{
+    checkOpenGLErrors("before Cubemap frame buffer initialization");
+    glGenFramebuffers(1, &m_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+    glGenRenderbuffers(1, &m_rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, cubemap.resolution, cubemap.resolution);
+
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    checkOpenGLErrors("Cubemap frame buffer initialization");
+}
+
+void CubemapFrameBuffer::bind(int idx)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_cubemap.cubemapID, 0);
+    checkOpenGLErrors("Cubemap frame buffer bind");
+}
+
+void CubemapFrameBuffer::unbind()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void CubemapFrameBuffer::destroy()
+{
     glDeleteRenderbuffers(1, &m_rbo);
     glDeleteFramebuffers(1, &m_fbo);
 }

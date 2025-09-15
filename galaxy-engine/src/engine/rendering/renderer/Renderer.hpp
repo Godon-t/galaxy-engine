@@ -4,6 +4,7 @@
 #include "Frontend.hpp"
 
 #include "data/Transform.hpp"
+#include "nodes/Node.hpp"
 #include "types/Render.hpp"
 
 namespace Galaxy {
@@ -16,6 +17,7 @@ public:
     void setProjectionMatrix(math::mat4& projection);
 
     void beginSceneRender(mat4& camTransform);
+    void beginSceneRender(const vec3& camPosition, const vec3& camDirection, const vec3& camUp);
     void submit(renderID meshID, const Transform& transform);
     void bindTexture(renderID textureInstanceID, char* uniformName);
 
@@ -35,11 +37,16 @@ public:
 
     renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback);
     renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces);
+    renderID instanciateCubemap();
     void bindCubemap(renderID cubemapInstanceID, char* uniformName);
+
+    void renderFromPoint(vec3 position, Node& root, renderID targetCubemapID);
 
 private:
     Renderer();
     ~Renderer();
+
+    void switchCommandBuffer();
 
     // TODO: double buffering of commands not used currently (no multithreading)
     std::vector<std::vector<RenderCommand>> m_commandBuffers;

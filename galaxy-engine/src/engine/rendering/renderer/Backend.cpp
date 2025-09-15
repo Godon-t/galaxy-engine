@@ -224,32 +224,35 @@ renderID Backend::generateCube(float dimmension, bool inward, std::function<void
     return instanciateMesh(vertices, indices, destroyCallback);
 }
 
+renderID Backend::instanciateCubemap()
+{
+    renderID cubemapID    = m_cubemapInstances.createResourceInstance();
+    auto& cubemapInstance = *m_cubemapInstances.get(cubemapID);
+    return cubemapID;
+}
+
 renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
 {
     renderID cubemapID = m_cubemapInstances.createResourceInstance();
 
     auto& cubemapInstance = *m_cubemapInstances.get(cubemapID);
-    glGenTextures(1, &cubemapInstance.cubemapID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
 
     for (int i = 0; i < 6; i++) {
-        faces[i].getResource().onLoaded([faces, cubemapID, i] {
+
+        faces[i].getResource().onLoaded([faces, &cubemapInstance, i] {
+            int w = faces[0].getResource().getWidth();
+            int h = faces[0].getResource().getHeight();
+            // TODO: Cube map can only take shape of cube ?
+            cubemapInstance.resize(w);
+
             auto& faceResource = faces[i].getResource();
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapInstance.cubemapID);
 
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                0, GL_RGB, faceResource.getWidth(), faceResource.getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, faceResource.getData());
+                0, GL_RGB, w, w, 0, GL_RGB, GL_UNSIGNED_BYTE, faceResource.getData());
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
         });
     }
-
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
     return cubemapID;
 }
@@ -301,8 +304,8 @@ void Backend::processCommand(BindTextureCommand& command)
 
 void Backend::processCommand(BindCubemapCommand& command)
 {
-    auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
-    m_textureInstances.get(command.instanceID)->activate(uniLoc);
+    auto& cubemap = *m_cubemapInstances.get(command.instanceID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.cubemapID);
     checkOpenGLErrors("Bind cubemap");
 }
 

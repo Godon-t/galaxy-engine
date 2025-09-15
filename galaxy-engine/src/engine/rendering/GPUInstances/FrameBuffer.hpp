@@ -1,17 +1,15 @@
 #pragma once
 
+#include "Texture.hpp"
 #include "pch.hpp"
 
 namespace Galaxy {
 enum class FramebufferTextureFormat {
     None = 0,
 
-    // Color
     RGBA8,
     // RED_INTEGER,
-
-    // Depth/stencil
-    DEPTH24STENCIL8,
+    DEPTH24STENCIL8
 
     // Defaults
     // Depth = DEPTH24STENCIL8
@@ -37,5 +35,22 @@ private:
     int m_width, m_height;
 
     void invalidate();
+};
+
+class CubemapFrameBuffer {
+public:
+    CubemapFrameBuffer(Cubemap& cubemap);
+    ~CubemapFrameBuffer() = default;
+
+    void bind(int idx);
+    void unbind();
+
+    void destroy();
+
+    inline unsigned int getCubemapID() { return m_cubemap.cubemapID; }
+
+private:
+    Cubemap& m_cubemap;
+    unsigned int m_fbo, m_rbo;
 };
 }

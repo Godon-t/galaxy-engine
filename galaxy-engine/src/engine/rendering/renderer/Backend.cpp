@@ -38,6 +38,24 @@ Backend::Backend(size_t maxSize)
     checkOpenGLErrors("Renderer constructor");
 }
 
+void Backend::destroy()
+{
+    m_materialInstances.removeAll([this](MaterialInstance& mat) {
+        for (auto& text : mat.images) {
+            m_textureInstances.tryRemove(text);
+        }
+    });
+    m_visualInstances.removeAll([](VisualInstance& visu) {
+        visu.~VisualInstance();
+    });
+    m_cubemapInstances.removeAll([](Cubemap& cubemap) {
+        cubemap.destroy();
+    });
+    m_textureInstances.removeAll([](Texture& texture) {
+        texture.destroy();
+    });
+}
+
 renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices, std::function<void()> destroyCallback)
 {
     if (!m_visualInstances.canAddInstance())

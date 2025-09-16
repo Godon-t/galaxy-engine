@@ -1,9 +1,9 @@
 #include "Frontend.hpp"
 
 namespace Galaxy {
-Frontend::Frontend(std::vector<RenderCommand>& commandBuffer)
-    : m_frontBuffer(commandBuffer)
+Frontend::Frontend(std::vector<RenderCommand>* commandBuffer)
 {
+    m_frontBuffer = commandBuffer;
 }
 
 void Frontend::submit(renderID meshID, const Transform& transform)
@@ -16,7 +16,7 @@ void Frontend::submit(renderID meshID, const Transform& transform)
     command.type = RenderCommandType::draw;
     command.draw = drawCommand;
 
-    m_frontBuffer.push_back(command);
+    m_frontBuffer->push_back(command);
 }
 
 void Frontend::clear(math::vec4& color)
@@ -28,7 +28,7 @@ void Frontend::clear(math::vec4& color)
     command.type  = RenderCommandType::clear;
     command.clear = clearCommand;
 
-    m_frontBuffer.push_back(command);
+    m_frontBuffer->push_back(command);
 }
 
 void Frontend::setViewMatrix(math::mat4& view)
@@ -40,7 +40,7 @@ void Frontend::setViewMatrix(math::mat4& view)
     command.type    = RenderCommandType::setView;
     command.setView = setViewCommand;
 
-    m_frontBuffer.push_back(command);
+    m_frontBuffer->push_back(command);
 
     m_viewMat = view;
 }
@@ -54,7 +54,7 @@ void Frontend::setProjectionMatrix(math::mat4& projection)
     command.type          = RenderCommandType::setProjection;
     command.setProjection = setProjectionCommand;
 
-    m_frontBuffer.push_back(command);
+    m_frontBuffer->push_back(command);
 
     m_projMat = projection;
 }
@@ -69,7 +69,7 @@ void Frontend::bindTexture(renderID textureInstanceID, char* uniformName)
     command.type        = RenderCommandType::bindTexture;
     command.bindTexture = bindTextureCommand;
 
-    m_frontBuffer.push_back(command);
+    m_frontBuffer->push_back(command);
 }
 
 void Frontend::bindCubemap(renderID cubemapInstanceID, char* uniformName)
@@ -82,7 +82,7 @@ void Frontend::bindCubemap(renderID cubemapInstanceID, char* uniformName)
     command.type        = RenderCommandType::bindCubemap;
     command.bindCubemap = bindCubemapCommand;
 
-    m_frontBuffer.push_back(command);
+    m_frontBuffer->push_back(command);
 }
 
 void Frontend::bindMaterial(renderID materialRenderID)
@@ -94,7 +94,7 @@ void Frontend::bindMaterial(renderID materialRenderID)
     command.type         = RenderCommandType::bindMaterial;
     command.bindMaterial = bindMaterialCommand;
 
-    m_frontBuffer.push_back(command);
+    m_frontBuffer->push_back(command);
 }
 
 void Frontend::changeUsedProgram(ProgramType program)
@@ -105,12 +105,12 @@ void Frontend::changeUsedProgram(ProgramType program)
     progCommand.type             = RenderCommandType::setActiveProgram;
     progCommand.setActiveProgram = setActiveProgramCommand;
 
-    m_frontBuffer.push_back(progCommand);
+    m_frontBuffer->push_back(progCommand);
     setProjectionMatrix(m_projMat);
     setViewMatrix(m_viewMat);
 }
 
-void Frontend::setCommandBuffer(std::vector<RenderCommand>& newBuffer)
+void Frontend::setCommandBuffer(std::vector<RenderCommand>* newBuffer)
 {
     m_frontBuffer = newBuffer;
 }

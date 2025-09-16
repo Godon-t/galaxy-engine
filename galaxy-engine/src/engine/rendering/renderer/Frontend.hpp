@@ -9,7 +9,7 @@
 namespace Galaxy {
 class Frontend {
 public:
-    Frontend(std::vector<RenderCommand>& commandBuffer);
+    Frontend(std::vector<RenderCommand>* commandBuffer);
 
     void submit(renderID meshID, const Transform& transform);
     void clear(math::vec4& color);
@@ -20,10 +20,10 @@ public:
     void bindMaterial(renderID materialRenderID);
     void changeUsedProgram(ProgramType program);
 
-    void setCommandBuffer(std::vector<RenderCommand>& newBuffer);
+    void setCommandBuffer(std::vector<RenderCommand>* newBuffer);
 
 private:
-    std::vector<RenderCommand>& m_frontBuffer;
+    std::vector<RenderCommand>* m_frontBuffer;
 
     mat4 m_projMat;
     mat4 m_viewMat;

@@ -11,19 +11,20 @@ namespace Galaxy {
 Renderer::Renderer()
     : m_commandBuffers(2)
     , m_frontCommandBufferIdx(0)
-    , m_frontend(m_commandBuffers[m_frontCommandBufferIdx])
+    , m_frontend(&m_commandBuffers[m_frontCommandBufferIdx])
     , m_backend()
 {
 }
 
 Renderer::~Renderer()
 {
+    m_backend.destroy();
 }
 
 void Renderer::switchCommandBuffer()
 {
     m_frontCommandBufferIdx = 1 - m_frontCommandBufferIdx;
-    m_frontend.setCommandBuffer(m_commandBuffers[m_frontCommandBufferIdx]);
+    m_frontend.setCommandBuffer(&m_commandBuffers[m_frontCommandBufferIdx]);
 }
 
 Renderer& Renderer::getInstance()
@@ -146,19 +147,14 @@ void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemap
     targetCubemap.resize(512);
     CubemapFrameBuffer cubemapBuffer(targetCubemap);
 
-    // root.draw();
     for (int i = 0; i < 6; i++) {
         cubemapBuffer.bind(i);
-        vec4 color = vec4(1, 0, 0, 1);
-        m_frontend.clear(color);
-        // beginSceneRender(vec3(0), orientations[1], ups[1]);
-        m_backend.processCommands(m_commandBuffers[m_frontCommandBufferIdx]);
+        beginSceneRender(vec3(0), orientations[i], ups[i]);
+        root.draw();
+        renderFrame();
     }
     cubemapBuffer.unbind();
     cubemapBuffer.destroy();
-
-    m_commandBuffers[m_frontCommandBufferIdx].clear();
-    switchCommandBuffer();
 }
 
 renderID Renderer::instanciateMaterial(ResourceHandle<Material> material)

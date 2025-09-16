@@ -64,6 +64,14 @@ public:
     }
 
     bool canAddInstance() { return m_freeIds.size() > 0; }
+    void removeAll(std::function<void(T&)> deletionCallback)
+    {
+        for (auto& elem : m_renderIdToInstance) {
+            deletionCallback(elem.second.first);
+            m_freeIds.emplace(elem.first);
+        }
+        m_renderIdToInstance.clear();
+    }
 
 private:
     std::unordered_map<renderID, std::pair<T, size_t>> m_renderIdToInstance;
@@ -89,6 +97,8 @@ public:
     renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback);
     renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces);
     renderID instanciateCubemap();
+
+    void destroy();
 
 private:
     void processCommand(RenderCommand& command);

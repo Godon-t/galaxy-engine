@@ -53,5 +53,6 @@ private:
     void updateCamera();
     void displayMenuBar(bool validScene);
     void displayViewport(bool sceneSelected);
+    void applicationWidgetRender();
 };
 }

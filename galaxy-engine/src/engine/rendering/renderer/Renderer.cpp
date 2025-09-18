@@ -56,6 +56,8 @@ void Renderer::endSceneRender()
 
 void Renderer::renderFrame()
 {
+    m_frontend.dumpCommandsToBuffer();
+    m_drawCount = m_commandBuffers[m_frontCommandBufferIdx].size();
     m_backend.processCommands(m_commandBuffers[m_frontCommandBufferIdx]);
     m_commandBuffers[m_frontCommandBufferIdx].clear();
     switchCommandBuffer();

@@ -85,18 +85,6 @@ void Frontend::bindCubemap(renderID cubemapInstanceID, char* uniformName)
     m_frontBuffer->push_back(command);
 }
 
-void Frontend::bindMaterial(renderID materialRenderID)
-{
-    BindMaterialCommand bindMaterialCommand;
-    bindMaterialCommand.materialRenderID = materialRenderID;
-
-    RenderCommand command;
-    command.type         = RenderCommandType::bindMaterial;
-    command.bindMaterial = bindMaterialCommand;
-
-    m_frontBuffer->push_back(command);
-}
-
 void Frontend::changeUsedProgram(ProgramType program)
 {
     SetActiveProgramCommand setActiveProgramCommand;
@@ -108,6 +96,40 @@ void Frontend::changeUsedProgram(ProgramType program)
     m_frontBuffer->push_back(progCommand);
     setProjectionMatrix(m_projMat);
     setViewMatrix(m_viewMat);
+}
+
+void Frontend::submitPBR(renderID meshID, renderID materialID, const Transform& transform)
+{
+    DrawCommand drawCommand;
+    drawCommand.instanceId = meshID;
+    drawCommand.model      = transform.getGlobalModelMatrix();
+
+    RenderCommand command;
+    command.type = RenderCommandType::draw;
+    command.draw = drawCommand;
+
+    m_materialToSubmitCommand[materialID].push_back(command);
+}
+
+void Frontend::dumpCommandsToBuffer()
+{
+    changeUsedProgram(ProgramType::PBR);
+    for (auto& queue : m_materialToSubmitCommand) {
+        BindMaterialCommand bindMaterialCommand;
+        bindMaterialCommand.materialRenderID = queue.first;
+
+        RenderCommand command;
+        command.type         = RenderCommandType::bindMaterial;
+        command.bindMaterial = bindMaterialCommand;
+
+        m_frontBuffer->push_back(command);
+
+        for (auto& meshCommand : queue.second) {
+            m_frontBuffer->push_back(meshCommand);
+        }
+    }
+
+    m_materialToSubmitCommand.clear();
 }
 
 void Frontend::setCommandBuffer(std::vector<RenderCommand>* newBuffer)

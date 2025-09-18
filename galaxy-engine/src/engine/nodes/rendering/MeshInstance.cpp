@@ -18,9 +18,9 @@ MeshInstance::~MeshInstance()
 
 void MeshInstance::draw()
 {
-    if (m_materialId)
-        Renderer::getInstance().bindMaterial(m_materialId);
-    if (m_renderId)
+    if (m_materialId && m_renderId)
+        Renderer::getInstance().submitPBR(m_renderId, m_materialId, *getTransform());
+    else if (m_renderId)
         Renderer::getInstance().submit(m_renderId, *getTransform());
 }
 

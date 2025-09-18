@@ -197,6 +197,33 @@ void EditorLayer::displayViewport(bool validScene)
     ImGui::End();
 }
 
+void EditorLayer::applicationWidgetRender()
+{
+    ImGui::Begin("App");
+
+    double fps = 1.0 / Application::getInstance().getDelta();
+
+    static std::vector<float> fpsHistory(300, 0.0f);
+    static size_t offset = 0;
+
+    fpsHistory[offset] = (float)fps;
+    offset             = (offset + 1) % fpsHistory.size();
+
+    ImGui::Text("Resource count: %.1i", ResourceManager::getInstance().getResourceCount());
+    ImGui::Text("Draw calls count: %.li", Renderer::getInstance().getDrawCallsCount());
+    ImGui::Text("FPS: %.1f", fps);
+    ImGui::PlotHistogram("FPS history", fpsHistory.data(), fpsHistory.size(), offset, nullptr, 0.0f, 60.0f, ImVec2(0, 100));
+    ImGui::Checkbox("Show all nodes", &m_showAllNodes);
+
+    if (ImGui::Button("Test resource"))
+        m_resourceAccess.show();
+    if (m_resourceAccess.display()) {
+        GLX_INFO("Selected resource! '{0}'", m_resourceAccess.selectedResourcePath);
+    }
+
+    ImGui::End();
+}
+
 void EditorLayer::onImGuiRender()
 {
     bool validScene           = Project::isSceneValid(m_selectedSceneId);
@@ -222,30 +249,9 @@ void EditorLayer::onImGuiRender()
         ImGui::End();
     }
 
-    ImGui::Begin("App");
-
-    double fps = 1.0 / Application::getInstance().getDelta();
-
-    static std::vector<float> fpsHistory(300, 0.0f);
-    static size_t offset = 0;
-
-    fpsHistory[offset] = (float)fps;
-    offset             = (offset + 1) % fpsHistory.size();
-
-    ImGui::Text("Resource count: %.1i", ResourceManager::getInstance().getResourceCount());
-    ImGui::Text("FPS: %.1f", fps);
-    ImGui::PlotHistogram("FPS history", fpsHistory.data(), fpsHistory.size(), offset, nullptr, 0.0f, 60.0f, ImVec2(0, 100));
-    ImGui::Checkbox("Show all nodes", &m_showAllNodes);
-
-    if (ImGui::Button("Test resource"))
-        m_resourceAccess.show();
-    if (m_resourceAccess.display()) {
-        GLX_INFO("Selected resource! '{0}'", m_resourceAccess.selectedResourcePath);
-    }
-
-    ImGui::End();
-
     displayViewport(validScene);
+
+    applicationWidgetRender();
 
     ImGui::Begin("Scene");
 

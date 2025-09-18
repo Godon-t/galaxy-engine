@@ -41,7 +41,10 @@ public:
     inline void clearCubemap(renderID cubemapID) { m_backend.clearCubemap(cubemapID); }
     inline void bindCubemap(renderID cubemapInstanceID, char* uniformName) { return m_frontend.bindCubemap(cubemapInstanceID, uniformName); }
 
+    inline void submitPBR(renderID meshID, renderID materialID, const Transform& transform) { m_frontend.submitPBR(meshID, materialID, transform); }
     void renderFromPoint(vec3 position, Node& root, renderID targetCubemapID);
+
+    inline int getDrawCallsCount() { return m_drawCount; }
 
 private:
     Renderer();
@@ -55,5 +58,7 @@ private:
 
     Frontend m_frontend;
     Backend m_backend;
+
+    int m_drawCount = 0;
 };
 }

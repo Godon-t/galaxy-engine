@@ -9,6 +9,7 @@ enum RenderCommandType {
     setView,
     setProjection,
     clear,
+    depthMask,
     draw,
     bindTexture,
     bindCubemap,
@@ -32,6 +33,10 @@ struct DrawCommand {
 
 struct ClearCommand {
     math::vec4 color;
+};
+
+struct DepthMaskCommand {
+    bool state;
 };
 
 struct BindTextureCommand {
@@ -65,6 +70,7 @@ struct RenderCommand {
         SetViewCommand setView;
         SetProjectionCommand setProjection;
         ClearCommand clear;
+        DepthMaskCommand depthMask;
         DrawCommand draw;
         BindTextureCommand bindTexture;
         BindCubemapCommand bindCubemap;

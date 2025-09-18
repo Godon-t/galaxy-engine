@@ -34,6 +34,7 @@ public:
     inline renderID instanciateMaterial(ResourceHandle<Material> material) { return m_backend.instanciateMaterial(material); }
     inline void bindMaterial(renderID materialID) { m_frontend.bindMaterial(materialID); }
     inline void clearMaterial(renderID materialID) { m_backend.clearMaterial(materialID); }
+    void updateMaterial(renderID materialID, ResourceHandle<Material> material);
 
     inline renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback) { return m_backend.generateCube(dimmension, inward, destroyCallback); }
     inline renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces) { return m_backend.instanciateCubemap(faces); }

@@ -43,6 +43,8 @@ void Frontend::setViewMatrix(math::mat4& view)
     m_frontBuffer->push_back(command);
 
     m_viewMat = view;
+
+    DistCompare::camPosition = vec3(view[3]);
 }
 
 void Frontend::setProjectionMatrix(math::mat4& projection)
@@ -111,23 +113,67 @@ void Frontend::submitPBR(renderID meshID, renderID materialID, const Transform& 
     m_materialToSubmitCommand[materialID].push_back(command);
 }
 
+vec3 Frontend::DistCompare::camPosition = vec3(0);
+
+bool Frontend::DistCompare::operator()(const std::pair<renderID, RenderCommand>& a, const std::pair<renderID, RenderCommand>& b) const
+{
+    return (camPosition - vec3(a.second.draw.model[3])).length() < (camPosition - vec3(b.second.draw.model[3])).length();
+}
+
 void Frontend::dumpCommandsToBuffer()
 {
     changeUsedProgram(ProgramType::PBR);
+
+    std::priority_queue<std::pair<renderID, RenderCommand>, std::vector<std::pair<renderID, RenderCommand>>, DistCompare> transparentPQ;
+
     for (auto& queue : m_materialToSubmitCommand) {
+        auto matID = queue.first;
+        if (m_materialsTransparency[matID]) {
+            for (auto& meshCommand : queue.second) {
+                auto elem = std::make_pair(matID, meshCommand);
+                transparentPQ.push(elem);
+            }
+        } else {
+            BindMaterialCommand bindMaterialCommand;
+            bindMaterialCommand.materialRenderID = matID;
+
+            RenderCommand command;
+            command.type         = RenderCommandType::bindMaterial;
+            command.bindMaterial = bindMaterialCommand;
+
+            m_frontBuffer->push_back(command);
+
+            for (auto& meshCommand : queue.second) {
+                m_frontBuffer->push_back(meshCommand);
+            }
+        }
+    }
+
+    DepthMaskCommand depthMask;
+    depthMask.state = false;
+    RenderCommand depthCommand;
+    depthCommand.type      = RenderCommandType::depthMask;
+    depthCommand.depthMask = depthMask;
+
+    m_frontBuffer->push_back(depthCommand);
+
+    while (!transparentPQ.empty()) {
         BindMaterialCommand bindMaterialCommand;
-        bindMaterialCommand.materialRenderID = queue.first;
+        bindMaterialCommand.materialRenderID = transparentPQ.top().first;
 
         RenderCommand command;
         command.type         = RenderCommandType::bindMaterial;
         command.bindMaterial = bindMaterialCommand;
 
         m_frontBuffer->push_back(command);
+        m_frontBuffer->push_back(transparentPQ.top().second);
 
-        for (auto& meshCommand : queue.second) {
-            m_frontBuffer->push_back(meshCommand);
-        }
+        transparentPQ.pop();
     }
+
+    depthMask.state        = true;
+    depthCommand.depthMask = depthMask;
+    m_frontBuffer->push_back(depthCommand);
 
     m_materialToSubmitCommand.clear();
 }

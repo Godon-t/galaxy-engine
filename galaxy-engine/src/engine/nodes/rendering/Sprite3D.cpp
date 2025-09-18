@@ -68,13 +68,13 @@ renderID Sprite3D::generateRect(vec2 dimmensions)
     vertices.push_back(v4);
 
     std::vector<short unsigned int> indices;
-    indices.push_back(0);
     indices.push_back(2);
+    indices.push_back(0);
     indices.push_back(1);
 
     indices.push_back(1);
-    indices.push_back(2);
     indices.push_back(3);
+    indices.push_back(2);
 
     return Renderer::getInstance().instanciateMesh(vertices, indices);
 }

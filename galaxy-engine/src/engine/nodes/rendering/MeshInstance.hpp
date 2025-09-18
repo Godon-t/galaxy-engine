@@ -26,11 +26,15 @@ public:
 
     inline ResourceHandle<Mesh> getMeshResource() const { return m_meshResource; }
 
+    inline ResourceHandle<Material> getMaterial() const { return m_materialResource; }
+    inline renderID getMaterialId() const { return m_materialId; }
+
 private:
     renderID m_renderId;
     renderID m_materialId;
 
     ResourceHandle<Mesh> m_meshResource;
+    ResourceHandle<Material> m_materialResource;
 
     int m_meshSurfaceIdx;
 };

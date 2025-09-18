@@ -39,6 +39,7 @@ void MeshInstance::loadMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
         m_renderId = Renderer::getInstance().instanciateMesh(mesh, surfaceIdx);
 
         ResourceHandle<Material> mat = mesh.getResource().getMaterial(surfaceIdx);
+        m_materialResource           = mat;
         mat.getResource().onLoaded([this, mat] {
             m_materialId = Renderer::getInstance().instanciateMaterial(mat);
         });

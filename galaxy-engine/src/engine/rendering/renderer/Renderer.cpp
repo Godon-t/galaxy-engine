@@ -63,6 +63,11 @@ void Renderer::renderFrame()
     switchCommandBuffer();
 }
 
+void Renderer::updateMaterial(renderID materialID, ResourceHandle<Material> material)
+{
+    m_frontend.setTransparency(materialID, material.getResource().getTransparency() < 1.f);
+}
+
 void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemapID)
 {
     switchCommandBuffer();

@@ -53,7 +53,7 @@ public:
     ProgramType type() const override { return ProgramType::PBR; }
 
 private:
-    unsigned int albedoLocation, metallicLocation, roughnessLocation, ambientLocation;
+    unsigned int albedoLocation, metallicLocation, roughnessLocation, ambientLocation, transparencyLocation;
     unsigned int albedoTexLocation, metallicTexLocation, roughnessTexLocation, ambientTexLocation, normalTexLocation;
     unsigned int useAlbedoMapLocation, useNormalMapLocation, useMetallicMapLocation, useRoughnessMapLocation, useAmbientMapLocation;
 };

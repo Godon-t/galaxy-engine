@@ -28,7 +28,20 @@ public:
 
     void setCommandBuffer(std::vector<RenderCommand>* newBuffer);
 
+    inline void setTransparency(renderID matID, bool state) { m_materialsTransparency[matID] = state; }
+    inline void removeMaterialID(renderID matID)
+    {
+        m_materialsTransparency.erase(matID);
+        m_materialToSubmitCommand.erase(matID);
+    }
+
 private:
+    struct DistCompare {
+        static vec3 camPosition;
+        bool operator()(const std::pair<renderID, RenderCommand>& a, const std::pair<renderID, RenderCommand>& b) const;
+    };
+
+    std::unordered_map<renderID, bool> m_materialsTransparency;
     std::unordered_map<renderID, std::vector<RenderCommand>> m_materialToSubmitCommand;
 
     std::vector<RenderCommand>* m_frontBuffer;

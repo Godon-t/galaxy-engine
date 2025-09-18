@@ -29,10 +29,11 @@ void main()
 #type fragment
 #version 330 core
 
-uniform vec3 albedoVal     = vec3(1.0, 0.f, 0.f);
-uniform float metallicVal  = 0.5f;
-uniform float roughnessVal = 0.5f;
-uniform float aoVal        = 1.f;
+uniform vec3 albedoVal        = vec3(1.0, 0.f, 0.f);
+uniform float metallicVal     = 0.5f;
+uniform float roughnessVal    = 0.5f;
+uniform float aoVal           = 1.f;
+uniform float transparencyVal = 1.0f;
 
 uniform sampler2D albedoMap;
 uniform sampler2D normalMap;
@@ -118,7 +119,7 @@ void main()
     vec3 albedo, normal;
     float metallic, roughness, ao;
 
-    float transparency = useAlbedoMap ? texture(albedoMap, v_texCoords).a : 1.0f;
+    float transparency = useAlbedoMap ? texture(albedoMap, v_texCoords).a : transparencyVal;
     albedo             = useAlbedoMap ? pow(texture(albedoMap, v_texCoords).rgb, vec3(2.2)) : pow(albedoVal, vec3(2.2));
     normal             = useNormalMap ? getNormalFromNormalMap() : v_normal;
     metallic           = useMetallicMap ? texture(metallicMap, v_texCoords).r : metallicVal;

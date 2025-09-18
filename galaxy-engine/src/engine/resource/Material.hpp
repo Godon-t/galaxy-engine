@@ -37,15 +37,18 @@ public:
     float getMetallic() const { return m_metallic; }
     float getRoughness() const { return m_roughness; }
     float getAmbient() const { return m_ambient; }
+    float getTransparency() const { return m_transparency; }
+    void setTransparency(float value) { m_transparency = value; }
 
 private:
     friend class ResourceImporter;
     friend class ResourceSerializer;
 
-    math::vec3 m_albedo = { 1.f, 0.7f, 0.77f };
-    float m_metallic    = 0.5f;
-    float m_roughness   = 0.5f;
-    float m_ambient     = 1.0f;
+    math::vec3 m_albedo  = { 1.f, 0.7f, 0.77f };
+    float m_metallic     = 0.5f;
+    float m_roughness    = 0.5f;
+    float m_ambient      = 1.0f;
+    float m_transparency = 1.0f;
 
     renderID m_materialRenderID = 0;
 

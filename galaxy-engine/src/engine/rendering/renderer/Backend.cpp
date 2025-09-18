@@ -24,12 +24,12 @@ Backend::Backend(size_t maxSize)
     glClearColor(1.f, 0.f, 0.2f, 0.0f);
 
     glEnable(GL_DEPTH_TEST);
-    // glDepthFunc(GL_LEQUAL);
-    // glEnable(GL_BLEND);
-    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthFunc(GL_LEQUAL);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // glEnable(GL_CULL_FACE);
-    glDisable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
+    // glDisable(GL_CULL_FACE);
 
     m_mainProgram    = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
     m_skyboxProgram  = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
@@ -165,13 +165,19 @@ renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
         setupTexture(NORMAL);
         setupTexture(AO);
 
-        matInstance->albedo    = matResource.getAlbedo();
-        matInstance->metallic  = matResource.getMetallic();
-        matInstance->ambient   = matResource.getAmbient();
-        matInstance->roughness = matResource.getRoughness();
+        matInstance->albedo       = matResource.getAlbedo();
+        matInstance->metallic     = matResource.getMetallic();
+        matInstance->ambient      = matResource.getAmbient();
+        matInstance->roughness    = matResource.getRoughness();
+        matInstance->transparency = matResource.getTransparency();
     });
 
     return materialID;
+}
+
+void Backend::updateMaterial(renderID materialID, ResourceHandle<Material> material)
+{
+    m_materialInstances.get(materialID)->transparency = material.getResource().getTransparency();
 }
 
 void Backend::clearMaterial(renderID materialID)
@@ -230,12 +236,12 @@ renderID Backend::generateCube(float dimmension, bool inward, std::function<void
     for (size_t i = 0; i < baseIndices.size(); i += 3) {
         if (inward) {
             indices.push_back(baseIndices[i]);
-            indices.push_back(baseIndices[i + 2]);
             indices.push_back(baseIndices[i + 1]);
+            indices.push_back(baseIndices[i + 2]);
         } else {
             indices.push_back(baseIndices[i]);
-            indices.push_back(baseIndices[i + 1]);
             indices.push_back(baseIndices[i + 2]);
+            indices.push_back(baseIndices[i + 1]);
         }
     }
 
@@ -291,6 +297,14 @@ void Backend::processCommand(ClearCommand& clearCommand)
     auto& clearColor = clearCommand.color;
     glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void Backend::processCommand(DepthMaskCommand& command)
+{
+    if (command.state)
+        glDepthMask(GL_TRUE);
+    else
+        glDepthMask(GL_FALSE);
 }
 
 void Backend::processCommand(SetViewCommand& setViewCommand)
@@ -371,6 +385,8 @@ void Backend::processCommand(RenderCommand& command)
         processCommand(command.setActiveProgram);
     else if (command.type == RenderCommandType::clear)
         processCommand(command.clear);
+    else if (command.type == RenderCommandType::depthMask)
+        processCommand(command.depthMask);
     else if (command.type == RenderCommandType::setView)
         processCommand(command.setView);
     else if (command.type == RenderCommandType::setProjection)

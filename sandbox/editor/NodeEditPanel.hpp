@@ -42,6 +42,11 @@ public:
         if (ImGui::InputInt("Surface idx", &surfaceIdx)) {
             node.loadMesh(node.getMeshResource(), surfaceIdx);
         }
+
+        auto mathandle = node.getMaterial();
+        if (materialEdit(mathandle.getResource())) {
+            Renderer::getInstance().updateMaterial(node.getMaterialId(), mathandle);
+        }
     }
     void visit(MultiMeshInstance& node)
     {
@@ -92,6 +97,17 @@ public:
         if (ImGui::DragFloat3("Scale", &scale[0])) {
             transform.setLocalScale(scale);
         }
+    }
+
+    bool materialEdit(Material& material)
+    {
+        ImGui::SeparatorText("Material");
+        float transparencyVal = material.getTransparency();
+        if (ImGui::SliderFloat("Transparency", &transparencyVal, 0.f, 1.f)) {
+            material.setTransparency(transparencyVal);
+            return true;
+        }
+        return false;
     }
 
     ResourceAccess m_resourceAccess;

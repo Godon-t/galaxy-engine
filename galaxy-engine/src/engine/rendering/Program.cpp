@@ -206,11 +206,12 @@ void Program::setUniform(const char* uniformName, int value)
 ProgramPBR::ProgramPBR(std::string path)
     : Program(path)
 {
-    auto programID    = getProgramID();
-    albedoLocation    = glGetUniformLocation(programID, "albedoVal");
-    metallicLocation  = glGetUniformLocation(programID, "metallicVal");
-    roughnessLocation = glGetUniformLocation(programID, "roughnessVal");
-    ambientLocation   = glGetUniformLocation(programID, "aoVal");
+    auto programID       = getProgramID();
+    albedoLocation       = glGetUniformLocation(programID, "albedoVal");
+    metallicLocation     = glGetUniformLocation(programID, "metallicVal");
+    roughnessLocation    = glGetUniformLocation(programID, "roughnessVal");
+    ambientLocation      = glGetUniformLocation(programID, "aoVal");
+    transparencyLocation = glGetUniformLocation(programID, "transparencyVal");
 
     albedoTexLocation    = glGetUniformLocation(programID, "albedoMap");
     metallicTexLocation  = glGetUniformLocation(programID, "metallicMap");
@@ -231,6 +232,7 @@ void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture, 
     glUniform1f(roughnessLocation, material.roughness);
     glUniform1f(ambientLocation, material.ambient);
     glUniform3f(albedoLocation, material.albedo[0], material.albedo[1], material.albedo[2]);
+    glUniform1f(transparencyLocation, material.transparency);
 
     auto activateTexture = [&material, &materialTextures](TextureType type, GLuint useLocation, GLuint mapLocation) {
         glUniform1i(useLocation, material.useImage[type]);

@@ -90,6 +90,7 @@ public:
     void clearTexture(renderID textureID);
 
     renderID instanciateMaterial(ResourceHandle<Material> material);
+    void updateMaterial(renderID materialID, ResourceHandle<Material> material);
     void clearMaterial(renderID materialID);
 
     void processCommands(std::vector<RenderCommand>& commands);
@@ -108,6 +109,7 @@ public:
 private:
     void processCommand(RenderCommand& command);
     void processCommand(ClearCommand& command);
+    void processCommand(DepthMaskCommand& command);
     void processCommand(SetViewCommand& command);
     void processCommand(SetProjectionCommand& command);
     void processCommand(SetActiveProgramCommand& command);

@@ -97,6 +97,11 @@ public:
     renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback);
     renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces);
     renderID instanciateCubemap();
+    void clearCubemap(renderID cubemapID);
+
+    // TODO: I don't think it is a good idea
+    inline mat4 getProjectionMatrix() { return m_projectionMatrix; }
+    void setProjectionMatrix(const mat4& projectionMatrix);
 
     void destroy();
 
@@ -123,6 +128,8 @@ private:
     ProgramSkybox m_skyboxProgram;
     ProgramTexture m_textureProgram;
     Program* m_activeProgram;
+
+    mat4 m_projectionMatrix;
 
     friend class Renderer;
 };

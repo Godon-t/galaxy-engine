@@ -5,6 +5,11 @@
 #include "resource/ResourceManager.hpp"
 
 namespace Galaxy {
+EnvironmentNode::~EnvironmentNode()
+{
+    Renderer::getInstance().clearCubemap(m_skyboxCubemapID);
+}
+
 void EnvironmentNode::accept(Galaxy::NodeVisitor& visitor)
 {
     visitor.visit(*this);

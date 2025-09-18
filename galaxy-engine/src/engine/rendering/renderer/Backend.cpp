@@ -244,14 +244,25 @@ renderID Backend::generateCube(float dimmension, bool inward, std::function<void
 
 renderID Backend::instanciateCubemap()
 {
-    renderID cubemapID    = m_cubemapInstances.createResourceInstance();
-    auto& cubemapInstance = *m_cubemapInstances.get(cubemapID);
+    renderID cubemapID = m_cubemapInstances.createResourceInstance();
     return cubemapID;
+}
+
+void Backend::clearCubemap(renderID cubemapID)
+{
+    if (!m_cubemapInstances.tryRemove(cubemapID))
+        return;
+
+    auto it = m_gpuDestroyNotifications.find(cubemapID);
+    if (it != m_gpuDestroyNotifications.end()) {
+        it->second();
+        m_gpuDestroyNotifications.erase(cubemapID);
+    }
 }
 
 renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
 {
-    renderID cubemapID = m_cubemapInstances.createResourceInstance();
+    renderID cubemapID = instanciateCubemap();
 
     auto& cubemapInstance = *m_cubemapInstances.get(cubemapID);
 
@@ -286,10 +297,14 @@ void Backend::processCommand(SetViewCommand& setViewCommand)
 {
     m_activeProgram->updateViewMatrix(setViewCommand.view);
 }
-
+void Backend::setProjectionMatrix(const mat4& projectionMatrix)
+{
+    m_projectionMatrix = projectionMatrix;
+    m_activeProgram->updateProjectionMatrix(projectionMatrix);
+}
 void Backend::processCommand(SetProjectionCommand& command)
 {
-    m_activeProgram->updateProjectionMatrix(command.projection);
+    setProjectionMatrix(command.projection);
 }
 
 void Backend::processCommand(SetActiveProgramCommand& command)
@@ -322,8 +337,9 @@ void Backend::processCommand(BindTextureCommand& command)
 
 void Backend::processCommand(BindCubemapCommand& command)
 {
+    auto uniLoc   = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
     auto& cubemap = *m_cubemapInstances.get(command.instanceID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.cubemapID);
+    cubemap.activate(uniLoc);
     checkOpenGLErrors("Bind cubemap");
 }
 

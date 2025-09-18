@@ -16,14 +16,17 @@ public:
     {
     }
 
+    ~EnvironmentNode();
+
     void accept(Galaxy::NodeVisitor& visitor) override;
 
     inline virtual void draw() override;
     inline virtual void testingFunc()
     {
-        // renderID provisoryCubemap = Renderer::getInstance().instanciateCubemap();
-        Renderer::getInstance().renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), m_skyboxCubemapID);
-        // m_skyboxCubemapID = provisoryCubemap;
+        renderID provisoryCubemap = Renderer::getInstance().instanciateCubemap();
+        Renderer::getInstance().renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), provisoryCubemap);
+        Renderer::getInstance().clearCubemap(m_skyboxCubemapID);
+        m_skyboxCubemapID = provisoryCubemap;
         // TODO: Delete cubemap
     }
 

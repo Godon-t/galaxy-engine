@@ -3,6 +3,7 @@
 #include "pch.hpp"
 
 #include "Core.hpp"
+#include "gl_headers.hpp"
 #include "rendering/CameraManager.hpp"
 #include "rendering/GPUInstances/FrameBuffer.hpp"
 #include "rendering/OpenglHelper.hpp"
@@ -33,11 +34,6 @@ Renderer& Renderer::getInstance()
     return renderer;
 }
 
-void Renderer::setProjectionMatrix(math::mat4& projection)
-{
-    m_frontend.setProjectionMatrix(projection);
-}
-
 void Renderer::beginSceneRender(mat4& camTransform)
 {
     auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
@@ -50,23 +46,8 @@ void Renderer::beginSceneRender(const vec3& camPosition, const vec3& camDirectio
 {
     auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
     m_frontend.clear(clearColor);
-    auto viewMatrix = lookAt(camPosition, camDirection, camUp);
+    auto viewMatrix = lookAt(camPosition, camPosition + camDirection, camUp);
     m_frontend.setViewMatrix(viewMatrix);
-}
-
-void Renderer::changeUsedProgram(ProgramType prog)
-{
-    m_frontend.changeUsedProgram(prog);
-}
-
-void Renderer::submit(renderID meshID, const Transform& transform)
-{
-    m_frontend.submit(meshID, transform);
-}
-
-void Renderer::bindTexture(renderID textureInstanceID, char* uniformName)
-{
-    m_frontend.bindTexture(textureInstanceID, uniformName);
 }
 
 void Renderer::endSceneRender()
@@ -78,47 +59,6 @@ void Renderer::renderFrame()
     m_backend.processCommands(m_commandBuffers[m_frontCommandBufferIdx]);
     m_commandBuffers[m_frontCommandBufferIdx].clear();
     switchCommandBuffer();
-}
-
-renderID Renderer::instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices)
-{
-    return m_backend.instanciateMesh(vertices, indices);
-}
-
-renderID Renderer::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
-{
-    return m_backend.instanciateMesh(mesh, surfaceIdx);
-}
-
-void Renderer::clearMesh(renderID meshID)
-{
-    m_backend.clearMesh(meshID);
-}
-renderID Renderer::instanciateTexture(ResourceHandle<Image> image)
-{
-    return m_backend.instanciateTexture(image);
-}
-void Renderer::clearTexture(renderID textureID)
-{
-    m_backend.clearTexture(textureID);
-}
-
-renderID Renderer::generateCube(float dimmension, bool inward, std::function<void()> destroyCallback)
-{
-    return m_backend.generateCube(dimmension, inward, destroyCallback);
-}
-
-renderID Renderer::instanciateCubemap()
-{
-    return m_backend.instanciateCubemap();
-}
-renderID Renderer::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
-{
-    return m_backend.instanciateCubemap(faces);
-}
-void Renderer::bindCubemap(renderID cubemapInstanceID, char* uniformName)
-{
-    return m_frontend.bindCubemap(cubemapInstanceID, uniformName);
 }
 
 void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemapID)
@@ -140,33 +80,29 @@ void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemap
     orientations[5] = { 0, 0, -1 };
     ups[4] = ups[5] = { 0, -1, 0 };
 
-    mat4 projection = perspective(radians(90.0f), 1.f, 0.1f, 100.f);
-
     Cubemap& targetCubemap = *m_backend.m_cubemapInstances.get(targetCubemapID);
     targetCubemap.useFloat = true;
-    targetCubemap.resize(512);
+    targetCubemap.resize(2048);
     CubemapFrameBuffer cubemapBuffer(targetCubemap);
+
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    glViewport(0, 0, targetCubemap.resolution, targetCubemap.resolution);
+
+    mat4 baseProjection = m_backend.getProjectionMatrix();
+    mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 99999.f);
+    m_backend.setProjectionMatrix(projection);
 
     for (int i = 0; i < 6; i++) {
         cubemapBuffer.bind(i);
-        beginSceneRender(vec3(0), orientations[i], ups[i]);
+        beginSceneRender(position, orientations[i], ups[i]);
         root.draw();
         renderFrame();
     }
     cubemapBuffer.unbind();
     cubemapBuffer.destroy();
-}
 
-renderID Renderer::instanciateMaterial(ResourceHandle<Material> material)
-{
-    return m_backend.instanciateMaterial(material);
-}
-void Renderer::bindMaterial(renderID materialID)
-{
-    m_frontend.bindMaterial(materialID);
-}
-void Renderer::clearMaterial(renderID materialID)
-{
-    m_backend.clearMaterial(materialID);
+    m_backend.setProjectionMatrix(baseProjection);
+    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 }
 }

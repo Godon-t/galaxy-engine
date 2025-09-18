@@ -64,6 +64,17 @@ void Texture::destroy()
 Cubemap::Cubemap()
 {
     glGenTextures(1, &cubemapID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
+    resize(64);
+}
+
+void Cubemap::activate(unsigned int uniLoc)
+{
+    int actInt = Texture::getAvailableActivationInt();
+    glActiveTexture(GL_TEXTURE0 + actInt);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
+    glUniform1i(uniLoc, actInt);
+    checkOpenGLErrors("activate cubemap");
 }
 
 void Cubemap::destroy()
@@ -74,7 +85,6 @@ void Cubemap::destroy()
 
 void Cubemap::allocateFaces(unsigned int res)
 {
-    checkOpenGLErrors("before Allocate faces");
     resolution = res;
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
     for (int i = 0; i < 6; i++) {

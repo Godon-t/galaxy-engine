@@ -12,33 +12,34 @@ class Renderer {
 public:
     static Renderer& getInstance();
 
-    void changeUsedProgram(ProgramType prog);
+    inline void changeUsedProgram(ProgramType prog) { m_frontend.changeUsedProgram(prog); }
 
-    void setProjectionMatrix(math::mat4& projection);
+    inline void setProjectionMatrix(math::mat4& projection) { m_frontend.setProjectionMatrix(projection); }
 
     void beginSceneRender(mat4& camTransform);
     void beginSceneRender(const vec3& camPosition, const vec3& camDirection, const vec3& camUp);
-    void submit(renderID meshID, const Transform& transform);
-    void bindTexture(renderID textureInstanceID, char* uniformName);
+    inline void submit(renderID meshID, const Transform& transform) { m_frontend.submit(meshID, transform); }
 
     void endSceneRender();
     void renderFrame();
 
-    renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices);
-    renderID instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx = 0);
-    void clearMesh(renderID meshID);
+    inline renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices) { return m_backend.instanciateMesh(vertices, indices); }
+    inline renderID instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx = 0) { return m_backend.instanciateMesh(mesh, surfaceIdx); }
+    inline void clearMesh(renderID meshID) { m_backend.clearMesh(meshID); }
 
-    renderID instanciateTexture(ResourceHandle<Image> image);
-    void clearTexture(renderID textureID);
+    inline renderID instanciateTexture(ResourceHandle<Image> image) { return m_backend.instanciateTexture(image); }
+    inline void bindTexture(renderID textureInstanceID, char* uniformName) { m_frontend.bindTexture(textureInstanceID, uniformName); }
+    inline void clearTexture(renderID textureID) { m_backend.clearTexture(textureID); }
 
-    renderID instanciateMaterial(ResourceHandle<Material> material);
-    void bindMaterial(renderID materialID);
-    void clearMaterial(renderID materialID);
+    inline renderID instanciateMaterial(ResourceHandle<Material> material) { return m_backend.instanciateMaterial(material); }
+    inline void bindMaterial(renderID materialID) { m_frontend.bindMaterial(materialID); }
+    inline void clearMaterial(renderID materialID) { m_backend.clearMaterial(materialID); }
 
-    renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback);
-    renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces);
-    renderID instanciateCubemap();
-    void bindCubemap(renderID cubemapInstanceID, char* uniformName);
+    inline renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback) { return m_backend.generateCube(dimmension, inward, destroyCallback); }
+    inline renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces) { return m_backend.instanciateCubemap(faces); }
+    inline renderID instanciateCubemap() { return m_backend.instanciateCubemap(); }
+    inline void clearCubemap(renderID cubemapID) { m_backend.clearCubemap(cubemapID); }
+    inline void bindCubemap(renderID cubemapInstanceID, char* uniformName) { return m_frontend.bindCubemap(cubemapInstanceID, uniformName); }
 
     void renderFromPoint(vec3 position, Node& root, renderID targetCubemapID);
 

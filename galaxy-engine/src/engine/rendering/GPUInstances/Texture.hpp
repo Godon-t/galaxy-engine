@@ -34,6 +34,8 @@ struct Cubemap {
 
     Cubemap();
 
+    void activate(unsigned int uniLoc);
+
     void destroy();
     void allocateFaces(unsigned int res);
     void resize(unsigned int res);

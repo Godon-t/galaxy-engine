@@ -170,6 +170,7 @@ renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
         matInstance->ambient      = matResource.getAmbient();
         matInstance->roughness    = matResource.getRoughness();
         matInstance->transparency = matResource.getTransparency();
+
     });
 
     return materialID;

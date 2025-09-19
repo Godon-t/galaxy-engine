@@ -28,6 +28,8 @@ bool Material::load(YAML::Node& data)
         return false;
     }
 
+    if(data["HasTransparency"]) setUseTransparency(data["HasTransparency"].as<bool>());
+
     std::unordered_map<TextureType, std::string> textureTypeToStr;
     textureTypeToStr[ALBEDO]    = "Albedo";
     textureTypeToStr[ROUGHNESS] = "Roughness";

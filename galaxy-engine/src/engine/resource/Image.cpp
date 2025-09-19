@@ -56,4 +56,15 @@ bool Image::loadExtern(const std::string& path)
     return true;
 }
 
+bool Image::hasTransparency(){
+    if(m_nbChannels<=3) return false;
+    for (int i = 0; i < m_width * m_height; ++i) {
+        unsigned char alpha = m_data[i * 4 + 3];
+        if (alpha < 255) {
+            return true;
+        }
+    }
+    return false;
+}
+
 }

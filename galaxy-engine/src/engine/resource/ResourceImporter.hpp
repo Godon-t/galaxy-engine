@@ -91,6 +91,9 @@ struct ResourceImporter {
         };
 
         tryImport(aiTextureType_BASE_COLOR, ALBEDO);
+        resource->m_images[ALBEDO].getResource().onLoaded([resource]{
+            resource->m_useTransparency = resource->m_images[ALBEDO].getResource().hasTransparency();
+        });
         aiColor3D color(0.f, 0.f, 0.f);
         if (material->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) {
             resource->m_albedo = vec3(color.r, color.g, color.b);
@@ -110,6 +113,14 @@ struct ResourceImporter {
         }
 
         tryImport(aiTextureType_AMBIENT, AO);
+
+
+        float opacity;
+        material->Get(AI_MATKEY_OPACITY, opacity);
+        resource->m_transparency = opacity;
+        material->Get(AI_MATKEY_TRANSPARENCYFACTOR, opacity);
+        if(opacity<resource->m_transparency) resource->m_transparency=opacity;
+
 
         if (resource->save(false)) {
             return resourceID;

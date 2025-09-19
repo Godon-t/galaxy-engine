@@ -24,6 +24,7 @@ struct Image : public ResourceBase {
     inline void setTextureID(renderID id) { m_textureID = id; }
 
     inline std::string getExternalFilePath() { return m_relativeExternalFilePath; }
+    bool hasTransparency();
 
     void destroy();
 

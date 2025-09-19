@@ -38,7 +38,12 @@ public:
     float getRoughness() const { return m_roughness; }
     float getAmbient() const { return m_ambient; }
     float getTransparency() const { return m_transparency; }
-    void setTransparency(float value) { m_transparency = value; }
+    void setTransparency(float value) { 
+        m_transparency = value; 
+        setUseTransparency(m_useTransparency || m_transparency < 1.f);
+    }
+    void setUseTransparency(bool state){ m_useTransparency = state; }
+    bool isUsingTransparency() const {return m_useTransparency;}
 
 private:
     friend class ResourceImporter;
@@ -49,6 +54,8 @@ private:
     float m_roughness    = 0.5f;
     float m_ambient      = 1.0f;
     float m_transparency = 1.0f;
+
+    bool m_useTransparency = false;
 
     renderID m_materialRenderID = 0;
 

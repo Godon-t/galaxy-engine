@@ -107,6 +107,11 @@ public:
             material.setTransparency(transparencyVal);
             return true;
         }
+        bool useTransparency = material.isUsingTransparency();
+        if(ImGui::Checkbox("Use transparency", &useTransparency)){
+            material.setUseTransparency(useTransparency);
+            return true;
+        }
         return false;
     }
 

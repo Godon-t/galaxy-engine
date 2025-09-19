@@ -31,7 +31,7 @@ public:
     inline void bindTexture(renderID textureInstanceID, char* uniformName) { m_frontend.bindTexture(textureInstanceID, uniformName); }
     inline void clearTexture(renderID textureID) { m_backend.clearTexture(textureID); }
 
-    inline renderID instanciateMaterial(ResourceHandle<Material> material) { return m_backend.instanciateMaterial(material); }
+    renderID instanciateMaterial(ResourceHandle<Material> material);
     inline void bindMaterial(renderID materialID) { m_frontend.bindMaterial(materialID); }
     inline void clearMaterial(renderID materialID) { m_backend.clearMaterial(materialID); }
     void updateMaterial(renderID materialID, ResourceHandle<Material> material);

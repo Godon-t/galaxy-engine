@@ -63,9 +63,17 @@ void Renderer::renderFrame()
     switchCommandBuffer();
 }
 
+renderID Renderer::instanciateMaterial(ResourceHandle<Material> material) { 
+    renderID matID = m_backend.instanciateMaterial(material); 
+
+    material.getResource().onLoaded([this, matID, material]{
+        m_frontend.setTransparency(matID, material.getResource().isUsingTransparency());
+    });
+}
+
 void Renderer::updateMaterial(renderID materialID, ResourceHandle<Material> material)
 {
-    m_frontend.setTransparency(materialID, material.getResource().getTransparency() < 1.f);
+    m_frontend.setTransparency(materialID, material.getResource().isUsingTransparency());
 }
 
 void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemapID)

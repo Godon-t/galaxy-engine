@@ -55,6 +55,8 @@ bool ResourceSerializer::serialize(Material& material)
     yaml << YAML::BeginMap;
     yaml << YAML::Key << "Type" << YAML::Value << "Material";
 
+    yaml << YAML::Key << "HasTransparency" << YAML::Value << material.isUsingTransparency();
+
     yaml << YAML::Key << "Images" << YAML::BeginMap;
     std::unordered_map<TextureType, std::string> textureTypeToStr;
     textureTypeToStr[ALBEDO]    = "Albedo";

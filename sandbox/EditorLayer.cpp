@@ -67,7 +67,6 @@ void EditorLayer::onDetach()
 
 void EditorLayer::onUpdate()
 {
-    m_viewportFrame->bind();
     if (Project::isSceneValid(m_selectedSceneId)) {
         m_selectedScene = &Project::loadScene(m_selectedSceneId);
     } else {
@@ -85,12 +84,14 @@ void EditorLayer::onUpdate()
             cameraTransform = m_editorCamera->getTransform()->getGlobalModelMatrix();
             updateCamera();
         }
+
         renderer.beginSceneRender(cameraTransform);
 
         // TODO: should the application handle the render ?
         m_selectedScene->getNodePtr()->draw();
 
         renderer.endSceneRender();
+        m_viewportFrame->bind();
         renderer.renderFrame();
     }
     m_viewportFrame->unbind();

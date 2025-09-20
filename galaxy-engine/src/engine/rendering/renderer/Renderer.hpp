@@ -37,6 +37,8 @@ public:
     void updateMaterial(renderID materialID, ResourceHandle<Material> material);
 
     inline renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback) { return m_backend.generateCube(dimmension, inward, destroyCallback); }
+    inline renderID generateQuad(vec2 dimmensions, std::function<void()> destroyCallback) { return m_backend.generateQuad(dimmensions, destroyCallback); }
+
     inline renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces) { return m_backend.instanciateCubemap(faces); }
     inline renderID instanciateCubemap() { return m_backend.instanciateCubemap(); }
     inline void clearCubemap(renderID cubemapID) { m_backend.clearCubemap(cubemapID); }

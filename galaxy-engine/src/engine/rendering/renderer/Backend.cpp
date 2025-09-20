@@ -170,7 +170,6 @@ renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
         matInstance->ambient      = matResource.getAmbient();
         matInstance->roughness    = matResource.getRoughness();
         matInstance->transparency = matResource.getTransparency();
-
     });
 
     return materialID;
@@ -245,6 +244,41 @@ renderID Backend::generateCube(float dimmension, bool inward, std::function<void
             indices.push_back(baseIndices[i + 1]);
         }
     }
+
+    return instanciateMesh(vertices, indices, destroyCallback);
+}
+
+renderID Backend::generateQuad(vec2 dimmensions, std::function<void()> destroyCallback)
+{
+    vec2 half = dimmensions / 2.f;
+
+    std::vector<Vertex> vertices;
+    Vertex v1, v2, v3, v4;
+    v1.position = vec3(-half.x, half.y, 0);
+    v1.texCoord = vec2(0, 0);
+
+    v2.position = vec3(half.x, half.y, 0);
+    v2.texCoord = vec2(1, 0);
+
+    v3.position = vec3(-half.x, -half.y, 0);
+    v3.texCoord = vec2(0, 1);
+
+    v4.position = vec3(half.x, -half.y, 0);
+    v4.texCoord = vec2(1, 1);
+
+    vertices.push_back(v1);
+    vertices.push_back(v2);
+    vertices.push_back(v3);
+    vertices.push_back(v4);
+
+    std::vector<short unsigned int> indices;
+    indices.push_back(2);
+    indices.push_back(0);
+    indices.push_back(1);
+
+    indices.push_back(1);
+    indices.push_back(3);
+    indices.push_back(2);
 
     return instanciateMesh(vertices, indices, destroyCallback);
 }

@@ -47,6 +47,8 @@ public:
         if (materialEdit(mathandle.getResource())) {
             Renderer::getInstance().updateMaterial(node.getMaterialId(), mathandle);
         }
+        if (ImGui::Button("Save resource"))
+            mathandle.getResource().save();
     }
     void visit(MultiMeshInstance& node)
     {
@@ -108,7 +110,7 @@ public:
             return true;
         }
         bool useTransparency = material.isUsingTransparency();
-        if(ImGui::Checkbox("Use transparency", &useTransparency)){
+        if (ImGui::Checkbox("Use transparency", &useTransparency)) {
             material.setUseTransparency(useTransparency);
             return true;
         }

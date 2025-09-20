@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 project(GalaxyProject)
 
 # set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -fsanitize=address -fstack-protector -D_FORTIFY_SOURCE=2")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
-set(CMAKE_C_FLAGS_DEBUG "-g -O0")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Werror=return-type")
+set(CMAKE_C_FLAGS_DEBUG "-g -O0 -Werror=return-type")
 set(CMAKE_BUILD_TYPE Debug)
 
 option(BUILD_SANDBOX "Build the sandbox application" ON)

@@ -63,12 +63,16 @@ void Renderer::renderFrame()
     switchCommandBuffer();
 }
 
-renderID Renderer::instanciateMaterial(ResourceHandle<Material> material) { 
-    renderID matID = m_backend.instanciateMaterial(material); 
+renderID Renderer::instanciateMaterial(ResourceHandle<Material> material)
+{
+    renderID matID = m_backend.instanciateMaterial(material);
 
-    material.getResource().onLoaded([this, matID, material]{
-        m_frontend.setTransparency(matID, material.getResource().isUsingTransparency());
+    auto& matResource = material.getResource();
+    matResource.onLoaded([this, matID, &matResource] {
+        m_frontend.setTransparency(matID, matResource.isUsingTransparency());
     });
+
+    return matID;
 }
 
 void Renderer::updateMaterial(renderID materialID, ResourceHandle<Material> material)

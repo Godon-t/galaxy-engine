@@ -13,6 +13,7 @@ class Frontend {
 public:
     Frontend(std::vector<RenderCommand>* commandBuffer);
 
+    void submit(renderID meshID);
     void submit(renderID meshID, const Transform& transform);
     void clear(math::vec4& color);
     void setViewMatrix(math::mat4& view);
@@ -23,6 +24,7 @@ public:
     void unbindFrameBuffer(renderID frameBufferInstanceID);
     void bindMaterial(renderID materialRenderID);
     void changeUsedProgram(ProgramType program);
+    void initPostProcessing(renderID frameBufferID);
 
     void submitPBR(renderID meshID, renderID materialID, const Transform& transform);
 

@@ -32,9 +32,10 @@ Backend::Backend(size_t maxSize)
     glEnable(GL_CULL_FACE);
     // glDisable(GL_CULL_FACE);
 
-    m_mainProgram    = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
-    m_skyboxProgram  = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
-    m_textureProgram = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
+    m_mainProgram           = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
+    m_skyboxProgram         = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
+    m_textureProgram        = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
+    m_postProcessingProgram = std::move(ProgramPostProc(engineRes("shaders/post_processing.glsl")));
 
     checkOpenGLErrors("Renderer constructor");
 }
@@ -273,12 +274,12 @@ renderID Backend::generateQuad(vec2 dimmensions, std::function<void()> destroyCa
     vertices.push_back(v4);
 
     std::vector<short unsigned int> indices;
-    indices.push_back(2);
     indices.push_back(0);
+    indices.push_back(2);
     indices.push_back(1);
 
-    indices.push_back(1);
     indices.push_back(3);
+    indices.push_back(1);
     indices.push_back(2);
 
     return instanciateMesh(vertices, indices, destroyCallback);
@@ -383,7 +384,19 @@ void Backend::processCommand(SetViewCommand& setViewCommand)
 void Backend::setProjectionMatrix(const mat4& projectionMatrix)
 {
     m_projectionMatrix = projectionMatrix;
-    m_activeProgram->updateProjectionMatrix(projectionMatrix);
+    m_mainProgram.use();
+    m_mainProgram.updateProjectionMatrix(projectionMatrix);
+
+    m_textureProgram.use();
+    m_textureProgram.updateProjectionMatrix(projectionMatrix);
+
+    m_skyboxProgram.use();
+    m_skyboxProgram.updateProjectionMatrix(projectionMatrix);
+
+    m_postProcessingProgram.use();
+    m_postProcessingProgram.updateProjectionMatrix(projectionMatrix);
+
+    m_activeProgram->use();
 }
 void Backend::processCommand(SetProjectionCommand& command)
 {
@@ -398,6 +411,8 @@ void Backend::processCommand(SetActiveProgramCommand& command)
         m_activeProgram = &m_mainProgram;
     else if (command.program == TEXTURE)
         m_activeProgram = &m_textureProgram;
+    else if (command.program == POST_PROCESSING)
+        m_activeProgram = &m_postProcessingProgram;
     else
         GLX_CORE_ASSERT(false, "unknown asked program!");
 
@@ -409,6 +424,11 @@ void Backend::processCommand(DrawCommand& command)
     auto& modelMatrix = command.model;
     m_activeProgram->updateModelMatrix(modelMatrix);
     m_visualInstances.get(command.instanceId)->draw();
+}
+
+void Backend::processCommand(RawDrawCommand& command)
+{
+    m_visualInstances.get(command.instanceID)->draw();
 }
 
 void Backend::processCommand(BindTextureCommand& command)
@@ -456,6 +476,16 @@ void Backend::processCommand(BindFrameBufferCommand& command, bool bind)
         m_frameBufferInstances.get(command.frameBufferID)->unbind();
 }
 
+void Backend::processCommand(InitPostProcessCommand& command)
+{
+    GLX_CORE_ASSERT(m_activeProgram->type() == ProgramType::POST_PROCESSING, "Post processing Program not active!");
+
+    auto& fb = *m_frameBufferInstances.get(command.frameBufferID);
+    ((ProgramPostProc*)m_activeProgram)->setTextures(fb.getColorTextureID(), fb.getDepthTextureID());
+
+    checkOpenGLErrors("Init post process");
+}
+
 void Backend::processCommand(RenderCommand& command)
 {
     if (command.type == RenderCommandType::setActiveProgram)
@@ -468,6 +498,8 @@ void Backend::processCommand(RenderCommand& command)
         processCommand(command.setView);
     else if (command.type == RenderCommandType::setProjection)
         processCommand(command.setProjection);
+    else if (command.type == RenderCommandType::rawDraw)
+        processCommand(command.rawDraw);
     else if (command.type == RenderCommandType::draw)
         processCommand(command.draw);
     else if (command.type == RenderCommandType::bindTexture)
@@ -480,6 +512,8 @@ void Backend::processCommand(RenderCommand& command)
         processCommand(command.bindFrameBuffer, true);
     else if (command.type == RenderCommandType::unbindFrameBuffer)
         processCommand(command.bindFrameBuffer, false);
+    else if (command.type == RenderCommandType::initPostProcess)
+        processCommand(command.initPostProcess);
     else
         GLX_CORE_ERROR("Unknown render command");
 }

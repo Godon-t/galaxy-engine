@@ -27,6 +27,8 @@ public:
     void destroy();
 
     inline unsigned int getColorTextureID() { return m_attachedColor; }
+    inline unsigned int getDepthTextureID() { return m_attachedDepth; }
+
     void resize(unsigned int newWidth, unsigned int newHeight);
 
     inline void setFormat(FramebufferTextureFormat format)
@@ -37,8 +39,9 @@ public:
 
 private:
     FramebufferTextureFormat m_format;
-    unsigned int m_fbo, m_rbo;
+    unsigned int m_fbo;
     unsigned int m_attachedColor;
+    unsigned int m_attachedDepth;
     int m_width, m_height;
 
     void invalidate();

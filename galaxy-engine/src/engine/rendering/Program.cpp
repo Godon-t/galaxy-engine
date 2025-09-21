@@ -203,6 +203,11 @@ void Program::setUniform(const char* uniformName, int value)
     glUniform1i(glGetUniformLocation(m_programID, uniformName), value);
 }
 
+void Program::setUniform(const char* uniformName, vec2 value)
+{
+    glUniform2f(glGetUniformLocation(m_programID, uniformName), value.x, value.y);
+}
+
 ProgramPBR::ProgramPBR(std::string path)
     : Program(path)
 {
@@ -255,5 +260,24 @@ ProgramSkybox::ProgramSkybox(std::string path)
 ProgramTexture::ProgramTexture(std::string path)
     : Program(path)
 {
+}
+
+ProgramPostProc::ProgramPostProc(std::string path)
+    : Program(path)
+{
+    m_colorLocation = glGetUniformLocation(getProgramID(), "sceneBuffer");
+    m_depthLocation = glGetUniformLocation(getProgramID(), "depthBuffer");
+}
+void ProgramPostProc::setTextures(unsigned int colorTexture, unsigned int depthTexture)
+{
+    int actInt = Texture::getAvailableActivationInt();
+    glActiveTexture(GL_TEXTURE0 + actInt);
+    glBindTexture(GL_TEXTURE_2D, colorTexture);
+    glUniform1i(m_colorLocation, actInt);
+
+    actInt = Texture::getAvailableActivationInt();
+    glActiveTexture(GL_TEXTURE0 + actInt);
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    glUniform1i(m_depthLocation, actInt);
 }
 }

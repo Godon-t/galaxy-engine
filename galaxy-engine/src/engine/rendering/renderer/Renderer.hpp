@@ -50,8 +50,13 @@ public:
     inline void unbindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.unbindFrameBuffer(frameBufferInstanceID); }
     inline void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height) { m_backend.resizeFrameBuffer(frameBufferID, width, height); }
 
+    // TODO: Make a post processing object ?
+    void resize(unsigned int width, unsigned int height) { m_backend.resizeFrameBuffer(m_sceneFrameBufferID, width, height); }
+
     inline void submitPBR(renderID meshID, renderID materialID, const Transform& transform) { m_frontend.submitPBR(meshID, materialID, transform); }
     void renderFromPoint(vec3 position, Node& root, renderID targetCubemapID);
+
+    void applyPostProcessing();
 
     inline int getDrawCallsCount() { return m_drawCount; }
 
@@ -70,6 +75,9 @@ private:
 
     Frontend m_frontend;
     Backend m_backend;
+
+    renderID m_sceneFrameBufferID;
+    renderID m_postProcessingQuadID;
 
     int m_drawCount = 0;
 };

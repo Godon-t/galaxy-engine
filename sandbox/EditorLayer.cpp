@@ -84,14 +84,16 @@ void EditorLayer::onUpdate()
             updateCamera();
         }
 
-        Renderer::getInstance().bindFrameBuffer(m_viewportFrameID);
         renderer.beginSceneRender(cameraTransform);
 
         // TODO: should the application handle the render ?
         m_selectedScene->getNodePtr()->draw();
 
         renderer.endSceneRender();
+        Renderer::getInstance().bindFrameBuffer(m_viewportFrameID);
+        Renderer::getInstance().applyPostProcessing();
         Renderer::getInstance().unbindFrameBuffer(m_viewportFrameID);
+
         renderer.renderFrame();
     }
 }
@@ -186,6 +188,7 @@ void EditorLayer::displayViewport(bool validScene)
         if (m_viewportSize != *(vec2*)&pannelSize) {
             m_viewportSize = { pannelSize.x, pannelSize.y };
             Renderer::getInstance().resizeFrameBuffer(m_viewportFrameID, m_viewportSize.x, m_viewportSize.y);
+            Renderer::getInstance().resize(m_viewportSize.x, m_viewportSize.y);
         }
         ImGui::PopStyleVar();
         // TODO: bad design if I have to use textureID outside of Renderer. Will cause problem when multithreading renderer.

@@ -15,6 +15,8 @@ Renderer::Renderer()
     , m_frontend(&m_commandBuffers[m_frontCommandBufferIdx])
     , m_backend()
 {
+    m_sceneFrameBufferID   = m_backend.instanciateFrameBuffer(1920, 1080, FramebufferTextureFormat::DEPTH24STENCIL8);
+    m_postProcessingQuadID = m_backend.generateQuad(vec2(2, 2), [] {});
 }
 
 Renderer::~Renderer()
@@ -36,6 +38,7 @@ Renderer& Renderer::getInstance()
 
 void Renderer::beginSceneRender(mat4& camTransform)
 {
+    m_frontend.bindFrameBuffer(m_sceneFrameBufferID);
     auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
     m_frontend.clear(clearColor);
     auto viewMatrix = CameraManager::processViewMatrix(camTransform);
@@ -52,11 +55,20 @@ void Renderer::beginSceneRender(const vec3& camPosition, const vec3& camDirectio
 
 void Renderer::endSceneRender()
 {
+    m_frontend.unbindFrameBuffer(m_sceneFrameBufferID);
+    m_frontend.dumpCommandsToBuffer();
+}
+
+void Renderer::applyPostProcessing()
+{
+    m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING);
+    m_frontend.initPostProcessing(m_sceneFrameBufferID);
+    m_frontend.submit(m_postProcessingQuadID);
+    m_frontend.changeUsedProgram(ProgramType::PBR);
 }
 
 void Renderer::renderFrame()
 {
-    m_frontend.dumpCommandsToBuffer();
     m_drawCount = m_commandBuffers[m_frontCommandBufferIdx].size();
     m_backend.processCommands(m_commandBuffers[m_frontCommandBufferIdx]);
     m_commandBuffers[m_frontCommandBufferIdx].clear();

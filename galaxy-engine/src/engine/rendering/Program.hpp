@@ -41,6 +41,7 @@ public:
     void use();
     void setUniform(const char* uniformName, float value);
     void setUniform(const char* uniformName, int value);
+    void setUniform(const char* uniformName, vec2 value);
 
     virtual ProgramType type() const = 0;
 };
@@ -73,5 +74,18 @@ public:
 
 private:
     unsigned int m_skyboxMapLocation;
+};
+
+class ProgramPostProc : public Program {
+public:
+    ProgramPostProc() = default;
+    ProgramPostProc(std::string path);
+    ProgramType type() const override { return ProgramType::POST_PROCESSING; }
+
+    void setTextures(unsigned int colorTexture, unsigned int depthTexture);
+
+private:
+    unsigned int m_depthLocation;
+    unsigned int m_colorLocation;
 };
 }

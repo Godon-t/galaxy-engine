@@ -6,6 +6,18 @@ Frontend::Frontend(std::vector<RenderCommand>* commandBuffer)
     m_frontBuffer = commandBuffer;
 }
 
+void Frontend::submit(renderID meshID)
+{
+    RawDrawCommand drawCommand;
+    drawCommand.instanceID = meshID;
+
+    RenderCommand command;
+    command.type    = RenderCommandType::rawDraw;
+    command.rawDraw = drawCommand;
+
+    m_frontBuffer->push_back(command);
+}
+
 void Frontend::submit(renderID meshID, const Transform& transform)
 {
     DrawCommand drawCommand;
@@ -124,6 +136,17 @@ void Frontend::changeUsedProgram(ProgramType program)
     m_frontBuffer->push_back(progCommand);
     setProjectionMatrix(m_projMat);
     setViewMatrix(m_viewMat);
+}
+
+void Frontend::initPostProcessing(renderID frameBufferID)
+{
+    InitPostProcessCommand postProcComm;
+    postProcComm.frameBufferID = frameBufferID;
+    RenderCommand command;
+    command.type            = RenderCommandType::initPostProcess;
+    command.initPostProcess = postProcComm;
+
+    m_frontBuffer->push_back(command);
 }
 
 void Frontend::submitPBR(renderID meshID, renderID materialID, const Transform& transform)

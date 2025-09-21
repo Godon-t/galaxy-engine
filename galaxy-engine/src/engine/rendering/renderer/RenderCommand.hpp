@@ -11,11 +11,13 @@ enum RenderCommandType {
     clear,
     depthMask,
     draw,
+    rawDraw,
     bindTexture,
     bindCubemap,
     bindMaterial,
     bindFrameBuffer,
-    unbindFrameBuffer
+    unbindFrameBuffer,
+    initPostProcess
 };
 
 struct SetViewCommand {
@@ -26,6 +28,10 @@ struct SetViewCommand {
 struct SetProjectionCommand {
     math::mat4 projection;
     // TODO: Shader ?
+};
+
+struct RawDrawCommand {
+    renderID instanceID;
 };
 
 struct DrawCommand {
@@ -63,6 +69,10 @@ struct BindFrameBufferCommand {
     renderID frameBufferID;
 };
 
+struct InitPostProcessCommand {
+    renderID frameBufferID;
+};
+
 struct RenderCommand {
     RenderCommand()
         : type(RenderCommandType::draw)
@@ -78,10 +88,12 @@ struct RenderCommand {
         ClearCommand clear;
         DepthMaskCommand depthMask;
         DrawCommand draw;
+        RawDrawCommand rawDraw;
         BindTextureCommand bindTexture;
         BindCubemapCommand bindCubemap;
         BindMaterialCommand bindMaterial;
         BindFrameBufferCommand bindFrameBuffer;
+        InitPostProcessCommand initPostProcess;
     };
 };
 } // namespace Galaxy

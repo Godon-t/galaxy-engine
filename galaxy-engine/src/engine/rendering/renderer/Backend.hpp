@@ -122,10 +122,12 @@ private:
     void processCommand(SetProjectionCommand& command);
     void processCommand(SetActiveProgramCommand& command);
     void processCommand(DrawCommand& command);
+    void processCommand(RawDrawCommand& command);
     void processCommand(BindTextureCommand& command);
     void processCommand(BindCubemapCommand& command);
     void processCommand(BindMaterialCommand& command);
     void processCommand(BindFrameBufferCommand& command, bool bind);
+    void processCommand(InitPostProcessCommand& command);
 
     RenderGpuResourceTable<VisualInstance> m_visualInstances;
     RenderGpuResourceTable<Texture> m_textureInstances;
@@ -139,6 +141,7 @@ private:
     ProgramPBR m_mainProgram;
     ProgramSkybox m_skyboxProgram;
     ProgramTexture m_textureProgram;
+    ProgramPostProc m_postProcessingProgram;
     Program* m_activeProgram;
 
     mat4 m_projectionMatrix;

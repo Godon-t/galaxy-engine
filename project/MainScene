@@ -8,9 +8,9 @@ Root:
         []
       Transform:
         Position: [1, 0, 2]
-        Rotation: [0, 0, 0]
+        Rotation: [0, 3.14159274, 0]
         Scale: [1, 1, 1]
-      ImageID: 4809115489423270856
+      ImageID: 1154117307871513382
     - Type: MultiMeshInstance
       Childs:
         - Type: MeshInstance
@@ -20,7 +20,7 @@ Root:
             Position: [0, 0, 0]
             Rotation: [0, 0, 0]
             Scale: [1, 1, 1]
-          MeshResourceID: 2958137959594282510
+          MeshResourceID: 3763782280891147967
           SurfaceIndex: 0
         - Type: MeshInstance
           Childs:
@@ -29,7 +29,7 @@ Root:
             Position: [0, 0, 0]
             Rotation: [0, 0, 0]
             Scale: [1, 1, 1]
-          MeshResourceID: 2958137959594282510
+          MeshResourceID: 3763782280891147967
           SurfaceIndex: 1
         - Type: MeshInstance
           Childs:
@@ -38,7 +38,7 @@ Root:
             Position: [0, 0, 0]
             Rotation: [0, 0, 0]
             Scale: [1, 1, 1]
-          MeshResourceID: 2958137959594282510
+          MeshResourceID: 3763782280891147967
           SurfaceIndex: 2
         - Type: MeshInstance
           Childs:
@@ -47,7 +47,7 @@ Root:
             Position: [0, 0, 0]
             Rotation: [0, 0, 0]
             Scale: [1, 1, 1]
-          MeshResourceID: 2958137959594282510
+          MeshResourceID: 3763782280891147967
           SurfaceIndex: 3
         - Type: MeshInstance
           Childs:
@@ -56,7 +56,7 @@ Root:
             Position: [0, 0, 0]
             Rotation: [0, 0, 0]
             Scale: [1, 1, 1]
-          MeshResourceID: 2958137959594282510
+          MeshResourceID: 3763782280891147967
           SurfaceIndex: 4
         - Type: MeshInstance
           Childs:
@@ -65,7 +65,7 @@ Root:
             Position: [0, 0, 0]
             Rotation: [0, 0, 0]
             Scale: [1, 1, 1]
-          MeshResourceID: 2958137959594282510
+          MeshResourceID: 3763782280891147967
           SurfaceIndex: 5
       Transform:
         Position: [0, -0.5, 2]

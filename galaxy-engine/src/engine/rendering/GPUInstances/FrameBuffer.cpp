@@ -30,11 +30,18 @@ void bindDepthAttachment(GLuint* id, int width, int height, GLenum format)
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *id);
 }
 
+FrameBuffer::FrameBuffer()
+    : FrameBuffer(2, 2, FramebufferTextureFormat::RGBA8)
+{
+}
+
 FrameBuffer::FrameBuffer(int width, int height, FramebufferTextureFormat format)
 {
     m_format = format;
     m_width  = width;
     m_height = height;
+    m_fbo    = 0;
+    m_rbo    = 0;
     invalidate();
 }
 void FrameBuffer::bind()
@@ -82,6 +89,9 @@ void FrameBuffer::destroy()
     glDeleteTextures(1, &m_attachedColor);
     glDeleteRenderbuffers(1, &m_rbo);
     glDeleteFramebuffers(1, &m_fbo);
+    m_attachedColor = 0;
+    m_rbo           = 0;
+    m_fbo           = 0;
 }
 
 CubemapFrameBuffer::CubemapFrameBuffer(Cubemap& cubemap)

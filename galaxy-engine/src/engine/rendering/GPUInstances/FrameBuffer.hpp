@@ -17,8 +17,9 @@ enum class FramebufferTextureFormat {
 
 class FrameBuffer {
 public:
+    FrameBuffer();
     FrameBuffer(int width, int height, FramebufferTextureFormat format);
-    ~FrameBuffer() = default;
+    ~FrameBuffer() { }
 
     void bind();
     void unbind();
@@ -27,6 +28,12 @@ public:
 
     inline unsigned int getColorTextureID() { return m_attachedColor; }
     void resize(unsigned int newWidth, unsigned int newHeight);
+
+    inline void setFormat(FramebufferTextureFormat format)
+    {
+        m_format = format;
+        invalidate();
+    }
 
 private:
     FramebufferTextureFormat m_format;

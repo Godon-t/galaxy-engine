@@ -44,10 +44,19 @@ public:
     inline void clearCubemap(renderID cubemapID) { m_backend.clearCubemap(cubemapID); }
     inline void bindCubemap(renderID cubemapInstanceID, char* uniformName) { return m_frontend.bindCubemap(cubemapInstanceID, uniformName); }
 
+    inline renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format) { return m_backend.instanciateFrameBuffer(width, height, format); }
+    inline void clearFrameBuffer(renderID frameBufferID) { m_backend.clearFrameBuffer(frameBufferID); }
+    inline void bindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.bindFrameBuffer(frameBufferInstanceID); }
+    inline void unbindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.unbindFrameBuffer(frameBufferInstanceID); }
+    inline void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height) { m_backend.resizeFrameBuffer(frameBufferID, width, height); }
+
     inline void submitPBR(renderID meshID, renderID materialID, const Transform& transform) { m_frontend.submitPBR(meshID, materialID, transform); }
     void renderFromPoint(vec3 position, Node& root, renderID targetCubemapID);
 
     inline int getDrawCallsCount() { return m_drawCount; }
+
+    // TODO: remove ASAP
+    inline unsigned int getFrameBufferTextureID(renderID frameBufferID) { return m_backend.getFrameBufferTextureID(frameBufferID); }
 
 private:
     Renderer();

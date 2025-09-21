@@ -19,6 +19,8 @@ public:
     void setProjectionMatrix(math::mat4& projection);
     void bindTexture(renderID textureInstanceID, char* uniformName);
     void bindCubemap(renderID cubemapInstanceID, char* uniformName);
+    void bindFrameBuffer(renderID frameBufferInstanceID);
+    void unbindFrameBuffer(renderID frameBufferInstanceID);
     void bindMaterial(renderID materialRenderID);
     void changeUsedProgram(ProgramType program);
 

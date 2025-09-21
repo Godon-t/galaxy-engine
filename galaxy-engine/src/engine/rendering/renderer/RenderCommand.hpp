@@ -13,7 +13,9 @@ enum RenderCommandType {
     draw,
     bindTexture,
     bindCubemap,
-    bindMaterial
+    bindMaterial,
+    bindFrameBuffer,
+    unbindFrameBuffer
 };
 
 struct SetViewCommand {
@@ -57,6 +59,10 @@ struct SetActiveProgramCommand {
     ProgramType program;
 };
 
+struct BindFrameBufferCommand {
+    renderID frameBufferID;
+};
+
 struct RenderCommand {
     RenderCommand()
         : type(RenderCommandType::draw)
@@ -75,6 +81,7 @@ struct RenderCommand {
         BindTextureCommand bindTexture;
         BindCubemapCommand bindCubemap;
         BindMaterialCommand bindMaterial;
+        BindFrameBufferCommand bindFrameBuffer;
     };
 };
 } // namespace Galaxy

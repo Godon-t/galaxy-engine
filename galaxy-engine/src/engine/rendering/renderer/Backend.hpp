@@ -2,6 +2,7 @@
 
 #include "RenderCommand.hpp"
 #include "core/Log.hpp"
+#include "rendering/GPUInstances/FrameBuffer.hpp"
 #include "rendering/GPUInstances/Texture.hpp"
 #include "rendering/GPUInstances/VisualInstance.hpp"
 #include "rendering/Program.hpp"
@@ -102,9 +103,14 @@ public:
     renderID instanciateCubemap();
     void clearCubemap(renderID cubemapID);
 
+    renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format);
+    void clearFrameBuffer(renderID frameBufferID);
+    void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height);
+
     // TODO: I don't think it is a good idea
     inline mat4 getProjectionMatrix() { return m_projectionMatrix; }
     void setProjectionMatrix(const mat4& projectionMatrix);
+    unsigned int getFrameBufferTextureID(renderID frameBufferID);
 
     void destroy();
 
@@ -119,11 +125,13 @@ private:
     void processCommand(BindTextureCommand& command);
     void processCommand(BindCubemapCommand& command);
     void processCommand(BindMaterialCommand& command);
+    void processCommand(BindFrameBufferCommand& command, bool bind);
 
     RenderGpuResourceTable<VisualInstance> m_visualInstances;
     RenderGpuResourceTable<Texture> m_textureInstances;
     RenderGpuResourceTable<MaterialInstance> m_materialInstances;
     RenderGpuResourceTable<Cubemap> m_cubemapInstances;
+    RenderGpuResourceTable<FrameBuffer> m_frameBufferInstances;
 
     // Will invalidate renderID for things outside of Node that store a renderID
     std::unordered_map<renderID, std::function<void()>> m_gpuDestroyNotifications;

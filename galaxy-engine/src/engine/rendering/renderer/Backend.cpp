@@ -11,6 +11,7 @@ Backend::Backend(size_t maxSize)
     : m_visualInstances(maxSize)
     , m_textureInstances(maxSize)
     , m_materialInstances(maxSize)
+    , m_frameBufferInstances(maxSize)
 {
     GLenum error = glGetError();
 
@@ -301,6 +302,39 @@ void Backend::clearCubemap(renderID cubemapID)
     }
 }
 
+renderID Backend::instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format)
+{
+    renderID frameBufferID = m_frameBufferInstances.createResourceInstance();
+    m_frameBufferInstances.get(frameBufferID)->setFormat(format);
+    m_frameBufferInstances.get(frameBufferID)->resize(width, height);
+    m_frameBufferInstances.get(frameBufferID)->unbind();
+    checkOpenGLErrors("Instantiate frameBuffer");
+    return frameBufferID;
+}
+
+void Backend::clearFrameBuffer(renderID frameBufferID)
+{
+    if (!m_frameBufferInstances.tryRemove(frameBufferID))
+        return;
+
+    auto it = m_gpuDestroyNotifications.find(frameBufferID);
+    if (it != m_gpuDestroyNotifications.end()) {
+        it->second();
+        m_gpuDestroyNotifications.erase(frameBufferID);
+    }
+    checkOpenGLErrors("Clear frameBuffer");
+}
+
+void Backend::resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height)
+{
+    m_frameBufferInstances.get(frameBufferID)->resize(width, height);
+}
+
+unsigned int Backend::getFrameBufferTextureID(renderID frameBufferID)
+{
+    return m_frameBufferInstances.get(frameBufferID)->getColorTextureID();
+}
+
 renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
 {
     renderID cubemapID = instanciateCubemap();
@@ -414,6 +448,14 @@ void Backend::processCommand(BindMaterialCommand& command)
     checkOpenGLErrors("Bind material");
 }
 
+void Backend::processCommand(BindFrameBufferCommand& command, bool bind)
+{
+    if (bind)
+        m_frameBufferInstances.get(command.frameBufferID)->bind();
+    else
+        m_frameBufferInstances.get(command.frameBufferID)->unbind();
+}
+
 void Backend::processCommand(RenderCommand& command)
 {
     if (command.type == RenderCommandType::setActiveProgram)
@@ -434,6 +476,10 @@ void Backend::processCommand(RenderCommand& command)
         processCommand(command.bindCubemap);
     else if (command.type == RenderCommandType::bindMaterial)
         processCommand(command.bindMaterial);
+    else if (command.type == RenderCommandType::bindFrameBuffer)
+        processCommand(command.bindFrameBuffer, true);
+    else if (command.type == RenderCommandType::unbindFrameBuffer)
+        processCommand(command.bindFrameBuffer, false);
     else
         GLX_CORE_ERROR("Unknown render command");
 }

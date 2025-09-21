@@ -37,7 +37,7 @@ private:
     ImGui::FileBrowser m_fileDialog;
 
     vec2 m_viewportSize;
-    FrameBuffer* m_viewportFrame;
+    renderID m_viewportFrameID;
 
     EditorMode m_mode;
     bool m_showAllNodes;

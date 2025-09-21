@@ -24,7 +24,6 @@
 #include "resource/ResourceManager.hpp"
 
 #include "rendering/CameraManager.hpp"
-#include "rendering/GPUInstances/FrameBuffer.hpp"
 #include "rendering/renderer/Renderer.hpp"
 
 #include "core/KeyCodes.hpp"

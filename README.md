@@ -1,3 +1,3 @@
 # notes
 
-- MeshInstances are drawn without valid rendererID when loading a resource upon scene loading
+- EditorLayer uses framebuffer textureID for ImGui. It shouldent happen as the Renderer is in theory the only one making opengl calls

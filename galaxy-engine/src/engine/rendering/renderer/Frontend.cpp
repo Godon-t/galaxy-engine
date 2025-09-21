@@ -87,6 +87,32 @@ void Frontend::bindCubemap(renderID cubemapInstanceID, char* uniformName)
     m_frontBuffer->push_back(command);
 }
 
+void Frontend::bindFrameBuffer(renderID frameBufferInstanceID)
+{
+    BindFrameBufferCommand typeCommand;
+    typeCommand.frameBufferID = frameBufferInstanceID;
+
+    RenderCommand command;
+    command.type            = RenderCommandType::bindFrameBuffer;
+    command.bindFrameBuffer = typeCommand;
+
+    m_frontBuffer->push_back(command);
+}
+
+void Frontend::unbindFrameBuffer(renderID frameBufferInstanceID)
+{
+    dumpCommandsToBuffer();
+
+    BindFrameBufferCommand typeCommand;
+    typeCommand.frameBufferID = frameBufferInstanceID;
+
+    RenderCommand command;
+    command.type            = RenderCommandType::unbindFrameBuffer;
+    command.bindFrameBuffer = typeCommand;
+
+    m_frontBuffer->push_back(command);
+}
+
 void Frontend::changeUsedProgram(ProgramType program)
 {
     SetActiveProgramCommand setActiveProgramCommand;

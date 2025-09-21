@@ -43,8 +43,8 @@ void EditorLayer::onAttach()
 
     Application::getInstance().setRootNode(rootNode);
 
-    auto& renderer  = Renderer::getInstance();
-    m_viewportFrame = new FrameBuffer(320, 180, FramebufferTextureFormat::DEPTH24STENCIL8);
+    auto& renderer    = Renderer::getInstance();
+    m_viewportFrameID = renderer.instanciateFrameBuffer(320, 180, FramebufferTextureFormat::DEPTH24STENCIL8);
 
     InputManager::addAction(Action(GLX_KEY_ESCAPE, "editor_exit"));
     InputManager::addAction(Action(GLX_KEY_W, "editor_forward"));
@@ -55,14 +55,14 @@ void EditorLayer::onAttach()
     InputManager::addAction(Action(GLX_KEY_Q, "editor_down"));
     InputManager::addAction(Action(GLX_KEY_E, "editor_up"));
 
-    Renderer::getInstance().changeUsedProgram(PBR);
+    renderer.changeUsedProgram(PBR);
     mat4 proj = CameraManager::processProjectionMatrix(vec2(320, 180));
-    Renderer::getInstance().setProjectionMatrix(proj);
+    renderer.setProjectionMatrix(proj);
 }
 
 void EditorLayer::onDetach()
 {
-    m_viewportFrame->destroy();
+    // Renderer::getInstance().clearFrameBuffer(m_viewportFrameID);
 }
 
 void EditorLayer::onUpdate()
@@ -71,7 +71,6 @@ void EditorLayer::onUpdate()
         m_selectedScene = &Project::loadScene(m_selectedSceneId);
     } else {
         m_selectedScene = nullptr;
-        m_viewportFrame->unbind();
         return;
     }
 
@@ -85,16 +84,16 @@ void EditorLayer::onUpdate()
             updateCamera();
         }
 
+        Renderer::getInstance().bindFrameBuffer(m_viewportFrameID);
         renderer.beginSceneRender(cameraTransform);
 
         // TODO: should the application handle the render ?
         m_selectedScene->getNodePtr()->draw();
 
         renderer.endSceneRender();
-        m_viewportFrame->bind();
+        Renderer::getInstance().unbindFrameBuffer(m_viewportFrameID);
         renderer.renderFrame();
     }
-    m_viewportFrame->unbind();
 }
 
 void EditorLayer::displayMenuBar(bool validScene)
@@ -186,10 +185,11 @@ void EditorLayer::displayViewport(bool validScene)
         ImVec2 pannelSize = ImGui::GetContentRegionAvail();
         if (m_viewportSize != *(vec2*)&pannelSize) {
             m_viewportSize = { pannelSize.x, pannelSize.y };
-            m_viewportFrame->resize(m_viewportSize.x, m_viewportSize.y);
+            Renderer::getInstance().resizeFrameBuffer(m_viewportFrameID, m_viewportSize.x, m_viewportSize.y);
         }
         ImGui::PopStyleVar();
-        auto textureID = m_viewportFrame->getColorTextureID();
+        // TODO: bad design if I have to use textureID outside of Renderer. Will cause problem when multithreading renderer.
+        auto textureID = Renderer::getInstance().getFrameBufferTextureID(m_viewportFrameID);
         ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 1, 1 }, ImVec2 { 0, 0 });
     } else {
         ImGui::PopStyleVar();

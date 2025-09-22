@@ -2,6 +2,7 @@
 
 #version 330 core
 layout(location = 0) in vec3 vertices_position_modelspace;
+layout(location = 1) in vec2 texCoord;
 
 out vec2 TexCoords;
 
@@ -11,7 +12,8 @@ uniform mat4 model;
 
 void main()
 {
-    TexCoords   = (vertices_position_modelspace.xy + vec2(1)) / 2.f;
+    TexCoords   = texCoord;
+    TexCoords.y = 1.f - TexCoords.y;
     gl_Position = vec4(vertices_position_modelspace.x, vertices_position_modelspace.y, 0, 1);
 }
 

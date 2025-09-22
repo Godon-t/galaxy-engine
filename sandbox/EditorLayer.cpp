@@ -43,8 +43,12 @@ void EditorLayer::onAttach()
 
     Application::getInstance().setRootNode(rootNode);
 
-    auto& renderer    = Renderer::getInstance();
-    m_viewportFrameID = renderer.instanciateFrameBuffer(320, 180, FramebufferTextureFormat::DEPTH24STENCIL8);
+    auto width  = Application::getInstance().getWindow().getWidth();
+    auto height = Application::getInstance().getWindow().getHeight();
+
+    auto& renderer = Renderer::getInstance();
+    renderer.resize(width, height);
+    m_viewportFrameID = renderer.instanciateFrameBuffer(width, height, FramebufferTextureFormat::DEPTH24STENCIL8);
 
     InputManager::addAction(Action(GLX_KEY_ESCAPE, "editor_exit"));
     InputManager::addAction(Action(GLX_KEY_W, "editor_forward"));
@@ -56,7 +60,7 @@ void EditorLayer::onAttach()
     InputManager::addAction(Action(GLX_KEY_E, "editor_up"));
 
     renderer.changeUsedProgram(PBR);
-    mat4 proj = CameraManager::processProjectionMatrix(vec2(320, 180));
+    mat4 proj = CameraManager::processProjectionMatrix(vec2(width, height));
     renderer.setProjectionMatrix(proj);
 }
 
@@ -188,7 +192,6 @@ void EditorLayer::displayViewport(bool validScene)
         if (m_viewportSize != *(vec2*)&pannelSize) {
             m_viewportSize = { pannelSize.x, pannelSize.y };
             Renderer::getInstance().resizeFrameBuffer(m_viewportFrameID, m_viewportSize.x, m_viewportSize.y);
-            Renderer::getInstance().resize(m_viewportSize.x, m_viewportSize.y);
         }
         ImGui::PopStyleVar();
         // TODO: bad design if I have to use textureID outside of Renderer. Will cause problem when multithreading renderer.
@@ -290,7 +293,10 @@ void EditorLayer::onEvent(Event& evt)
         }
     } else if (evt.getEventType() == EventType::WindowResize) {
         WindowResizeEvent& resize = (WindowResizeEvent&)evt;
-        mat4 proj                 = CameraManager::processProjectionMatrix(vec2(resize.getWidth(), resize.getHeight()));
+        vec2 newDim               = vec2(resize.getWidth(), resize.getHeight());
+        Renderer::getInstance().resize(newDim.x, newDim.y);
+
+        mat4 proj = CameraManager::processProjectionMatrix(newDim);
         Renderer::getInstance().setProjectionMatrix(proj);
     }
 }

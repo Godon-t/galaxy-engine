@@ -7,6 +7,7 @@
 
 namespace Galaxy {
 int Texture::s_currentFreeActivationInt = 0;
+int Texture::s_maxActivationInt         = 64;
 
 Texture::Texture(unsigned char* data, int width, int height, int nbChannels)
 {
@@ -54,6 +55,7 @@ void Texture::activate(int textureLocation)
     glActiveTexture(GL_TEXTURE0 + actInt);
     glBindTexture(GL_TEXTURE_2D, m_id);
     glUniform1i(textureLocation, actInt);
+    checkOpenGLErrors("Texture activation");
 }
 
 void Texture::destroy()

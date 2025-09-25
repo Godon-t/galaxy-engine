@@ -1,5 +1,5 @@
 #pragma once
 
 namespace Galaxy {
-void checkOpenGLErrors(const char* context);
+bool checkOpenGLErrors(const char* context);
 }

@@ -6,10 +6,12 @@
 #include "gl_headers.hpp"
 
 namespace Galaxy {
-void checkOpenGLErrors(const char* context)
+bool checkOpenGLErrors(const char* context)
 {
+    bool error = false;
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR) {
+        error                = true;
         const char* errorStr = "";
         switch (err) {
         case GL_INVALID_ENUM:
@@ -39,5 +41,6 @@ void checkOpenGLErrors(const char* context)
         }
         GLX_CORE_ERROR("[OpenGL Error] ({0}) at: {1}", errorStr, context);
     }
+    return error;
 }
 }

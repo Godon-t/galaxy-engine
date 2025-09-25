@@ -14,7 +14,12 @@ public:
 
     inline unsigned int getId() const { return m_id; }
     inline static void resetActivationInts() { s_currentFreeActivationInt = 0; }
-    inline static int getAvailableActivationInt() { return s_currentFreeActivationInt++; }
+    inline static int getAvailableActivationInt()
+    {
+        if (s_currentFreeActivationInt >= s_maxActivationInt)
+            s_currentFreeActivationInt = 0;
+        return s_currentFreeActivationInt++;
+    }
 
     void activate(int textureLocation);
 
@@ -25,6 +30,7 @@ private:
     unsigned int m_format;
 
     static int s_currentFreeActivationInt;
+    static int s_maxActivationInt;
 };
 
 struct Cubemap {

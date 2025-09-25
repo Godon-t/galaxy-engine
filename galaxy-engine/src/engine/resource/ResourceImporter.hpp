@@ -44,7 +44,13 @@ struct ResourceImporter {
         if (material->GetTextureCount(textureType) > 0) {
             aiString str;
             material->GetTexture(textureType, 0, &str);
+
             res = str.C_Str();
+
+            for (auto& c : res) {
+                if (c == '\\')
+                    c = '/';
+            }
         }
         return res;
     }
@@ -93,9 +99,10 @@ struct ResourceImporter {
         tryImport(aiTextureType_BASE_COLOR, ALBEDO);
 
         // TODO: save() doesn't wait for this to be loaded so useTransparency will always be false
-        resource->m_images[ALBEDO].getResource().onLoaded([resource] {
-            resource->m_useTransparency = resource->m_images[ALBEDO].getResource().hasTransparency();
-        });
+        if (resource->m_useImage[ALBEDO])
+            resource->m_images[ALBEDO].getResource().onLoaded([resource] {
+                resource->m_useTransparency = resource->m_images[ALBEDO].getResource().hasTransparency();
+            });
 
         aiColor3D color(0.f, 0.f, 0.f);
         if (material->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) {
@@ -194,7 +201,7 @@ struct ResourceImporter {
         if (extension == ".jpg" || extension == ".png") {
             importImage(file);
         }
-        if (extension == ".gltf") {
+        if (extension == ".gltf" || extension == ".obj") {
             importGltf(file);
         }
         Project::savePaths();

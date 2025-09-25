@@ -121,7 +121,7 @@ void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemap
     glViewport(0, 0, targetCubemap.resolution, targetCubemap.resolution);
 
     mat4 baseProjection = m_backend.getProjectionMatrix();
-    mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 99999.f);
+    mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 999.f);
     m_backend.setProjectionMatrix(projection);
 
     for (int i = 0; i < 6; i++) {

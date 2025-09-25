@@ -9,7 +9,7 @@
 namespace Galaxy {
 Backend::Backend(size_t maxSize)
     : m_visualInstances(maxSize)
-    , m_textureInstances(maxSize)
+    , m_textureInstances(maxSize * 2)
     , m_materialInstances(maxSize)
     , m_frameBufferInstances(maxSize)
 {
@@ -464,8 +464,6 @@ void Backend::processCommand(BindMaterialCommand& command)
     addTexture(AO);
 
     ((ProgramPBR*)m_activeProgram)->updateMaterial(material, materialTextures);
-
-    checkOpenGLErrors("Bind material");
 }
 
 void Backend::processCommand(BindFrameBufferCommand& command, bool bind)

@@ -7,7 +7,7 @@ Root:
       Childs:
         []
       Transform:
-        Position: [1, 0, 2]
+        Position: [4, 0.300000012, 2]
         Rotation: [0, 3.14159274, 0]
         Scale: [1, 1, 1]
       ImageID: 1154117307871513382
@@ -68,9 +68,9 @@ Root:
           MeshResourceID: 3763782280891147967
           SurfaceIndex: 5
       Transform:
-        Position: [0, -0.5, 2]
+        Position: [0, 0, 7]
         Rotation: [0, 3.14159274, 0]
-        Scale: [1, 1, 1]
+        Scale: [5, 5, 5]
     - Type: EnvironmentNode
       Childs:
         []

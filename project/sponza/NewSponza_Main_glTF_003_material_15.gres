@@ -1,8 +1,8 @@
 Type: Material
 HasTransparency: false
 Images:
-  Normal: 3471990178227855452
-  Albedo: 10912516454523819010
+  Normal: 18303391029403088480
+  Albedo: 10853796748594709539
 Constants:
   Albedo: [1, 1, 1]
   Ambient: 1

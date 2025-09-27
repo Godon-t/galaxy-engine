@@ -102,6 +102,7 @@ struct ResourceImporter {
         if (resource->m_useImage[ALBEDO])
             resource->m_images[ALBEDO].getResource().onLoaded([resource] {
                 resource->m_useTransparency = resource->m_images[ALBEDO].getResource().hasTransparency();
+                resource->save();
             });
 
         aiColor3D color(0.f, 0.f, 0.f);

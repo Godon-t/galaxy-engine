@@ -1,207 +1,207 @@
 Name: UI
 Resources:
-  - Id: 7075026412584599027
-    Path: sponza/NewSponza_Main_glTF_003_material_27.gres
-  - Id: 286566445068776609
+  - Id: 1589579564957806073
     Path: sponza/textures/roof_tiles_01_Normal.gres
-  - Id: 16489507266632230740
+  - Id: 12051775648193337961
+    Path: sponza/textures/ornament_01_Normal.gres
+  - Id: 7865971950258529403
     Path: sponza/textures/roof_tiles_01_BaseColor.gres
-  - Id: 17834597081836317035
-    Path: sponza/NewSponza_Main_glTF_003_material_26.gres
-  - Id: 2942787375369314786
-    Path: sponza/textures/ceiling_plaster_01_BaseColor.gres
-  - Id: 12275823535868841633
+  - Id: 10263777603824249498
     Path: sponza/NewSponza_Main_glTF_003_material_25.gres
-  - Id: 33400807943195334
-    Path: sponza/textures/col_head_2ndfloor_03_Normal.gres
-  - Id: 10387100022014431383
-    Path: sponza/textures/col_head_2ndfloor_03_BaseColor.gres
-  - Id: 17713750956171838699
+  - Id: 16692127904593574786
+    Path: sponza/textures/ceiling_plaster_01_BaseColor.gres
+  - Id: 12678946098129655637
+    Path: sponza/textures/col_brickwall_01_BaseColor.gres
+  - Id: 3768538157547585700
+    Path: sponza/NewSponza_Main_glTF_003_material_27.gres
+  - Id: 7074224245273857276
     Path: sponza/NewSponza_Main_glTF_003_material_23.gres
-  - Id: 8432580787599066075
-    Path: sponza/NewSponza_Main_glTF_003_material_22.gres
-  - Id: 10561282159772788581
-    Path: sponza/textures/dirt_decal_01_dirt_decal_01_mask_gltf_alpha_dirt_decal_Opacity.gres
-  - Id: 15276258456938969791
-    Path: sponza/textures/lionhead_01_Normal.gres
-  - Id: 13938132999094368107
-    Path: sponza/NewSponza_Main_glTF_003_material_20.gres
-  - Id: 2238644863723099950
-    Path: sponza/textures/floor_tiles_01_Normal.gres
-  - Id: 12565808790478404442
-    Path: sponza/NewSponza_Main_glTF_003_material_18.gres
-  - Id: 14644380308204480775
-    Path: sponza/textures/wood_door_01_Normal.gres
-  - Id: 4667659937808224307
-    Path: sponza/NewSponza_Main_glTF_003_material_17.gres
-  - Id: 2053173949350970202
-    Path: sponza/textures/brickwall_01_Normal.gres
-  - Id: 9309539533477142623
-    Path: sponza/NewSponza_Main_glTF_003_material_16.gres
-  - Id: 13488160385992033786
-    Path: sponza/textures/lionhead_01_BaseColor.gres
-  - Id: 3471990178227855452
-    Path: sponza/textures/door_stoneframe_01_Normal.gres
-  - Id: 10912516454523819010
-    Path: sponza/textures/door_stoneframe_01_BaseColor.gres
-  - Id: 2190381152302124087
-    Path: sponza/NewSponza_Main_glTF_003_material_15.gres
-  - Id: 9802257954784229820
-    Path: sponza/textures/floor_tiles_01_BaseColor.gres
-  - Id: 18364893456890611141
-    Path: sponza/textures/door_stoneframe_02_BaseColor.gres
-  - Id: 11424509725410140892
-    Path: sponza/NewSponza_Main_glTF_003_material_14.gres
-  - Id: 10224540279380426565
-    Path: sponza/NewSponza_Main_glTF_003_material_13.gres
-  - Id: 15221725844600871533
-    Path: sponza/NewSponza_Main_glTF_003_material_12.gres
-  - Id: 9549318038490724527
-    Path: sponza/textures/arch_stone_wall_01_BaseColor.gres
-  - Id: 16110856929200928183
-    Path: sponza/NewSponza_Main_glTF_003_material_1.gres
-  - Id: 8507702695478468229
+  - Id: 460675681007838641
+    Path: sponza/textures/col_head_2ndfloor_02_Normal.gres
+  - Id: 15999691651708478661
     Path: sponza/textures/col_head_2ndfloor_02_BaseColor.gres
+  - Id: 9575964269041908475
+    Path: sponza/NewSponza_Main_glTF_003_material_22.gres
+  - Id: 16548647152299480204
+    Path: sponza/textures/lionhead_01_Normal.gres
+  - Id: 1997692298599233153
+    Path: sponza/textures/lionhead_01_BaseColor.gres
+  - Id: 12036282382738394744
+    Path: sponza/textures/floor_tiles_01_Normal.gres
+  - Id: 16005677759172223812
+    Path: sponza/textures/floor_tiles_01_BaseColor.gres
+  - Id: 1920032554501105721
+    Path: sponza/NewSponza_Main_glTF_003_material_19.gres
+  - Id: 6507698111691551068
+    Path: sponza/textures/wood_tile_01_Normal.gres
+  - Id: 5928024389478385795
+    Path: sponza/NewSponza_Main_glTF_003_material_18.gres
+  - Id: 3155499081573982259
+    Path: sponza/textures/brickwall_01_Normal.gres
+  - Id: 4177024622067678365
+    Path: sponza/textures/brickwall_01_BaseColor.gres
+  - Id: 4725252036625006659
+    Path: sponza/NewSponza_Main_glTF_003_material_14.gres
+  - Id: 461839815420049611
+    Path: sponza/textures/door_stoneframe_02_BaseColor.gres
+  - Id: 11217714395603793647
+    Path: sponza/NewSponza_Main_glTF_003_material_13.gres
+  - Id: 11053459259078210166
+    Path: sponza/NewSponza_Main_glTF_003.gres
+  - Id: 2460468878944992546
+    Path: FlightHelmet/FlightHelmet_material_2.gres
+  - Id: 7308005752601212967
+    Path: FlightHelmet/FlightHelmet_Materials_RubberWoodMat_Normal.gres
+  - Id: 10853796748594709539
+    Path: sponza/textures/door_stoneframe_01_BaseColor.gres
+  - Id: 14473858754794636852
+    Path: sponza/NewSponza_Main_glTF_003_material_10.gres
   - Id: 7986093971324970717
     Path: env.gres
-  - Id: 14403612153751918329
-    Path: skybox/top.gres
-  - Id: 8709069953981858591
-    Path: sponza/NewSponza_Main_glTF_003_material_0.gres
-  - Id: 3307877404096727322
-    Path: sponza/NewSponza_Main_glTF_003_material_19.gres
-  - Id: 6096151706210836878
-    Path: sponza/textures/stones_2ndfloor_01_BaseColor.gres
-  - Id: 7632501282720765959
-    Path: sponza/textures/wood_tile_01_Normal.gres
-  - Id: 3939479516312259107
-    Path: sponza/NewSponza_Main_glTF_003_material_8.gres
-  - Id: 8632975327275962918
-    Path: sponza/textures/stone_01_tile_BaseColor.gres
-  - Id: 13022213604405061338
-    Path: FlightHelmet/FlightHelmet_Materials_MetalPartsMat_Normal.gres
-  - Id: 11615041764506864576
-    Path: FlightHelmet/FlightHelmet_material_2.gres
-  - Id: 13690744344105854629
-    Path: sponza/textures/col_head_2ndfloor_02_Normal.gres
-  - Id: 10216037949637897257
-    Path: FlightHelmet/FlightHelmet_Materials_LeatherPartsMat_BaseColor.gres
-  - Id: 2059565357679602730
-    Path: sponza/NewSponza_Main_glTF_003_material_7.gres
-  - Id: 10099343652891422319
-    Path: sponza/textures/brickwall_01_BaseColor.gres
-  - Id: 14680290551685183559
-    Path: FlightHelmet/FlightHelmet_material_1.gres
-  - Id: 1420790417279034966
-    Path: sponza/textures/wood_door_01_BaseColor.gres
-  - Id: 3673956913729716960
+  - Id: 14689408961500011286
     Path: FlightHelmet/FlightHelmet_Materials_RubberWoodMat_BaseColor.gres
-  - Id: 1132311990549469737
-    Path: sponza/textures/arch_stone_wall_01_Normal.gres
-  - Id: 3106303840836324285
-    Path: sponza/NewSponza_Main_glTF_003_material_4.gres
-  - Id: 2453763873496557662
-    Path: FlightHelmet/FlightHelmet_material_0.gres
-  - Id: 14294341819827652311
-    Path: FlightHelmet/FlightHelmet_Materials_LensesMat_Normal.gres
-  - Id: 17315484856325558582
-    Path: FlightHelmet/FlightHelmet_Materials_LensesMat_BaseColor.gres
-  - Id: 3763782280891147967
+  - Id: 6873655548417591319
+    Path: sponza/NewSponza_Main_glTF_003_material_17.gres
+  - Id: 13786600416514106517
     Path: FlightHelmet/FlightHelmet.gres
-  - Id: 3888080931881805355
-    Path: sponza/textures/wood_tile_01_BaseColor.gres
-  - Id: 1154117307871513382
-    Path: FlightHelmet/FlightHelmet_Materials_MetalPartsMat_BaseColor.gres
-  - Id: 12093101099666235615
-    Path: FlightHelmet/FlightHelmet_material_4.gres
-  - Id: 4644564808234824206
-    Path: sponza/NewSponza_Main_glTF_003.gres
-  - Id: 6764593959259629191
-    Path: skybox/back.gres
+  - Id: 16488278360565289785
+    Path: sponza/textures/metal_door_01_BaseColor.gres
   - Id: 8206350862214049602
     Path: skybox/front.gres
-  - Id: 4722697378684800460
-    Path: FlightHelmet/FlightHelmet_Materials_GlassPlasticMat_Normal.gres
-  - Id: 3471773461455052011
-    Path: FlightHelmet/FlightHelmet_Materials_LeatherPartsMat_Normal.gres
-  - Id: 9695359555469258006
-    Path: skybox/bot.gres
-  - Id: 17069806231793365829
-    Path: sponza/textures/window_frame_01_Normal.gres
+  - Id: 799732789772935884
+    Path: sponza/textures/stone_trims_02_BaseColor.gres
+  - Id: 6509458992095770901
+    Path: sponza/NewSponza_Main_glTF_003_material_11.gres
+  - Id: 813344082288788010
+    Path: FlightHelmet/FlightHelmet_material_5.gres
+  - Id: 14690592984084699759
+    Path: sponza/textures/stones_2ndfloor_01_BaseColor.gres
+  - Id: 12763224577709414865
+    Path: FlightHelmet/FlightHelmet_material_4.gres
+  - Id: 14237801233609944231
+    Path: sponza/NewSponza_Main_glTF_003_material_20.gres
+  - Id: 14631130243831502234
+    Path: FlightHelmet/FlightHelmet_Materials_LensesMat_Normal.gres
+  - Id: 15122153934342419545
+    Path: FlightHelmet/FlightHelmet_Materials_LeatherPartsMat_BaseColor.gres
+  - Id: 17703843441428935133
+    Path: sponza/textures/ornament_01_BaseColor.gres
+  - Id: 6712297767108259316
+    Path: sponza/textures/arch_stone_wall_01_BaseColor.gres
   - Id: 3994793311305732487
     Path: skybox/right.gres
-  - Id: 7638455759640847580
-    Path: sponza/NewSponza_Main_glTF_003_material_24.gres
-  - Id: 6706732041920587901
-    Path: FlightHelmet/FlightHelmet_material_5.gres
-  - Id: 17812259008916941520
-    Path: sponza/textures/stone_trims_01_BaseColor.gres
-  - Id: 9395973436764717132
-    Path: sponza/textures/ornament_01_Normal.gres
-  - Id: 4791695609639756653
-    Path: FlightHelmet/FlightHelmet_Materials_RubberWoodMat_Normal.gres
-  - Id: 13078344714919062627
-    Path: sponza/textures/stone_trims_01_Normal.gres
-  - Id: 12983144744812062943
-    Path: sponza/textures/ceiling_plaster_01_Normal.gres
-  - Id: 11596423730244511997
+  - Id: 14472778272921206755
     Path: sponza/NewSponza_Main_glTF_003_material_21.gres
-  - Id: 11580162895058371111
+  - Id: 18303391029403088480
+    Path: sponza/textures/door_stoneframe_01_Normal.gres
+  - Id: 8244010256375467008
+    Path: sponza/NewSponza_Main_glTF_003_material_5.gres
+  - Id: 11677210136057859051
+    Path: sponza/textures/arch_stone_wall_01_Normal.gres
+  - Id: 9043836110868689581
+    Path: FlightHelmet/FlightHelmet_Materials_MetalPartsMat_BaseColor.gres
+  - Id: 16041527533908255768
+    Path: sponza/NewSponza_Main_glTF_003_material_26.gres
+  - Id: 17140785216195104899
+    Path: FlightHelmet/FlightHelmet_Materials_LensesMat_BaseColor.gres
+  - Id: 6764593959259629191
+    Path: skybox/back.gres
+  - Id: 4573472169167981753
+    Path: sponza/NewSponza_Main_glTF_003_material_1.gres
+  - Id: 1685806744530514684
+    Path: sponza/textures/brickwall_02_BaseColor.gres
+  - Id: 14651301143001186259
+    Path: FlightHelmet/FlightHelmet_Materials_GlassPlasticMat_Normal.gres
+  - Id: 18098277873501041925
     Path: sponza/textures/door_stoneframe_02_Normal.gres
+  - Id: 817839178619925818
+    Path: sponza/textures/brickwall_02_Normal.gres
+  - Id: 17635496075808295020
+    Path: FlightHelmet/FlightHelmet_Materials_GlassPlasticMat_BaseColor.gres
+  - Id: 18096650902485057714
+    Path: sponza/NewSponza_Main_glTF_003_material_24.gres
+  - Id: 7399737152245223633
+    Path: FlightHelmet/FlightHelmet_material_1.gres
+  - Id: 590577176433302096
+    Path: sponza/textures/stone_01_tile_Normal.gres
+  - Id: 3940044101846697552
+    Path: FlightHelmet/FlightHelmet_Materials_MetalPartsMat_Normal.gres
+  - Id: 17403958055538028513
+    Path: sponza/NewSponza_Main_glTF_003_material_3.gres
+  - Id: 14403612153751918329
+    Path: skybox/top.gres
+  - Id: 280005994450832868
+    Path: sponza/NewSponza_Main_glTF_003_material_16.gres
+  - Id: 2322139764433733571
+    Path: sponza/NewSponza_Main_glTF_003_material_12.gres
+  - Id: 10942952713310589987
+    Path: sponza/NewSponza_Main_glTF_003_material_0.gres
+  - Id: 3966797385862723728
+    Path: sponza/textures/stone_trims_01_BaseColor.gres
+  - Id: 18263004356933245743
+    Path: sponza/textures/stone_trims_01_Normal.gres
+  - Id: 878172927195293139
+    Path: sponza/NewSponza_Main_glTF_003_material_2.gres
+  - Id: 488175596565151858
+    Path: sponza/textures/wood_door_01_Normal.gres
+  - Id: 13282738277076104736
+    Path: sponza/textures/wood_door_01_BaseColor.gres
   - Id: 9446390072482230442
     Path: skybox/left.gres
-  - Id: 13396963009816916924
-    Path: sponza/textures/metal_door_01_BaseColor.gres
-  - Id: 4901019709714904948
-    Path: sponza/textures/stone_trims_02_Normal.gres
-  - Id: 15156618699206465103
-    Path: sponza/textures/metal_door_01_Normal.gres
-  - Id: 14016892698750791853
-    Path: sponza/textures/col_1stfloor_Normal.gres
-  - Id: 18321663695965311800
-    Path: sponza/NewSponza_Main_glTF_003_material_2.gres
-  - Id: 14569796535269464033
-    Path: sponza/NewSponza_Main_glTF_003_material_3.gres
-  - Id: 15880655406352862891
-    Path: sponza/textures/brickwall_02_BaseColor.gres
-  - Id: 12487005216518561121
-    Path: sponza/textures/brickwall_02_Normal.gres
-  - Id: 7599750933119634552
-    Path: sponza/NewSponza_Main_glTF_003_material_9.gres
-  - Id: 8616458909643451088
+  - Id: 3739219601660288215
+    Path: FlightHelmet/FlightHelmet_Materials_LeatherPartsMat_Normal.gres
+  - Id: 1108268793207248732
     Path: sponza/textures/stones_2ndfloor_01_Normal.gres
-  - Id: 1797370323116702900
-    Path: sponza/NewSponza_Main_glTF_003_material_10.gres
-  - Id: 13147544675690263454
-    Path: sponza/NewSponza_Main_glTF_003_material_5.gres
-  - Id: 8663500443132139408
-    Path: sponza/textures/col_brickwall_01_Normal.gres
-  - Id: 14399993720429555228
-    Path: sponza/textures/window_frame_01_BaseColor.gres
-  - Id: 11908662785162546173
-    Path: sponza/textures/stone_trims_02_BaseColor.gres
-  - Id: 2937111426727048073
-    Path: sponza/textures/ceiling_plaster_02_BaseColor.gres
-  - Id: 13219011432030650788
+  - Id: 12594699798103475102
+    Path: FlightHelmet/FlightHelmet_material_0.gres
+  - Id: 10477905505238710779
+    Path: sponza/NewSponza_Main_glTF_003_material_4.gres
+  - Id: 2271380976305893681
+    Path: sponza/textures/stone_trims_02_Normal.gres
+  - Id: 13587270368933781008
+    Path: sponza/textures/col_head_2ndfloor_03_Normal.gres
+  - Id: 10691956380660140079
+    Path: sponza/textures/col_head_2ndfloor_03_BaseColor.gres
+  - Id: 164762347919813658
     Path: sponza/NewSponza_Main_glTF_003_material_6.gres
-  - Id: 13064078274616855019
-    Path: sponza/textures/ornament_01_BaseColor.gres
-  - Id: 8341230216536440969
-    Path: sponza/textures/col_brickwall_01_BaseColor.gres
-  - Id: 12957761492545862082
-    Path: sponza/textures/stone_01_tile_Normal.gres
-  - Id: 16686446741306444813
+  - Id: 9470638842790517283
+    Path: sponza/textures/ceiling_plaster_01_Normal.gres
+  - Id: 12050846681727389173
+    Path: sponza/NewSponza_Main_glTF_003_material_7.gres
+  - Id: 11073107633074779855
+    Path: sponza/textures/metal_door_01_Normal.gres
+  - Id: 10552598684267853108
+    Path: sponza/textures/window_frame_01_BaseColor.gres
+  - Id: 5486829223498345892
+    Path: sponza/textures/dirt_decal_01_dirt_decal_01_mask_gltf_alpha_dirt_decal_Opacity.gres
+  - Id: 10241754421528908248
+    Path: sponza/NewSponza_Main_glTF_003_material_15.gres
+  - Id: 9695359555469258006
+    Path: skybox/bot.gres
+  - Id: 5766466987706337861
+    Path: sponza/textures/window_frame_01_Normal.gres
+  - Id: 1331769965051469149
+    Path: sponza/NewSponza_Main_glTF_003_material_8.gres
+  - Id: 15318776601425549633
+    Path: sponza/textures/wood_tile_01_BaseColor.gres
+  - Id: 13357983096783246532
+    Path: sponza/textures/ceiling_plaster_02_BaseColor.gres
+  - Id: 11476090424682297898
+    Path: sponza/textures/stone_01_tile_BaseColor.gres
+  - Id: 6886079237647577656
+    Path: sponza/textures/col_brickwall_01_Normal.gres
+  - Id: 6194781174593255094
     Path: FlightHelmet/FlightHelmet_material_3.gres
-  - Id: 8745024644880880302
+  - Id: 7835420693026613746
+    Path: sponza/NewSponza_Main_glTF_003_material_9.gres
+  - Id: 9772629331116776926
     Path: sponza/textures/col_1stfloor_BaseColor.gres
-  - Id: 501922432666278070
-    Path: sponza/textures/col_head_1stfloor_Normal.gres
-  - Id: 12687971018925146388
-    Path: FlightHelmet/FlightHelmet_Materials_GlassPlasticMat_BaseColor.gres
-  - Id: 6644377981087862574
+  - Id: 6940086590210630182
+    Path: sponza/textures/col_1stfloor_Normal.gres
+  - Id: 3587389164183860722
     Path: sponza/textures/col_head_1stfloor_BaseColor.gres
-  - Id: 7101537693139674544
-    Path: sponza/NewSponza_Main_glTF_003_material_11.gres
+  - Id: 2700306823830023872
+    Path: sponza/textures/col_head_1stfloor_Normal.gres
 Scenes:
   - Id: 7857652255564026288
     Path: MainScene

@@ -116,10 +116,12 @@ renderID Backend::instanciateTexture(ResourceHandle<Image> image)
     }
 
     renderID textureID = m_textureInstances.createResourceInstance();
+    image.getResource().setTextureID(textureID);
 
     image.getResource().onLoaded([this, image, textureID] {
-        const auto& imgRes = image.getResource();
+        auto& imgRes = image.getResource();
         m_textureInstances.get(textureID)->init(imgRes.getData(), imgRes.getWidth(), imgRes.getHeight(), imgRes.getNbChannels());
+        imgRes.freeCpuData();
     });
 
     m_gpuDestroyNotifications[textureID] = [image] mutable { image.getResource().notifyGpuInstanceDestroyed(); };

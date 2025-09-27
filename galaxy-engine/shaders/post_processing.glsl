@@ -46,15 +46,16 @@ void main()
 {
     vec4 pix = texture(sceneBuffer, TexCoords);
 
-    float depth = linearDepth(texture(depthBuffer, TexCoords).r);
+    float res = 0.005f;
 
-    // float depthUp = texture(depthBuffer, TexCoords - vec2(0, 0.1)).r;
+    float depthUp    = texture(depthBuffer, TexCoords + vec2(0, res)).r;
+    float depthDown  = texture(depthBuffer, TexCoords - vec2(0, res)).r;
+    float depthRight = texture(depthBuffer, TexCoords + vec2(res, 0)).r;
+    float depthLeft  = texture(depthBuffer, TexCoords - vec2(res, 0)).r;
+    float depth      = texture(depthBuffer, TexCoords).r;
 
-    // float depthDiff = depth - depthUp;
-    // depthDiff       = (0.f, 1.f, depthDiff);
-    // color = vec4(pix.rgb * (1.f - depthDiff), 1);
+    float filter = depth - (depthUp + depthDown + depthLeft + depthRight) / 4.f;
+    filter       = smoothstep(0.f, 1.f, filter * 100.f);
 
-    // color = vec4(vec3(depth * 100.f), 1.0);
-
-    color = vec4(pix.rgb, 1.0);
+    color = vec4(pix.rgb * (1.f - filter), 1);
 }

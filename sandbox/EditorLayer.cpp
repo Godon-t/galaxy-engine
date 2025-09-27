@@ -91,7 +91,8 @@ void EditorLayer::onUpdate()
         renderer.beginSceneRender(cameraTransform);
 
         // TODO: should the application handle the render ?
-        m_selectedScene->getNodePtr()->draw();
+        Application::getInstance().getRootNodePtr()->draw();
+        // m_selectedScene->getNodePtr()->draw();
 
         renderer.endSceneRender();
         Renderer::getInstance().bindFrameBuffer(m_viewportFrameID);

@@ -17,7 +17,7 @@ struct Image : public ResourceBase {
     inline int getWidth() const { return m_width; }
     inline int getHeight() const { return m_height; }
     inline int getNbChannels() const { return m_nbChannels; }
-    inline unsigned char* getData() const { return m_data; }
+    unsigned char* getData();
 
     inline void notifyGpuInstanceDestroyed() { m_textureID = 0; }
     inline renderID getTextureID() const { return m_textureID; }
@@ -28,6 +28,9 @@ struct Image : public ResourceBase {
 
     void destroy();
 
+    // Free space in ram
+    void freeCpuData();
+
 private:
     int m_width;
     int m_height;
@@ -37,5 +40,7 @@ private:
     std::string m_relativeExternalFilePath;
 
     renderID m_textureID = 0;
+
+    bool m_freed = true;
 };
 }

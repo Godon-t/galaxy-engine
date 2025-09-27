@@ -7,6 +7,7 @@
 #include <bits/this_thread_sleep.h>
 
 #include "Log.hpp"
+#include "TimeLogger.hpp"
 #include "event/WindowEvent.hpp"
 #include "nodes/rendering/Camera.hpp"
 #include "nodes/rendering/MeshInstance.hpp"
@@ -95,6 +96,8 @@ void Application::run()
         //     std::this_thread::sleep_for(m_frameDuration - elapsed);
 
     } while (!m_terminated);
+
+    GlobalTimer::getInstance().printAverages();
 }
 void Application::terminate()
 {

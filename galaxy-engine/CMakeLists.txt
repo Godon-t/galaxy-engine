@@ -60,6 +60,7 @@ add_library(galaxy-engine
 
 	src/engine/core/Log.cpp
 	src/engine/core/Layer.cpp
+	src/engine/core/TimeLogger.cpp
 	src/engine/core/LayerStack.cpp
 
 	src/engine/event/InputManager.cpp

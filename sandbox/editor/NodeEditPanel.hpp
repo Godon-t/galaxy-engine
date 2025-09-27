@@ -44,7 +44,7 @@ public:
         }
 
         auto mathandle = node.getMaterial();
-        if (mathandle.getState() == LOADED && materialEdit(mathandle.getResource())) {
+        if (mathandle && materialEdit(mathandle.getResource())) {
             Renderer::getInstance().updateMaterial(node.getMaterialId(), mathandle);
         }
         if (ImGui::Button("Save resource"))

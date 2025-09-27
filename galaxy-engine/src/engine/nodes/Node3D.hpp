@@ -25,6 +25,7 @@ public:
 
     void translate(vec3 translation);
     void rotate(vec3 rotation);
+    void setRotation(quat rotation);
     void setScale(vec3 scale);
 
     void accept(Galaxy::NodeVisitor& visitor) override;

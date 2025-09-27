@@ -30,6 +30,9 @@ bool Mesh::loadExtern(const std::string& filePath)
     }
 
     m_subMeshes.resize(scene->mNumMeshes);
+    aiNode* sceneNode = scene->mRootNode;
+    m_subMeshTree     = buildTree(sceneNode);
+
     for (int i = 0; i < scene->mNumMeshes; i++) {
         extractSubMesh(scene, i);
     }
@@ -64,6 +67,16 @@ bool Mesh::load(YAML::Node& data)
         }
     }
     return true;
+}
+
+SubMeshTree& Mesh::getMeshTree(int surfaceIdx)
+{
+    return *findCorrespondingTree(&m_subMeshTree, surfaceIdx);
+}
+
+SubMeshTree& Mesh::getRootTree()
+{
+    return m_subMeshTree;
 }
 
 void Mesh::extractSubMesh(const aiScene* scene, int surface)
@@ -117,4 +130,44 @@ void Mesh::extractSubMesh(const aiScene* scene, int surface)
     }
 }
 
+SubMeshTree Mesh::buildTree(const aiNode* node)
+{
+    aiMatrix4x4 nodeTransform = node->mTransformation;
+    aiVector3D scaling, translation;
+    aiQuaternion rotation;
+    nodeTransform.Decompose(scaling, rotation, translation);
+
+    SubMeshTree tree;
+    tree.rotation    = quat(rotation.w, rotation.x, rotation.y, rotation.z);
+    tree.translation = vec3(translation.x, translation.y, translation.z);
+    tree.scale       = vec3(scaling.x, scaling.y, scaling.z);
+
+    tree.subMeshes.resize(node->mNumMeshes);
+    for (int i = 0; i < node->mNumMeshes; i++) {
+        tree.subMeshes[i] = node->mMeshes[i];
+    }
+
+    tree.childs.reserve(node->mNumChildren);
+    for (int i = 0; i < node->mNumChildren; i++) {
+        tree.childs.push_back(buildTree(node->mChildren[i]));
+    }
+
+    return tree;
+}
+
+SubMeshTree* Mesh::findCorrespondingTree(SubMeshTree* currentTree, int surfaceIdx)
+{
+    for (auto& meshIdx : currentTree->subMeshes) {
+        if (meshIdx == surfaceIdx) {
+            return currentTree;
+        }
+    }
+
+    for (auto& child : currentTree->childs) {
+        SubMeshTree* res = findCorrespondingTree(&child, surfaceIdx);
+        if (res != nullptr)
+            return res;
+    }
+    return nullptr;
+}
 } // namespace Galaxy

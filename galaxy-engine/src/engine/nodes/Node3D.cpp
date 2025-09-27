@@ -33,6 +33,10 @@ void Node3D::rotate(vec3 rotation)
 {
     m_transform.rotate(rotation);
 }
+void Node3D::setRotation(quat rotation)
+{
+    m_transform.setLocalRotation(rotation);
+}
 void Node3D::setScale(vec3 scale)
 {
     m_transform.setLocalScale(scale);

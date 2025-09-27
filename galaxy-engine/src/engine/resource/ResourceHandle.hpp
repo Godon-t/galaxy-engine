@@ -36,7 +36,7 @@ public:
 
     ~ResourceHandle() = default;
 
-    explicit operator bool() const { return getState() == LOADED; }
+    explicit operator bool() const { return m_resource && getState() == LOADED; }
 
     const ResourceType& getResource() const { return static_cast<ResourceType&>(*m_resource.get()); }
     ResourceType& getResource() { return static_cast<ResourceType&>(*m_resource.get()); }

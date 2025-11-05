@@ -50,8 +50,13 @@ uniform bool useAoMap        = false;
 // lights
 const int MAX_LIGHT                    = 20;
 uniform int lightCount                 = 1;
-uniform vec3 lightPositions[MAX_LIGHT] = vec3[MAX_LIGHT](vec3(0.f, 2.f, 0.f));
-uniform vec3 lightColors[MAX_LIGHT]    = vec3[MAX_LIGHT](vec3(1.f));
+uniform vec3 lightPositions[MAX_LIGHT] = vec3[MAX_LIGHT](
+    vec3(0.f, 2.f, 0.f), vec3(0),vec3(0),vec3(0),vec3(0),vec3(0), vec3(0),vec3(0),vec3(0),vec3(0),vec3(0), vec3(0),vec3(0),vec3(0),vec3(0),vec3(0), vec3(0),vec3(0),vec3(0),vec3(0)
+    );
+uniform vec3 lightColors[MAX_LIGHT]    = vec3[MAX_LIGHT](
+    vec3(1.f), vec3(0),vec3(0),vec3(0),vec3(0),vec3(0), vec3(0),vec3(0),vec3(0),vec3(0),vec3(0), vec3(0),vec3(0),vec3(0),vec3(0),vec3(0), vec3(0),vec3(0),vec3(0),vec3(0)
+    );
+
 
 in vec2 v_texCoords;
 in vec3 v_worldPos;

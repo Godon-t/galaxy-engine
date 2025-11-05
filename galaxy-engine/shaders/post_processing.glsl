@@ -54,8 +54,8 @@ void main()
     float depthLeft  = texture(depthBuffer, TexCoords - vec2(res, 0)).r;
     float depth      = texture(depthBuffer, TexCoords).r;
 
-    float filter = depth - (depthUp + depthDown + depthLeft + depthRight) / 4.f;
-    filter       = smoothstep(0.f, 1.f, filter * 100.f);
+    float f = depth - (depthUp + depthDown + depthLeft + depthRight) / 4.f;
+    f       = smoothstep(0.f, 1.f, f * 100.f);
 
-    color = vec4(pix.rgb * (1.f - filter), 1);
+    color = vec4(pix.rgb * (1.f - f), 1);
 }

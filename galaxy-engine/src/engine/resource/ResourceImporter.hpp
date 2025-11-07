@@ -93,10 +93,17 @@ struct ResourceImporter {
                 uuid imageID                  = importImage(folderPath + "/" + texturePath);
                 resource->m_images[glxType]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
                 resource->m_useImage[glxType] = true;
+                return true;
+            } else {
+                return false;
             }
         };
 
-        tryImport(aiTextureType_BASE_COLOR, ALBEDO);
+        if (!tryImport(aiTextureType_BASE_COLOR, ALBEDO)) {
+            tryImport(aiTextureType_AMBIENT, ALBEDO);
+        } else {
+            tryImport(aiTextureType_AMBIENT, AO);
+        }
 
         // TODO: save() doesn't wait for this to be loaded so useTransparency will always be false
         if (resource->m_useImage[ALBEDO])
@@ -122,8 +129,6 @@ struct ResourceImporter {
         if (material->Get(AI_MATKEY_ROUGHNESS_FACTOR, value) == AI_SUCCESS) {
             resource->m_roughness = value;
         }
-
-        tryImport(aiTextureType_AMBIENT, AO);
 
         float opacity;
         material->Get(AI_MATKEY_OPACITY, opacity);

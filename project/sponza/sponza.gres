@@ -1,0 +1,789 @@
+Type: Mesh
+ExternalFile: sponza/sponza.obj
+SubMeshes:
+  - HasMaterial: true
+    MaterialID: 2894855353715685891
+  - HasMaterial: true
+    MaterialID: 107279995900684053
+  - HasMaterial: true
+    MaterialID: 4141195365545807217
+  - HasMaterial: true
+    MaterialID: 9655488091755718130
+  - HasMaterial: true
+    MaterialID: 8472703128743682711
+  - HasMaterial: true
+    MaterialID: 8472703128743682711
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 10585035000240150844
+  - HasMaterial: true
+    MaterialID: 204476243022672643
+  - HasMaterial: true
+    MaterialID: 204476243022672643
+  - HasMaterial: true
+    MaterialID: 204476243022672643
+  - HasMaterial: true
+    MaterialID: 204476243022672643
+  - HasMaterial: true
+    MaterialID: 204476243022672643
+  - HasMaterial: true
+    MaterialID: 204476243022672643
+  - HasMaterial: true
+    MaterialID: 204476243022672643
+  - HasMaterial: true
+    MaterialID: 204476243022672643
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 12313275857335658351
+  - HasMaterial: true
+    MaterialID: 10585035000240150844
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 8472703128743682711
+  - HasMaterial: true
+    MaterialID: 10585035000240150844
+  - HasMaterial: true
+    MaterialID: 8472703128743682711
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 10585035000240150844
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 10585035000240150844
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 10585035000240150844
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 10585035000240150844
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 10585035000240150844
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 10585035000240150844
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 10585035000240150844
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 10585035000240150844
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 10585035000240150844
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 8472703128743682711
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 8472703128743682711
+  - HasMaterial: true
+    MaterialID: 8472703128743682711
+  - HasMaterial: true
+    MaterialID: 14506311978727021876
+  - HasMaterial: true
+    MaterialID: 14506311978727021876
+  - HasMaterial: true
+    MaterialID: 8472703128743682711
+  - HasMaterial: true
+    MaterialID: 14506311978727021876
+  - HasMaterial: true
+    MaterialID: 8472703128743682711
+  - HasMaterial: true
+    MaterialID: 14506311978727021876
+  - HasMaterial: true
+    MaterialID: 14506311978727021876
+  - HasMaterial: true
+    MaterialID: 8472703128743682711
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 5712841567714907640
+  - HasMaterial: true
+    MaterialID: 8472703128743682711
+  - HasMaterial: true
+    MaterialID: 12313275857335658351
+  - HasMaterial: true
+    MaterialID: 204476243022672643
+  - HasMaterial: true
+    MaterialID: 204476243022672643
+  - HasMaterial: true
+    MaterialID: 204476243022672643
+  - HasMaterial: true
+    MaterialID: 204476243022672643
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 16395404793738613127
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 1913999298050395962
+  - HasMaterial: true
+    MaterialID: 6875447987043037832
+  - HasMaterial: true
+    MaterialID: 8472703128743682711
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 2894855353715685891
+  - HasMaterial: true
+    MaterialID: 2894855353715685891
+  - HasMaterial: true
+    MaterialID: 2894855353715685891
+  - HasMaterial: true
+    MaterialID: 2894855353715685891
+  - HasMaterial: true
+    MaterialID: 2894855353715685891
+  - HasMaterial: true
+    MaterialID: 2894855353715685891
+  - HasMaterial: true
+    MaterialID: 2894855353715685891
+  - HasMaterial: true
+    MaterialID: 11200986090143659385
+  - HasMaterial: true
+    MaterialID: 13858493358062474481
+  - HasMaterial: true
+    MaterialID: 10761741252048044689
+  - HasMaterial: true
+    MaterialID: 11200986090143659385
+  - HasMaterial: true
+    MaterialID: 13858493358062474481
+  - HasMaterial: true
+    MaterialID: 11200986090143659385
+  - HasMaterial: true
+    MaterialID: 10761741252048044689
+  - HasMaterial: true
+    MaterialID: 13858493358062474481
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 1591827038535620869
+  - HasMaterial: true
+    MaterialID: 7125598846024743055
+  - HasMaterial: true
+    MaterialID: 2443619676918727450
+  - HasMaterial: true
+    MaterialID: 9859272189864598093
+  - HasMaterial: true
+    MaterialID: 2443619676918727450
+  - HasMaterial: true
+    MaterialID: 9859272189864598093
+  - HasMaterial: true
+    MaterialID: 2443619676918727450
+  - HasMaterial: true
+    MaterialID: 7125598846024743055
+  - HasMaterial: true
+    MaterialID: 9859272189864598093
+  - HasMaterial: true
+    MaterialID: 2443619676918727450
+  - HasMaterial: true
+    MaterialID: 7125598846024743055
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 5248253481962024936
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 8266292047429895562
+  - HasMaterial: true
+    MaterialID: 107279995900684053
+  - HasMaterial: true
+    MaterialID: 4141195365545807217
+  - HasMaterial: true
+    MaterialID: 107279995900684053
+  - HasMaterial: true
+    MaterialID: 4141195365545807217
+  - HasMaterial: true
+    MaterialID: 107279995900684053
+  - HasMaterial: true
+    MaterialID: 4141195365545807217
+  - HasMaterial: true
+    MaterialID: 107279995900684053
+  - HasMaterial: true
+    MaterialID: 4141195365545807217
+  - HasMaterial: true
+    MaterialID: 107279995900684053
+  - HasMaterial: true
+    MaterialID: 4141195365545807217
+  - HasMaterial: true
+    MaterialID: 107279995900684053
+  - HasMaterial: true
+    MaterialID: 4141195365545807217
+  - HasMaterial: true
+    MaterialID: 107279995900684053
+  - HasMaterial: true
+    MaterialID: 4141195365545807217
+  - HasMaterial: true
+    MaterialID: 18226765341820020210
+  - HasMaterial: true
+    MaterialID: 18226765341820020210
+  - HasMaterial: true
+    MaterialID: 18226765341820020210
+  - HasMaterial: true
+    MaterialID: 18226765341820020210
+  - HasMaterial: true
+    MaterialID: 12022925688087868335
+  - HasMaterial: true
+    MaterialID: 9655488091755718130
+  - HasMaterial: true
+    MaterialID: 12022925688087868335
+  - HasMaterial: true
+    MaterialID: 9655488091755718130
+  - HasMaterial: true
+    MaterialID: 8472703128743682711
+  - HasMaterial: true
+    MaterialID: 2245600370368257916
+  - HasMaterial: true
+    MaterialID: 2245600370368257916
+  - HasMaterial: true
+    MaterialID: 8472703128743682711

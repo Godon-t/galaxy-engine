@@ -111,7 +111,7 @@ void Program::init(const char* vertexContent, const char* fragmentContent)
 
     mat4 view = lookAt(vec3(0, 0, 0), vec3(0, 0, -1), vec3(0, 1, 0));
     updateViewMatrix(view);
-    mat4 projection = perspective(radians(45.f), 16.f / 9.f, 0.1f, 999.0f);
+    mat4 projection = perspective(radians(45.f), 16.f / 9.f, 0.1f, 9999.0f);
     updateProjectionMatrix(projection);
     checkOpenGLErrors("Program initialization");
 }

@@ -78,6 +78,7 @@ void FrameBuffer::invalidate()
     glCreateFramebuffers(1, &m_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
+    // TODO: 3 cases, rgba, depth or rgba and depth
     if (m_format == FramebufferTextureFormat::RGBA8) {
         bindColorAttachmentTexture(&m_attachedColor, m_width, m_height, GL_RGBA8, GL_RGBA);
     } else if (m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
@@ -124,6 +125,7 @@ CubemapFrameBuffer::CubemapFrameBuffer(Cubemap& cubemap)
 void CubemapFrameBuffer::bind(int idx)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    // TODO: Depend on cubemap mode: color, depth or both
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_cubemap.cubemapID, 0);
     checkOpenGLErrors("Cubemap frame buffer bind");
 }

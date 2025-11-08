@@ -105,7 +105,6 @@ struct ResourceImporter {
             tryImport(aiTextureType_AMBIENT, AO);
         }
 
-        // TODO: save() doesn't wait for this to be loaded so useTransparency will always be false
         if (resource->m_useImage[ALBEDO])
             resource->m_images[ALBEDO].getResource().onLoaded([resource] {
                 resource->m_useTransparency = resource->m_images[ALBEDO].getResource().hasTransparency();
@@ -129,6 +128,8 @@ struct ResourceImporter {
         if (material->Get(AI_MATKEY_ROUGHNESS_FACTOR, value) == AI_SUCCESS) {
             resource->m_roughness = value;
         }
+
+        // TODO: Height map not imported
 
         float opacity;
         material->Get(AI_MATKEY_OPACITY, opacity);

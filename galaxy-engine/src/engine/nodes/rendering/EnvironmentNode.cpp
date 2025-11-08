@@ -26,15 +26,23 @@ inline void EnvironmentNode::draw()
     }
 }
 
-void EnvironmentNode::enteredRoot()
+void EnvironmentNode::loadEnv(ResourceHandle<Environment> env)
 {
-    m_env = ResourceManager::getInstance().load<Environment>("env.gres");
+    m_env = env;
     m_env.getResource().onLoaded([this] {
-        m_skyboxCubemapID = Renderer::getInstance().instanciateCubemap(m_env.getResource().getSkybox());
+        auto& rendererInstance = Renderer::getInstance();
+        m_skyboxCubemapID      = rendererInstance.instanciateCubemap(m_env.getResource().getSkybox());
+        m_irradianceCubemapID  = rendererInstance.instanciateCubemap();
+        rendererInstance.renderFromPoint(m_transform.getGlobalPosition(), *Application::getInstance().getRootNodePtr().get(), m_irradianceCubemapID);
         // m_env.getResource().m_skyboxCubemapID = m_skyboxCubemapID;
     });
+}
 
-    m_cubeMeshID = Renderer::getInstance().generateCube(999.f, true, [] {});
+void EnvironmentNode::enteredRoot()
+{
+    // loadEnv(ResourceManager::getInstance().load<Environment>("env.gres"));
+
+    m_cubeMeshID = Renderer::getInstance().generateCube(9998.f, true, [] {});
 }
 
 } // namespace Galaxy

@@ -59,7 +59,7 @@ mat4 CameraManager::getCurrentCamTransform()
 
 mat4 CameraManager::processProjectionMatrix(vec2 viewPortDimmensions)
 {
-    return perspective(radians(45.f), viewPortDimmensions.x / viewPortDimmensions.y, 0.1f, 999.f);
+    return perspective(radians(45.f), viewPortDimmensions.x / viewPortDimmensions.y, 0.1f, 9999.f);
 }
 
 mat4 CameraManager::processViewMatrix(mat4& transform)

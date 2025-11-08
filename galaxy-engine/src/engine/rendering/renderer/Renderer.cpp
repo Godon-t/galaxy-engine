@@ -120,20 +120,23 @@ void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemap
     glGetIntegerv(GL_VIEWPORT, viewport);
     glViewport(0, 0, targetCubemap.resolution, targetCubemap.resolution);
 
-    mat4 baseProjection = m_backend.getProjectionMatrix();
+    mat4 baseProjection = m_frontend.getProjectionMatrix();
     mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 999.f);
-    m_backend.setProjectionMatrix(projection);
+    m_frontend.setProjectionMatrix(projection);
 
     for (int i = 0; i < 6; i++) {
+        vec4 clearColor = vec4(1, 0, 0, 1);
         cubemapBuffer.bind(i);
         beginSceneRender(position, orientations[i], ups[i]);
+        m_frontend.clear(clearColor);
         root.draw();
+        endSceneRender();
         renderFrame();
     }
     cubemapBuffer.unbind();
     cubemapBuffer.destroy();
 
-    m_backend.setProjectionMatrix(baseProjection);
+    m_frontend.setProjectionMatrix(baseProjection);
     glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 }
 }

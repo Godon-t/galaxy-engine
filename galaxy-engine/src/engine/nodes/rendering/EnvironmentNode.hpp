@@ -21,7 +21,7 @@ public:
     void accept(Galaxy::NodeVisitor& visitor) override;
 
     inline virtual void draw() override;
-    inline virtual void testingFunc()
+    void testingFunc()
     {
         renderID provisoryCubemap = Renderer::getInstance().instanciateCubemap();
         Renderer::getInstance().renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), provisoryCubemap);
@@ -29,6 +29,7 @@ public:
         m_skyboxCubemapID = provisoryCubemap;
         // TODO: Delete cubemap
     }
+    void loadEnv(ResourceHandle<Environment> env);
 
 protected:
     virtual void enteredRoot() override;
@@ -36,6 +37,7 @@ protected:
 private:
     ResourceHandle<Environment> m_env;
     renderID m_skyboxCubemapID;
+    renderID m_irradianceCubemapID;
     renderID m_cubeMeshID;
 
     Transform m_transform;

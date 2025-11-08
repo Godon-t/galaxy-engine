@@ -79,6 +79,8 @@ private:
     renderID m_sceneFrameBufferID;
     renderID m_postProcessingQuadID;
 
+    mat4 m_projMatrix;
+
     int m_drawCount = 0;
 };
 }

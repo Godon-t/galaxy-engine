@@ -107,8 +107,6 @@ public:
     void clearFrameBuffer(renderID frameBufferID);
     void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height);
 
-    // TODO: I don't think it is a good idea
-    inline mat4 getProjectionMatrix() { return m_projectionMatrix; }
     void setProjectionMatrix(const mat4& projectionMatrix);
     unsigned int getFrameBufferTextureID(renderID frameBufferID);
 
@@ -143,8 +141,6 @@ private:
     ProgramTexture m_textureProgram;
     ProgramPostProc m_postProcessingProgram;
     Program* m_activeProgram;
-
-    mat4 m_projectionMatrix;
 
     friend class Renderer;
 };

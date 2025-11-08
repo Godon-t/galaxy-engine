@@ -16,8 +16,11 @@ public:
     void submit(renderID meshID);
     void submit(renderID meshID, const Transform& transform);
     void clear(math::vec4& color);
+
     void setViewMatrix(math::mat4& view);
     void setProjectionMatrix(math::mat4& projection);
+    mat4 getProjectionMatrix();
+
     void bindTexture(renderID textureInstanceID, char* uniformName);
     void bindCubemap(renderID cubemapInstanceID, char* uniformName);
     void bindFrameBuffer(renderID frameBufferInstanceID);

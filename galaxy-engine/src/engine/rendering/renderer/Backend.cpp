@@ -385,7 +385,6 @@ void Backend::processCommand(SetViewCommand& setViewCommand)
 }
 void Backend::setProjectionMatrix(const mat4& projectionMatrix)
 {
-    m_projectionMatrix = projectionMatrix;
     m_mainProgram.use();
     m_mainProgram.updateProjectionMatrix(projectionMatrix);
 

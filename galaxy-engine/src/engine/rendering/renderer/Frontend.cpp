@@ -73,6 +73,11 @@ void Frontend::setProjectionMatrix(math::mat4& projection)
     m_projMat = projection;
 }
 
+mat4 Frontend::getProjectionMatrix()
+{
+    return m_projMat;
+}
+
 void Frontend::bindTexture(renderID textureInstanceID, char* uniformName)
 {
     BindTextureCommand bindTextureCommand;

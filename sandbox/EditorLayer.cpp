@@ -281,7 +281,7 @@ void EditorLayer::onEvent(Event& evt)
             Application::getInstance().terminate();
     } else if (evt.getEventType() == EventType::MouseScroll) {
         MouseScrollEvent& scrollEvt = (MouseScrollEvent&)evt;
-        m_cameraSpeed += scrollEvt.getYOffset() * 0.001;
+        m_cameraSpeed += scrollEvt.getYOffset() * 0.1;
         m_cameraSpeed = m_cameraSpeed <= 0 ? 0.0001 : m_cameraSpeed;
     } else if (evt.getEventType() == EventType::MouseMotion && m_rightClickDown) {
         MouseMotionEvent& mouseMotion = (MouseMotionEvent&)evt;

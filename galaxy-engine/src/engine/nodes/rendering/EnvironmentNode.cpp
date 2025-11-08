@@ -32,8 +32,8 @@ void EnvironmentNode::loadEnv(ResourceHandle<Environment> env)
     m_env.getResource().onLoaded([this] {
         auto& rendererInstance = Renderer::getInstance();
         m_skyboxCubemapID      = rendererInstance.instanciateCubemap(m_env.getResource().getSkybox());
-        m_irradianceCubemapID  = rendererInstance.instanciateCubemap();
-        rendererInstance.renderFromPoint(m_transform.getGlobalPosition(), *Application::getInstance().getRootNodePtr().get(), m_irradianceCubemapID);
+        // m_irradianceCubemapID  = rendererInstance.instanciateCubemap();
+        // rendererInstance.renderFromPoint(m_transform.getGlobalPosition(), *Application::getInstance().getRootNodePtr().get(), m_irradianceCubemapID);
         // m_env.getResource().m_skyboxCubemapID = m_skyboxCubemapID;
     });
 }

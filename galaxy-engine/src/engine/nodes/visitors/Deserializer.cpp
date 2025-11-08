@@ -9,6 +9,7 @@
 #include "nodes/Node3D.hpp"
 #include "nodes/NodeHelper.hpp"
 #include "nodes/rendering/Camera.hpp"
+#include "nodes/rendering/EnvironmentNode.hpp"
 #include "nodes/rendering/MeshInstance.hpp"
 #include "nodes/rendering/MultiMeshInstance.hpp"
 #include "nodes/rendering/Sprite3D.hpp"
@@ -120,5 +121,11 @@ void SceneDeSerializer::visit(Sprite3D& node)
 }
 void SceneDeSerializer::visit(EnvironmentNode& node)
 {
+    visit(static_cast<Node&>(node));
+    if (m_currentYAMLNode["EnvID"]) {
+        uuid envID          = m_currentYAMLNode["EnvID"].as<uint64_t>();
+        std::string envPath = Project::getPath(ProjectPathTypes::RESOURCE, envID);
+        node.loadEnv(ResourceManager::getInstance().load<Environment>(envPath));
+    }
 }
 } // namespace Galaxy

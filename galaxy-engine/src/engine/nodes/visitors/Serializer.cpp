@@ -85,5 +85,7 @@ void SceneSerializer::visit(Sprite3D& node)
 void SceneSerializer::visit(EnvironmentNode& node)
 {
     visit(static_cast<Node&>(node));
+    if (node.getEnvResourceID() != 0)
+        m_yaml << YAML::Key << "EnvID" << YAML::Value << node.getEnvResourceID();
 }
 }

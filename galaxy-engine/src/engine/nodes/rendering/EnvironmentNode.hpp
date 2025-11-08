@@ -30,6 +30,7 @@ public:
         // TODO: Delete cubemap
     }
     void loadEnv(ResourceHandle<Environment> env);
+    inline uuid getEnvResourceID() const { return m_env.getResource().getResourceID(); }
 
 protected:
     virtual void enteredRoot() override;

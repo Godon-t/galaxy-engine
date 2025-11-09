@@ -154,6 +154,19 @@ void Frontend::initPostProcessing(renderID frameBufferID)
     m_frontBuffer->push_back(command);
 }
 
+void Frontend::setUniform(char* uniformName, bool value)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = uniformName;
+    uniformCommand.type        = BOOL;
+    uniformCommand.valueBool   = value;
+    RenderCommand command;
+    command.type       = RenderCommandType::SetUniform;
+    command.setUniform = uniformCommand;
+
+    m_frontBuffer->push_back(command);
+}
+
 void Frontend::submitPBR(renderID meshID, renderID materialID, const Transform& transform)
 {
     DrawCommand drawCommand;

@@ -28,6 +28,7 @@ public:
     void bindMaterial(renderID materialRenderID);
     void changeUsedProgram(ProgramType program);
     void initPostProcessing(renderID frameBufferID);
+    void setUniform(char* uniformName, bool value);
 
     void submitPBR(renderID meshID, renderID materialID, const Transform& transform);
 

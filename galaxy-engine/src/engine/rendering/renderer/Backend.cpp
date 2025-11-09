@@ -494,6 +494,13 @@ void Backend::processCommand(InitPostProcessCommand& command)
     checkOpenGLErrors("Init post process");
 }
 
+void Backend::processCommand(SetUniformCommand& command)
+{
+    if (command.type == SetValueTypes::BOOL) {
+        glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueBool ? GL_TRUE : GL_FALSE);
+    }
+}
+
 void Backend::processCommand(RenderCommand& command)
 {
     if (command.type == RenderCommandType::setActiveProgram)
@@ -522,6 +529,8 @@ void Backend::processCommand(RenderCommand& command)
         processCommand(command.bindFrameBuffer, false);
     else if (command.type == RenderCommandType::initPostProcess)
         processCommand(command.initPostProcess);
+    else if (command.type == RenderCommandType::SetUniform)
+        processCommand(command.setUniform);
     else
         GLX_CORE_ERROR("Unknown render command");
 }

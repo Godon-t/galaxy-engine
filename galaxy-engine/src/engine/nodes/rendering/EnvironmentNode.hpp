@@ -25,11 +25,10 @@ public:
     {
         renderID provisoryCubemap = Renderer::getInstance().instanciateCubemap();
         Renderer::getInstance().renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), provisoryCubemap);
-        // TODO: Delete cubemap
-
         Renderer::getInstance().applyFilterOnCubemap(m_cubeMeshID, provisoryCubemap, m_irradianceCubemapID, FilterEnum::IRRADIANCE);
-        // Renderer::getInstance().clearCubemap(m_skyboxCubemapID);
-        // m_skyboxCubemapID = m_irradianceCubemapID;
+
+        Renderer::getInstance().bindCubemap(m_irradianceCubemapID, "irradianceMap");
+        Renderer::getInstance().setUniform("useIrradianceMap", true);
     }
     void loadEnv(ResourceHandle<Environment> env);
     inline uuid getEnvResourceID() const { return m_env.getResource().getResourceID(); }

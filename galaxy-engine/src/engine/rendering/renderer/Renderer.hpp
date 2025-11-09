@@ -54,6 +54,8 @@ public:
     inline void unbindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.unbindFrameBuffer(frameBufferInstanceID); }
     inline void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height) { m_backend.resizeFrameBuffer(frameBufferID, width, height); }
 
+    inline void setUniform(char* uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
+
     void applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter);
 
     // TODO: Make a post processing object ?

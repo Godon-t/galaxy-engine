@@ -17,7 +17,8 @@ enum RenderCommandType {
     bindMaterial,
     bindFrameBuffer,
     unbindFrameBuffer,
-    initPostProcess
+    initPostProcess,
+    SetUniform
 };
 
 struct SetViewCommand {
@@ -73,6 +74,17 @@ struct InitPostProcessCommand {
     renderID frameBufferID;
 };
 
+enum SetValueTypes {
+    BOOL
+};
+struct SetUniformCommand {
+    SetValueTypes type;
+    char* uniformName;
+    union {
+        bool valueBool;
+    };
+};
+
 struct RenderCommand {
     RenderCommand()
         : type(RenderCommandType::draw)
@@ -94,6 +106,7 @@ struct RenderCommand {
         BindMaterialCommand bindMaterial;
         BindFrameBufferCommand bindFrameBuffer;
         InitPostProcessCommand initPostProcess;
+        SetUniformCommand setUniform;
     };
 };
 } // namespace Galaxy

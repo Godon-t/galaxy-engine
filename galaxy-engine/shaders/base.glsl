@@ -29,6 +29,7 @@ void main()
 #type fragment
 #version 330 core
 
+uniform bool useIrradianceMap;
 uniform samplerCube irradianceMap;
 
 uniform vec3 albedoVal        = vec3(1.0, 0.f, 0.f);
@@ -171,8 +172,12 @@ void main()
     vec3 kS = F;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
-    vec3 irradiance = texture(irradianceMap, N).rgb;
-    // vec3 irradiance = vec3(0.5);
+    vec3 irradiance;
+    if (useIrradianceMap)
+        // irradiance = texture(irradianceMap, N).rgb;
+        irradiance = vec3(0.);
+    else
+        irradiance = vec3(0.75);
     vec3 diffuse = irradiance * albedo;
 
     // // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
@@ -184,8 +189,7 @@ void main()
     // vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
     // vec3 ambient = (kD * diffuse + specular) * ao;
-
-    vec3 ambient  = vec3(0.03) * albedo * ao;
+    vec3 ambient  = (kD * diffuse) * ao;
     vec3 colorPBR = ambient + Lo;
 
     colorPBR = colorPBR / (colorPBR + vec3(1.0));

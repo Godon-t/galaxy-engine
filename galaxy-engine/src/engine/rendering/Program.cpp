@@ -229,6 +229,9 @@ ProgramPBR::ProgramPBR(std::string path)
     useMetallicMapLocation  = glGetUniformLocation(programID, "useMetallicMap");
     useRoughnessMapLocation = glGetUniformLocation(programID, "useRoughnessMap");
     useAmbientMapLocation   = glGetUniformLocation(programID, "useAoMap");
+
+    use();
+    glUniform1i(glGetUniformLocation(programID, "useIrradianceMap"), GL_FALSE);
 }
 
 void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture, TextureType::COUNT>& materialTextures)

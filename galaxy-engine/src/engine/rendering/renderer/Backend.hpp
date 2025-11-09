@@ -126,6 +126,7 @@ private:
     void processCommand(BindMaterialCommand& command);
     void processCommand(BindFrameBufferCommand& command, bool bind);
     void processCommand(InitPostProcessCommand& command);
+    void processCommand(SetUniformCommand& command);
 
     RenderGpuResourceTable<VisualInstance> m_visualInstances;
     RenderGpuResourceTable<Texture> m_textureInstances;

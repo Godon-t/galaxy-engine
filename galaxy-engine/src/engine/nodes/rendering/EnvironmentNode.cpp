@@ -21,10 +21,8 @@ inline void EnvironmentNode::draw()
     if (m_skyboxCubemapID != 0) {
         auto& ri = Renderer::getInstance();
         ri.changeUsedProgram(SKYBOX);
-        ri.bindCubemap(m_skyboxCubemapID, "skybox");
         ri.submit(m_cubeMeshID, m_transform);
         ri.changeUsedProgram(PBR);
-        ri.bindCubemap(m_irradianceCubemapID, "irradianceMap");
     }
 }
 
@@ -34,7 +32,16 @@ void EnvironmentNode::loadEnv(ResourceHandle<Environment> env)
     m_env.getResource().onLoaded([this] {
         auto& rendererInstance = Renderer::getInstance();
         m_skyboxCubemapID      = rendererInstance.instanciateCubemap(m_env.getResource().getSkybox());
-        // m_env.getResource().m_skyboxCubemapID = m_skyboxCubemapID;
+
+        rendererInstance.changeUsedProgram(SKYBOX);
+        rendererInstance.bindCubemap(m_skyboxCubemapID, "skybox");
+
+        // Renderer::getInstance().renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), provisoryCubemap);
+        rendererInstance.applyFilterOnCubemap(m_cubeMeshID, m_skyboxCubemapID, m_irradianceCubemapID, FilterEnum::IRRADIANCE);
+
+        rendererInstance.changeUsedProgram(PBR);
+        rendererInstance.bindCubemap(m_irradianceCubemapID, "irradianceMap");
+        // rendererInstance.setUniform("useIrradianceMap", true);
     });
 }
 

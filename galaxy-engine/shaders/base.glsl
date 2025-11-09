@@ -29,6 +29,8 @@ void main()
 #type fragment
 #version 330 core
 
+uniform samplerCube irradianceMap;
+
 uniform vec3 albedoVal        = vec3(1.0, 0.f, 0.f);
 uniform float metallicVal     = 0.5f;
 uniform float roughnessVal    = 0.5f;
@@ -51,12 +53,9 @@ uniform bool useAoMap        = false;
 const int MAX_LIGHT                    = 20;
 uniform int lightCount                 = 1;
 uniform vec3 lightPositions[MAX_LIGHT] = vec3[MAX_LIGHT](
-    vec3(0.f, 2.f, 0.f), vec3(0),vec3(0),vec3(0),vec3(0),vec3(0), vec3(0),vec3(0),vec3(0),vec3(0),vec3(0), vec3(0),vec3(0),vec3(0),vec3(0),vec3(0), vec3(0),vec3(0),vec3(0),vec3(0)
-    );
-uniform vec3 lightColors[MAX_LIGHT]    = vec3[MAX_LIGHT](
-    vec3(1.f), vec3(0),vec3(0),vec3(0),vec3(0),vec3(0), vec3(0),vec3(0),vec3(0),vec3(0),vec3(0), vec3(0),vec3(0),vec3(0),vec3(0),vec3(0), vec3(0),vec3(0),vec3(0),vec3(0)
-    );
-
+    vec3(0.f, 2.f, 0.f), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0));
+uniform vec3 lightColors[MAX_LIGHT] = vec3[MAX_LIGHT](
+    vec3(1.f), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0));
 
 in vec2 v_texCoords;
 in vec3 v_worldPos;
@@ -168,13 +167,13 @@ void main()
     }
 
     // ambient lighting (we now use IBL as the ambient term)
-    // vec3 F  = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
-    // vec3 kS = F;
-    // vec3 kD = 1.0 - kS;
-    // kD *= 1.0 - metallic;
-    // // vec3 irradiance = texture(irradianceMap, N).rgb;
+    vec3 F  = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+    vec3 kS = F;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
+    vec3 irradiance = texture(irradianceMap, N).rgb;
     // vec3 irradiance = vec3(0.5);
-    // vec3 diffuse    = irradiance * albedo;
+    vec3 diffuse = irradiance * albedo;
 
     // // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
     // const float MAX_REFLECTION_LOD = 4.0;

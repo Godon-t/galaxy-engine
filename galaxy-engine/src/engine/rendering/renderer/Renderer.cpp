@@ -17,6 +17,19 @@ Renderer::Renderer()
 {
     m_sceneFrameBufferID   = m_backend.instanciateFrameBuffer(1920, 1080, FramebufferTextureFormat::DEPTH24STENCIL8);
     m_postProcessingQuadID = m_backend.generateQuad(vec2(2, 2), [] {});
+
+    m_cubemap_orientations[0] = { 1, 0, 0 };
+    m_cubemap_orientations[1] = { -1, 0, 0 };
+    m_cubemap_ups[0] = m_cubemap_ups[1] = { 0, -1, 0 };
+
+    m_cubemap_orientations[2] = { 0, 1, 0 };
+    m_cubemap_orientations[3] = { 0, -1, 0 };
+    m_cubemap_ups[2]          = { 0, 0, 1 };
+    m_cubemap_ups[3]          = { 0, 0, -1 };
+
+    m_cubemap_orientations[4] = { 0, 0, 1 };
+    m_cubemap_orientations[5] = { 0, 0, -1 };
+    m_cubemap_ups[4] = m_cubemap_ups[5] = { 0, -1, 0 };
 }
 
 Renderer::~Renderer()
@@ -92,24 +105,58 @@ void Renderer::updateMaterial(renderID materialID, ResourceHandle<Material> mate
     m_frontend.setTransparency(materialID, material.getResource().isUsingTransparency());
 }
 
-void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemapID)
+void Renderer::applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter)
 {
     switchCommandBuffer();
     m_commandBuffers[m_frontCommandBufferIdx].clear();
 
-    vec3 orientations[6], ups[6];
-    orientations[0] = { 1, 0, 0 };
-    orientations[1] = { -1, 0, 0 };
-    ups[0] = ups[1] = { 0, -1, 0 };
+    std::function<void()> prgToUse;
+    switch (filter) {
+    case FilterEnum::IRRADIANCE:
+        prgToUse = [this]() {
+            m_frontend.changeUsedProgram(ProgramType::FILTER_IRRADIANCE);
+        };
+        break;
+    default:
+        GLX_CORE_ERROR("Unknown filter applied!");
+        return;
+    }
 
-    orientations[2] = { 0, 1, 0 };
-    orientations[3] = { 0, -1, 0 };
-    ups[2]          = { 0, 0, 1 };
-    ups[3]          = { 0, 0, -1 };
+    Cubemap& targetCubemap = *m_backend.m_cubemapInstances.get(targetID);
+    targetCubemap.useFloat = true;
+    targetCubemap.resize(2048);
+    CubemapFrameBuffer cubemapBuffer(targetCubemap);
 
-    orientations[4] = { 0, 0, 1 };
-    orientations[5] = { 0, 0, -1 };
-    ups[4] = ups[5] = { 0, -1, 0 };
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    glViewport(0, 0, targetCubemap.resolution, targetCubemap.resolution);
+
+    mat4 baseProjection = m_frontend.getProjectionMatrix();
+    mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);
+    m_frontend.setProjectionMatrix(projection);
+
+    vec3 position = vec3(0, 0, 0);
+    Transform transformTemp;
+    for (int i = 0; i < 6; i++) {
+        cubemapBuffer.bind(i);
+        beginSceneRender(position, m_cubemap_orientations[i], m_cubemap_ups[i]);
+        prgToUse();
+        m_frontend.bindCubemap(sourceID, "skybox");
+        m_frontend.submit(skyboxMesh, transformTemp);
+        endSceneRender();
+        renderFrame();
+    }
+    cubemapBuffer.unbind();
+    cubemapBuffer.destroy();
+
+    m_frontend.setProjectionMatrix(baseProjection);
+    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+}
+
+void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemapID)
+{
+    switchCommandBuffer();
+    m_commandBuffers[m_frontCommandBufferIdx].clear();
 
     Cubemap& targetCubemap = *m_backend.m_cubemapInstances.get(targetCubemapID);
     targetCubemap.useFloat = true;
@@ -121,14 +168,12 @@ void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemap
     glViewport(0, 0, targetCubemap.resolution, targetCubemap.resolution);
 
     mat4 baseProjection = m_frontend.getProjectionMatrix();
-    mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 999.f);
+    mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);
     m_frontend.setProjectionMatrix(projection);
 
     for (int i = 0; i < 6; i++) {
-        vec4 clearColor = vec4(1, 0, 0, 1);
         cubemapBuffer.bind(i);
-        beginSceneRender(position, orientations[i], ups[i]);
-        m_frontend.clear(clearColor);
+        beginSceneRender(position, m_cubemap_orientations[i], m_cubemap_ups[i]);
         root.draw();
         endSceneRender();
         renderFrame();

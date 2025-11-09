@@ -8,6 +8,10 @@
 #include "types/Render.hpp"
 
 namespace Galaxy {
+enum FilterEnum {
+    IRRADIANCE
+};
+
 class Renderer {
 public:
     static Renderer& getInstance();
@@ -50,8 +54,13 @@ public:
     inline void unbindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.unbindFrameBuffer(frameBufferInstanceID); }
     inline void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height) { m_backend.resizeFrameBuffer(frameBufferID, width, height); }
 
+    void applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter);
+
     // TODO: Make a post processing object ?
-    void resize(unsigned int width, unsigned int height) { m_backend.resizeFrameBuffer(m_sceneFrameBufferID, width, height); }
+    void resize(unsigned int width, unsigned int height)
+    {
+        m_backend.resizeFrameBuffer(m_sceneFrameBufferID, width, height);
+    }
 
     inline void submitPBR(renderID meshID, renderID materialID, const Transform& transform) { m_frontend.submitPBR(meshID, materialID, transform); }
     void renderFromPoint(vec3 position, Node& root, renderID targetCubemapID);
@@ -79,7 +88,7 @@ private:
     renderID m_sceneFrameBufferID;
     renderID m_postProcessingQuadID;
 
-    mat4 m_projMatrix;
+    vec3 m_cubemap_orientations[6], m_cubemap_ups[6];
 
     int m_drawCount = 0;
 };

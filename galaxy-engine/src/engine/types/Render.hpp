@@ -12,7 +12,8 @@ enum ProgramType {
     PBR,
     SKYBOX,
     TEXTURE,
-    POST_PROCESSING
+    POST_PROCESSING,
+    FILTER_IRRADIANCE
 };
 
 struct Vertex {

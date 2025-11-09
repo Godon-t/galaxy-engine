@@ -138,6 +138,7 @@ private:
 
     ProgramPBR m_mainProgram;
     ProgramSkybox m_skyboxProgram;
+    ProgramSkybox m_irradianceProgram;
     ProgramTexture m_textureProgram;
     ProgramPostProc m_postProcessingProgram;
     Program* m_activeProgram;

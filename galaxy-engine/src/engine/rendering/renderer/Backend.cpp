@@ -34,8 +34,11 @@ Backend::Backend(size_t maxSize)
 
     m_mainProgram           = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
     m_skyboxProgram         = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
+    m_irradianceProgram     = std::move(ProgramSkybox(engineRes("shaders/filters/irradiance.glsl")));
     m_textureProgram        = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
     m_postProcessingProgram = std::move(ProgramPostProc(engineRes("shaders/post_processing.glsl")));
+
+    m_activeProgram = &m_mainProgram;
 
     checkOpenGLErrors("Renderer constructor");
 }
@@ -385,6 +388,7 @@ void Backend::processCommand(SetViewCommand& setViewCommand)
 }
 void Backend::setProjectionMatrix(const mat4& projectionMatrix)
 {
+    // TODO: bug prone
     m_mainProgram.use();
     m_mainProgram.updateProjectionMatrix(projectionMatrix);
 
@@ -393,6 +397,9 @@ void Backend::setProjectionMatrix(const mat4& projectionMatrix)
 
     m_skyboxProgram.use();
     m_skyboxProgram.updateProjectionMatrix(projectionMatrix);
+
+    m_irradianceProgram.use();
+    m_irradianceProgram.updateProjectionMatrix(projectionMatrix);
 
     m_postProcessingProgram.use();
     m_postProcessingProgram.updateProjectionMatrix(projectionMatrix);
@@ -414,6 +421,8 @@ void Backend::processCommand(SetActiveProgramCommand& command)
         m_activeProgram = &m_textureProgram;
     else if (command.program == POST_PROCESSING)
         m_activeProgram = &m_postProcessingProgram;
+    else if (command.program == FILTER_IRRADIANCE)
+        m_activeProgram = &m_irradianceProgram;
     else
         GLX_CORE_ASSERT(false, "unknown asked program!");
 

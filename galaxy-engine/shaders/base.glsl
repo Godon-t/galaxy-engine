@@ -173,11 +173,11 @@ void main()
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
     vec3 irradiance;
-    if (useIrradianceMap)
-        // irradiance = texture(irradianceMap, N).rgb;
-        irradiance = vec3(0.);
-    else
-        irradiance = vec3(0.75);
+    // if (useIrradianceMap)
+    //     irradiance = texture(irradianceMap, N).rgb;
+    // else
+    //     irradiance = vec3(0.5);
+    irradiance   = vec3(0.5);
     vec3 diffuse = irradiance * albedo;
 
     // // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.

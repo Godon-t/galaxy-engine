@@ -37,18 +37,16 @@ void EnvironmentNode::loadEnv(ResourceHandle<Environment> env)
         rendererInstance.bindCubemap(m_skyboxCubemapID, "skybox");
 
         // Renderer::getInstance().renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), provisoryCubemap);
-        rendererInstance.applyFilterOnCubemap(m_cubeMeshID, m_skyboxCubemapID, m_irradianceCubemapID, FilterEnum::IRRADIANCE);
+        // rendererInstance.applyFilterOnCubemap(m_cubeMeshID, m_skyboxCubemapID, m_irradianceCubemapID, FilterEnum::IRRADIANCE);
 
-        rendererInstance.changeUsedProgram(PBR);
-        rendererInstance.bindCubemap(m_irradianceCubemapID, "irradianceMap");
+        // rendererInstance.changeUsedProgram(PBR);
+        // rendererInstance.bindCubemap(m_irradianceCubemapID, "irradianceMap");
         // rendererInstance.setUniform("useIrradianceMap", true);
     });
 }
 
 void EnvironmentNode::enteredRoot()
 {
-    // loadEnv(ResourceManager::getInstance().load<Environment>("env.gres"));
-
     m_cubeMeshID          = Renderer::getInstance().generateCube(9999.f, true, [] {});
     m_irradianceCubemapID = Renderer::getInstance().instanciateCubemap();
 }

@@ -82,6 +82,8 @@ void FrameBuffer::invalidate()
     if (m_format == FramebufferTextureFormat::RGBA8) {
         bindColorAttachmentTexture(&m_attachedColor, m_width, m_height, GL_RGBA8, GL_RGBA);
     } else if (m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
+        bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH24_STENCIL8);
+    } else if (m_format == FramebufferTextureFormat::DEPTH24RGBA8) {
         bindColorAttachmentTexture(&m_attachedColor, m_width, m_height, GL_RGBA8, GL_RGBA);
         bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH24_STENCIL8);
     } else {

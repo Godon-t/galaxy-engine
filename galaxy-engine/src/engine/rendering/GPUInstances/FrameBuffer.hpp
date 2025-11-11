@@ -2,19 +2,9 @@
 
 #include "Texture.hpp"
 #include "pch.hpp"
+#include "types/Render.hpp"
 
 namespace Galaxy {
-enum class FramebufferTextureFormat {
-    None = 0,
-
-    RGBA8,
-    // RED_INTEGER,
-    DEPTH24STENCIL8
-
-    // Defaults
-    // Depth = DEPTH24STENCIL8
-};
-
 class FrameBuffer {
 public:
     FrameBuffer();
@@ -36,6 +26,7 @@ public:
         m_format = format;
         invalidate();
     }
+    inline FramebufferTextureFormat getFormat() const { return m_format; }
 
 private:
     FramebufferTextureFormat m_format;

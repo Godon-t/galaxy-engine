@@ -104,7 +104,7 @@ void Frontend::bindCubemap(renderID cubemapInstanceID, char* uniformName)
     m_frontBuffer->push_back(command);
 }
 
-void Frontend::bindFrameBuffer(renderID frameBufferInstanceID)
+void Frontend::bindFrameBuffer(renderID frameBufferInstanceID, FramebufferTextureFormat framebufferFormat)
 {
     BindFrameBufferCommand typeCommand;
     typeCommand.frameBufferID = frameBufferInstanceID;
@@ -114,6 +114,8 @@ void Frontend::bindFrameBuffer(renderID frameBufferInstanceID)
     command.bindFrameBuffer = typeCommand;
 
     m_frontBuffer->push_back(command);
+
+    m_currentFramebufferFormat = framebufferFormat;
 }
 
 void Frontend::unbindFrameBuffer(renderID frameBufferInstanceID)
@@ -128,6 +130,8 @@ void Frontend::unbindFrameBuffer(renderID frameBufferInstanceID)
     command.bindFrameBuffer = typeCommand;
 
     m_frontBuffer->push_back(command);
+
+    m_currentFramebufferFormat = FramebufferTextureFormat::None;
 }
 
 void Frontend::changeUsedProgram(ProgramType program)
@@ -177,7 +181,14 @@ void Frontend::submitPBR(renderID meshID, renderID materialID, const Transform& 
     command.type = RenderCommandType::draw;
     command.draw = drawCommand;
 
-    m_materialToSubmitCommand[materialID].push_back(command);
+    // TODO: Test if it works
+    if (m_currentFramebufferFormat == FramebufferTextureFormat::DEPTH24STENCIL8) {
+        if (!m_materialsTransparency[materialID]) {
+            m_frontBuffer->push_back(command);
+        }
+    } else {
+        m_materialToSubmitCommand[materialID].push_back(command);
+    }
 }
 
 vec3 Frontend::DistCompare::camPosition = vec3(0);

@@ -21,3 +21,15 @@ struct Vertex {
     math::vec2 texCoord;
     math::vec3 normal;
 };
+
+enum class FramebufferTextureFormat {
+    None = 0,
+
+    RGBA8,
+    // RED_INTEGER,
+    DEPTH24STENCIL8,
+    DEPTH24RGBA8
+
+    // Defaults
+    // Depth = DEPTH24STENCIL8
+};

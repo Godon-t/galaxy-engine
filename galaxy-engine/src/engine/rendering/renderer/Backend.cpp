@@ -336,6 +336,11 @@ void Backend::resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsi
     m_frameBufferInstances.get(frameBufferID)->resize(width, height);
 }
 
+FramebufferTextureFormat Backend::getFramebufferFormat(renderID id)
+{
+    return m_frameBufferInstances.get(id)->getFormat();
+}
+
 unsigned int Backend::getFrameBufferTextureID(renderID frameBufferID)
 {
     return m_frameBufferInstances.get(frameBufferID)->getColorTextureID();

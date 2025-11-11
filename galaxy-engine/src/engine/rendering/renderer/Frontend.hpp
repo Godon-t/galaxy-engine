@@ -23,7 +23,7 @@ public:
 
     void bindTexture(renderID textureInstanceID, char* uniformName);
     void bindCubemap(renderID cubemapInstanceID, char* uniformName);
-    void bindFrameBuffer(renderID frameBufferInstanceID);
+    void bindFrameBuffer(renderID frameBufferInstanceID, FramebufferTextureFormat framebufferFormat);
     void unbindFrameBuffer(renderID frameBufferInstanceID);
     void bindMaterial(renderID materialRenderID);
     void changeUsedProgram(ProgramType program);
@@ -56,5 +56,6 @@ private:
 
     mat4 m_projMat;
     mat4 m_viewMat;
+    FramebufferTextureFormat m_currentFramebufferFormat = FramebufferTextureFormat::None;
 };
 } // namespace Galaxy

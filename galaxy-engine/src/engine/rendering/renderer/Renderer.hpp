@@ -20,7 +20,7 @@ public:
 
     inline void setProjectionMatrix(math::mat4& projection) { m_frontend.setProjectionMatrix(projection); }
 
-    void beginSceneRender(mat4& camTransform);
+    void beginSceneRender(const mat4& camTransform);
     void beginSceneRender(const vec3& camPosition, const vec3& camDirection, const vec3& camUp);
     inline void submit(renderID meshID, const Transform& transform) { m_frontend.submit(meshID, transform); }
 
@@ -50,13 +50,12 @@ public:
 
     inline renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format) { return m_backend.instanciateFrameBuffer(width, height, format); }
     inline void clearFrameBuffer(renderID frameBufferID) { m_backend.clearFrameBuffer(frameBufferID); }
-    inline void bindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.bindFrameBuffer(frameBufferInstanceID); }
+    inline void bindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.bindFrameBuffer(frameBufferInstanceID, m_backend.getFramebufferFormat(frameBufferInstanceID)); }
     inline void unbindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.unbindFrameBuffer(frameBufferInstanceID); }
     inline void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height) { m_backend.resizeFrameBuffer(frameBufferID, width, height); }
+    inline FramebufferTextureFormat getFramebufferFormat(renderID framebufferID) { return m_backend.getFramebufferFormat(framebufferID); }
 
     inline void setUniform(char* uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
-
-    void applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter);
 
     // TODO: Make a post processing object ?
     void resize(unsigned int width, unsigned int height)
@@ -66,6 +65,7 @@ public:
 
     inline void submitPBR(renderID meshID, renderID materialID, const Transform& transform) { m_frontend.submitPBR(meshID, materialID, transform); }
     void renderFromPoint(vec3 position, Node& root, renderID targetCubemapID);
+    void applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter);
 
     void applyPostProcessing();
 

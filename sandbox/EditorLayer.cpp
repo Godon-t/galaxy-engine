@@ -48,7 +48,7 @@ void EditorLayer::onAttach()
 
     auto& renderer = Renderer::getInstance();
     renderer.resize(width, height);
-    m_viewportFrameID = renderer.instanciateFrameBuffer(width, height, FramebufferTextureFormat::DEPTH24STENCIL8);
+    m_viewportFrameID = renderer.instanciateFrameBuffer(width, height, FramebufferTextureFormat::DEPTH24RGBA8);
 
     InputManager::addAction(Action(GLX_KEY_ESCAPE, "editor_exit"));
     InputManager::addAction(Action(GLX_KEY_W, "editor_forward"));

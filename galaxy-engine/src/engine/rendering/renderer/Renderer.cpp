@@ -15,7 +15,7 @@ Renderer::Renderer()
     , m_frontend(&m_commandBuffers[m_frontCommandBufferIdx])
     , m_backend()
 {
-    m_sceneFrameBufferID   = m_backend.instanciateFrameBuffer(1920, 1080, FramebufferTextureFormat::DEPTH24STENCIL8);
+    m_sceneFrameBufferID   = m_backend.instanciateFrameBuffer(1920, 1080, FramebufferTextureFormat::DEPTH24RGBA8);
     m_postProcessingQuadID = m_backend.generateQuad(vec2(2, 2), [] {});
 
     m_cubemap_orientations[0] = { 1, 0, 0 };
@@ -49,9 +49,9 @@ Renderer& Renderer::getInstance()
     return renderer;
 }
 
-void Renderer::beginSceneRender(mat4& camTransform)
+void Renderer::beginSceneRender(const mat4& camTransform)
 {
-    m_frontend.bindFrameBuffer(m_sceneFrameBufferID);
+    m_frontend.bindFrameBuffer(m_sceneFrameBufferID, m_backend.getFramebufferFormat(m_sceneFrameBufferID));
     auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
     m_frontend.clear(clearColor);
     auto viewMatrix = CameraManager::processViewMatrix(camTransform);

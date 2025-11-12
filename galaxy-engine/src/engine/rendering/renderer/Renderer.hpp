@@ -18,14 +18,16 @@ public:
 
     inline void changeUsedProgram(ProgramType prog) { m_frontend.changeUsedProgram(prog); }
 
-    inline void setProjectionMatrix(math::mat4& projection) { m_frontend.setProjectionMatrix(projection); }
+    // inline void setProjectionMatrix(math::mat4& projection) { m_frontend.setProjectionMatrix(projection); }
 
-    void beginSceneRender(const mat4& camTransform);
-    void beginSceneRender(const vec3& camPosition, const vec3& camDirection, const vec3& camUp);
-    inline void submit(renderID meshID, const Transform& transform) { m_frontend.submit(meshID, transform); }
+    void beginSceneRender(const mat4& camTransform, const vec2& dimmensions);
+    void beginSceneRender(const vec3& camPosition, const vec3& camDirection, const vec3& camUp, const vec2& dimmensions);
 
     void endSceneRender();
+
     void renderFrame();
+
+    inline void submit(renderID meshID, const Transform& transform) { m_frontend.submit(meshID, transform); }
 
     inline renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices) { return m_backend.instanciateMesh(vertices, indices); }
     inline renderID instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx = 0) { return m_backend.instanciateMesh(mesh, surfaceIdx); }
@@ -50,7 +52,7 @@ public:
 
     inline renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format) { return m_backend.instanciateFrameBuffer(width, height, format); }
     inline void clearFrameBuffer(renderID frameBufferID) { m_backend.clearFrameBuffer(frameBufferID); }
-    inline void bindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.bindFrameBuffer(frameBufferInstanceID, m_backend.getFramebufferFormat(frameBufferInstanceID)); }
+    inline void bindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.bindFrameBuffer(frameBufferInstanceID); }
     inline void unbindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.unbindFrameBuffer(frameBufferInstanceID); }
     inline void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height) { m_backend.resizeFrameBuffer(frameBufferID, width, height); }
     inline FramebufferTextureFormat getFramebufferFormat(renderID framebufferID) { return m_backend.getFramebufferFormat(framebufferID); }

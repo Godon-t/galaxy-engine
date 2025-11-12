@@ -104,6 +104,7 @@ public:
     void clearCubemap(renderID cubemapID);
 
     renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format);
+    renderID instantiateCubemapFrameBuffer(unsigned int size);
     void clearFrameBuffer(renderID frameBufferID);
     void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height);
     // TODO: Wrong way ?
@@ -123,8 +124,9 @@ private:
     void processCommand(SetActiveProgramCommand& command);
     void processCommand(DrawCommand& command);
     void processCommand(RawDrawCommand& command);
-    void processCommand(BindTextureCommand& command);
-    void processCommand(BindCubemapCommand& command);
+    void processCommand(UseTextureCommand& command);
+    void processCommand(UseCubemapCommand& command);
+    void processCommand(AttachTextureToFramebufferCommand& command);
     void processCommand(BindMaterialCommand& command);
     void processCommand(BindFrameBufferCommand& command, bool bind);
     void processCommand(InitPostProcessCommand& command);
@@ -135,6 +137,7 @@ private:
     RenderGpuResourceTable<MaterialInstance> m_materialInstances;
     RenderGpuResourceTable<Cubemap> m_cubemapInstances;
     RenderGpuResourceTable<FrameBuffer> m_frameBufferInstances;
+    RenderGpuResourceTable<CubemapFrameBuffer> m_cubemapFrameBufferInstances;
 
     // Will invalidate renderID for things outside of Node that store a renderID
     std::unordered_map<renderID, std::function<void()>> m_gpuDestroyNotifications;

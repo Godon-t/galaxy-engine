@@ -12,8 +12,9 @@ enum RenderCommandType {
     depthMask,
     draw,
     rawDraw,
-    bindTexture,
-    bindCubemap,
+    useTexture,
+    useCubemap,
+    attachTextureToFramebuffer,
     bindMaterial,
     bindFrameBuffer,
     unbindFrameBuffer,
@@ -48,14 +49,20 @@ struct DepthMaskCommand {
     bool state;
 };
 
-struct BindTextureCommand {
+struct UseTextureCommand {
     renderID instanceID;
     char* uniformName;
 };
 
-struct BindCubemapCommand {
+struct UseCubemapCommand {
     renderID instanceID;
     char* uniformName;
+};
+
+struct AttachTextureToFramebufferCommand {
+    renderID textureID;
+    renderID framebufferID;
+    bool isDepth = false;
 };
 
 struct BindMaterialCommand {
@@ -68,6 +75,7 @@ struct SetActiveProgramCommand {
 
 struct BindFrameBufferCommand {
     renderID frameBufferID;
+    int cubemapFaceIdx = -1;
 };
 
 struct InitPostProcessCommand {
@@ -101,8 +109,9 @@ struct RenderCommand {
         DepthMaskCommand depthMask;
         DrawCommand draw;
         RawDrawCommand rawDraw;
-        BindTextureCommand bindTexture;
-        BindCubemapCommand bindCubemap;
+        UseTextureCommand useTexture;
+        UseCubemapCommand useCubemap;
+        AttachTextureToFramebufferCommand attachTextureToFramebuffer;
         BindMaterialCommand bindMaterial;
         BindFrameBufferCommand bindFrameBuffer;
         InitPostProcessCommand initPostProcess;

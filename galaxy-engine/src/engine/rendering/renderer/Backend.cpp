@@ -12,6 +12,7 @@ Backend::Backend(size_t maxSize)
     , m_textureInstances(maxSize * 2)
     , m_materialInstances(maxSize)
     , m_frameBufferInstances(maxSize)
+    , m_cubemapFrameBufferInstances(maxSize)
 {
     GLenum error = glGetError();
 
@@ -318,6 +319,15 @@ renderID Backend::instanciateFrameBuffer(unsigned int width, unsigned int height
     return frameBufferID;
 }
 
+renderID Backend::instantiateCubemapFrameBuffer(unsigned int size)
+{
+    renderID frameBufferID = m_cubemapFrameBufferInstances.createResourceInstance();
+    m_cubemapFrameBufferInstances.get(frameBufferID)->resize(size);
+    m_cubemapFrameBufferInstances.get(frameBufferID)->unbind();
+    checkOpenGLErrors("Instantiate frameBuffer");
+    return frameBufferID;
+}
+
 void Backend::clearFrameBuffer(renderID frameBufferID)
 {
     if (!m_frameBufferInstances.tryRemove(frameBufferID))
@@ -446,19 +456,29 @@ void Backend::processCommand(RawDrawCommand& command)
     m_visualInstances.get(command.instanceID)->draw();
 }
 
-void Backend::processCommand(BindTextureCommand& command)
+void Backend::processCommand(UseTextureCommand& command)
 {
     auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
     m_textureInstances.get(command.instanceID)->activate(uniLoc);
     checkOpenGLErrors("Bind texture");
 }
 
-void Backend::processCommand(BindCubemapCommand& command)
+void Backend::processCommand(UseCubemapCommand& command)
 {
     auto uniLoc   = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
     auto& cubemap = *m_cubemapInstances.get(command.instanceID);
     cubemap.activate(uniLoc);
     checkOpenGLErrors("Bind cubemap");
+}
+
+void Backend::processCommand(AttachTextureToFramebufferCommand& command)
+{
+    auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
+    auto& texture     = *m_textureInstances.get(command.textureID);
+    if (command.isDepth)
+        framebuffer.attachDepthTexture(texture.getId());
+    else
+        framebuffer.attachColorTexture(texture.getId());
 }
 
 void Backend::processCommand(BindMaterialCommand& command)
@@ -484,11 +504,19 @@ void Backend::processCommand(BindMaterialCommand& command)
 void Backend::processCommand(BindFrameBufferCommand& command, bool bind)
 {
     if (bind)
-        m_frameBufferInstances.get(command.frameBufferID)->bind();
-    else
-        m_frameBufferInstances.get(command.frameBufferID)->unbind();
+        if (command.cubemapFaceIdx >= 0)
+            m_cubemapFrameBufferInstances.get(command.frameBufferID)->bind(command.cubemapFaceIdx);
+        else
+            m_frameBufferInstances.get(command.frameBufferID)->bind();
+    else {
+        if (command.cubemapFaceIdx >= 0)
+            m_cubemapFrameBufferInstances.get(command.frameBufferID)->unbind();
+        else
+            m_frameBufferInstances.get(command.frameBufferID)->unbind();
+    }
 }
 
+// TODO: Rework post processing logic
 void Backend::processCommand(InitPostProcessCommand& command)
 {
     GLX_CORE_ASSERT(m_activeProgram->type() == ProgramType::POST_PROCESSING, "Post processing Program not active!");
@@ -522,10 +550,12 @@ void Backend::processCommand(RenderCommand& command)
         processCommand(command.rawDraw);
     else if (command.type == RenderCommandType::draw)
         processCommand(command.draw);
-    else if (command.type == RenderCommandType::bindTexture)
-        processCommand(command.bindTexture);
-    else if (command.type == RenderCommandType::bindCubemap)
-        processCommand(command.bindCubemap);
+    else if (command.type == RenderCommandType::useTexture)
+        processCommand(command.useTexture);
+    else if (command.type == RenderCommandType::useCubemap)
+        processCommand(command.useCubemap);
+    else if (command.type == RenderCommandType::attachTextureToFramebuffer)
+        processCommand(command.attachTextureToFramebuffer);
     else if (command.type == RenderCommandType::bindMaterial)
         processCommand(command.bindMaterial);
     else if (command.type == RenderCommandType::bindFrameBuffer)

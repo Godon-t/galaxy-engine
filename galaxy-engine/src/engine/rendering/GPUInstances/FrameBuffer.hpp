@@ -5,6 +5,8 @@
 #include "types/Render.hpp"
 
 namespace Galaxy {
+
+// TODO: Change to use Texture object directly
 class FrameBuffer {
 public:
     FrameBuffer();
@@ -27,6 +29,9 @@ public:
         invalidate();
     }
     inline FramebufferTextureFormat getFormat() const { return m_format; }
+    void attachTexture(unsigned int attachment, unsigned int textureId, unsigned int target);
+    void attachColorTexture(unsigned int textureID);
+    void attachDepthTexture(unsigned int textureID);
 
 private:
     FramebufferTextureFormat m_format;
@@ -40,7 +45,8 @@ private:
 
 class CubemapFrameBuffer {
 public:
-    CubemapFrameBuffer(Cubemap& cubemap);
+    CubemapFrameBuffer();
+    CubemapFrameBuffer(int size);
     ~CubemapFrameBuffer() = default;
 
     void bind(int idx);
@@ -48,10 +54,14 @@ public:
 
     void destroy();
 
-    inline unsigned int getCubemapID() { return m_cubemap.cubemapID; }
+    void resize(unsigned int newSize);
 
 private:
-    Cubemap& m_cubemap;
     unsigned int m_fbo, m_rbo;
+    unsigned int m_size;
+
+    Cubemap m_cubemap;
+
+    void invalidate();
 };
 }

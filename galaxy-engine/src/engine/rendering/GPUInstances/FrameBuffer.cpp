@@ -70,6 +70,31 @@ void FrameBuffer::resize(unsigned int newWidth, unsigned int newHeight)
     invalidate();
 }
 
+void FrameBuffer::attachTexture(unsigned int attachment, unsigned int textureId, unsigned int target)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, target, textureId, 0);
+
+    // TODO: Memory leak, we need to destroy textures if they come from framebuffer creation
+    if (attachment == GL_COLOR_ATTACHMENT0)
+        m_attachedColor = textureId;
+    else if (attachment == GL_DEPTH_ATTACHMENT)
+        m_attachedDepth = textureId;
+
+    bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
+}
+
+void FrameBuffer::attachColorTexture(unsigned int textureID)
+{
+    attachTexture(GL_COLOR_ATTACHMENT0, textureID, GL_TEXTURE_2D);
+}
+
+void FrameBuffer::attachDepthTexture(unsigned int textureID)
+{
+    attachTexture(GL_DEPTH_ATTACHMENT, textureID, GL_TEXTURE_2D);
+}
+
 void FrameBuffer::invalidate()
 {
     if (m_fbo != 0)
@@ -106,22 +131,15 @@ void FrameBuffer::destroy()
     m_fbo           = 0;
 }
 
-CubemapFrameBuffer::CubemapFrameBuffer(Cubemap& cubemap)
-    : m_cubemap(cubemap)
+CubemapFrameBuffer::CubemapFrameBuffer()
+    : CubemapFrameBuffer(2)
 {
-    checkOpenGLErrors("before Cubemap frame buffer initialization");
-    glGenFramebuffers(1, &m_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+}
 
-    glGenRenderbuffers(1, &m_rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, cubemap.resolution, cubemap.resolution);
-
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    checkOpenGLErrors("Cubemap frame buffer initialization");
+CubemapFrameBuffer::CubemapFrameBuffer(int size)
+{
+    m_size = size;
+    invalidate();
 }
 
 void CubemapFrameBuffer::bind(int idx)
@@ -141,5 +159,30 @@ void CubemapFrameBuffer::destroy()
 {
     glDeleteRenderbuffers(1, &m_rbo);
     glDeleteFramebuffers(1, &m_fbo);
+}
+
+void CubemapFrameBuffer::resize(unsigned int newSize)
+{
+    m_size = newSize;
+    invalidate();
+}
+
+void CubemapFrameBuffer::invalidate()
+{
+    if (m_fbo != 0)
+        destroy();
+
+    glGenFramebuffers(1, &m_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+    glGenRenderbuffers(1, &m_rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, m_size, m_size);
+
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    checkOpenGLErrors("Cubemap frame buffer initialization");
 }
 }

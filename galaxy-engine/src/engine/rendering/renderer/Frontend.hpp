@@ -2,6 +2,7 @@
 
 #include "pch.hpp"
 
+#include "RenderCanva.hpp"
 #include "RenderCommand.hpp"
 #include "data/Transform.hpp"
 #include "types/Render.hpp"
@@ -13,26 +14,29 @@ class Frontend {
 public:
     Frontend(std::vector<RenderCommand>* commandBuffer);
 
+    void beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1);
+    void endCanva();
+    void attachCurrentCanva(renderID targetTextureID);
+    void processCanvas();
+
     void submit(renderID meshID);
     void submit(renderID meshID, const Transform& transform);
     void clear(math::vec4& color);
 
-    void setViewMatrix(math::mat4& view);
-    void setProjectionMatrix(math::mat4& projection);
     mat4 getProjectionMatrix();
 
     void bindTexture(renderID textureInstanceID, char* uniformName);
+    void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID);
+    void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID);
     void bindCubemap(renderID cubemapInstanceID, char* uniformName);
-    void bindFrameBuffer(renderID frameBufferInstanceID, FramebufferTextureFormat framebufferFormat);
-    void unbindFrameBuffer(renderID frameBufferInstanceID);
+    void bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx = -1);
+    void unbindFrameBuffer(renderID frameBufferInstanceID, bool cubemap = false);
     void bindMaterial(renderID materialRenderID);
     void changeUsedProgram(ProgramType program);
     void initPostProcessing(renderID frameBufferID);
     void setUniform(char* uniformName, bool value);
 
     void submitPBR(renderID meshID, renderID materialID, const Transform& transform);
-
-    void dumpCommandsToBuffer();
 
     void setCommandBuffer(std::vector<RenderCommand>* newBuffer);
 
@@ -49,7 +53,16 @@ private:
         bool operator()(const std::pair<renderID, RenderCommand>& a, const std::pair<renderID, RenderCommand>& b) const;
     };
 
+    void dumpCommandsToBuffer(RenderCanva& canva);
+    void setViewMatrix(const math::mat4& view);
+    void setProjectionMatrix(const math::mat4& projection);
+    void pushCommand(RenderCommand command);
+
     std::unordered_map<renderID, bool> m_materialsTransparency;
+
+    std::vector<RenderCanva> m_canvas;
+    size_t m_currentCanvaIdx;
+
     std::unordered_map<renderID, std::vector<RenderCommand>> m_materialToSubmitCommand;
 
     std::vector<RenderCommand>* m_frontBuffer;

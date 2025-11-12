@@ -59,9 +59,7 @@ void EditorLayer::onAttach()
     InputManager::addAction(Action(GLX_KEY_Q, "editor_down"));
     InputManager::addAction(Action(GLX_KEY_E, "editor_up"));
 
-    renderer.changeUsedProgram(PBR);
-    mat4 proj = CameraManager::processProjectionMatrix(vec2(width, height));
-    renderer.setProjectionMatrix(proj);
+    m_viewportSize = vec2(200);
 }
 
 void EditorLayer::onDetach()
@@ -88,7 +86,7 @@ void EditorLayer::onUpdate()
             updateCamera();
         }
 
-        renderer.beginSceneRender(cameraTransform);
+        renderer.beginSceneRender(cameraTransform, m_viewportSize);
 
         // TODO: should the application handle the render ?
         Application::getInstance().getRootNodePtr()->draw();
@@ -296,9 +294,6 @@ void EditorLayer::onEvent(Event& evt)
         WindowResizeEvent& resize = (WindowResizeEvent&)evt;
         vec2 newDim               = vec2(resize.getWidth(), resize.getHeight());
         Renderer::getInstance().resize(newDim.x, newDim.y);
-
-        mat4 proj = CameraManager::processProjectionMatrix(newDim);
-        Renderer::getInstance().setProjectionMatrix(proj);
     }
 }
 void EditorLayer::updateCamera()

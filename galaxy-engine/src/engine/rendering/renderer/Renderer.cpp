@@ -49,27 +49,18 @@ Renderer& Renderer::getInstance()
     return renderer;
 }
 
-void Renderer::beginSceneRender(const mat4& camTransform)
+void Renderer::beginSceneRender(const mat4& camTransform, const vec2& dimmensions)
 {
-    m_frontend.bindFrameBuffer(m_sceneFrameBufferID, m_backend.getFramebufferFormat(m_sceneFrameBufferID));
-    auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
-    m_frontend.clear(clearColor);
-    auto viewMatrix = CameraManager::processViewMatrix(camTransform);
-    m_frontend.setViewMatrix(viewMatrix);
-}
+    auto viewMatrix       = CameraManager::processViewMatrix(camTransform);
+    auto projectionMatrix = CameraManager::processProjectionMatrix(vec2(dimmensions));
 
-void Renderer::beginSceneRender(const vec3& camPosition, const vec3& camDirection, const vec3& camUp)
-{
-    auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
-    m_frontend.clear(clearColor);
-    auto viewMatrix = lookAt(camPosition, camPosition + camDirection, camUp);
-    m_frontend.setViewMatrix(viewMatrix);
+    m_frontend.beginCanva(viewMatrix, projectionMatrix, m_sceneFrameBufferID, FramebufferTextureFormat::DEPTH24STENCIL8);
 }
 
 void Renderer::endSceneRender()
 {
-    m_frontend.unbindFrameBuffer(m_sceneFrameBufferID);
-    m_frontend.dumpCommandsToBuffer();
+    m_frontend.endCanva();
+    m_frontend.processCanvas();
 }
 
 void Renderer::applyPostProcessing()
@@ -107,81 +98,84 @@ void Renderer::updateMaterial(renderID materialID, ResourceHandle<Material> mate
 
 void Renderer::applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter)
 {
-    switchCommandBuffer();
-    m_commandBuffers[m_frontCommandBufferIdx].clear();
+    // switchCommandBuffer();
+    // m_commandBuffers[m_frontCommandBufferIdx].clear();
 
-    std::function<void()> prgToUse;
-    switch (filter) {
-    case FilterEnum::IRRADIANCE:
-        prgToUse = [this]() {
-            m_frontend.changeUsedProgram(ProgramType::FILTER_IRRADIANCE);
-        };
-        break;
-    default:
-        GLX_CORE_ERROR("Unknown filter applied!");
-        return;
-    }
+    // std::function<void()> prgToUse;
+    // switch (filter) {
+    // case FilterEnum::IRRADIANCE:
+    //     prgToUse = [this]() {
+    //         m_frontend.changeUsedProgram(ProgramType::FILTER_IRRADIANCE);
+    //     };
+    //     break;
+    // default:
+    //     GLX_CORE_ERROR("Unknown filter applied!");
+    //     return;
+    // }
 
-    Cubemap& targetCubemap = *m_backend.m_cubemapInstances.get(targetID);
-    targetCubemap.useFloat = true;
-    targetCubemap.resize(2048);
-    CubemapFrameBuffer cubemapBuffer(targetCubemap);
+    // Cubemap& targetCubemap = *m_backend.m_cubemapInstances.get(targetID);
+    // targetCubemap.useFloat = true;
+    // targetCubemap.resize(2048);
+    // CubemapFrameBuffer cubemapBuffer(targetCubemap);
 
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    glViewport(0, 0, targetCubemap.resolution, targetCubemap.resolution);
+    // GLint viewport[4];
+    // glGetIntegerv(GL_VIEWPORT, viewport);
+    // glViewport(0, 0, targetCubemap.resolution, targetCubemap.resolution);
 
-    mat4 baseProjection = m_frontend.getProjectionMatrix();
-    mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);
-    m_frontend.setProjectionMatrix(projection);
+    // vec2 dimmensions      = vec2(targetCubemap.resolution);
+    // auto projectionMatrix = CameraManager::processProjectionMatrix(vec2(dimmensions));
 
-    vec3 position = vec3(0, 0, 0);
-    Transform transformTemp;
-    for (int i = 0; i < 6; i++) {
-        cubemapBuffer.bind(i);
-        beginSceneRender(position, m_cubemap_orientations[i], m_cubemap_ups[i]);
-        prgToUse();
-        m_frontend.bindCubemap(sourceID, "skybox");
-        m_frontend.submit(skyboxMesh, transformTemp);
-        endSceneRender();
-        renderFrame();
-    }
-    cubemapBuffer.unbind();
-    cubemapBuffer.destroy();
+    // mat4 baseProjection = m_frontend.getProjectionMatrix();
+    // mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);
+    // m_frontend.setProjectionMatrix(projection);
 
-    m_frontend.setProjectionMatrix(baseProjection);
-    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+    // vec3 position = vec3(0, 0, 0);
+    // Transform transformTemp;
+    // for (int i = 0; i < 6; i++) {
+    //     auto viewMatrix = lookAt(camPosition, camPosition + camDirection, camUp);
+    //     m_frontend.beginCanva(viewMatrix, projectionMatrix, targetID, FramebufferTextureFormat::DEPTH24RGBA8, i);
+
+    //     beginSceneRender(position, m_cubemap_orientations[i], m_cubemap_ups[i], dimmensions);
+    //     prgToUse();
+    //     m_frontend.bindCubemap(sourceID, "skybox");
+    //     m_frontend.submit(skyboxMesh, transformTemp);
+    //     endSceneRender();
+    //     renderFrame();
+    // }
+
+    // m_frontend.setProjectionMatrix(baseProjection);
+    // glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 }
 
 void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemapID)
 {
-    switchCommandBuffer();
-    m_commandBuffers[m_frontCommandBufferIdx].clear();
+    // switchCommandBuffer();
+    // m_commandBuffers[m_frontCommandBufferIdx].clear();
 
-    Cubemap& targetCubemap = *m_backend.m_cubemapInstances.get(targetCubemapID);
-    targetCubemap.useFloat = true;
-    targetCubemap.resize(2048);
-    CubemapFrameBuffer cubemapBuffer(targetCubemap);
+    // Cubemap& targetCubemap = *m_backend.m_cubemapInstances.get(targetCubemapID);
+    // targetCubemap.useFloat = true;
+    // targetCubemap.resize(2048);
+    // CubemapFrameBuffer cubemapBuffer(targetCubemap);
 
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    glViewport(0, 0, targetCubemap.resolution, targetCubemap.resolution);
+    // GLint viewport[4];
+    // glGetIntegerv(GL_VIEWPORT, viewport);
+    // glViewport(0, 0, targetCubemap.resolution, targetCubemap.resolution);
 
-    mat4 baseProjection = m_frontend.getProjectionMatrix();
-    mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);
-    m_frontend.setProjectionMatrix(projection);
+    // mat4 baseProjection = m_frontend.getProjectionMatrix();
+    // mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);
+    // m_frontend.setProjectionMatrix(projection);
 
-    for (int i = 0; i < 6; i++) {
-        cubemapBuffer.bind(i);
-        beginSceneRender(position, m_cubemap_orientations[i], m_cubemap_ups[i]);
-        root.draw();
-        endSceneRender();
-        renderFrame();
-    }
-    cubemapBuffer.unbind();
-    cubemapBuffer.destroy();
+    // for (int i = 0; i < 6; i++) {
+    //     cubemapBuffer.bind(i);
+    //     beginSceneRender(position, m_cubemap_orientations[i], m_cubemap_ups[i]);
+    //     root.draw();
+    //     endSceneRender();
+    //     renderFrame();
+    // }
+    // cubemapBuffer.unbind();
+    // cubemapBuffer.destroy();
 
-    m_frontend.setProjectionMatrix(baseProjection);
-    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+    // m_frontend.setProjectionMatrix(baseProjection);
+    // glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 }
 }

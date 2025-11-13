@@ -41,6 +41,7 @@ private:
 
     EditorMode m_mode;
     bool m_showAllNodes;
+    bool m_disablePostProcessing;
 
     // Ref to nodes in Root
     std::shared_ptr<Node> m_rootEditorNode;

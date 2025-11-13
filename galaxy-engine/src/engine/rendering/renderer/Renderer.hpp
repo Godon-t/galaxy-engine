@@ -75,6 +75,7 @@ public:
 
     // TODO: remove ASAP
     inline unsigned int getFrameBufferTextureID(renderID frameBufferID) { return m_backend.getFrameBufferTextureID(frameBufferID); }
+    inline unsigned int getSceneFrameBufferTextureID() { return m_backend.getFrameBufferTextureID(m_sceneFrameBufferID); }
 
 private:
     Renderer();

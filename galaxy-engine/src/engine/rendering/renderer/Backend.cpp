@@ -479,6 +479,8 @@ void Backend::processCommand(AttachTextureToFramebufferCommand& command)
         framebuffer.attachDepthTexture(texture.getId());
     else
         framebuffer.attachColorTexture(texture.getId());
+
+    checkOpenGLErrors("Attach texture to framebuffer");
 }
 
 void Backend::processCommand(BindMaterialCommand& command)
@@ -499,6 +501,7 @@ void Backend::processCommand(BindMaterialCommand& command)
     addTexture(AO);
 
     ((ProgramPBR*)m_activeProgram)->updateMaterial(material, materialTextures);
+    checkOpenGLErrors("Binding material");
 }
 
 void Backend::processCommand(BindFrameBufferCommand& command, bool bind)
@@ -514,6 +517,8 @@ void Backend::processCommand(BindFrameBufferCommand& command, bool bind)
         else
             m_frameBufferInstances.get(command.frameBufferID)->unbind();
     }
+
+    checkOpenGLErrors("Binding framebuffer");
 }
 
 // TODO: Rework post processing logic

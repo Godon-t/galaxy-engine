@@ -11,6 +11,7 @@ EditorLayer::EditorLayer(const char* projectPath)
     : Layer("Editor layer")
     , m_mode(EditorMode::Edit)
     , m_showAllNodes(false)
+    , m_disablePostProcessing(false)
 {
     if (!Project::load(projectPath)) {
         GLX_ERROR("Can't load project '{0}', creating one", projectPath);
@@ -189,12 +190,16 @@ void EditorLayer::displayViewport(bool validScene)
         }
         ImVec2 pannelSize = ImGui::GetContentRegionAvail();
         if (m_viewportSize != *(vec2*)&pannelSize) {
+            // TODO: resize here and on resize event ?
             m_viewportSize = { pannelSize.x, pannelSize.y };
-            Renderer::getInstance().resizeFrameBuffer(m_viewportFrameID, m_viewportSize.x, m_viewportSize.y);
         }
         ImGui::PopStyleVar();
         // TODO: bad design if I have to use textureID outside of Renderer. Will cause problem when multithreading renderer.
-        auto textureID = Renderer::getInstance().getFrameBufferTextureID(m_viewportFrameID);
+        unsigned int textureID;
+        if (m_disablePostProcessing)
+            textureID = Renderer::getInstance().getSceneFrameBufferTextureID();
+        else
+            textureID = Renderer::getInstance().getFrameBufferTextureID(m_viewportFrameID);
         ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 1, 1 }, ImVec2 { 0, 0 });
     } else {
         ImGui::PopStyleVar();
@@ -226,6 +231,8 @@ void EditorLayer::applicationWidgetRender()
     if (m_resourceAccess.display()) {
         GLX_INFO("Selected resource! '{0}'", m_resourceAccess.selectedResourcePath);
     }
+
+    ImGui::Checkbox("Disable post-processing", &m_disablePostProcessing);
 
     ImGui::End();
 }
@@ -294,6 +301,7 @@ void EditorLayer::onEvent(Event& evt)
         WindowResizeEvent& resize = (WindowResizeEvent&)evt;
         vec2 newDim               = vec2(resize.getWidth(), resize.getHeight());
         Renderer::getInstance().resize(newDim.x, newDim.y);
+        Renderer::getInstance().resizeFrameBuffer(m_viewportFrameID, m_viewportSize.x, m_viewportSize.y);
     }
 }
 void EditorLayer::updateCamera()

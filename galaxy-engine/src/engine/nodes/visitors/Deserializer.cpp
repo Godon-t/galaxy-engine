@@ -13,6 +13,7 @@
 #include "nodes/rendering/MeshInstance.hpp"
 #include "nodes/rendering/MultiMeshInstance.hpp"
 #include "nodes/rendering/Sprite3D.hpp"
+#include "nodes/rendering/SpotLight.hpp"
 #include "project/Project.hpp"
 #include "types/Math.hpp"
 
@@ -126,6 +127,30 @@ void SceneDeSerializer::visit(EnvironmentNode& node)
         uuid envID          = m_currentYAMLNode["EnvID"].as<uint64_t>();
         std::string envPath = Project::getPath(ProjectPathTypes::RESOURCE, envID);
         node.loadEnv(ResourceManager::getInstance().load<Environment>(envPath));
+    }
+}
+
+void SceneDeSerializer::visit(SpotLight& node)
+{
+    visit(static_cast<Node3D&>(node));
+    
+    if (m_currentYAMLNode["Intensity"]) {
+        node.setIntensity(m_currentYAMLNode["Intensity"].as<float>());
+    }
+    if (m_currentYAMLNode["Color"]) {
+        node.setColor(m_currentYAMLNode["Color"].as<vec3>());
+    }
+    if (m_currentYAMLNode["CutoffAngle"]) {
+        node.setCutoffAngle(m_currentYAMLNode["CutoffAngle"].as<float>());
+    }
+    if (m_currentYAMLNode["OuterCutoffAngle"]) {
+        node.setOuterCutoffAngle(m_currentYAMLNode["OuterCutoffAngle"].as<float>());
+    }
+    if (m_currentYAMLNode["Range"]) {
+        node.setRange(m_currentYAMLNode["Range"].as<float>());
+    }
+    if (m_currentYAMLNode["CastShadows"]) {
+        node.setCastShadows(m_currentYAMLNode["CastShadows"].as<bool>());
     }
 }
 } // namespace Galaxy

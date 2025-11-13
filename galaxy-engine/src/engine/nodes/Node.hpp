@@ -50,6 +50,7 @@ public:
     void clearChilds();
     std::vector<Node*> getChildren() const;
     size_t getChildCount() const;
+    bool getInRoot() const { return m_inRoot; }
 
     std::string getName() { return m_name; }
 

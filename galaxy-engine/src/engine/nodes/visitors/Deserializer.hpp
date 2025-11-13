@@ -27,5 +27,6 @@ public:
     void visit(MultiMeshInstance& node) override;
     void visit(Sprite3D& node) override;
     void visit(EnvironmentNode& node) override;
+    void visit(SpotLight& node) override;
 };
 }

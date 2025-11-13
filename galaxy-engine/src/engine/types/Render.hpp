@@ -6,6 +6,7 @@
 
 using camID    = size_t;
 using renderID = size_t;
+using lightID  = size_t;
 
 enum ProgramType {
     NONE,

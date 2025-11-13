@@ -85,6 +85,44 @@ public:
             node.testingFunc();
         }
     }
+    void visit(SpotLight& node)
+    {
+        visit(static_cast<Node3D&>(node));
+
+        ImGui::SeparatorText("SpotLight Properties");
+        float intensity = node.getIntensity();
+        if (ImGui::DragFloat("Intensity", &intensity, 0.01f, 0.0f, 10.0f)) {
+            node.setIntensity(intensity);
+        }
+        vec3 color = node.getColor();
+        if (ImGui::ColorEdit3("Color", &color[0])) {
+            node.setColor(color);
+        }
+
+        float cutoffAngle = node.getCutoffAngle();
+        if (ImGui::SliderFloat("Cutoff Angle", &cutoffAngle, 0.0f, 90.0f)) {
+            node.setCutoffAngle(cutoffAngle);
+        }
+
+        float outerCutoffAngle = node.getOuterCutoffAngle();
+        if (ImGui::SliderFloat("Outer Cutoff Angle", &outerCutoffAngle, 0.0f, 90.0f)) {
+            node.setOuterCutoffAngle(outerCutoffAngle);
+        }
+
+        float range = node.getRange();
+        if (ImGui::DragFloat("Range", &range, 0.1f, 0.1f, 100.0f)) {
+            node.setRange(range);
+        }
+
+        bool castShadows = node.getCastShadows();
+        if (ImGui::Checkbox("Cast Shadows", &castShadows)) {
+            node.setCastShadows(castShadows);
+        }
+
+        if (castShadows) {
+            ImGui::Text("Shadow Map ID: %zu", node.getShadowMapID());
+        }
+    }
     void transformEdit(Transform& transform)
     {
         ImGui::SeparatorText("Transform");

@@ -6,6 +6,7 @@
 #include "rendering/MeshInstance.hpp"
 #include "rendering/MultiMeshInstance.hpp"
 #include "rendering/Sprite3D.hpp"
+#include "rendering/SpotLight.hpp"
 
 namespace Galaxy {
 std::unique_ptr<Node> constructNode(std::string& type)
@@ -24,6 +25,8 @@ std::unique_ptr<Node> constructNode(std::string& type)
         return std::make_unique<Sprite3D>();
     } else if (type == "EnvironmentNode") {
         return std::make_unique<EnvironmentNode>();
+    } else if (type == "SpotLight") {
+        return std::make_unique<SpotLight>();
     } else {
         GLX_CORE_ERROR("Unknown type '{0}'", type);
         return nullptr;

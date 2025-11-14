@@ -15,8 +15,9 @@ Renderer::Renderer()
     , m_frontend(&m_commandBuffers[m_frontCommandBufferIdx])
     , m_backend()
 {
-    m_sceneFrameBufferID   = m_backend.instanciateFrameBuffer(1920, 1080, FramebufferTextureFormat::DEPTH24RGBA8);
-    m_postProcessingQuadID = m_backend.generateQuad(vec2(2, 2), [] {});
+    m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8);
+    m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
+    m_postProcessingQuadID   = m_backend.generateQuad(vec2(2, 2), [] {});
 
     m_cubemap_orientations[0] = { 1, 0, 0 };
     m_cubemap_orientations[1] = { -1, 0, 0 };
@@ -51,24 +52,27 @@ Renderer& Renderer::getInstance()
 
 void Renderer::beginSceneRender(const mat4& camTransform, const vec2& dimmensions)
 {
-    auto viewMatrix       = CameraManager::processViewMatrix(camTransform);
-    auto projectionMatrix = CameraManager::processProjectionMatrix(vec2(dimmensions));
+    m_currentView = CameraManager::processViewMatrix(camTransform);
+    m_currentProj = CameraManager::processProjectionMatrix(vec2(dimmensions));
 
-    m_frontend.beginCanva(viewMatrix, projectionMatrix, m_sceneFrameBufferID, FramebufferTextureFormat::DEPTH24STENCIL8);
+    m_frontend.beginCanva(m_currentView, m_currentProj, m_sceneFrameBufferID, FramebufferTextureFormat::DEPTH24STENCIL8);
 }
 
 void Renderer::endSceneRender()
 {
     m_frontend.endCanva();
+    applyPostProcessing();
     m_frontend.processCanvas();
 }
 
 void Renderer::applyPostProcessing()
 {
+    m_frontend.beginCanva(m_currentView, m_currentProj, m_postProcessingBufferID, FramebufferTextureFormat::RGBA8);
     m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING);
     m_frontend.initPostProcessing(m_sceneFrameBufferID);
     m_frontend.submit(m_postProcessingQuadID);
     m_frontend.changeUsedProgram(ProgramType::PBR);
+    m_frontend.endCanva();
 }
 
 void Renderer::renderFrame()

@@ -399,7 +399,22 @@ void Backend::processCommand(DepthMaskCommand& command)
 
 void Backend::processCommand(SetViewCommand& setViewCommand)
 {
-    m_activeProgram->updateViewMatrix(setViewCommand.view);
+    m_mainProgram.use();
+    m_mainProgram.updateViewMatrix(setViewCommand.view);
+
+    m_textureProgram.use();
+    m_textureProgram.updateViewMatrix(setViewCommand.view);
+
+    m_skyboxProgram.use();
+    m_skyboxProgram.updateViewMatrix(setViewCommand.view);
+
+    m_irradianceProgram.use();
+    m_irradianceProgram.updateViewMatrix(setViewCommand.view);
+
+    m_postProcessingProgram.use();
+    m_postProcessingProgram.updateViewMatrix(setViewCommand.view);
+
+    m_activeProgram->use();
 }
 void Backend::setProjectionMatrix(const mat4& projectionMatrix)
 {

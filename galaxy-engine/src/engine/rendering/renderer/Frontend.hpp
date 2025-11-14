@@ -32,6 +32,7 @@ public:
     void bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx = -1);
     void unbindFrameBuffer(renderID frameBufferInstanceID, bool cubemap = false);
     void bindMaterial(renderID materialRenderID);
+    // TODO: rename to match setActiveProgram command
     void changeUsedProgram(ProgramType program);
     void initPostProcessing(renderID frameBufferID);
     void setUniform(char* uniformName, bool value);

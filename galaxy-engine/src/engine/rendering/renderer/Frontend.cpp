@@ -36,8 +36,10 @@ void Frontend::processCanvas()
         clear(clearColor);
         setViewMatrix(canva.viewMat);
         setProjectionMatrix(canva.projectionMat);
+        changeUsedProgram(ProgramType::PBR);
 
         dumpCommandsToBuffer(canva);
+        unbindFrameBuffer(canva.framebufferID, canva.cubemapIdx >= 0);
     }
 
     m_canvas.clear();
@@ -218,7 +220,7 @@ void Frontend::initPostProcessing(renderID frameBufferID)
     command.initPostProcess = postProcComm;
 
     // TODO: make it work with canvaRender
-    m_frontBuffer->push_back(command);
+    pushCommand(command);
 }
 
 void Frontend::setUniform(char* uniformName, bool value)
@@ -266,6 +268,9 @@ void Frontend::dumpCommandsToBuffer(RenderCanva& canva)
     DistCompare::camPosition = vec3(canva.viewMat[3]);
 
     std::priority_queue<std::pair<renderID, RenderCommand>, std::vector<std::pair<renderID, RenderCommand>>, DistCompare> transparentPQ;
+
+    for (auto& command : canva.commands)
+        m_frontBuffer->push_back(command);
 
     for (auto& queue : canva.materialToSubmitCommand) {
         auto matID = queue.first;

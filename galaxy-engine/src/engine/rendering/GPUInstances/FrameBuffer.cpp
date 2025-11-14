@@ -118,6 +118,7 @@ void FrameBuffer::invalidate()
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     GLX_CORE_ASSERT(complete, "Framebuffer not complete");
 
+    unbind();
     checkOpenGLErrors("Frame buffer creation");
 }
 

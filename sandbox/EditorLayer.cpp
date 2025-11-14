@@ -49,7 +49,6 @@ void EditorLayer::onAttach()
 
     auto& renderer = Renderer::getInstance();
     renderer.resize(width, height);
-    m_viewportFrameID = renderer.instanciateFrameBuffer(width, height, FramebufferTextureFormat::DEPTH24RGBA8);
 
     InputManager::addAction(Action(GLX_KEY_ESCAPE, "editor_exit"));
     InputManager::addAction(Action(GLX_KEY_W, "editor_forward"));
@@ -94,9 +93,6 @@ void EditorLayer::onUpdate()
         // m_selectedScene->getNodePtr()->draw();
 
         renderer.endSceneRender();
-        Renderer::getInstance().bindFrameBuffer(m_viewportFrameID);
-        Renderer::getInstance().applyPostProcessing();
-        Renderer::getInstance().unbindFrameBuffer(m_viewportFrameID);
 
         renderer.renderFrame();
     }
@@ -197,9 +193,9 @@ void EditorLayer::displayViewport(bool validScene)
         // TODO: bad design if I have to use textureID outside of Renderer. Will cause problem when multithreading renderer.
         unsigned int textureID;
         if (m_disablePostProcessing)
-            textureID = Renderer::getInstance().getSceneFrameBufferTextureID();
+            textureID = Renderer::getInstance().getRawSceneTextureID();
         else
-            textureID = Renderer::getInstance().getFrameBufferTextureID(m_viewportFrameID);
+            textureID = Renderer::getInstance().getPostProcSceneTextureID();
         ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 1, 1 }, ImVec2 { 0, 0 });
     } else {
         ImGui::PopStyleVar();

@@ -13,9 +13,14 @@ uniform mat4 model;
 
 void main()
 {
-    TexCoords              = vertices_position_modelspace;
-    mat4 viewNoTranslation = mat4(mat3(view));
-    gl_Position            = projection * viewNoTranslation * vec4(vertices_position_modelspace, 1.0);
+    mat4 viewNoTranslation = view;
+    viewNoTranslation[3]   = vec4(0.0, 0.0, 0.0, 1.0);
+
+    TexCoords = vertices_position_modelspace;
+
+    vec4 pos = projection * viewNoTranslation * vec4(vertices_position_modelspace, 1.0);
+
+    gl_Position = pos.xyww;
 }
 ///////////////////////////////////////////////////////////
 
@@ -30,5 +35,6 @@ uniform samplerCube skybox;
 
 void main()
 {
-    color = texture(skybox, TexCoords);
+    vec3 sampleDir = normalize(TexCoords);
+    color          = texture(skybox, sampleDir);
 }

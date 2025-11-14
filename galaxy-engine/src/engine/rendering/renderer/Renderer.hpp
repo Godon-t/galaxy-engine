@@ -59,23 +59,23 @@ public:
 
     inline void setUniform(char* uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
 
-    // TODO: Make a post processing object ?
+    // TODO: Resizing unbind framebuffer
     void resize(unsigned int width, unsigned int height)
     {
         m_backend.resizeFrameBuffer(m_sceneFrameBufferID, width, height);
+        m_backend.resizeFrameBuffer(m_postProcessingBufferID, width, height);
     }
 
     inline void submitPBR(renderID meshID, renderID materialID, const Transform& transform) { m_frontend.submitPBR(meshID, materialID, transform); }
     void renderFromPoint(vec3 position, Node& root, renderID targetCubemapID);
     void applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter);
 
-    void applyPostProcessing();
-
     inline int getDrawCallsCount() { return m_drawCount; }
 
     // TODO: remove ASAP
     inline unsigned int getFrameBufferTextureID(renderID frameBufferID) { return m_backend.getFrameBufferTextureID(frameBufferID); }
-    inline unsigned int getSceneFrameBufferTextureID() { return m_backend.getFrameBufferTextureID(m_sceneFrameBufferID); }
+    inline unsigned int getRawSceneTextureID() { return m_backend.getFrameBufferTextureID(m_sceneFrameBufferID); }
+    inline unsigned int getPostProcSceneTextureID() { return m_backend.getFrameBufferTextureID(m_postProcessingBufferID); }
 
 private:
     Renderer();
@@ -83,6 +83,7 @@ private:
 
     void switchCommandBuffer();
 
+    void applyPostProcessing();
     // TODO: double buffering of commands not used currently (no multithreading)
     std::vector<std::vector<RenderCommand>> m_commandBuffers;
     int m_frontCommandBufferIdx;
@@ -91,7 +92,11 @@ private:
     Backend m_backend;
 
     renderID m_sceneFrameBufferID;
+    renderID m_postProcessingBufferID;
     renderID m_postProcessingQuadID;
+
+    mat4 m_currentView;
+    mat4 m_currentProj;
 
     vec3 m_cubemap_orientations[6], m_cubemap_ups[6];
 

@@ -9,7 +9,7 @@ SpotLight::SpotLight(std::string name)
     : Node3D(name)
     , m_lightID(0)
     , m_shadowMapID(0)
-    , m_visualCubeID(0)
+    , m_visualPyramidID(0)
     , m_intensity(1.0f)
     , m_color(vec3(1.0f, 1.0f, 1.0f))
     , m_cutoffAngle(45.0f)
@@ -28,9 +28,9 @@ SpotLight::~SpotLight()
         m_shadowMapID = 0;
     }
     
-    if (m_visualCubeID != 0) {
-        Renderer::getInstance().clearMesh(m_visualCubeID);
-        m_visualCubeID = 0;
+    if (m_visualPyramidID != 0) {
+        Renderer::getInstance().clearMesh(m_visualPyramidID);
+        m_visualPyramidID = 0;
     }
     
     // TODO: Unregister light from LightManager when implemented
@@ -51,9 +51,10 @@ void SpotLight::enteredRoot()
         );
     }
     
-    // Créer le cube de visualisation
-    if (m_visualCubeID == 0) {
-        m_visualCubeID = Renderer::getInstance().generateCube(0.2f, false, []() {});
+    // Créer la pyramide de visualisation
+    // La base de la pyramide est orientée dans la direction de projection (vers -Z local)
+    if (m_visualPyramidID == 0) {
+        m_visualPyramidID = Renderer::getInstance().generatePyramid(0.3f, 0.5f, []() {});
         m_initialized = true;
     }
 }
@@ -65,9 +66,9 @@ void SpotLight::accept(Galaxy::NodeVisitor& visitor)
 
 void SpotLight::draw()
 {
-    // Dessiner le cube de visualisation si initialisé
-    if (m_initialized && m_visualCubeID != 0) {
-        Renderer::getInstance().submit(m_visualCubeID, m_transform);
+    // Dessiner la pyramide de visualisation si initialisé
+    if (m_initialized && m_visualPyramidID != 0) {
+        Renderer::getInstance().submit(m_visualPyramidID, m_transform);
     }
     
     // Appeler le draw de la classe parente pour dessiner les enfants

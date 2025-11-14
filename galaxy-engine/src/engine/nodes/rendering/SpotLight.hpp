@@ -9,7 +9,7 @@ class SpotLight : public Node3D {
 private:
     lightID m_lightID;
     renderID m_shadowMapID;
-    renderID m_visualCubeID;  // Mesh ID pour le cube de visualisation
+    renderID m_visualPyramidID;  // Mesh ID for the pyramid visualisation
     
     float m_intensity;
     vec3 m_color;

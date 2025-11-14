@@ -44,6 +44,7 @@ public:
 
     inline renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback) { return m_backend.generateCube(dimmension, inward, destroyCallback); }
     inline renderID generateQuad(vec2 dimmensions, std::function<void()> destroyCallback) { return m_backend.generateQuad(dimmensions, destroyCallback); }
+    inline renderID generatePyramid(float baseSize, float height, std::function<void()> destroyCallback) { return m_backend.generatePyramid(baseSize, height, destroyCallback); }
 
     inline renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces) { return m_backend.instanciateCubemap(faces); }
     inline renderID instanciateCubemap() { return m_backend.instanciateCubemap(); }

@@ -98,6 +98,7 @@ public:
 
     renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback);
     renderID generateQuad(vec2 dimmensions, std::function<void()> destroyCallback);
+    renderID generatePyramid(float baseSize, float height, std::function<void()> destroyCallback);
 
     renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces);
     renderID instanciateCubemap();

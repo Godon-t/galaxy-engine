@@ -9,6 +9,7 @@ SpotLight::SpotLight(std::string name)
     : Node3D(name)
     , m_lightID(0)
     , m_shadowMapID(0)
+    , m_visualCubeID(0)
     , m_intensity(1.0f)
     , m_color(vec3(1.0f, 1.0f, 1.0f))
     , m_cutoffAngle(45.0f)
@@ -16,6 +17,7 @@ SpotLight::SpotLight(std::string name)
     , m_range(10.0f)
     , m_castShadows(true)
     , m_shadowMapResolution(1024)
+    , m_initialized(false)
 {
 }
 
@@ -24,6 +26,11 @@ SpotLight::~SpotLight()
     if (m_shadowMapID != 0) {
         Renderer::getInstance().clearFrameBuffer(m_shadowMapID);
         m_shadowMapID = 0;
+    }
+    
+    if (m_visualCubeID != 0) {
+        Renderer::getInstance().clearMesh(m_visualCubeID);
+        m_visualCubeID = 0;
     }
     
     // TODO: Unregister light from LightManager when implemented
@@ -43,11 +50,28 @@ void SpotLight::enteredRoot()
             FramebufferTextureFormat::DEPTH24STENCIL8
         );
     }
+    
+    // Créer le cube de visualisation
+    if (m_visualCubeID == 0) {
+        m_visualCubeID = Renderer::getInstance().generateCube(0.2f, false, []() {});
+        m_initialized = true;
+    }
 }
 
 void SpotLight::accept(Galaxy::NodeVisitor& visitor)
 {
     visitor.visit(*this);
+}
+
+void SpotLight::draw()
+{
+    // Dessiner le cube de visualisation si initialisé
+    if (m_initialized && m_visualCubeID != 0) {
+        Renderer::getInstance().submit(m_visualCubeID, m_transform);
+    }
+    
+    // Appeler le draw de la classe parente pour dessiner les enfants
+    Node3D::draw();
 }
 
 void SpotLight::setCastShadows(bool castShadows)

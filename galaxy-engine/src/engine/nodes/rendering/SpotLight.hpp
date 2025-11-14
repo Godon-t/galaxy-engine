@@ -9,6 +9,7 @@ class SpotLight : public Node3D {
 private:
     lightID m_lightID;
     renderID m_shadowMapID;
+    renderID m_visualCubeID;  // Mesh ID pour le cube de visualisation
     
     float m_intensity;
     vec3 m_color;
@@ -18,6 +19,7 @@ private:
     
     bool m_castShadows;
     unsigned int m_shadowMapResolution;
+    bool m_initialized;
 
 protected:
     virtual void enteringRoot() override;
@@ -29,7 +31,7 @@ public:
 
     void accept(Galaxy::NodeVisitor& visitor) override;
 
-    inline virtual void draw() override { Node3D::draw(); }
+    inline virtual void draw() override;
 
     vec3 getDirection() const;
     mat4 getLightSpaceMatrix() const;

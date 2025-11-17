@@ -147,6 +147,7 @@ private:
     ProgramSkybox m_skyboxProgram;
     ProgramSkybox m_irradianceProgram;
     ProgramTexture m_textureProgram;
+    ProgramUnicolor m_unicolorProgram;
     ProgramPostProc m_postProcessingProgram;
     Program* m_activeProgram;
 

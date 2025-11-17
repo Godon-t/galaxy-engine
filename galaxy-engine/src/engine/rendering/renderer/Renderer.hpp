@@ -59,6 +59,7 @@ public:
     inline FramebufferTextureFormat getFramebufferFormat(renderID framebufferID) { return m_backend.getFramebufferFormat(framebufferID); }
 
     inline void setUniform(char* uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
+    inline void setUnicolorObjectColor(const vec3& color) { m_frontend.setUnicolorObjectColor(color); }
 
     // TODO: Resizing unbind framebuffer
     void resize(unsigned int width, unsigned int height)

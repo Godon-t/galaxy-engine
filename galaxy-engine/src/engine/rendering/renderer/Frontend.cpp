@@ -236,6 +236,21 @@ void Frontend::setUniform(char* uniformName, bool value)
     pushCommand(command);
 }
 
+void Frontend::setUnicolorObjectColor(const vec3& color)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = (char*)"objectColor";
+    uniformCommand.type        = VEC3;
+    uniformCommand.valueVec3.x = color.r;
+    uniformCommand.valueVec3.y = color.g;
+    uniformCommand.valueVec3.z = color.b;
+    RenderCommand command;
+    command.type       = RenderCommandType::SetUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
 void Frontend::submitPBR(renderID meshID, renderID materialID, const Transform& transform)
 {
     DrawCommand drawCommand;

@@ -83,13 +83,17 @@ struct InitPostProcessCommand {
 };
 
 enum SetValueTypes {
-    BOOL
+    BOOL,
+    VEC3
 };
 struct SetUniformCommand {
     SetValueTypes type;
     char* uniformName;
     union {
         bool valueBool;
+        struct {
+            float x, y, z;
+        } valueVec3;
     };
 };
 

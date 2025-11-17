@@ -36,6 +36,7 @@ public:
     void changeUsedProgram(ProgramType program);
     void initPostProcessing(renderID frameBufferID);
     void setUniform(char* uniformName, bool value);
+    void setUnicolorObjectColor(const vec3& color);
 
     void submitPBR(renderID meshID, renderID materialID, const Transform& transform);
 

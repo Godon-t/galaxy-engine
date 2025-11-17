@@ -37,6 +37,7 @@ Backend::Backend(size_t maxSize)
     m_skyboxProgram         = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
     m_irradianceProgram     = std::move(ProgramSkybox(engineRes("shaders/filters/irradiance.glsl")));
     m_textureProgram        = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
+    m_unicolorProgram       = std::move(ProgramUnicolor(engineRes("shaders/unicolor.glsl")));
     m_postProcessingProgram = std::move(ProgramPostProc(engineRes("shaders/post_processing.glsl")));
 
     m_activeProgram = &m_mainProgram;
@@ -458,6 +459,9 @@ void Backend::processCommand(SetViewCommand& setViewCommand)
     m_textureProgram.use();
     m_textureProgram.updateViewMatrix(setViewCommand.view);
 
+    m_unicolorProgram.use();
+    m_unicolorProgram.updateViewMatrix(setViewCommand.view);
+
     m_skyboxProgram.use();
     m_skyboxProgram.updateViewMatrix(setViewCommand.view);
 
@@ -477,6 +481,9 @@ void Backend::setProjectionMatrix(const mat4& projectionMatrix)
 
     m_textureProgram.use();
     m_textureProgram.updateProjectionMatrix(projectionMatrix);
+
+    m_unicolorProgram.use();
+    m_unicolorProgram.updateProjectionMatrix(projectionMatrix);
 
     m_skyboxProgram.use();
     m_skyboxProgram.updateProjectionMatrix(projectionMatrix);
@@ -502,6 +509,8 @@ void Backend::processCommand(SetActiveProgramCommand& command)
         m_activeProgram = &m_mainProgram;
     else if (command.program == TEXTURE)
         m_activeProgram = &m_textureProgram;
+    else if (command.program == UNICOLOR)
+        m_activeProgram = &m_unicolorProgram;
     else if (command.program == POST_PROCESSING)
         m_activeProgram = &m_postProcessingProgram;
     else if (command.program == FILTER_IRRADIANCE)
@@ -604,6 +613,9 @@ void Backend::processCommand(SetUniformCommand& command)
 {
     if (command.type == SetValueTypes::BOOL) {
         glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueBool ? GL_TRUE : GL_FALSE);
+    } else if (command.type == SetValueTypes::VEC3) {
+        glUniform3f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), 
+                    command.valueVec3.x, command.valueVec3.y, command.valueVec3.z);
     }
 }
 

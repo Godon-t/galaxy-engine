@@ -265,6 +265,17 @@ ProgramTexture::ProgramTexture(std::string path)
 {
 }
 
+ProgramUnicolor::ProgramUnicolor(std::string path)
+    : Program(path)
+{
+    m_colorLocation = glGetUniformLocation(getProgramID(), "objectColor");
+}
+
+void ProgramUnicolor::setColor(const vec3& color)
+{
+    glUniform3f(m_colorLocation, color.r, color.g, color.b);
+}
+
 ProgramPostProc::ProgramPostProc(std::string path)
     : Program(path)
 {

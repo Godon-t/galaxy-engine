@@ -13,6 +13,7 @@ enum ProgramType {
     PBR,
     SKYBOX,
     TEXTURE,
+    UNICOLOR,
     POST_PROCESSING,
     FILTER_IRRADIANCE
 };

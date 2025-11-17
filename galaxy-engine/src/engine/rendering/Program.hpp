@@ -66,6 +66,17 @@ public:
     ProgramType type() const override { return ProgramType::TEXTURE; }
 };
 
+class ProgramUnicolor : public Program {
+public:
+    ProgramUnicolor() = default;
+    ProgramUnicolor(std::string path);
+    void setColor(const vec3& color);
+    ProgramType type() const override { return ProgramType::UNICOLOR; }
+
+private:
+    unsigned int m_colorLocation;
+};
+
 class ProgramSkybox : public Program {
 public:
     ProgramSkybox() = default;

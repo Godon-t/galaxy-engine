@@ -68,7 +68,11 @@ void SpotLight::draw()
 {
     // Dessiner la pyramide de visualisation si initialisé
     if (m_initialized && m_visualPyramidID != 0) {
+        Renderer::getInstance().changeUsedProgram(UNICOLOR);
+        Renderer::getInstance().setUnicolorObjectColor(m_color);
         Renderer::getInstance().submit(m_visualPyramidID, m_transform);
+        // Revenir au shader PBR par défaut
+        Renderer::getInstance().changeUsedProgram(PBR);
     }
     
     // Appeler le draw de la classe parente pour dessiner les enfants

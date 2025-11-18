@@ -51,12 +51,14 @@ public:
     ProgramPBR() = default;
     ProgramPBR(std::string path);
     void updateMaterial(MaterialInstance& mat, std::array<Texture, TextureType::COUNT>& materialTextures);
+    void setLightSpaceMatrix(const mat4& lightSpaceMatrix);
     ProgramType type() const override { return ProgramType::PBR; }
 
 private:
     unsigned int albedoLocation, metallicLocation, roughnessLocation, ambientLocation, transparencyLocation;
     unsigned int albedoTexLocation, metallicTexLocation, roughnessTexLocation, ambientTexLocation, normalTexLocation;
     unsigned int useAlbedoMapLocation, useNormalMapLocation, useMetallicMapLocation, useRoughnessMapLocation, useAmbientMapLocation;
+    unsigned int lightSpaceMatrixLocation;
 };
 
 class ProgramTexture : public Program {
@@ -98,5 +100,17 @@ public:
 private:
     unsigned int m_depthLocation;
     unsigned int m_colorLocation;
+};
+
+class ProgramShadow : public Program {
+public:
+    ProgramShadow() = default;
+    ProgramShadow(std::string path);
+    ProgramType type() const override { return ProgramType::SHADOW_DEPTH; }
+    
+    void setLightSpaceMatrix(const mat4& lightSpaceMatrix);
+
+private:
+    unsigned int m_lightSpaceMatrixLocation;
 };
 }

@@ -25,6 +25,13 @@ public:
 
     void endSceneRender();
 
+    void beginShadowPass(const vec3& lightPosition, const vec3& lightDirection, float fov, float nearPlane, float farPlane);
+    void endShadowPass();
+    void bindShadowMap(renderID shadowMapTextureID);
+    void setLightSpaceMatrix(const mat4& lightSpaceMatrix);
+    inline mat4 getLightSpaceMatrix() const { return m_lightSpaceMatrix; }
+    renderID getShadowMapTextureID();
+
     void renderFrame();
 
     inline void submit(renderID meshID, const Transform& transform) { m_frontend.submit(meshID, transform); }
@@ -52,6 +59,7 @@ public:
     inline void bindCubemap(renderID cubemapInstanceID, char* uniformName) { return m_frontend.bindCubemap(cubemapInstanceID, uniformName); }
 
     inline renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format) { return m_backend.instanciateFrameBuffer(width, height, format); }
+    inline renderID instanciateShadowMapFrameBuffer(unsigned int width, unsigned int height) { return m_backend.instanciateShadowMapFrameBuffer(width, height); }
     inline void clearFrameBuffer(renderID frameBufferID) { m_backend.clearFrameBuffer(frameBufferID); }
     inline void bindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.bindFrameBuffer(frameBufferInstanceID); }
     inline void unbindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.unbindFrameBuffer(frameBufferInstanceID); }
@@ -73,6 +81,8 @@ public:
     void applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter);
 
     inline int getDrawCallsCount() { return m_drawCount; }
+
+    inline renderID getShadowMapFrameBufferID() const { return m_shadowMapFrameBufferID; }
 
     // TODO: remove ASAP
     inline unsigned int getFrameBufferTextureID(renderID frameBufferID) { return m_backend.getFrameBufferTextureID(frameBufferID); }
@@ -96,6 +106,10 @@ private:
     renderID m_sceneFrameBufferID;
     renderID m_postProcessingBufferID;
     renderID m_postProcessingQuadID;
+    
+    renderID m_shadowMapFrameBufferID;
+    renderID m_shadowMapTextureID;
+    mat4 m_lightSpaceMatrix;
 
     mat4 m_currentView;
     mat4 m_currentProj;

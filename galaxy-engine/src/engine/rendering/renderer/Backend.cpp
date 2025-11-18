@@ -39,6 +39,7 @@ Backend::Backend(size_t maxSize)
     m_textureProgram        = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
     m_unicolorProgram       = std::move(ProgramUnicolor(engineRes("shaders/unicolor.glsl")));
     m_postProcessingProgram = std::move(ProgramPostProc(engineRes("shaders/post_processing.glsl")));
+    m_shadowProgram         = std::move(ProgramShadow(engineRes("shaders/shadow_depth.glsl")));
 
     m_activeProgram = &m_mainProgram;
 
@@ -382,6 +383,61 @@ renderID Backend::instantiateCubemapFrameBuffer(unsigned int size)
     return frameBufferID;
 }
 
+renderID Backend::instanciateShadowMapFrameBuffer(unsigned int width, unsigned int height)
+{
+    renderID frameBufferID = m_frameBufferInstances.createResourceInstance();
+    auto* frameBuffer = m_frameBufferInstances.get(frameBufferID);
+    
+    // Créer le framebuffer
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    
+    // Créer uniquement la texture de profondeur
+    GLuint depthTexture;
+    glGenTextures(1, &depthTexture);
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    
+    // Configurer la texture de profondeur avec les paramètres optimisés pour shadow mapping
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, 
+                 GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    
+    // Paramètres de filtrage pour shadow map (LINEAR pour PCF)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    // Clamp to border pour éviter les artefacts en dehors de la shadow map
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    
+    // Définir la couleur de bordure à 1.0 (pas d'ombre en dehors)
+    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    
+    // Activer la comparaison de profondeur pour shadow mapping
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    
+    // Attacher la texture de profondeur au framebuffer
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+    
+    // Dire à OpenGL qu'on n'utilise pas de color buffer
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    
+    // Vérifier que le framebuffer est complet
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    GLX_CORE_ASSERT(status == GL_FRAMEBUFFER_COMPLETE, "Shadow map framebuffer not complete!");
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    
+    // Stocker les informations dans l'instance
+    frameBuffer->setFormat(FramebufferTextureFormat::DEPTH24STENCIL8);
+    
+    checkOpenGLErrors("Instantiate shadow map frameBuffer");
+    return frameBufferID;
+}
+
 void Backend::clearFrameBuffer(renderID frameBufferID)
 {
     if (!m_frameBufferInstances.tryRemove(frameBufferID))
@@ -408,6 +464,11 @@ FramebufferTextureFormat Backend::getFramebufferFormat(renderID id)
 unsigned int Backend::getFrameBufferTextureID(renderID frameBufferID)
 {
     return m_frameBufferInstances.get(frameBufferID)->getColorTextureID();
+}
+
+unsigned int Backend::getFrameBufferDepthTextureID(renderID frameBufferID)
+{
+    return m_frameBufferInstances.get(frameBufferID)->getDepthTextureID();
 }
 
 renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
@@ -515,6 +576,8 @@ void Backend::processCommand(SetActiveProgramCommand& command)
         m_activeProgram = &m_postProcessingProgram;
     else if (command.program == FILTER_IRRADIANCE)
         m_activeProgram = &m_irradianceProgram;
+    else if (command.program == SHADOW_DEPTH)
+        m_activeProgram = &m_shadowProgram;
     else
         GLX_CORE_ASSERT(false, "unknown asked program!");
 

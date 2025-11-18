@@ -44,10 +44,9 @@ void SpotLight::enteringRoot()
 void SpotLight::enteredRoot()
 {
     if (m_castShadows && m_shadowMapID == 0) {
-        m_shadowMapID = Renderer::getInstance().instanciateFrameBuffer(
+        m_shadowMapID = Renderer::getInstance().instanciateShadowMapFrameBuffer(
             m_shadowMapResolution,
-            m_shadowMapResolution,
-            FramebufferTextureFormat::DEPTH24STENCIL8
+            m_shadowMapResolution
         );
     }
     
@@ -90,10 +89,9 @@ void SpotLight::setCastShadows(bool castShadows)
     // Créer ou détruire la shadowmap selon le besoin
     if (Node::nodeExists(this->id) && getInRoot()) { // si le nœud est dans la scène et existe
         if (m_castShadows && m_shadowMapID == 0) {
-            m_shadowMapID = Renderer::getInstance().instanciateFrameBuffer(
+            m_shadowMapID = Renderer::getInstance().instanciateShadowMapFrameBuffer(
                 m_shadowMapResolution,
-                m_shadowMapResolution,
-                FramebufferTextureFormat::DEPTH24STENCIL8
+                m_shadowMapResolution
             );
         } else if (!m_castShadows && m_shadowMapID != 0) {
             Renderer::getInstance().clearFrameBuffer(m_shadowMapID);

@@ -106,6 +106,7 @@ public:
 
     renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format);
     renderID instantiateCubemapFrameBuffer(unsigned int size);
+    renderID instanciateShadowMapFrameBuffer(unsigned int width, unsigned int height);
     void clearFrameBuffer(renderID frameBufferID);
     void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height);
     // TODO: Wrong way ?
@@ -113,6 +114,7 @@ public:
 
     void setProjectionMatrix(const mat4& projectionMatrix);
     unsigned int getFrameBufferTextureID(renderID frameBufferID);
+    unsigned int getFrameBufferDepthTextureID(renderID frameBufferID);
 
     void destroy();
 
@@ -149,6 +151,7 @@ private:
     ProgramTexture m_textureProgram;
     ProgramUnicolor m_unicolorProgram;
     ProgramPostProc m_postProcessingProgram;
+    ProgramShadow m_shadowProgram;
     Program* m_activeProgram;
 
     friend class Renderer;

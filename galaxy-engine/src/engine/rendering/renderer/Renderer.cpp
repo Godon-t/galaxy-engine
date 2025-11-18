@@ -18,6 +18,10 @@ Renderer::Renderer()
     m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8);
     m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
     m_postProcessingQuadID   = m_backend.generateQuad(vec2(2, 2), [] {});
+    
+    // Créer une shadow map de 2048x2048 par défaut
+    m_shadowMapFrameBufferID = m_backend.instanciateShadowMapFrameBuffer(2048, 2048);
+    m_shadowMapTextureID     = 0; // Sera défini plus tard si nécessaire
 
     m_cubemap_orientations[0] = { 1, 0, 0 };
     m_cubemap_orientations[1] = { -1, 0, 0 };
@@ -63,6 +67,63 @@ void Renderer::endSceneRender()
     m_frontend.endCanva();
     applyPostProcessing();
     m_frontend.processCanvas();
+}
+
+void Renderer::beginShadowPass(const vec3& lightPosition, const vec3& lightDirection, float fov, float nearPlane, float farPlane)
+{
+    // Créer la matrice de projection en perspective pour la lumière
+    mat4 lightProjection = glm::perspective(glm::radians(fov), 1.0f, nearPlane, farPlane);
+    
+    // Créer la matrice de vue depuis la position de la lumière
+    vec3 up = vec3(0, 1, 0);
+    // Éviter que up soit parallèle à direction
+    if (abs(dot(lightDirection, up)) > 0.99f) {
+        up = vec3(1, 0, 0);
+    }
+    
+    mat4 lightView = glm::lookAt(lightPosition, lightPosition + lightDirection, up);
+    
+    // Calculer la matrice lightSpace
+    m_lightSpaceMatrix = lightProjection * lightView;
+    
+    // Commencer un canvas spécial pour la shadow map
+    m_frontend.beginCanva(lightView, lightProjection, m_shadowMapFrameBufferID, FramebufferTextureFormat::DEPTH24STENCIL8);
+    
+    // Clear la shadow map
+    vec4 clearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    m_frontend.clear(clearColor);
+    
+    // Changer pour le shader de profondeur
+    m_frontend.changeUsedProgram(ProgramType::SHADOW_DEPTH);
+}
+
+void Renderer::endShadowPass()
+{
+    // Terminer le canvas de shadow map
+    m_frontend.endCanva();
+    
+    // Revenir au shader PBR par défaut
+    m_frontend.changeUsedProgram(ProgramType::PBR);
+}
+
+void Renderer::bindShadowMap(renderID shadowMapTextureID)
+{
+    // Lier la texture de shadow map au shader PBR
+    m_frontend.bindTexture(shadowMapTextureID, "shadowMap");
+}
+
+void Renderer::setLightSpaceMatrix(const mat4& lightSpaceMatrix)
+{
+    m_lightSpaceMatrix = lightSpaceMatrix;
+    // Définir la matrice dans le shader PBR
+    if (m_backend.m_mainProgram.type() == ProgramType::PBR) {
+        m_backend.m_mainProgram.setLightSpaceMatrix(lightSpaceMatrix);
+    }
+}
+
+renderID Renderer::getShadowMapTextureID()
+{
+    return m_backend.getFrameBufferDepthTextureID(m_shadowMapFrameBufferID);
 }
 
 void Renderer::applyPostProcessing()

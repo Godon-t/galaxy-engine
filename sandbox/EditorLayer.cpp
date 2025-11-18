@@ -129,7 +129,7 @@ void EditorLayer::onUpdate()
         if (mainLight && mainLight->getCastShadows()) {
             // Bind shadow map and set light space matrix
             renderID shadowTexture = renderer.getShadowMapTextureID();
-            renderer.bindShadowMap(shadowTexture);
+            renderer.bindTexture(shadowTexture, const_cast<char*>("shadowMap"));
             renderer.setLightSpaceMatrix(renderer.getLightSpaceMatrix());
         }
 

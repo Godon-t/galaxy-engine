@@ -385,22 +385,15 @@ renderID Backend::instantiateCubemapFrameBuffer(unsigned int size)
 
 renderID Backend::instanciateShadowMapFrameBuffer(unsigned int width, unsigned int height)
 {
-    renderID frameBufferID = m_frameBufferInstances.createResourceInstance();
+    // Créer un framebuffer standard avec format depth-only
+    renderID frameBufferID = instanciateFrameBuffer(width, height, FramebufferTextureFormat::DEPTH24STENCIL8);
     auto* frameBuffer = m_frameBufferInstances.get(frameBufferID);
     
-    // Créer le framebuffer
-    GLuint fbo;
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    // Obtenir l'ID de la texture de profondeur
+    GLuint depthTexture = frameBuffer->getDepthTextureID();
     
-    // Créer uniquement la texture de profondeur
-    GLuint depthTexture;
-    glGenTextures(1, &depthTexture);
+    // Reconfigurer la texture de profondeur avec des paramètres optimisés pour shadow mapping
     glBindTexture(GL_TEXTURE_2D, depthTexture);
-    
-    // Configurer la texture de profondeur avec les paramètres optimisés pour shadow mapping
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, 
-                 GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
     
     // Paramètres de filtrage pour shadow map (LINEAR pour PCF)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -414,27 +407,9 @@ renderID Backend::instanciateShadowMapFrameBuffer(unsigned int width, unsigned i
     float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
     
-    // Activer la comparaison de profondeur pour shadow mapping
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    glBindTexture(GL_TEXTURE_2D, 0);
     
-    // Attacher la texture de profondeur au framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
-    
-    // Dire à OpenGL qu'on n'utilise pas de color buffer
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    
-    // Vérifier que le framebuffer est complet
-    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    GLX_CORE_ASSERT(status == GL_FRAMEBUFFER_COMPLETE, "Shadow map framebuffer not complete!");
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    
-    // Stocker les informations dans l'instance
-    frameBuffer->setFormat(FramebufferTextureFormat::DEPTH24STENCIL8);
-    
-    checkOpenGLErrors("Instantiate shadow map frameBuffer");
+    checkOpenGLErrors("Configure shadow map frameBuffer");
     return frameBufferID;
 }
 

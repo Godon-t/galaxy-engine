@@ -109,7 +109,7 @@ void Renderer::endShadowPass()
 void Renderer::bindShadowMap(renderID shadowMapTextureID)
 {
     // Lier la texture de shadow map au shader PBR
-    m_frontend.bindTexture(shadowMapTextureID, "shadowMap");
+    m_frontend.bindTexture(shadowMapTextureID, const_cast<char*>("shadowMap"));
 }
 
 void Renderer::setLightSpaceMatrix(const mat4& lightSpaceMatrix)

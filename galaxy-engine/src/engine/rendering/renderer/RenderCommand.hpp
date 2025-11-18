@@ -15,11 +15,16 @@ enum RenderCommandType {
     useTexture,
     useCubemap,
     attachTextureToFramebuffer,
+    attachCubemapToFramebuffer,
     bindMaterial,
     bindFrameBuffer,
     unbindFrameBuffer,
     initPostProcess,
-    SetUniform
+    setUniform,
+    setViewport,
+    updateCubemap,
+
+    debugMsg
 };
 
 struct SetViewCommand {
@@ -65,6 +70,11 @@ struct AttachTextureToFramebufferCommand {
     bool isDepth = false;
 };
 
+struct AttachCubemapToFramebufferCommand {
+    renderID cubemapID;
+    renderID framebufferID;
+};
+
 struct BindMaterialCommand {
     renderID materialRenderID;
 };
@@ -93,7 +103,23 @@ struct SetUniformCommand {
     };
 };
 
+struct SetViewportCommand {
+    math::vec2 position;
+    math::vec2 size;
+};
+
+struct UpdateCubemapCommand {
+    renderID targetID;
+    unsigned int resolution;
+};
+
+struct DebugMsgCommand {
+    char* msg;
+};
+
 struct RenderCommand {
+    ~RenderCommand() = default;
+
     RenderCommand()
         : type(RenderCommandType::draw)
     {
@@ -112,10 +138,15 @@ struct RenderCommand {
         UseTextureCommand useTexture;
         UseCubemapCommand useCubemap;
         AttachTextureToFramebufferCommand attachTextureToFramebuffer;
+        AttachCubemapToFramebufferCommand attachCubemapToFramebuffer;
         BindMaterialCommand bindMaterial;
         BindFrameBufferCommand bindFrameBuffer;
         InitPostProcessCommand initPostProcess;
         SetUniformCommand setUniform;
+        SetViewportCommand setViewport;
+        UpdateCubemapCommand updateCubemap;
+
+        DebugMsgCommand debugMsg;
     };
 };
 } // namespace Galaxy

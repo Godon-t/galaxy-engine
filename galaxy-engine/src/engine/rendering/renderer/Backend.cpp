@@ -291,12 +291,6 @@ renderID Backend::generateQuad(vec2 dimmensions, std::function<void()> destroyCa
     return instanciateMesh(vertices, indices, destroyCallback);
 }
 
-renderID Backend::instanciateCubemap()
-{
-    renderID cubemapID = m_cubemapInstances.createResourceInstance();
-    return cubemapID;
-}
-
 void Backend::clearCubemap(renderID cubemapID)
 {
     if (!m_cubemapInstances.tryRemove(cubemapID))
@@ -346,6 +340,11 @@ void Backend::resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsi
     m_frameBufferInstances.get(frameBufferID)->resize(width, height);
 }
 
+void Backend::resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size)
+{
+    m_cubemapFrameBufferInstances.get(frameBufferID)->resize(size);
+}
+
 FramebufferTextureFormat Backend::getFramebufferFormat(renderID id)
 {
     return m_frameBufferInstances.get(id)->getFormat();
@@ -367,7 +366,6 @@ renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
         faces[i].getResource().onLoaded([faces, &cubemapInstance, i] {
             int w = faces[0].getResource().getWidth();
             int h = faces[0].getResource().getHeight();
-            // TODO: Cube map can only take shape of cube ?
             cubemapInstance.resize(w);
 
             auto& faceResource = faces[i].getResource();
@@ -379,6 +377,13 @@ renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
         });
     }
 
+    return cubemapID;
+}
+
+renderID Backend::instanciateCubemap(int resolution)
+{
+    renderID cubemapID = m_cubemapInstances.createResourceInstance();
+    m_cubemapInstances.get(cubemapID)->resize(resolution);
     return cubemapID;
 }
 
@@ -498,6 +503,12 @@ void Backend::processCommand(AttachTextureToFramebufferCommand& command)
     checkOpenGLErrors("Attach texture to framebuffer");
 }
 
+void Backend::processCommand(AttachCubemapToFramebufferCommand& command)
+{
+    // TODO: Beware of memory handling !!!
+    m_cubemapFrameBufferInstances.get(command.framebufferID)->attachCubemap(*m_cubemapInstances.get(command.cubemapID));
+}
+
 void Backend::processCommand(BindMaterialCommand& command)
 {
     GLX_CORE_ASSERT(m_activeProgram->type() == ProgramType::PBR, "PBR Program not active!");
@@ -554,40 +565,88 @@ void Backend::processCommand(SetUniformCommand& command)
     }
 }
 
+void Backend::processCommand(SetViewportCommand& command)
+{
+    glViewport((int)command.position.x, (int)command.position.y, (int)command.size.x, (int)command.size.y);
+}
+
+void Backend::processCommand(UpdateCubemapCommand& command)
+{
+    m_cubemapInstances.get(command.targetID)->resize(command.resolution);
+}
+
+void Backend::processCommand(DebugMsgCommand& command)
+{
+    GLX_CORE_TRACE(command.msg);
+    free(command.msg);
+}
+
 void Backend::processCommand(RenderCommand& command)
 {
-    if (command.type == RenderCommandType::setActiveProgram)
+    switch (command.type) {
+    case RenderCommandType::setActiveProgram:
         processCommand(command.setActiveProgram);
-    else if (command.type == RenderCommandType::clear)
+        break;
+    case RenderCommandType::clear:
         processCommand(command.clear);
-    else if (command.type == RenderCommandType::depthMask)
+        break;
+    case RenderCommandType::depthMask:
         processCommand(command.depthMask);
-    else if (command.type == RenderCommandType::setView)
+        break;
+    case RenderCommandType::setView:
         processCommand(command.setView);
-    else if (command.type == RenderCommandType::setProjection)
+        break;
+    case RenderCommandType::setProjection:
         processCommand(command.setProjection);
-    else if (command.type == RenderCommandType::rawDraw)
+        break;
+    case RenderCommandType::rawDraw:
         processCommand(command.rawDraw);
-    else if (command.type == RenderCommandType::draw)
+        break;
+    case RenderCommandType::draw:
         processCommand(command.draw);
-    else if (command.type == RenderCommandType::useTexture)
+        break;
+    case RenderCommandType::useTexture:
         processCommand(command.useTexture);
-    else if (command.type == RenderCommandType::useCubemap)
+        break;
+    case RenderCommandType::useCubemap:
         processCommand(command.useCubemap);
-    else if (command.type == RenderCommandType::attachTextureToFramebuffer)
+        break;
+    case RenderCommandType::attachTextureToFramebuffer:
         processCommand(command.attachTextureToFramebuffer);
-    else if (command.type == RenderCommandType::bindMaterial)
+        break;
+    case RenderCommandType::attachCubemapToFramebuffer:
+        processCommand(command.attachCubemapToFramebuffer);
+        break;
+    case RenderCommandType::bindMaterial:
         processCommand(command.bindMaterial);
-    else if (command.type == RenderCommandType::bindFrameBuffer)
+        break;
+    case RenderCommandType::bindFrameBuffer:
         processCommand(command.bindFrameBuffer, true);
-    else if (command.type == RenderCommandType::unbindFrameBuffer)
+        break;
+    case RenderCommandType::unbindFrameBuffer:
         processCommand(command.bindFrameBuffer, false);
-    else if (command.type == RenderCommandType::initPostProcess)
+        break;
+    case RenderCommandType::initPostProcess:
         processCommand(command.initPostProcess);
-    else if (command.type == RenderCommandType::SetUniform)
+        break;
+    case RenderCommandType::setUniform:
         processCommand(command.setUniform);
-    else
+        break;
+    case RenderCommandType::setViewport:
+        processCommand(command.setViewport);
+        break;
+    case RenderCommandType::updateCubemap:
+        processCommand(command.updateCubemap);
+        break;
+    case RenderCommandType::debugMsg:
+        processCommand(command.debugMsg);
+        break;
+    default:
         GLX_CORE_ERROR("Unknown render command");
+        break;
+    }
+
+    checkOpenGLErrors("Process command");
 }
 
 } // namespace Galaxy

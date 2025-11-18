@@ -23,6 +23,9 @@ public:
     void beginSceneRender(const mat4& camTransform, const vec2& dimmensions);
     void beginSceneRender(const vec3& camPosition, const vec3& camDirection, const vec3& camUp, const vec2& dimmensions);
 
+    inline void beginCanvaNoBuffer() { m_frontend.beginCanvaNoBuffer(); }
+    inline void endCanva() { m_frontend.endCanva(); }
+
     void endSceneRender();
 
     void renderFrame();
@@ -48,14 +51,18 @@ public:
     inline renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces) { return m_backend.instanciateCubemap(faces); }
     inline renderID instanciateCubemap() { return m_backend.instanciateCubemap(); }
     inline void clearCubemap(renderID cubemapID) { m_backend.clearCubemap(cubemapID); }
-    inline void bindCubemap(renderID cubemapInstanceID, char* uniformName) { return m_frontend.bindCubemap(cubemapInstanceID, uniformName); }
+    inline void useCubemap(renderID cubemapInstanceID, char* uniformName) { return m_frontend.useCubemap(cubemapInstanceID, uniformName); }
 
     inline renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format) { return m_backend.instanciateFrameBuffer(width, height, format); }
     inline void clearFrameBuffer(renderID frameBufferID) { m_backend.clearFrameBuffer(frameBufferID); }
     inline void bindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.bindFrameBuffer(frameBufferInstanceID); }
     inline void unbindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.unbindFrameBuffer(frameBufferInstanceID); }
     inline void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height) { m_backend.resizeFrameBuffer(frameBufferID, width, height); }
+    inline void resizeCubemapFrameBuffer(renderID framebufferID, unsigned int size) { m_backend.resizeCubemapFrameBuffer(framebufferID, size); }
+    inline void resizeCubemap(renderID targetID, unsigned int size) { m_frontend.updateCubemap(targetID, size); }
     inline FramebufferTextureFormat getFramebufferFormat(renderID framebufferID) { return m_backend.getFramebufferFormat(framebufferID); }
+
+    inline void debugMessage(std::string message) { m_frontend.addDebugMsg(message); }
 
     inline void setUniform(char* uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
 
@@ -94,6 +101,7 @@ private:
     renderID m_sceneFrameBufferID;
     renderID m_postProcessingBufferID;
     renderID m_postProcessingQuadID;
+    renderID m_cubemapFramebufferID;
 
     mat4 m_currentView;
     mat4 m_currentProj;

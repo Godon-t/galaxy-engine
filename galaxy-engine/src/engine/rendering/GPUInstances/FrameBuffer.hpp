@@ -40,6 +40,9 @@ private:
     unsigned int m_attachedDepth;
     int m_width, m_height;
 
+    bool m_externalColor = false;
+    bool m_externalDepth = false;
+
     void invalidate();
 };
 
@@ -48,6 +51,8 @@ public:
     CubemapFrameBuffer();
     CubemapFrameBuffer(int size);
     ~CubemapFrameBuffer() = default;
+
+    void attachCubemap(Cubemap cubemap);
 
     void bind(int idx);
     void unbind();

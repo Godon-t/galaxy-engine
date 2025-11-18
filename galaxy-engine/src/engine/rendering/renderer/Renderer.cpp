@@ -15,6 +15,7 @@ Renderer::Renderer()
     , m_frontend(&m_commandBuffers[m_frontCommandBufferIdx])
     , m_backend()
 {
+    m_cubemapFramebufferID   = m_backend.instantiateCubemapFrameBuffer(1024);
     m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8);
     m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
     m_postProcessingQuadID   = m_backend.generateQuad(vec2(2, 2), [] {});
@@ -153,33 +154,32 @@ void Renderer::applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, rend
 
 void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemapID)
 {
-    // switchCommandBuffer();
-    // m_commandBuffers[m_frontCommandBufferIdx].clear();
+    GLint viewport[4];
+    // TODO: Find a way to retrieve current viewport size or to restore after render
+    glGetIntegerv(GL_VIEWPORT, viewport);
 
-    // Cubemap& targetCubemap = *m_backend.m_cubemapInstances.get(targetCubemapID);
-    // targetCubemap.useFloat = true;
-    // targetCubemap.resize(2048);
-    // CubemapFrameBuffer cubemapBuffer(targetCubemap);
+    vec2 restorePos(viewport[0], viewport[1]);
+    vec2 restoreSize(viewport[2], viewport[3]);
 
-    // GLint viewport[4];
-    // glGetIntegerv(GL_VIEWPORT, viewport);
-    // glViewport(0, 0, targetCubemap.resolution, targetCubemap.resolution);
+    vec2 size(1024);
+    vec2 pos(0);
 
-    // mat4 baseProjection = m_frontend.getProjectionMatrix();
-    // mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);
-    // m_frontend.setProjectionMatrix(projection);
+    m_frontend.beginCanvaNoBuffer();
+    m_frontend.addDebugMsg("Rendering from point");
+    m_frontend.updateCubemap(targetCubemapID, 1024);
+    m_frontend.attachCubemapToFramebuffer(m_cubemapFramebufferID, targetCubemapID);
+    m_frontend.endCanva();
 
-    // for (int i = 0; i < 6; i++) {
-    //     cubemapBuffer.bind(i);
-    //     beginSceneRender(position, m_cubemap_orientations[i], m_cubemap_ups[i]);
-    //     root.draw();
-    //     endSceneRender();
-    //     renderFrame();
-    // }
-    // cubemapBuffer.unbind();
-    // cubemapBuffer.destroy();
+    mat4 projection = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);
+    for (int i = 0; i < 6; i++) {
+        auto viewMatrix = lookAt(position, position + m_cubemap_orientations[i], m_cubemap_ups[i]);
 
-    // m_frontend.setProjectionMatrix(baseProjection);
-    // glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+        m_frontend.beginCanva(viewMatrix, projection, m_cubemapFramebufferID, FramebufferTextureFormat::DEPTH24RGBA8, i);
+        // m_frontend.setViewport(pos, size);
+        // root.draw();
+        // m_frontend.setViewport(restorePos, restoreSize);
+        m_frontend.endCanva();
+    }
 }
+
 }

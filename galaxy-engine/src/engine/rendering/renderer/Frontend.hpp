@@ -14,9 +14,9 @@ class Frontend {
 public:
     Frontend(std::vector<RenderCommand>* commandBuffer);
 
+    void beginCanvaNoBuffer();
     void beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1);
     void endCanva();
-    void attachCurrentCanva(renderID targetTextureID);
     void processCanvas();
 
     void submit(renderID meshID);
@@ -28,7 +28,8 @@ public:
     void bindTexture(renderID textureInstanceID, char* uniformName);
     void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID);
     void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID);
-    void bindCubemap(renderID cubemapInstanceID, char* uniformName);
+    void attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID);
+    void useCubemap(renderID cubemapInstanceID, char* uniformName);
     void bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx = -1);
     void unbindFrameBuffer(renderID frameBufferInstanceID, bool cubemap = false);
     void bindMaterial(renderID materialRenderID);
@@ -36,6 +37,9 @@ public:
     void changeUsedProgram(ProgramType program);
     void initPostProcessing(renderID frameBufferID);
     void setUniform(char* uniformName, bool value);
+    void setViewport(vec2 position, vec2 dimmension);
+    void updateCubemap(renderID targetID, unsigned int resolution);
+    void addDebugMsg(std::string message);
 
     void submitPBR(renderID meshID, renderID materialID, const Transform& transform);
 
@@ -45,7 +49,7 @@ public:
     inline void removeMaterialID(renderID matID)
     {
         m_materialsTransparency.erase(matID);
-        m_materialToSubmitCommand.erase(matID);
+        // m_materialToSubmitCommand.erase(matID);
     }
 
 private:
@@ -63,8 +67,6 @@ private:
 
     std::vector<RenderCanva> m_canvas;
     size_t m_currentCanvaIdx;
-
-    std::unordered_map<renderID, std::vector<RenderCommand>> m_materialToSubmitCommand;
 
     std::vector<RenderCommand>* m_frontBuffer;
 

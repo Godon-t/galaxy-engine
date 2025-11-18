@@ -36,7 +36,7 @@ private:
 struct Cubemap {
     unsigned int cubemapID  = 0;
     unsigned int resolution = 0;
-    bool useFloat           = false;
+    bool useFloat           = true;
 
     Cubemap();
 

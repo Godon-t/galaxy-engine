@@ -9,9 +9,34 @@ namespace Galaxy {
 int Texture::s_currentFreeActivationInt = 0;
 int Texture::s_maxActivationInt         = 64;
 
+
 Texture::Texture(unsigned char* data, int width, int height, int nbChannels)
 {
     init(data, width, height, nbChannels);
+}
+
+void Texture::resize(int width, int height)
+{
+    if(m_id == 0){
+        glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
+
+        glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // Default to RGB8 internal format and RGB external format
+        m_internalFormat = GL_RGB8;
+        m_format = GL_RGB;
+
+        glTextureStorage2D(m_id, 1, m_internalFormat, width, height);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        checkOpenGLErrors("Texture resize with init");
+        return;
+    }
+    glBindTexture(GL_TEXTURE_2D, m_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, m_format, width, height, 0, m_format, GL_UNSIGNED_BYTE, nullptr);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    checkOpenGLErrors("Texture resize");
 }
 
 void Texture::init(unsigned char* data, int width, int height, int nbChannels)
@@ -42,8 +67,12 @@ void Texture::init(unsigned char* data, int width, int height, int nbChannels)
     glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTextureStorage2D(m_id, 1, internalFormat, width, height);
-    glTextureSubImage2D(m_id, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
+    // store formats on the object so later resize calls know which to use
+    m_internalFormat = internalFormat;
+    m_format = format;
+
+    glTextureStorage2D(m_id, 1, m_internalFormat, width, height);
+    glTextureSubImage2D(m_id, 0, 0, 0, width, height, m_format, GL_UNSIGNED_BYTE, data);
     glGenerateTextureMipmap(m_id);
 
     checkOpenGLErrors("Texture load");

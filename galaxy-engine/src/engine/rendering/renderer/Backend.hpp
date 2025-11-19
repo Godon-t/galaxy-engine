@@ -87,7 +87,8 @@ public:
     renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices, std::function<void()> destroyCallback = nullptr);
     void clearMesh(renderID meshID);
 
-    renderID instanciateTexture(ResourceHandle<Image> image);
+    renderID instantiateTexture();
+    renderID instantiateTexture(ResourceHandle<Image> image);
     void clearTexture(renderID textureID);
 
     renderID instanciateMaterial(ResourceHandle<Material> material);
@@ -106,7 +107,7 @@ public:
 
     renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format);
     renderID instantiateCubemapFrameBuffer(unsigned int size);
-    renderID instanciateShadowMapFrameBuffer(unsigned int width, unsigned int height);
+    
     void clearFrameBuffer(renderID frameBufferID);
     void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height);
     void resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size);

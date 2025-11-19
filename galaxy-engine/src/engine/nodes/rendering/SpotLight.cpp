@@ -2,6 +2,7 @@
 
 #include "SpotLight.hpp"
 #include "rendering/renderer/Renderer.hpp"
+#include "Application.hpp"
 
 namespace Galaxy {
 
@@ -43,12 +44,8 @@ void SpotLight::enteringRoot()
 
 void SpotLight::enteredRoot()
 {
-    if (m_castShadows && m_shadowMapID == 0) {
-        m_shadowMapID = Renderer::getInstance().instanciateShadowMapFrameBuffer(
-            m_shadowMapResolution,
-            m_shadowMapResolution
-        );
-    }
+    //m_shadowMapResolution
+    m_shadowMapID = Renderer::getInstance().instantiateTexture();
     
     // Créer la pyramide de visualisation
     // La base de la pyramide est orientée dans la direction de projection (vers -Z local)
@@ -67,6 +64,12 @@ void SpotLight::draw()
 {
     // Dessiner la pyramide de visualisation si initialisé
     if (m_initialized && m_visualPyramidID != 0) {
+        auto& ri = Renderer::getInstance();
+        vec2 dimmensions(1024);
+        
+        ri.renderLight(m_transform, m_shadowMapID);
+
+
         Renderer::getInstance().changeUsedProgram(UNICOLOR);
         Renderer::getInstance().setUnicolorObjectColor(m_color);
         Renderer::getInstance().submit(m_visualPyramidID, m_transform);
@@ -89,10 +92,7 @@ void SpotLight::setCastShadows(bool castShadows)
     // Créer ou détruire la shadowmap selon le besoin
     if (Node::nodeExists(this->id) && getInRoot()) { // si le nœud est dans la scène et existe
         if (m_castShadows && m_shadowMapID == 0) {
-            m_shadowMapID = Renderer::getInstance().instanciateShadowMapFrameBuffer(
-                m_shadowMapResolution,
-                m_shadowMapResolution
-            );
+            
         } else if (!m_castShadows && m_shadowMapID != 0) {
             Renderer::getInstance().clearFrameBuffer(m_shadowMapID);
             m_shadowMapID = 0;

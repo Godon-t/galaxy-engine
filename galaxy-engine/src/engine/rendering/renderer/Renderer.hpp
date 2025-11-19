@@ -24,12 +24,20 @@ public:
     void beginSceneRender(const vec3& camPosition, const vec3& camDirection, const vec3& camUp, const vec2& dimmensions);
 
     inline void beginCanvaNoBuffer() { m_frontend.beginCanvaNoBuffer(); }
+    void beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1);
+    inline void beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1) { 
+        m_frontend.beginCanva(viewMat, projectionMat, framebufferID, framebufferFormat, cubemapIdx); 
+    }
     inline void endCanva() { m_frontend.endCanva(); }
 
     void endSceneRender();
 
     void beginShadowPass(const vec3& lightPosition, const vec3& lightDirection, float fov, float nearPlane, float farPlane);
     void endShadowPass();
+
+    void renderLight(const Transform& transform, renderID lightTextureID);
+
+
     void bindShadowMap(renderID shadowMapTextureID);
     void setLightSpaceMatrix(const mat4& lightSpaceMatrix);
     inline mat4 getLightSpaceMatrix() const { return m_lightSpaceMatrix; }
@@ -43,7 +51,7 @@ public:
     inline renderID instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx = 0) { return m_backend.instanciateMesh(mesh, surfaceIdx); }
     inline void clearMesh(renderID meshID) { m_backend.clearMesh(meshID); }
 
-    inline renderID instanciateTexture(ResourceHandle<Image> image) { return m_backend.instanciateTexture(image); }
+    inline renderID instanciateTexture(ResourceHandle<Image> image) { return m_backend.instantiateTexture(image); }
     inline void bindTexture(renderID textureInstanceID, char* uniformName) { m_frontend.bindTexture(textureInstanceID, uniformName); }
     inline void clearTexture(renderID textureID) { m_backend.clearTexture(textureID); }
 
@@ -56,13 +64,13 @@ public:
     inline renderID generateQuad(vec2 dimmensions, std::function<void()> destroyCallback) { return m_backend.generateQuad(dimmensions, destroyCallback); }
     inline renderID generatePyramid(float baseSize, float height, std::function<void()> destroyCallback) { return m_backend.generatePyramid(baseSize, height, destroyCallback); }
 
+    inline renderID instantiateTexture(){return m_backend.instantiateTexture();}
     inline renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces) { return m_backend.instanciateCubemap(faces); }
     inline renderID instanciateCubemap() { return m_backend.instanciateCubemap(); }
     inline void clearCubemap(renderID cubemapID) { m_backend.clearCubemap(cubemapID); }
     inline void useCubemap(renderID cubemapInstanceID, char* uniformName) { return m_frontend.useCubemap(cubemapInstanceID, uniformName); }
 
     inline renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format) { return m_backend.instanciateFrameBuffer(width, height, format); }
-    inline renderID instanciateShadowMapFrameBuffer(unsigned int width, unsigned int height) { return m_backend.instanciateShadowMapFrameBuffer(width, height); }
     inline void clearFrameBuffer(renderID frameBufferID) { m_backend.clearFrameBuffer(frameBufferID); }
     inline void bindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.bindFrameBuffer(frameBufferInstanceID); }
     inline void unbindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.unbindFrameBuffer(frameBufferInstanceID); }
@@ -71,7 +79,10 @@ public:
     inline void resizeCubemap(renderID targetID, unsigned int size) { m_frontend.updateCubemap(targetID, size); }
     inline FramebufferTextureFormat getFramebufferFormat(renderID framebufferID) { return m_backend.getFramebufferFormat(framebufferID); }
 
-    inline void debugMessage(std::string message) { m_frontend.addDebugMsg(message); }
+    inline void debugMessage(std::string message) { m_frontend.addDebugMsg(message);}
+
+    inline void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID) {m_frontend.attachTextureToColorFramebuffer(textureID, framebufferID);}
+    inline void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID) {m_frontend.attachTextureToDepthFramebuffer(textureID, framebufferID);}
 
     inline void setUniform(char* uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
     inline void setUnicolorObjectColor(const vec3& color) { m_frontend.setUnicolorObjectColor(color); }
@@ -122,8 +133,14 @@ private:
     mat4 m_currentView;
     mat4 m_currentProj;
 
+    renderID m_debugPlane;
+
     vec3 m_cubemap_orientations[6], m_cubemap_ups[6];
 
     int m_drawCount = 0;
+
+
+    unsigned int m_currentLightIdx = 0;
+    unsigned int m_maxLightIdx = 20;
 };
 }

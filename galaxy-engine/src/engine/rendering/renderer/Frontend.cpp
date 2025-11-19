@@ -271,7 +271,7 @@ void Frontend::setUnicolorObjectColor(const vec3& color)
     uniformCommand.valueVec3.y = color.g;
     uniformCommand.valueVec3.z = color.b;
     RenderCommand command;
-    command.type       = RenderCommandType::SetUniform;
+    command.type       = RenderCommandType::setUniform;
     command.setUniform = uniformCommand;
 
     pushCommand(command);

@@ -5,10 +5,14 @@ class Texture {
 public:
     Texture()
         : m_id(0)
+        , m_format(0)
+        , m_internalFormat(0)
     {
     }
 
     Texture(unsigned char* data, int width, int height, int nbChannels);
+
+    void resize(int width, int height);
 
     void init(unsigned char* data, int width, int height, int nbChannels);
 
@@ -28,6 +32,7 @@ public:
 private:
     unsigned int m_id;
     unsigned int m_format;
+    unsigned int m_internalFormat;
 
     static int s_currentFreeActivationInt;
     static int s_maxActivationInt;

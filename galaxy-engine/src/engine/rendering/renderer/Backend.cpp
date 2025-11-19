@@ -113,7 +113,7 @@ void Backend::clearMesh(renderID meshID)
     }
 }
 
-renderID Backend::instanciateTexture(ResourceHandle<Image> image)
+renderID Backend::instantiateTexture(ResourceHandle<Image> image)
 {
     renderID existingID = image.getResource().getTextureID();
     if (existingID != 0) {
@@ -132,6 +132,17 @@ renderID Backend::instanciateTexture(ResourceHandle<Image> image)
 
     m_gpuDestroyNotifications[textureID] = [image] mutable { image.getResource().notifyGpuInstanceDestroyed(); };
 
+    return textureID;
+}
+
+renderID Backend::instantiateTexture()
+{
+    if (!m_textureInstances.canAddInstance())
+        return 0;
+
+    renderID textureID = m_textureInstances.createResourceInstance();
+    m_textureInstances.get(textureID)->resize(1024,1024);
+    checkOpenGLErrors("Instantiate texture");
     return textureID;
 }
 
@@ -165,7 +176,7 @@ renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
         auto setupTexture = [this, &matInstance, &matResource](TextureType type) {
             matInstance->useImage[type] = matResource.canUseImage(type);
             if (matInstance->useImage[type]) {
-                matInstance->images[type] = instanciateTexture(matResource.getImage(type));
+                matInstance->images[type] = instantiateTexture(matResource.getImage(type));
             }
         };
 
@@ -290,59 +301,6 @@ renderID Backend::generateQuad(vec2 dimmensions, std::function<void()> destroyCa
     indices.push_back(1);
     indices.push_back(2);
 
-    return instanciateMesh(vertices, indices, destroyCallback);
-}
-
-renderID Backend::generatePyramid(float baseSize, float height, std::function<void()> destroyCallback)
-{
-    std::vector<Vertex> vertices;
-    std::vector<short unsigned int> indices;
-
-    float half = baseSize / 2.0f;
-    
-    // top
-    Vertex apex;
-    apex.position = vec3(0, 0, height);
-    apex.normal = vec3(0, 0, 1);
-    apex.texCoord = vec2(0.5f, 0.5f);
-    vertices.push_back(apex); // index 0
-    
-    // base
-    Vertex base1, base2, base3, base4;
-    base1.position = vec3(-half, -half, 0);
-    base1.normal = vec3(0, 0, -1);
-    base1.texCoord = vec2(0, 0);
-    vertices.push_back(base1); // index 1
-    
-    base2.position = vec3(half, -half, 0);
-    base2.normal = vec3(0, 0, -1);
-    base2.texCoord = vec2(1, 0);
-    vertices.push_back(base2); // index 2
-    
-    base3.position = vec3(half, half, 0);
-    base3.normal = vec3(0, 0, -1);
-    base3.texCoord = vec2(1, 1);
-    vertices.push_back(base3); // index 3
-    
-    base4.position = vec3(-half, half, 0);
-    base4.normal = vec3(0, 0, -1);
-    base4.texCoord = vec2(0, 1);
-    vertices.push_back(base4); // index 4
-    
-    // lateral faces triangles (apex to each base edge)
-    // Front face (towards -Y)
-    indices.push_back(0); indices.push_back(1); indices.push_back(2);
-    // Right face (towards +X)
-    indices.push_back(0); indices.push_back(2); indices.push_back(3);
-    // Back face (towards +Y)
-    indices.push_back(0); indices.push_back(3); indices.push_back(4);
-    // Left face (towards -X)
-    indices.push_back(0); indices.push_back(4); indices.push_back(1);
-    
-    // Base (two triangles)
-    indices.push_back(1); indices.push_back(4); indices.push_back(3);
-    indices.push_back(1); indices.push_back(3); indices.push_back(2);
-    
     return instanciateMesh(vertices, indices, destroyCallback);
 }
 
@@ -688,7 +646,11 @@ void Backend::processCommand(SetUniformCommand& command)
     } else if (command.type == SetValueTypes::VEC3) {
         glUniform3f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), 
                     command.valueVec3.x, command.valueVec3.y, command.valueVec3.z);
+    } else if(command.type == SetValueTypes::MAT4){
+        glUniformMatrix4fv(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), 1, GL_FALSE, &command.viewMatrix[0][0]);
     }
+
+    checkOpenGLErrors("Set uniform");
 }
 
 void Backend::processCommand(SetViewportCommand& command)
@@ -699,22 +661,7 @@ void Backend::processCommand(SetViewportCommand& command)
 void Backend::processCommand(UpdateCubemapCommand& command)
 {
     m_cubemapInstances.get(command.targetID)->resize(command.resolution);
-}
-
-void Backend::processCommand(DebugMsgCommand& command)
-{
-    GLX_CORE_TRACE(command.msg);
-    free(command.msg);
-}
-
-void Backend::processCommand(SetViewportCommand& command)
-{
-    glViewport((int)command.position.x, (int)command.position.y, (int)command.size.x, (int)command.size.y);
-}
-
-void Backend::processCommand(UpdateCubemapCommand& command)
-{
-    m_cubemapInstances.get(command.targetID)->resize(command.resolution);
+    checkOpenGLErrors("Update cubemap");
 }
 
 void Backend::processCommand(DebugMsgCommand& command)

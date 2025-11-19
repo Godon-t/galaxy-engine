@@ -7,6 +7,7 @@
 #include "rendering/CameraManager.hpp"
 #include "rendering/GPUInstances/FrameBuffer.hpp"
 #include "rendering/OpenglHelper.hpp"
+#include "Application.hpp"
 
 namespace Galaxy {
 Renderer::Renderer()
@@ -21,7 +22,7 @@ Renderer::Renderer()
     m_postProcessingQuadID   = m_backend.generateQuad(vec2(2, 2), [] {});
     
     // Créer une shadow map de 2048x2048 par défaut
-    m_shadowMapFrameBufferID = m_backend.instanciateShadowMapFrameBuffer(2048, 2048);
+    m_shadowMapFrameBufferID = m_backend.instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH24STENCIL8);
     m_shadowMapTextureID     = 0; // Sera défini plus tard si nécessaire
 
     m_cubemap_orientations[0] = { 1, 0, 0 };
@@ -36,6 +37,8 @@ Renderer::Renderer()
     m_cubemap_orientations[4] = { 0, 0, 1 };
     m_cubemap_orientations[5] = { 0, 0, -1 };
     m_cubemap_ups[4] = m_cubemap_ups[5] = { 0, -1, 0 };
+
+    m_debugPlane = m_backend.generateQuad(vec2(2, 2), [] {});
 }
 
 Renderer::~Renderer()
@@ -57,10 +60,14 @@ Renderer& Renderer::getInstance()
 
 void Renderer::beginSceneRender(const mat4& camTransform, const vec2& dimmensions)
 {
-    m_currentView = CameraManager::processViewMatrix(camTransform);
-    m_currentProj = CameraManager::processProjectionMatrix(vec2(dimmensions));
+    beginCanva(camTransform, dimmensions, m_sceneFrameBufferID, FramebufferTextureFormat::DEPTH24RGBA8);
+}
 
-    m_frontend.beginCanva(m_currentView, m_currentProj, m_sceneFrameBufferID, FramebufferTextureFormat::DEPTH24STENCIL8);
+void Renderer::beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx){
+    m_currentView = CameraManager::processViewMatrix(camTransform);
+    m_currentProj = CameraManager::processProjectionMatrix(dimmensions);
+
+    m_frontend.beginCanva(m_currentView, m_currentProj, m_sceneFrameBufferID, framebufferFormat);
 }
 
 void Renderer::endSceneRender()
@@ -96,6 +103,8 @@ void Renderer::beginShadowPass(const vec3& lightPosition, const vec3& lightDirec
     
     // Changer pour le shader de profondeur
     m_frontend.changeUsedProgram(ProgramType::SHADOW_DEPTH);
+
+    m_currentLightIdx = 0;
 }
 
 void Renderer::endShadowPass()
@@ -211,6 +220,28 @@ void Renderer::applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, rend
 
     // m_frontend.setProjectionMatrix(baseProjection);
     // glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+}
+
+void Renderer::renderLight(const Transform& transform, renderID lightTextureID){
+    if(m_currentLightIdx > m_maxLightIdx){
+        return;
+    }
+
+    Transform transfo;
+    vec3 top(0,10,0);
+    transfo.setLocalPosition(top);
+    vec2 dim(1024);
+
+    beginCanva(transform.getGlobalModelMatrix(), dim, m_shadowMapFrameBufferID, FramebufferTextureFormat::DEPTH24STENCIL8);
+    attachTextureToDepthFramebuffer(lightTextureID, m_shadowMapFrameBufferID);
+    Application::getInstance().getRootNodePtr()->draw();
+
+    m_frontend.changeUsedProgram(ProgramType::TEXTURE);
+    m_frontend.bindTexture(lightTextureID, "sampledTexture");
+    m_frontend.submit(m_debugPlane, transfo);
+    m_frontend.endCanva();
+
+    m_currentLightIdx ++;
 }
 
 void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemapID)

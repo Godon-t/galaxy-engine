@@ -7,6 +7,9 @@
 namespace Galaxy {
 
 // TODO: Change to use Texture object directly
+// TODO: Add option for border
+//    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+//    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 class FrameBuffer {
 public:
     FrameBuffer();

@@ -94,7 +94,8 @@ struct InitPostProcessCommand {
 
 enum SetValueTypes {
     BOOL,
-    VEC3
+    VEC3,
+    MAT4
 };
 struct SetUniformCommand {
     SetValueTypes type;
@@ -105,6 +106,8 @@ struct SetUniformCommand {
             float x, y, z;
         } valueVec3;
     };
+    // TODO: fix this !!!
+    math::mat4 viewMatrix;
 };
 
 struct SetViewportCommand {

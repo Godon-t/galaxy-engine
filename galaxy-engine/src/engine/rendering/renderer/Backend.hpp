@@ -101,7 +101,7 @@ public:
     renderID generatePyramid(float baseSize, float height, std::function<void()> destroyCallback);
 
     renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces);
-    renderID instanciateCubemap();
+    renderID instanciateCubemap(int resolution = 1024);
     void clearCubemap(renderID cubemapID);
 
     renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format);
@@ -109,6 +109,7 @@ public:
     renderID instanciateShadowMapFrameBuffer(unsigned int width, unsigned int height);
     void clearFrameBuffer(renderID frameBufferID);
     void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height);
+    void resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size);
     // TODO: Wrong way ?
     FramebufferTextureFormat getFramebufferFormat(renderID id);
 
@@ -130,10 +131,15 @@ private:
     void processCommand(UseTextureCommand& command);
     void processCommand(UseCubemapCommand& command);
     void processCommand(AttachTextureToFramebufferCommand& command);
+    void processCommand(AttachCubemapToFramebufferCommand& command);
     void processCommand(BindMaterialCommand& command);
     void processCommand(BindFrameBufferCommand& command, bool bind);
     void processCommand(InitPostProcessCommand& command);
     void processCommand(SetUniformCommand& command);
+    void processCommand(SetViewportCommand& command);
+    void processCommand(UpdateCubemapCommand& command);
+
+    void processCommand(DebugMsgCommand& command);
 
     RenderGpuResourceTable<VisualInstance> m_visualInstances;
     RenderGpuResourceTable<Texture> m_textureInstances;

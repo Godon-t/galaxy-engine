@@ -6,6 +6,18 @@ Frontend::Frontend(std::vector<RenderCommand>* commandBuffer)
     m_frontBuffer = commandBuffer;
 }
 
+void Frontend::beginCanvaNoBuffer()
+{
+    auto canva = RenderCanva();
+
+    if (m_currentCanvaIdx == -1) {
+        m_canvas.push_back(canva);
+        m_currentCanvaIdx = 0;
+    } else {
+        m_canvas.insert(m_canvas.begin() + m_currentCanvaIdx, canva);
+    }
+}
+
 void Frontend::beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx)
 {
     auto canva = RenderCanva(viewMat, projectionMat, framebufferID, framebufferFormat, cubemapIdx);
@@ -23,23 +35,23 @@ void Frontend::endCanva()
     m_currentCanvaIdx++;
 }
 
-void Frontend::attachCurrentCanva(renderID targetTextureID)
-{
-    m_canvas[m_currentCanvaIdx].targetTextureID = targetTextureID;
-}
-
 void Frontend::processCanvas()
 {
     for (auto& canva : m_canvas) {
-        auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
-        bindFrameBuffer(canva.framebufferID, canva.cubemapIdx);
-        clear(clearColor);
-        setViewMatrix(canva.viewMat);
-        setProjectionMatrix(canva.projectionMat);
-        changeUsedProgram(ProgramType::PBR);
+        if (canva.useBuffer) {
+            auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
+            bindFrameBuffer(canva.framebufferID, canva.cubemapIdx);
+            clear(clearColor);
+            setViewMatrix(canva.viewMat);
+            setProjectionMatrix(canva.projectionMat);
+            changeUsedProgram(ProgramType::PBR);
+        }
 
         dumpCommandsToBuffer(canva);
-        unbindFrameBuffer(canva.framebufferID, canva.cubemapIdx >= 0);
+
+        if (canva.useBuffer) {
+            unbindFrameBuffer(canva.framebufferID, canva.cubemapIdx >= 0);
+        }
     }
 
     m_canvas.clear();
@@ -111,6 +123,8 @@ void Frontend::pushCommand(RenderCommand command)
 {
     if (m_canvas.size() == 0 || m_currentCanvaIdx >= m_canvas.size())
         m_frontBuffer->push_back(command);
+    else if (!m_canvas[m_currentCanvaIdx].materialToSubmitCommand.empty())
+        m_canvas[m_currentCanvaIdx].endCommands.push_back(command);
     else
         m_canvas[m_currentCanvaIdx].commands.push_back(command);
 }
@@ -161,7 +175,19 @@ void Frontend::attachTextureToDepthFramebuffer(renderID textureID, renderID fram
     pushCommand(command);
 }
 
-void Frontend::bindCubemap(renderID cubemapInstanceID, char* uniformName)
+void Frontend::attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID)
+{
+    AttachCubemapToFramebufferCommand attachCommand;
+    attachCommand.cubemapID     = cubemapID;
+    attachCommand.framebufferID = framebufferID;
+    RenderCommand command;
+    command.type                       = RenderCommandType::attachCubemapToFramebuffer;
+    command.attachCubemapToFramebuffer = attachCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::useCubemap(renderID cubemapInstanceID, char* uniformName)
 {
     UseCubemapCommand useCubemapCommand;
     useCubemapCommand.instanceID  = cubemapInstanceID;
@@ -230,7 +256,7 @@ void Frontend::setUniform(char* uniformName, bool value)
     uniformCommand.type        = BOOL;
     uniformCommand.valueBool   = value;
     RenderCommand command;
-    command.type       = RenderCommandType::SetUniform;
+    command.type       = RenderCommandType::setUniform;
     command.setUniform = uniformCommand;
 
     pushCommand(command);
@@ -247,6 +273,44 @@ void Frontend::setUnicolorObjectColor(const vec3& color)
     RenderCommand command;
     command.type       = RenderCommandType::SetUniform;
     command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::setViewport(vec2 position, vec2 dimmension)
+{
+    SetViewportCommand setViewportCommand;
+    setViewportCommand.position = position;
+    setViewportCommand.size     = dimmension;
+    RenderCommand command;
+    command.type        = RenderCommandType::setViewport;
+    command.setViewport = setViewportCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::updateCubemap(renderID targetID, unsigned int resolution)
+{
+    UpdateCubemapCommand update;
+    update.targetID   = targetID;
+    update.resolution = resolution;
+    RenderCommand command;
+    command.type          = RenderCommandType::updateCubemap;
+    command.updateCubemap = update;
+
+    pushCommand(command);
+}
+
+void Frontend::addDebugMsg(std::string message)
+{
+    DebugMsgCommand debug;
+    char* copy = new char[message.size() + 1];
+    std::strcpy(copy, message.c_str());
+    debug.msg = copy;
+
+    RenderCommand command;
+    command.type     = RenderCommandType::debugMsg;
+    command.debugMsg = debug;
 
     pushCommand(command);
 }
@@ -335,6 +399,9 @@ void Frontend::dumpCommandsToBuffer(RenderCanva& canva)
     depthMask.state        = true;
     depthCommand.depthMask = depthMask;
     m_frontBuffer->push_back(depthCommand);
+
+    for (auto& command : canva.endCommands)
+        m_frontBuffer->push_back(command);
 }
 
 void Frontend::setCommandBuffer(std::vector<RenderCommand>* newBuffer)

@@ -75,11 +75,17 @@ void FrameBuffer::attachTexture(unsigned int attachment, unsigned int textureId,
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, target, textureId, 0);
 
-    // TODO: Memory leak, we need to destroy textures if they come from framebuffer creation
-    if (attachment == GL_COLOR_ATTACHMENT0)
+    if (attachment == GL_COLOR_ATTACHMENT0) {
+        if (!m_externalColor)
+            destroy();
+        m_externalColor = true;
         m_attachedColor = textureId;
-    else if (attachment == GL_DEPTH_ATTACHMENT)
+    } else if (attachment == GL_DEPTH_ATTACHMENT) {
+        if (!m_externalDepth)
+            destroy();
+        m_externalDepth = true;
         m_attachedDepth = textureId;
+    }
 
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
@@ -133,7 +139,7 @@ void FrameBuffer::destroy()
 }
 
 CubemapFrameBuffer::CubemapFrameBuffer()
-    : CubemapFrameBuffer(2)
+    : CubemapFrameBuffer(512)
 {
 }
 
@@ -143,12 +149,24 @@ CubemapFrameBuffer::CubemapFrameBuffer(int size)
     invalidate();
 }
 
+void CubemapFrameBuffer::attachCubemap(Cubemap cubemap)
+{
+    m_cubemap = cubemap;
+    resize(cubemap.resolution);
+}
+
 void CubemapFrameBuffer::bind(int idx)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     // TODO: Depend on cubemap mode: color, depth or both
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_cubemap.cubemapID, 0);
-    checkOpenGLErrors("Cubemap frame buffer bind");
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_cubemap.cubemapID, 0);
+
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+    bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    GLX_CORE_ASSERT(complete, "Cubemap framebuffer not complete after bind face {0}", idx);
+    checkOpenGLErrors("Bind framebuffer face idx");
 }
 
 void CubemapFrameBuffer::unbind()

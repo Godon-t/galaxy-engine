@@ -346,10 +346,57 @@ renderID Backend::generatePyramid(float baseSize, float height, std::function<vo
     return instanciateMesh(vertices, indices, destroyCallback);
 }
 
-renderID Backend::instanciateCubemap()
+renderID Backend::generatePyramid(float baseSize, float height, std::function<void()> destroyCallback)
 {
-    renderID cubemapID = m_cubemapInstances.createResourceInstance();
-    return cubemapID;
+    std::vector<Vertex> vertices;
+    std::vector<short unsigned int> indices;
+
+    float half = baseSize / 2.0f;
+    
+    // top
+    Vertex apex;
+    apex.position = vec3(0, 0, height);
+    apex.normal = vec3(0, 0, 1);
+    apex.texCoord = vec2(0.5f, 0.5f);
+    vertices.push_back(apex); // index 0
+    
+    // base
+    Vertex base1, base2, base3, base4;
+    base1.position = vec3(-half, -half, 0);
+    base1.normal = vec3(0, 0, -1);
+    base1.texCoord = vec2(0, 0);
+    vertices.push_back(base1); // index 1
+    
+    base2.position = vec3(half, -half, 0);
+    base2.normal = vec3(0, 0, -1);
+    base2.texCoord = vec2(1, 0);
+    vertices.push_back(base2); // index 2
+    
+    base3.position = vec3(half, half, 0);
+    base3.normal = vec3(0, 0, -1);
+    base3.texCoord = vec2(1, 1);
+    vertices.push_back(base3); // index 3
+    
+    base4.position = vec3(-half, half, 0);
+    base4.normal = vec3(0, 0, -1);
+    base4.texCoord = vec2(0, 1);
+    vertices.push_back(base4); // index 4
+    
+    // lateral faces triangles (apex to each base edge)
+    // Front face (towards -Y)
+    indices.push_back(0); indices.push_back(1); indices.push_back(2);
+    // Right face (towards +X)
+    indices.push_back(0); indices.push_back(2); indices.push_back(3);
+    // Back face (towards +Y)
+    indices.push_back(0); indices.push_back(3); indices.push_back(4);
+    // Left face (towards -X)
+    indices.push_back(0); indices.push_back(4); indices.push_back(1);
+    
+    // Base (two triangles)
+    indices.push_back(1); indices.push_back(4); indices.push_back(3);
+    indices.push_back(1); indices.push_back(3); indices.push_back(2);
+    
+    return instanciateMesh(vertices, indices, destroyCallback);
 }
 
 void Backend::clearCubemap(renderID cubemapID)
@@ -383,36 +430,6 @@ renderID Backend::instantiateCubemapFrameBuffer(unsigned int size)
     return frameBufferID;
 }
 
-renderID Backend::instanciateShadowMapFrameBuffer(unsigned int width, unsigned int height)
-{
-    // Créer un framebuffer standard avec format depth-only
-    renderID frameBufferID = instanciateFrameBuffer(width, height, FramebufferTextureFormat::DEPTH24STENCIL8);
-    auto* frameBuffer = m_frameBufferInstances.get(frameBufferID);
-    
-    // Obtenir l'ID de la texture de profondeur
-    GLuint depthTexture = frameBuffer->getDepthTextureID();
-    
-    // Reconfigurer la texture de profondeur avec des paramètres optimisés pour shadow mapping
-    glBindTexture(GL_TEXTURE_2D, depthTexture);
-    
-    // Paramètres de filtrage pour shadow map (LINEAR pour PCF)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-    // Clamp to border pour éviter les artefacts en dehors de la shadow map
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    
-    // Définir la couleur de bordure à 1.0 (pas d'ombre en dehors)
-    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-    
-    glBindTexture(GL_TEXTURE_2D, 0);
-    
-    checkOpenGLErrors("Configure shadow map frameBuffer");
-    return frameBufferID;
-}
-
 void Backend::clearFrameBuffer(renderID frameBufferID)
 {
     if (!m_frameBufferInstances.tryRemove(frameBufferID))
@@ -429,6 +446,11 @@ void Backend::clearFrameBuffer(renderID frameBufferID)
 void Backend::resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height)
 {
     m_frameBufferInstances.get(frameBufferID)->resize(width, height);
+}
+
+void Backend::resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size)
+{
+    m_cubemapFrameBufferInstances.get(frameBufferID)->resize(size);
 }
 
 FramebufferTextureFormat Backend::getFramebufferFormat(renderID id)
@@ -457,7 +479,6 @@ renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
         faces[i].getResource().onLoaded([faces, &cubemapInstance, i] {
             int w = faces[0].getResource().getWidth();
             int h = faces[0].getResource().getHeight();
-            // TODO: Cube map can only take shape of cube ?
             cubemapInstance.resize(w);
 
             auto& faceResource = faces[i].getResource();
@@ -469,6 +490,13 @@ renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
         });
     }
 
+    return cubemapID;
+}
+
+renderID Backend::instanciateCubemap(int resolution)
+{
+    renderID cubemapID = m_cubemapInstances.createResourceInstance();
+    m_cubemapInstances.get(cubemapID)->resize(resolution);
     return cubemapID;
 }
 
@@ -598,6 +626,12 @@ void Backend::processCommand(AttachTextureToFramebufferCommand& command)
     checkOpenGLErrors("Attach texture to framebuffer");
 }
 
+void Backend::processCommand(AttachCubemapToFramebufferCommand& command)
+{
+    // TODO: Beware of memory handling !!!
+    m_cubemapFrameBufferInstances.get(command.framebufferID)->attachCubemap(*m_cubemapInstances.get(command.cubemapID));
+}
+
 void Backend::processCommand(BindMaterialCommand& command)
 {
     GLX_CORE_ASSERT(m_activeProgram->type() == ProgramType::PBR, "PBR Program not active!");
@@ -657,40 +691,104 @@ void Backend::processCommand(SetUniformCommand& command)
     }
 }
 
+void Backend::processCommand(SetViewportCommand& command)
+{
+    glViewport((int)command.position.x, (int)command.position.y, (int)command.size.x, (int)command.size.y);
+}
+
+void Backend::processCommand(UpdateCubemapCommand& command)
+{
+    m_cubemapInstances.get(command.targetID)->resize(command.resolution);
+}
+
+void Backend::processCommand(DebugMsgCommand& command)
+{
+    GLX_CORE_TRACE(command.msg);
+    free(command.msg);
+}
+
+void Backend::processCommand(SetViewportCommand& command)
+{
+    glViewport((int)command.position.x, (int)command.position.y, (int)command.size.x, (int)command.size.y);
+}
+
+void Backend::processCommand(UpdateCubemapCommand& command)
+{
+    m_cubemapInstances.get(command.targetID)->resize(command.resolution);
+}
+
+void Backend::processCommand(DebugMsgCommand& command)
+{
+    GLX_CORE_TRACE(command.msg);
+    free(command.msg);
+}
+
 void Backend::processCommand(RenderCommand& command)
 {
-    if (command.type == RenderCommandType::setActiveProgram)
+    switch (command.type) {
+    case RenderCommandType::setActiveProgram:
         processCommand(command.setActiveProgram);
-    else if (command.type == RenderCommandType::clear)
+        break;
+    case RenderCommandType::clear:
         processCommand(command.clear);
-    else if (command.type == RenderCommandType::depthMask)
+        break;
+    case RenderCommandType::depthMask:
         processCommand(command.depthMask);
-    else if (command.type == RenderCommandType::setView)
+        break;
+    case RenderCommandType::setView:
         processCommand(command.setView);
-    else if (command.type == RenderCommandType::setProjection)
+        break;
+    case RenderCommandType::setProjection:
         processCommand(command.setProjection);
-    else if (command.type == RenderCommandType::rawDraw)
+        break;
+    case RenderCommandType::rawDraw:
         processCommand(command.rawDraw);
-    else if (command.type == RenderCommandType::draw)
+        break;
+    case RenderCommandType::draw:
         processCommand(command.draw);
-    else if (command.type == RenderCommandType::useTexture)
+        break;
+    case RenderCommandType::useTexture:
         processCommand(command.useTexture);
-    else if (command.type == RenderCommandType::useCubemap)
+        break;
+    case RenderCommandType::useCubemap:
         processCommand(command.useCubemap);
-    else if (command.type == RenderCommandType::attachTextureToFramebuffer)
+        break;
+    case RenderCommandType::attachTextureToFramebuffer:
         processCommand(command.attachTextureToFramebuffer);
-    else if (command.type == RenderCommandType::bindMaterial)
+        break;
+    case RenderCommandType::attachCubemapToFramebuffer:
+        processCommand(command.attachCubemapToFramebuffer);
+        break;
+    case RenderCommandType::bindMaterial:
         processCommand(command.bindMaterial);
-    else if (command.type == RenderCommandType::bindFrameBuffer)
+        break;
+    case RenderCommandType::bindFrameBuffer:
         processCommand(command.bindFrameBuffer, true);
-    else if (command.type == RenderCommandType::unbindFrameBuffer)
+        break;
+    case RenderCommandType::unbindFrameBuffer:
         processCommand(command.bindFrameBuffer, false);
-    else if (command.type == RenderCommandType::initPostProcess)
+        break;
+    case RenderCommandType::initPostProcess:
         processCommand(command.initPostProcess);
-    else if (command.type == RenderCommandType::SetUniform)
+        break;
+    case RenderCommandType::setUniform:
         processCommand(command.setUniform);
-    else
+        break;
+    case RenderCommandType::setViewport:
+        processCommand(command.setViewport);
+        break;
+    case RenderCommandType::updateCubemap:
+        processCommand(command.updateCubemap);
+        break;
+    case RenderCommandType::debugMsg:
+        processCommand(command.debugMsg);
+        break;
+    default:
         GLX_CORE_ERROR("Unknown render command");
+        break;
+    }
+
+    checkOpenGLErrors("Process command");
 }
 
 } // namespace Galaxy

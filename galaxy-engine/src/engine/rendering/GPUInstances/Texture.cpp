@@ -94,7 +94,7 @@ void Cubemap::allocateFaces(unsigned int res)
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F,
                 resolution, resolution, 0, GL_RGB, GL_FLOAT, nullptr);
         else
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB,
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB8,
                 resolution, resolution, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
     }
     // paramétrage par défaut

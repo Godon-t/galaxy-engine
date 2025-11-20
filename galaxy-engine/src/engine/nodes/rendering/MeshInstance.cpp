@@ -24,6 +24,12 @@ void MeshInstance::draw()
         Renderer::getInstance().submit(m_renderId, *getTransform());
 }
 
+void MeshInstance::lightPassDraw()
+{
+    if (m_renderId)
+        Renderer::getInstance().submit(m_renderId, *getTransform());
+}
+
 void MeshInstance::accept(NodeVisitor& visitor)
 {
     visitor.visit(*this);

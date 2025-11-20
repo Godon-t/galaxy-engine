@@ -107,7 +107,7 @@ struct SetUniformCommand {
         } valueVec3;
     };
     // TODO: fix this !!!
-    math::mat4 viewMatrix;
+    math::mat4 matrixValue;
 };
 
 struct SetViewportCommand {

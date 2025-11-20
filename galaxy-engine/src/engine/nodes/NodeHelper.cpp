@@ -6,7 +6,7 @@
 #include "rendering/MeshInstance.hpp"
 #include "rendering/MultiMeshInstance.hpp"
 #include "rendering/Sprite3D.hpp"
-#include "rendering/SpotLight.hpp"
+#include "rendering/lighting/SpotLight.hpp"
 
 namespace Galaxy {
 std::unique_ptr<Node> constructNode(std::string& type)

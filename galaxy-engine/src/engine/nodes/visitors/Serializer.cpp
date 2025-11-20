@@ -10,7 +10,7 @@
 #include "nodes/rendering/MeshInstance.hpp"
 #include "nodes/rendering/MultiMeshInstance.hpp"
 #include "nodes/rendering/Sprite3D.hpp"
-#include "nodes/rendering/SpotLight.hpp"
+#include "nodes/rendering/lighting/SpotLight.hpp"
 #include "types/Math.hpp"
 
 #include <fstream>

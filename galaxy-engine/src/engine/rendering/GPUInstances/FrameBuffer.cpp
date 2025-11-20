@@ -26,8 +26,24 @@ void bindDepthAttachment(GLuint* id, int width, int height, GLenum format)
     glGenTextures(1, id);
     glBindTexture(GL_TEXTURE_2D, *id);
 
+    // Decide pixel format and type based on requested internal format
+    GLenum pixelFormat = GL_DEPTH_COMPONENT;
+    GLenum pixelType   = GL_FLOAT;
+
+    if (format == GL_DEPTH24_STENCIL8) {
+        pixelFormat = GL_DEPTH_STENCIL;
+        pixelType   = GL_UNSIGNED_INT_24_8;
+    } else if (format == GL_DEPTH_COMPONENT24 || format == GL_DEPTH_COMPONENT32 || format == GL_DEPTH_COMPONENT16) {
+        pixelFormat = GL_DEPTH_COMPONENT;
+        pixelType   = GL_FLOAT;
+    } else {
+        // Fallback to a depth component with float type
+        pixelFormat = GL_DEPTH_COMPONENT;
+        pixelType   = GL_FLOAT;
+    }
+
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
-        GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        pixelFormat, pixelType, nullptr);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -70,35 +86,52 @@ void FrameBuffer::resize(unsigned int newWidth, unsigned int newHeight)
     invalidate();
 }
 
-void FrameBuffer::attachTexture(unsigned int attachment, unsigned int textureId, unsigned int target)
+void FrameBuffer::attachTexture(unsigned int attachment, Texture& texture, unsigned int target)
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, target, textureId, 0);
+    // unsigned int textureId = texture.getId();
+    // glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
-    if (attachment == GL_COLOR_ATTACHMENT0) {
-        if (!m_externalColor)
-            destroy();
-        m_externalColor = true;
-        m_attachedColor = textureId;
-    } else if (attachment == GL_DEPTH_ATTACHMENT) {
-        if (!m_externalDepth)
-            destroy();
-        m_externalDepth = true;
-        m_attachedDepth = textureId;
-    }
+    // if (attachment == GL_COLOR_ATTACHMENT0) {
+    //     if (!m_externalColor)
+    //         destroy();
 
-    bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
-    GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
+    //     texture.resize(m_width, m_height);
+    //     texture.setFormat(TextureFormat::RGBA);
+
+    //     m_externalColor = true;
+    //     m_attachedColor = texture.getId();
+    //     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_attachedColor, 0);
+    // } else if (attachment == GL_DEPTH_ATTACHMENT) {
+    //     // if (!m_externalDepth)
+    //     //     destroy();
+
+    //     // checkOpenGLErrors("Attach depth texture to framebuffer0");
+    //     // texture.resize(m_width, m_height);
+    //     // checkOpenGLErrors("Attach depth texture to framebuffer1");
+    //     // texture.setFormat(TextureFormat::DEPTH);
+    //     // checkOpenGLErrors("Attach depth texture to framebuffer2");
+
+    //     // m_externalDepth = true;
+    //     // m_attachedDepth = texture.getId();
+
+    //     // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_attachedDepth, 0);
+    //     // checkOpenGLErrors("Attach depth texture to framebuffer3");
+
+    //     texture.m_id = m_attachedDepth;
+    // }
+
+    // bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    // GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
 }
 
-void FrameBuffer::attachColorTexture(unsigned int textureID)
+void FrameBuffer::attachColorTexture(Texture texture)
 {
-    attachTexture(GL_COLOR_ATTACHMENT0, textureID, GL_TEXTURE_2D);
+    attachTexture(GL_COLOR_ATTACHMENT0, texture, GL_TEXTURE_2D);
 }
 
-void FrameBuffer::attachDepthTexture(unsigned int textureID)
+void FrameBuffer::attachDepthTexture(Texture texture)
 {
-    attachTexture(GL_DEPTH_ATTACHMENT, textureID, GL_TEXTURE_2D);
+    attachTexture(GL_DEPTH_ATTACHMENT, texture, GL_TEXTURE_2D);
 }
 
 void FrameBuffer::invalidate()
@@ -117,6 +150,8 @@ void FrameBuffer::invalidate()
     } else if (m_format == FramebufferTextureFormat::DEPTH24RGBA8) {
         bindColorAttachmentTexture(&m_attachedColor, m_width, m_height, GL_RGBA8, GL_RGBA);
         bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH24_STENCIL8);
+    } else if (m_format == FramebufferTextureFormat::DEPTH24) {
+        bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH_COMPONENT24);
     } else {
         GLX_CORE_ASSERT(false, "Framebuffer format not handled");
     }

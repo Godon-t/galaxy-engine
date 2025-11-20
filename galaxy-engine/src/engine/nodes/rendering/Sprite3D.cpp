@@ -19,6 +19,10 @@ void Sprite3D::draw()
         Renderer::getInstance().changeUsedProgram(PBR);
     }
 }
+void Sprite3D::lightPassDraw()
+{
+    Renderer::getInstance().submit(m_rectID, m_transform);
+}
 void Sprite3D::accept(Galaxy::NodeVisitor& visitor)
 {
     visitor.visit(*this);

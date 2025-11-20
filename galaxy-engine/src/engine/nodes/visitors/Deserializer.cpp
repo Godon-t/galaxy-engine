@@ -13,7 +13,7 @@
 #include "nodes/rendering/MeshInstance.hpp"
 #include "nodes/rendering/MultiMeshInstance.hpp"
 #include "nodes/rendering/Sprite3D.hpp"
-#include "nodes/rendering/SpotLight.hpp"
+#include "nodes/rendering/lighting/SpotLight.hpp"
 #include "project/Project.hpp"
 #include "types/Math.hpp"
 
@@ -133,7 +133,7 @@ void SceneDeSerializer::visit(EnvironmentNode& node)
 void SceneDeSerializer::visit(SpotLight& node)
 {
     visit(static_cast<Node3D&>(node));
-    
+
     if (m_currentYAMLNode["Intensity"]) {
         node.setIntensity(m_currentYAMLNode["Intensity"].as<float>());
     }

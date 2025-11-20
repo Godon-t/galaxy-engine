@@ -105,6 +105,13 @@ void Node::draw()
     }
 }
 
+void Node::lightPassDraw()
+{
+    for (auto&& child : m_children) {
+        child->lightPassDraw();
+    }
+}
+
 void Node::updateTransformAndChilds(const mat4& matrix)
 {
     for (auto&& child : m_children) {

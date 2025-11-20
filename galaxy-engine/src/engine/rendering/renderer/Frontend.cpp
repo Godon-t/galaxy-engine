@@ -1,6 +1,13 @@
 #include "Frontend.hpp"
 
 namespace Galaxy {
+char* copyString(const std::string& str)
+{
+    char* cstr = new char[str.size() + 1];
+    std::strcpy(cstr, str.c_str());
+    return cstr;
+}
+
 Frontend::Frontend(std::vector<RenderCommand>* commandBuffer)
 {
     m_frontBuffer = commandBuffer;
@@ -249,12 +256,25 @@ void Frontend::initPostProcessing(renderID frameBufferID)
     pushCommand(command);
 }
 
-void Frontend::setUniform(char* uniformName, bool value)
+void Frontend::setUniform(std::string uniformName, bool value)
 {
     SetUniformCommand uniformCommand;
-    uniformCommand.uniformName = uniformName;
+    uniformCommand.uniformName = copyString(uniformName);
     uniformCommand.type        = BOOL;
     uniformCommand.valueBool   = value;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::setUniform(std::string uniformName, mat4 value)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.type        = MAT4;
+    uniformCommand.matrixValue = value;
     RenderCommand command;
     command.type       = RenderCommandType::setUniform;
     command.setUniform = uniformCommand;

@@ -32,9 +32,9 @@ public:
         invalidate();
     }
     inline FramebufferTextureFormat getFormat() const { return m_format; }
-    void attachTexture(unsigned int attachment, unsigned int textureId, unsigned int target);
-    void attachColorTexture(unsigned int textureID);
-    void attachDepthTexture(unsigned int textureID);
+    void attachTexture(unsigned int attachment, Texture& texture, unsigned int target);
+    void attachColorTexture(Texture texture);
+    void attachDepthTexture(Texture texture);
 
 private:
     FramebufferTextureFormat m_format;

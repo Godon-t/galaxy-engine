@@ -36,7 +36,10 @@ public:
     // TODO: rename to match setActiveProgram command
     void changeUsedProgram(ProgramType program);
     void initPostProcessing(renderID frameBufferID);
-    void setUniform(char* uniformName, bool value);
+
+    void setUniform(std::string uniformName, bool value);
+    void setUniform(std::string uniformName, mat4 value);
+
     void setViewport(vec2 position, vec2 dimmension);
     void updateCubemap(renderID targetID, unsigned int resolution);
     void addDebugMsg(std::string message);

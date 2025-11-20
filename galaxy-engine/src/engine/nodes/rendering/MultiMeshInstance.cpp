@@ -10,6 +10,10 @@ void MultiMeshInstance::draw()
 {
     Node3D::draw();
 }
+void MultiMeshInstance::lightPassDraw()
+{
+    Node3D::lightPassDraw();
+}
 void MultiMeshInstance::accept(Galaxy::NodeVisitor& visitor)
 {
     visitor.visit(*this);

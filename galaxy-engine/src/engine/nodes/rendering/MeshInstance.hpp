@@ -18,6 +18,7 @@ public:
     ~MeshInstance() override;
 
     virtual void draw() override;
+    virtual void lightPassDraw() override;
 
     void accept(NodeVisitor& visitor) override;
     void loadMesh(ResourceHandle<Mesh> mesh, int surfaceIdx);

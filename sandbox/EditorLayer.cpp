@@ -10,14 +10,15 @@ std::unordered_map<Galaxy::uuid, std::string> ResourceAccess::paths;
 // Helper function to find the first SpotLight in the scene
 static SpotLight* findFirstSpotLight(Node* node)
 {
-    if (!node) return nullptr;
-    
+    if (!node)
+        return nullptr;
+
     // Check if the current node is a SpotLight
     SpotLight* spotLight = dynamic_cast<SpotLight*>(node);
     if (spotLight) {
         return spotLight;
     }
-    
+
     // Recursively search in children
     for (Node* child : node->getChildren()) {
         SpotLight* found = findFirstSpotLight(child);
@@ -25,7 +26,7 @@ static SpotLight* findFirstSpotLight(Node* node)
             return found;
         }
     }
-    
+
     return nullptr;
 }
 
@@ -70,6 +71,7 @@ void EditorLayer::onAttach()
     auto height = Application::getInstance().getWindow().getHeight();
 
     auto& renderer = Renderer::getInstance();
+    renderer.init();
     renderer.resize(width, height);
 
     InputManager::addAction(Action(GLX_KEY_ESCAPE, "editor_exit"));
@@ -108,31 +110,22 @@ void EditorLayer::onUpdate()
             updateCamera();
         }
 
-        // Find the first spotlight for shadow mapping
-        SpotLight* mainLight = findFirstSpotLight(Application::getInstance().getRootNodePtr().get());
-        
-        // PASS 1: Generate shadow map if a spotlight exists and casts shadows
-        if (mainLight && mainLight->getCastShadows()) {
-            vec3 lightPos = mainLight->getTransform()->getGlobalPosition();
-            vec3 lightDir = mainLight->getDirection();
-            float fov = mainLight->getOuterCutoffAngle() * 2.0f;
-            float range = mainLight->getRange();
-            
-            renderer.beginShadowPass(lightPos, lightDir, fov, 0.1f, range);
-            Application::getInstance().getRootNodePtr()->draw();
-            renderer.endShadowPass();
-        }
-        
-        // PASS 2: Normal scene render with shadows
-        renderer.beginSceneRender(cameraTransform, m_viewportSize);
-        
-        if (mainLight && mainLight->getCastShadows()) {
-            // Bind shadow map and set light space matrix
-            renderID shadowTexture = renderer.getShadowMapTextureID();
-            renderer.bindTexture(shadowTexture, const_cast<char*>("shadowMap"));
-            renderer.setLightSpaceMatrix(renderer.getLightSpaceMatrix());
-        }
+        // // Find the first spotlight for shadow mapping
+        // SpotLight* mainLight = findFirstSpotLight(Application::getInstance().getRootNodePtr().get());
 
+        // // PASS 1: Generate shadow map if a spotlight exists and casts shadows
+        // if (mainLight && mainLight->getCastShadows()) {
+        //     vec3 lightPos = mainLight->getTransform()->getGlobalPosition();
+        //     vec3 lightDir = mainLight->getDirection();
+        //     float fov = mainLight->getOuterCutoffAngle() * 2.0f;
+        //     float range = mainLight->getRange();
+
+        //     renderer.beginShadowPass(lightPos, lightDir, fov, 0.1f, range);
+        //     Application::getInstance().getRootNodePtr()->draw();
+        //     renderer.endShadowPass();
+        // }
+        renderer.shadowPass();
+        renderer.beginSceneRender(cameraTransform, m_viewportSize);
         // TODO: should the application handle the render ?
         Application::getInstance().getRootNodePtr()->draw();
         // m_selectedScene->getNodePtr()->draw();

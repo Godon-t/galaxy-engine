@@ -118,10 +118,6 @@ public:
         if (ImGui::Checkbox("Cast Shadows", &castShadows)) {
             node.setCastShadows(castShadows);
         }
-
-        if (castShadows) {
-            ImGui::Text("Shadow Map ID: %zu", node.getShadowMapID());
-        }
     }
     void transformEdit(Transform& transform)
     {

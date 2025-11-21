@@ -25,26 +25,17 @@ void Texture::resize(int width, int height)
     unsigned int internalFormat = getInternalFormat(m_format);
     unsigned int format         = getExternalFormat(m_format);
     unsigned int type           = getType(m_format);
-    if (m_id == 0) {
-        glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
 
-        glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glTextureStorage2D(m_id, 1, internalFormat, width, height);
-    } else {
+    if (m_id != 0)
         glDeleteTextures(1, &m_id);
-        glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
 
-        glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
+    glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glTextureStorage2D(m_id, 1, internalFormat, width, height);
-    }
+    glTextureStorage2D(m_id, 1, internalFormat, width, height);
     checkOpenGLErrors("Texture resize");
 }
 
@@ -129,6 +120,8 @@ unsigned int Texture::getInternalFormat(TextureFormat format)
         return GL_RGB8;
     if (format == TextureFormat::DEPTH)
         return GL_DEPTH_COMPONENT24;
+    if (format == TextureFormat::DEPTH24STENCIL8)
+        return GL_DEPTH24_STENCIL8;
     return 0;
 }
 
@@ -141,7 +134,9 @@ unsigned int Texture::getExternalFormat(TextureFormat format)
     if (format == TextureFormat::RGB)
         return GL_RGB;
     if (format == TextureFormat::DEPTH)
-        return GL_DEPTH_COMPONENT;
+        return GL_DEPTH_COMPONENT24;
+    if (format == TextureFormat::DEPTH24STENCIL8)
+        return GL_DEPTH_STENCIL;
     return 0;
 }
 
@@ -150,7 +145,9 @@ unsigned int Texture::getType(TextureFormat format)
     if (format == TextureFormat::RGBA || format == TextureFormat::RGB || format == TextureFormat::RED)
         return GL_UNSIGNED_BYTE;
     if (format == TextureFormat::DEPTH)
-        return GL_FLOAT;
+        return GL_UNSIGNED_INT;
+    if (format == TextureFormat::DEPTH24STENCIL8)
+        return GL_UNSIGNED_INT_24_8;
     return 0;
 }
 

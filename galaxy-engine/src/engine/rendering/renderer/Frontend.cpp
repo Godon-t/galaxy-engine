@@ -44,10 +44,14 @@ void Frontend::endCanva()
 
 void Frontend::processCanvas()
 {
+    auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
     for (auto& canva : m_canvas) {
         if (canva.useBuffer) {
-            auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
             bindFrameBuffer(canva.framebufferID, canva.cubemapIdx);
+            if (canva.colorTargetID != 0)
+                attachTextureToColorFramebuffer(canva.colorTargetID, canva.framebufferID);
+            if (canva.depthTargetID != 0)
+                attachTextureToDepthFramebuffer(canva.depthTargetID, canva.framebufferID);
             clear(clearColor);
             setViewMatrix(canva.viewMat);
             setProjectionMatrix(canva.projectionMat);
@@ -63,6 +67,16 @@ void Frontend::processCanvas()
 
     m_canvas.clear();
     m_currentCanvaIdx = 0;
+}
+
+void Frontend::linkCanvaColorToTexture(renderID textureID)
+{
+    m_canvas[m_currentCanvaIdx].colorTargetID = textureID;
+}
+
+void Frontend::linkCanvaDepthToTexture(renderID textureID)
+{
+    m_canvas[m_currentCanvaIdx].depthTargetID = textureID;
 }
 
 void Frontend::submit(renderID meshID)

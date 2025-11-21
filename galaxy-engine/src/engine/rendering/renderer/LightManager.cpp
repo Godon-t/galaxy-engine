@@ -13,7 +13,7 @@ LightManager::~LightManager()
 
 void LightManager::init()
 {
-    m_shadowMapFrameBufferID = Renderer::getInstance().instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH24);
+    m_shadowMapFrameBufferID = Renderer::getInstance().instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH);
 }
 
 int LightManager::registerLight(const SpotLight* desc)
@@ -50,9 +50,10 @@ void LightManager::shadowPass(Node* sceneRoot)
         if (currentLightIdx >= m_maxLights)
             break;
 
-        ri.beginCanva(lightData.lightSpaceMatrix, projMat, m_shadowMapFrameBufferID, FramebufferTextureFormat::DEPTH24);
+        ri.beginCanva(lightData.lightSpaceMatrix, projMat, m_shadowMapFrameBufferID, FramebufferTextureFormat::DEPTH24STENCIL8);
         ri.setUniform("lightSpaceMatrix[" + std::to_string(id) + "]", m_lights[id].lightSpaceMatrix);
-        ri.attachTextureToDepthFramebuffer(lightData.shadowMapID, m_shadowMapFrameBufferID);
+        ri.linkCanvaDepthToTexture(lightData.shadowMapID);
+        // ri.attachTextureToDepthFramebuffer(lightData.shadowMapID, m_shadowMapFrameBufferID);
         sceneRoot->lightPassDraw();
         ri.endCanva();
         currentLightIdx++;

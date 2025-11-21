@@ -16,6 +16,8 @@ struct RenderCanva {
     std::unordered_map<renderID, std::vector<RenderCommand>> materialToSubmitCommand;
     std::vector<RenderCommand> commands;
     std::vector<RenderCommand> endCommands;
+    renderID colorTargetID;
+    renderID depthTargetID;
     int cubemapIdx;
     bool useBuffer;
 
@@ -26,6 +28,8 @@ struct RenderCanva {
         , format(framebufferFormat)
         , cubemapIdx(-1)
         , useBuffer(true)
+        , colorTargetID(0)
+        , depthTargetID(0)
     {
     }
 
@@ -36,6 +40,8 @@ struct RenderCanva {
         , format(framebufferFormat)
         , cubemapIdx(cubemapIndex)
         , useBuffer(true)
+        , colorTargetID(0)
+        , depthTargetID(0)
     {
     }
 

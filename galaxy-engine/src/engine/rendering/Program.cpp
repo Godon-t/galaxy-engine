@@ -229,7 +229,7 @@ ProgramPBR::ProgramPBR(std::string path)
     useMetallicMapLocation  = glGetUniformLocation(programID, "useMetallicMap");
     useRoughnessMapLocation = glGetUniformLocation(programID, "useRoughnessMap");
     useAmbientMapLocation   = glGetUniformLocation(programID, "useAoMap");
-    
+
     lightSpaceMatrixLocation = glGetUniformLocation(programID, "lightSpaceMatrix");
 
     use();
@@ -256,7 +256,6 @@ void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture, 
     activateTexture(NORMAL, useNormalMapLocation, normalTexLocation);
     activateTexture(AO, useAmbientMapLocation, ambientTexLocation);
 }
-
 
 void ProgramPBR::setLightSpaceMatrix(const mat4& lightSpaceMatrix)
 {

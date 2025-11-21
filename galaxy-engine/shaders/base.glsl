@@ -21,9 +21,9 @@ void main()
     v_texCoords = texCoord;
     gl_Position = projection * view * model * vec4(vertices_position_modelspace, 1);
 
-    v_normal   = normalize(mat3(transpose(inverse(model))) * normal);
-    v_worldPos = vec3(model * vec4(vertices_position_modelspace, 1.0));
-    v_camPos   = vec3(inverse(view)[3]);
+    v_normal            = normalize(mat3(transpose(inverse(model))) * normal);
+    v_worldPos          = vec3(model * vec4(vertices_position_modelspace, 1.0));
+    v_camPos            = vec3(inverse(view)[3]);
     v_fragPosLightSpace = lightSpaceMatrix * vec4(v_worldPos, 1.0);
 }
 
@@ -127,36 +127,34 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 {
     // Perspective division
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    
+
     // Transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
-    
+
     // Get closest depth value from light's perspective
     float closestDepth = texture(shadowMap, projCoords.xy).r;
-    
+
     // Get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
-    
+
     // Bias pour éviter le shadow acne
     float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-    
+
     // PCF (Percentage Closer Filtering) pour adoucir les ombres
-    float shadow = 0.0;
+    float shadow   = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-    for(int x = -1; x <= 1; ++x)
-    {
-        for(int y = -1; y <= 1; ++y)
-        {
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
             float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
         }
     }
     shadow /= 9.0;
-    
+
     // Keep shadow at 0.0 when outside far plane
-    if(projCoords.z > 1.0)
+    if (projCoords.z > 1.0)
         shadow = 0.0;
-        
+
     return shadow;
 }
 /*--------------------------------------PBR--------------------------------------*/
@@ -206,10 +204,10 @@ void main()
 
         // add to outgoing radiance Lo
         float NdotL = max(dot(N, L), 0.0);
-        
+
         // Calculer l'ombre
         float shadow = ShadowCalculation(v_fragPosLightSpace, N, L);
-        
+
         Lo += (1.0 - shadow) * (kD * albedo / PI + specular) * radiance * NdotL * 50.f;
     }
 

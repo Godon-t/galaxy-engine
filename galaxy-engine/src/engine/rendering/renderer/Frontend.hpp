@@ -18,6 +18,8 @@ public:
     void beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1);
     void endCanva();
     void processCanvas();
+    void linkCanvaColorToTexture(renderID textureID);
+    void linkCanvaDepthToTexture(renderID textureID);
 
     void submit(renderID meshID);
     void submit(renderID meshID, const Transform& transform);

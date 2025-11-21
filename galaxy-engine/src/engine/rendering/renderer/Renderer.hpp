@@ -24,16 +24,15 @@ public:
 
     void beginSceneRender(const mat4& camTransform, const vec2& dimmensions);
     void beginSceneRender(const vec3& camPosition, const vec3& camDirection, const vec3& camUp, const vec2& dimmensions);
-    inline void beginCanvaNoBuffer()
-    {
-        m_frontend.beginCanvaNoBuffer();
-    }
+    inline void beginCanvaNoBuffer() { m_frontend.beginCanvaNoBuffer(); }
     void beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1);
     inline void beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1)
     {
         m_frontend.beginCanva(viewMat, projectionMat, framebufferID, framebufferFormat, cubemapIdx);
     }
     inline void endCanva() { m_frontend.endCanva(); }
+    inline void linkCanvaColorToTexture(renderID textureID) { m_frontend.linkCanvaColorToTexture(textureID); }
+    inline void linkCanvaDepthToTexture(renderID textureID) { m_frontend.linkCanvaDepthToTexture(textureID); }
 
     void endSceneRender();
 
@@ -125,6 +124,10 @@ private:
 
     mat4 m_currentView;
     mat4 m_currentProj;
+
+    renderID m_testRect;
+    renderID m_testRectText;
+    renderID m_testRectFB;
 
     vec3 m_cubemap_orientations[6], m_cubemap_ups[6];
 

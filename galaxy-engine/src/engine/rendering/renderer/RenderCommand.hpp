@@ -23,6 +23,7 @@ enum RenderCommandType {
     setUniform,
     setViewport,
     updateCubemap,
+    saveFrameBuffer,
 
     debugMsg
 };
@@ -93,14 +94,21 @@ struct InitPostProcessCommand {
 };
 
 enum SetValueTypes {
-    BOOL
+    BOOL,
+    VEC3,
+    MAT4
 };
 struct SetUniformCommand {
     SetValueTypes type;
     char* uniformName;
     union {
         bool valueBool;
+        struct {
+            float x, y, z;
+        } valueVec3;
     };
+    // TODO: fix this !!!
+    math::mat4 matrixValue;
 };
 
 struct SetViewportCommand {
@@ -115,6 +123,11 @@ struct UpdateCubemapCommand {
 
 struct DebugMsgCommand {
     char* msg;
+};
+
+struct SaveFrameBufferCommand {
+    char* path;
+    renderID frameBufferID;
 };
 
 struct RenderCommand {
@@ -147,6 +160,7 @@ struct RenderCommand {
         UpdateCubemapCommand updateCubemap;
 
         DebugMsgCommand debugMsg;
+        SaveFrameBufferCommand saveFrameBuffer;
     };
 };
 } // namespace Galaxy

@@ -8,20 +8,23 @@ layout(location = 2) in vec3 normal;
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
+uniform mat4 lightSpaceMatrix;
 
 out vec2 v_texCoords;
 out vec3 v_worldPos;
 out vec3 v_normal;
-out vec3 v_camPos; // Why a varying ?
+out vec3 v_camPos;
+out vec4 v_fragPosLightSpace;
 
 void main()
 {
     v_texCoords = texCoord;
     gl_Position = projection * view * model * vec4(vertices_position_modelspace, 1);
 
-    v_normal   = normalize(mat3(transpose(inverse(model))) * normal);
-    v_worldPos = vec3(model * vec4(vertices_position_modelspace, 1.0));
-    v_camPos   = vec3(inverse(view)[3]);
+    v_normal            = normalize(mat3(transpose(inverse(model))) * normal);
+    v_worldPos          = vec3(model * vec4(vertices_position_modelspace, 1.0));
+    v_camPos            = vec3(inverse(view)[3]);
+    v_fragPosLightSpace = lightSpaceMatrix * vec4(v_worldPos, 1.0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -43,6 +46,7 @@ uniform sampler2D normalMap;
 uniform sampler2D metallicMap;
 uniform sampler2D roughnessMap;
 uniform sampler2D aoMap;
+uniform sampler2D shadowMap;
 
 uniform bool useAlbedoMap    = false;
 uniform bool useNormalMap    = false;
@@ -51,8 +55,19 @@ uniform bool useRoughnessMap = false;
 uniform bool useAoMap        = false;
 
 // lights
-const int MAX_LIGHT                    = 20;
-uniform int lightCount                 = 1;
+const int MAX_LIGHT    = 20;
+uniform int lightCount = 1;
+struct Light {
+    vec3 position;
+    float pad0;
+    vec3 color;
+    float pad1;
+    mat4 lightMatrix;
+    // shadow map
+};
+
+uniform Light lights[MAX_LIGHT];
+
 uniform vec3 lightPositions[MAX_LIGHT] = vec3[MAX_LIGHT](
     vec3(0.f, 2.f, 0.f), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0));
 uniform vec3 lightColors[MAX_LIGHT] = vec3[MAX_LIGHT](
@@ -62,6 +77,7 @@ in vec2 v_texCoords;
 in vec3 v_worldPos;
 in vec3 v_normal;
 in vec3 v_camPos;
+in vec4 v_fragPosLightSpace;
 
 out vec4 color;
 
@@ -117,6 +133,34 @@ vec3 getNormalFromNormalMap()
 {
     return -normalize(texture2D(normalMap, v_texCoords).rgb * 2.0 - 1.0);
 }
+
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
+{
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords      = projCoords * 0.5 + 0.5;
+
+    float currentDepth = projCoords.z;
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+
+    float bias = 0.001;
+
+    float shadow   = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    shadow /= 9.0;
+
+    if (projCoords.z > 1.0)
+        shadow = 0.0;
+
+    // shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+
+    return shadow;
+}
 /*--------------------------------------PBR--------------------------------------*/
 
 void main()
@@ -143,11 +187,11 @@ void main()
 
     for (int i = 0; i < lightCount; ++i) {
         // calculate per-light radiance
-        vec3 L            = normalize(lightPositions[i] - v_worldPos);
+        vec3 L            = normalize(lights[i].position - v_worldPos);
         vec3 H            = normalize(V + L);
-        float distance    = length(lightPositions[i] - v_worldPos);
+        float distance    = length(lights[i].position - v_worldPos);
         float attenuation = 1.f / (distance * distance);
-        vec3 radiance     = lightColors[i] * attenuation;
+        vec3 radiance     = lights[i].color * attenuation;
 
         // cook-torrance brdf
         float NDF = DistributionGGX(N, H, roughness);
@@ -164,7 +208,11 @@ void main()
 
         // add to outgoing radiance Lo
         float NdotL = max(dot(N, L), 0.0);
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL * 50.f;
+
+        // Calculer l'ombre
+        float shadow = ShadowCalculation(v_fragPosLightSpace, N, L);
+
+        Lo += (1.0 - shadow) * (kD * albedo / PI + specular) * radiance * NdotL * 50.f;
     }
 
     // ambient lighting (we now use IBL as the ambient term)
@@ -196,4 +244,8 @@ void main()
     colorPBR = pow(colorPBR, vec3(1.0 / 2.2));
 
     color = vec4(colorPBR, transparency);
+
+    // vec3 L       = normalize(lights[0].position - v_worldPos);
+    // float shadow = ShadowCalculation(v_fragPosLightSpace, N, L);
+    // color        = vec4(vec3(shadow), transparency);
 }

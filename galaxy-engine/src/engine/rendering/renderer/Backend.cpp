@@ -33,11 +33,14 @@ Backend::Backend(size_t maxSize)
     glEnable(GL_CULL_FACE);
     // glDisable(GL_CULL_FACE);
 
+    // TODO: Change the way Program object are created
     m_mainProgram           = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
     m_skyboxProgram         = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
     m_irradianceProgram     = std::move(ProgramSkybox(engineRes("shaders/filters/irradiance.glsl")));
     m_textureProgram        = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
+    m_unicolorProgram       = std::move(ProgramUnicolor(engineRes("shaders/unicolor.glsl")));
     m_postProcessingProgram = std::move(ProgramPostProc(engineRes("shaders/post_processing.glsl")));
+    m_shadowProgram         = std::move(ProgramShadow(engineRes("shaders/shadow_depth.glsl")));
 
     m_activeProgram = &m_mainProgram;
 
@@ -111,7 +114,7 @@ void Backend::clearMesh(renderID meshID)
     }
 }
 
-renderID Backend::instanciateTexture(ResourceHandle<Image> image)
+renderID Backend::instantiateTexture(ResourceHandle<Image> image)
 {
     renderID existingID = image.getResource().getTextureID();
     if (existingID != 0) {
@@ -130,6 +133,17 @@ renderID Backend::instanciateTexture(ResourceHandle<Image> image)
 
     m_gpuDestroyNotifications[textureID] = [image] mutable { image.getResource().notifyGpuInstanceDestroyed(); };
 
+    return textureID;
+}
+
+renderID Backend::instantiateTexture()
+{
+    if (!m_textureInstances.canAddInstance())
+        return 0;
+
+    renderID textureID = m_textureInstances.createResourceInstance();
+    m_textureInstances.get(textureID)->resize(1024, 1024);
+    checkOpenGLErrors("Instantiate texture");
     return textureID;
 }
 
@@ -163,7 +177,7 @@ renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
         auto setupTexture = [this, &matInstance, &matResource](TextureType type) {
             matInstance->useImage[type] = matResource.canUseImage(type);
             if (matInstance->useImage[type]) {
-                matInstance->images[type] = instanciateTexture(matResource.getImage(type));
+                matInstance->images[type] = instantiateTexture(matResource.getImage(type));
             }
         };
 
@@ -291,6 +305,71 @@ renderID Backend::generateQuad(vec2 dimmensions, std::function<void()> destroyCa
     return instanciateMesh(vertices, indices, destroyCallback);
 }
 
+renderID Backend::generatePyramid(float baseSize, float height, std::function<void()> destroyCallback)
+{
+    std::vector<Vertex> vertices;
+    std::vector<short unsigned int> indices;
+
+    float half = baseSize / 2.0f;
+
+    // top
+    Vertex apex;
+    apex.position = vec3(0, 0, height);
+    apex.normal   = vec3(0, 0, 1);
+    apex.texCoord = vec2(0.5f, 0.5f);
+    vertices.push_back(apex); // index 0
+
+    // base
+    Vertex base1, base2, base3, base4;
+    base1.position = vec3(-half, -half, 0);
+    base1.normal   = vec3(0, 0, -1);
+    base1.texCoord = vec2(0, 0);
+    vertices.push_back(base1); // index 1
+
+    base2.position = vec3(half, -half, 0);
+    base2.normal   = vec3(0, 0, -1);
+    base2.texCoord = vec2(1, 0);
+    vertices.push_back(base2); // index 2
+
+    base3.position = vec3(half, half, 0);
+    base3.normal   = vec3(0, 0, -1);
+    base3.texCoord = vec2(1, 1);
+    vertices.push_back(base3); // index 3
+
+    base4.position = vec3(-half, half, 0);
+    base4.normal   = vec3(0, 0, -1);
+    base4.texCoord = vec2(0, 1);
+    vertices.push_back(base4); // index 4
+
+    // lateral faces triangles (apex to each base edge)
+    // Front face (towards -Y)
+    indices.push_back(0);
+    indices.push_back(1);
+    indices.push_back(2);
+    // Right face (towards +X)
+    indices.push_back(0);
+    indices.push_back(2);
+    indices.push_back(3);
+    // Back face (towards +Y)
+    indices.push_back(0);
+    indices.push_back(3);
+    indices.push_back(4);
+    // Left face (towards -X)
+    indices.push_back(0);
+    indices.push_back(4);
+    indices.push_back(1);
+
+    // Base (two triangles)
+    indices.push_back(1);
+    indices.push_back(4);
+    indices.push_back(3);
+    indices.push_back(1);
+    indices.push_back(3);
+    indices.push_back(2);
+
+    return instanciateMesh(vertices, indices, destroyCallback);
+}
+
 void Backend::clearCubemap(renderID cubemapID)
 {
     if (!m_cubemapInstances.tryRemove(cubemapID))
@@ -355,6 +434,55 @@ unsigned int Backend::getFrameBufferTextureID(renderID frameBufferID)
     return m_frameBufferInstances.get(frameBufferID)->getColorTextureID();
 }
 
+unsigned int Backend::getFrameBufferDepthTextureID(renderID frameBufferID)
+{
+    return m_frameBufferInstances.get(frameBufferID)->getDepthTextureID();
+}
+
+void Backend::setCullMode(renderID visualInstanceID, CullMode mode)
+{
+    m_visualInstances.get(visualInstanceID)->setCullMode(mode);
+}
+
+void Backend::initDebugCallback()
+{
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback([](GLenum source, GLenum type, GLuint id,
+                               GLenum severity, GLsizei length,
+                               const GLchar* message, const void* userParam) {
+        (void)source;
+        (void)type;
+        (void)id;
+        (void)length;
+        (void)userParam;
+        if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
+            return;
+
+        char* severityChr;
+        switch (severity) {
+        case GL_DEBUG_SEVERITY_HIGH:
+            severityChr = "High";
+            break;
+        case GL_DEBUG_SEVERITY_MEDIUM:
+            severityChr = "Medium";
+            break;
+        case GL_DEBUG_SEVERITY_LOW:
+            severityChr = "Low";
+            break;
+        default:
+            severityChr = "Unknown";
+            break;
+        }
+        GLX_CORE_WARN("GL DEBUG (severity={0}): {1}", severityChr, message);
+
+        if (severity == GL_DEBUG_SEVERITY_HIGH) {
+            raise(SIGTRAP);
+        }
+    },
+        nullptr);
+}
+
 renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
 {
     renderID cubemapID = instanciateCubemap();
@@ -410,6 +538,9 @@ void Backend::processCommand(SetViewCommand& setViewCommand)
     m_textureProgram.use();
     m_textureProgram.updateViewMatrix(setViewCommand.view);
 
+    m_unicolorProgram.use();
+    m_unicolorProgram.updateViewMatrix(setViewCommand.view);
+
     m_skyboxProgram.use();
     m_skyboxProgram.updateViewMatrix(setViewCommand.view);
 
@@ -429,6 +560,9 @@ void Backend::setProjectionMatrix(const mat4& projectionMatrix)
 
     m_textureProgram.use();
     m_textureProgram.updateProjectionMatrix(projectionMatrix);
+
+    m_unicolorProgram.use();
+    m_unicolorProgram.updateProjectionMatrix(projectionMatrix);
 
     m_skyboxProgram.use();
     m_skyboxProgram.updateProjectionMatrix(projectionMatrix);
@@ -454,10 +588,14 @@ void Backend::processCommand(SetActiveProgramCommand& command)
         m_activeProgram = &m_mainProgram;
     else if (command.program == TEXTURE)
         m_activeProgram = &m_textureProgram;
+    else if (command.program == UNICOLOR)
+        m_activeProgram = &m_unicolorProgram;
     else if (command.program == POST_PROCESSING)
         m_activeProgram = &m_postProcessingProgram;
     else if (command.program == FILTER_IRRADIANCE)
         m_activeProgram = &m_irradianceProgram;
+    else if (command.program == SHADOW_DEPTH)
+        m_activeProgram = &m_shadowProgram;
     else
         GLX_CORE_ASSERT(false, "unknown asked program!");
 
@@ -496,9 +634,9 @@ void Backend::processCommand(AttachTextureToFramebufferCommand& command)
     auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
     auto& texture     = *m_textureInstances.get(command.textureID);
     if (command.isDepth)
-        framebuffer.attachDepthTexture(texture.getId());
+        framebuffer.attachDepthTexture(texture);
     else
-        framebuffer.attachColorTexture(texture.getId());
+        framebuffer.attachColorTexture(texture);
 
     checkOpenGLErrors("Attach texture to framebuffer");
 }
@@ -562,7 +700,16 @@ void Backend::processCommand(SetUniformCommand& command)
 {
     if (command.type == SetValueTypes::BOOL) {
         glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueBool ? GL_TRUE : GL_FALSE);
+    } else if (command.type == SetValueTypes::VEC3) {
+        glUniform3f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName),
+            command.valueVec3.x, command.valueVec3.y, command.valueVec3.z);
+    } else if (command.type == SetValueTypes::MAT4) {
+        glUniformMatrix4fv(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), 1, GL_FALSE, &command.matrixValue[0][0]);
     }
+
+    free(command.uniformName);
+
+    checkOpenGLErrors("Set uniform");
 }
 
 void Backend::processCommand(SetViewportCommand& command)
@@ -573,12 +720,20 @@ void Backend::processCommand(SetViewportCommand& command)
 void Backend::processCommand(UpdateCubemapCommand& command)
 {
     m_cubemapInstances.get(command.targetID)->resize(command.resolution);
+    checkOpenGLErrors("Update cubemap");
 }
 
 void Backend::processCommand(DebugMsgCommand& command)
 {
     GLX_CORE_TRACE(command.msg);
     free(command.msg);
+}
+
+void Backend::processCommand(SaveFrameBufferCommand& command)
+{
+    m_frameBufferInstances.get(command.frameBufferID)->savePPM(command.path);
+
+    free(command.path);
 }
 
 void Backend::processCommand(RenderCommand& command)
@@ -640,6 +795,9 @@ void Backend::processCommand(RenderCommand& command)
         break;
     case RenderCommandType::debugMsg:
         processCommand(command.debugMsg);
+        break;
+    case RenderCommandType::saveFrameBuffer:
+        processCommand(command.saveFrameBuffer);
         break;
     default:
         GLX_CORE_ERROR("Unknown render command");

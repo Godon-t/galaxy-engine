@@ -69,4 +69,12 @@ mat4 CameraManager::processViewMatrix(const mat4& transform)
     vec3 target   = position + forward;
     return lookAt(position, target, vec3(0, 1, 0));
 }
+
+mat4 CameraManager::processViewMatrix(mat4& transform)
+{
+    vec3 position = vec3(transform[3][0], transform[3][1], transform[3][2]);
+    vec3 forward  = vec3(transform[2][0], transform[2][1], transform[2][2]);
+    vec3 target   = position + forward;
+    return lookAt(position, target, vec3(0, 1, 0));
+}
 }

@@ -8,6 +8,7 @@ class MeshInstance;
 class MultiMeshInstance;
 class Sprite3D;
 class EnvironmentNode;
+class SpotLight;
 
 class NodeVisitor {
 public:
@@ -18,5 +19,6 @@ public:
     virtual void visit(MultiMeshInstance& node) {};
     virtual void visit(Sprite3D& node) {};
     virtual void visit(EnvironmentNode& node) {};
+    virtual void visit(SpotLight& node) {};
 };
 }

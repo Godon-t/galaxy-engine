@@ -1,6 +1,13 @@
 #include "Frontend.hpp"
 
 namespace Galaxy {
+char* copyString(const std::string& str)
+{
+    char* cstr = new char[str.size() + 1];
+    std::strcpy(cstr, str.c_str());
+    return cstr;
+}
+
 Frontend::Frontend(std::vector<RenderCommand>* commandBuffer)
 {
     m_frontBuffer = commandBuffer;
@@ -37,10 +44,14 @@ void Frontend::endCanva()
 
 void Frontend::processCanvas()
 {
+    auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
     for (auto& canva : m_canvas) {
         if (canva.useBuffer) {
-            auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
             bindFrameBuffer(canva.framebufferID, canva.cubemapIdx);
+            if (canva.colorTargetID != 0)
+                attachTextureToColorFramebuffer(canva.colorTargetID, canva.framebufferID);
+            if (canva.depthTargetID != 0)
+                attachTextureToDepthFramebuffer(canva.depthTargetID, canva.framebufferID);
             clear(clearColor);
             setViewMatrix(canva.viewMat);
             setProjectionMatrix(canva.projectionMat);
@@ -50,12 +61,30 @@ void Frontend::processCanvas()
         dumpCommandsToBuffer(canva);
 
         if (canva.useBuffer) {
+            if (canva.storeResult)
+                saveFrameBuffer(canva.framebufferID, canva.storagePath);
             unbindFrameBuffer(canva.framebufferID, canva.cubemapIdx >= 0);
         }
     }
 
     m_canvas.clear();
     m_currentCanvaIdx = 0;
+}
+
+void Frontend::linkCanvaColorToTexture(renderID textureID)
+{
+    m_canvas[m_currentCanvaIdx].colorTargetID = textureID;
+}
+
+void Frontend::linkCanvaDepthToTexture(renderID textureID)
+{
+    m_canvas[m_currentCanvaIdx].depthTargetID = textureID;
+}
+
+void Frontend::storeCanvaResult(std::string& path)
+{
+    m_canvas[m_currentCanvaIdx].storeResult = true;
+    m_canvas[m_currentCanvaIdx].storagePath = path;
 }
 
 void Frontend::submit(renderID meshID)
@@ -127,6 +156,21 @@ void Frontend::pushCommand(RenderCommand command)
         m_canvas[m_currentCanvaIdx].endCommands.push_back(command);
     else
         m_canvas[m_currentCanvaIdx].commands.push_back(command);
+}
+
+void Frontend::saveFrameBuffer(renderID framebufferID, std::string& path)
+{
+    SaveFrameBufferCommand saveFramebufferC;
+    char* copy = new char[path.size() + 1];
+    std::strcpy(copy, path.c_str());
+    saveFramebufferC.path          = copy;
+    saveFramebufferC.frameBufferID = framebufferID;
+
+    RenderCommand command;
+    command.type            = RenderCommandType::saveFrameBuffer;
+    command.saveFrameBuffer = saveFramebufferC;
+
+    pushCommand(command);
 }
 
 mat4 Frontend::getProjectionMatrix()
@@ -249,12 +293,55 @@ void Frontend::initPostProcessing(renderID frameBufferID)
     pushCommand(command);
 }
 
-void Frontend::setUniform(char* uniformName, bool value)
+void Frontend::setUniform(std::string uniformName, bool value)
 {
     SetUniformCommand uniformCommand;
-    uniformCommand.uniformName = uniformName;
+    uniformCommand.uniformName = copyString(uniformName);
     uniformCommand.type        = BOOL;
     uniformCommand.valueBool   = value;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::setUniform(std::string uniformName, mat4 value)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.type        = MAT4;
+    uniformCommand.matrixValue = value;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::setUniform(std::string uniformName, vec3 value)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.type        = VEC3;
+    uniformCommand.valueVec3.x = value.r;
+    uniformCommand.valueVec3.y = value.g;
+    uniformCommand.valueVec3.z = value.b;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::setUnicolorObjectColor(const vec3& color)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = (char*)"objectColor";
+    uniformCommand.type        = VEC3;
+    uniformCommand.valueVec3.x = color.r;
+    uniformCommand.valueVec3.y = color.g;
+    uniformCommand.valueVec3.z = color.b;
     RenderCommand command;
     command.type       = RenderCommandType::setUniform;
     command.setUniform = uniformCommand;

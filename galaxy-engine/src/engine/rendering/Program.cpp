@@ -230,6 +230,8 @@ ProgramPBR::ProgramPBR(std::string path)
     useRoughnessMapLocation = glGetUniformLocation(programID, "useRoughnessMap");
     useAmbientMapLocation   = glGetUniformLocation(programID, "useAoMap");
 
+    lightSpaceMatrixLocation = glGetUniformLocation(programID, "lightSpaceMatrix");
+
     use();
     glUniform1i(glGetUniformLocation(programID, "useIrradianceMap"), GL_FALSE);
 }
@@ -255,6 +257,11 @@ void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture, 
     activateTexture(AO, useAmbientMapLocation, ambientTexLocation);
 }
 
+void ProgramPBR::setLightSpaceMatrix(const mat4& lightSpaceMatrix)
+{
+    glUniformMatrix4fv(lightSpaceMatrixLocation, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+}
+
 ProgramSkybox::ProgramSkybox(std::string path)
     : Program(path)
 {
@@ -263,6 +270,17 @@ ProgramSkybox::ProgramSkybox(std::string path)
 ProgramTexture::ProgramTexture(std::string path)
     : Program(path)
 {
+}
+
+ProgramUnicolor::ProgramUnicolor(std::string path)
+    : Program(path)
+{
+    m_colorLocation = glGetUniformLocation(getProgramID(), "objectColor");
+}
+
+void ProgramUnicolor::setColor(const vec3& color)
+{
+    glUniform3f(m_colorLocation, color.r, color.g, color.b);
 }
 
 ProgramPostProc::ProgramPostProc(std::string path)
@@ -282,5 +300,16 @@ void ProgramPostProc::setTextures(unsigned int colorTexture, unsigned int depthT
     glActiveTexture(GL_TEXTURE0 + actInt);
     glBindTexture(GL_TEXTURE_2D, depthTexture);
     glUniform1i(m_depthLocation, actInt);
+}
+
+ProgramShadow::ProgramShadow(std::string path)
+    : Program(path)
+{
+    m_lightSpaceMatrixLocation = glGetUniformLocation(getProgramID(), "lightSpaceMatrix");
+}
+
+void ProgramShadow::setLightSpaceMatrix(const mat4& lightSpaceMatrix)
+{
+    glUniformMatrix4fv(m_lightSpaceMatrixLocation, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
 }
 }

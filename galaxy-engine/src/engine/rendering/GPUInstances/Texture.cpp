@@ -14,26 +14,77 @@ Texture::Texture(unsigned char* data, int width, int height, int nbChannels)
     init(data, width, height, nbChannels);
 }
 
+void Texture::resize(int width, int height)
+{
+    if (width == m_width && height == m_height)
+        return;
+
+    m_width  = width;
+    m_height = height;
+
+    unsigned int internalFormat = getInternalFormat(m_format);
+    unsigned int format         = getExternalFormat(m_format);
+    unsigned int type           = getType(m_format);
+
+    if (m_id != 0)
+        glDeleteTextures(1, &m_id);
+
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
+    glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    if (m_format == TextureFormat::DEPTH24STENCIL8 || m_format == TextureFormat::DEPTH) {
+        float borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    }
+
+    glTextureStorage2D(m_id, 1, internalFormat, width, height);
+    checkOpenGLErrors("Texture resize");
+}
+
+void Texture::setFormat(TextureFormat format)
+{
+    if (format != m_format) {
+        m_format = format;
+
+        if (m_id != 0) {
+            glDeleteTextures(1, &m_id);
+            m_id = 0;
+        }
+
+        int keepWidth  = m_width;
+        int keepHeight = m_height;
+        m_width        = 0;
+        m_height       = 0;
+        resize(keepWidth, keepHeight);
+        checkOpenGLErrors("Texture set format");
+    }
+}
+
 void Texture::init(unsigned char* data, int width, int height, int nbChannels)
 {
-    GLenum internalFormat = GL_RGB8;
-    GLenum format         = GL_RGB;
+    m_width  = width;
+    m_height = height;
+
     switch (nbChannels) {
     case 1:
-        internalFormat = GL_R8;
-        format         = GL_RED;
+        m_format = TextureFormat::RED;
         break;
     case 3:
-        internalFormat = GL_RGB8;
-        format         = GL_RGB;
+        m_format = TextureFormat::RGB;
         break;
     case 4:
-        internalFormat = GL_RGBA8;
-        format         = GL_RGBA;
+        m_format = TextureFormat::RGBA;
         break;
     default:
         GLX_CORE_ERROR("Warning: Unsupported texture format, defaulting to GL_RGB8\n");
     }
+
+    GLenum internalFormat = getInternalFormat(m_format);
+    GLenum format         = getExternalFormat(m_format);
+    unsigned int type     = getType(m_format);
 
     glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
 
@@ -43,7 +94,7 @@ void Texture::init(unsigned char* data, int width, int height, int nbChannels)
     glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glTextureStorage2D(m_id, 1, internalFormat, width, height);
-    glTextureSubImage2D(m_id, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
+    glTextureSubImage2D(m_id, 0, 0, 0, width, height, format, type, data);
     glGenerateTextureMipmap(m_id);
 
     checkOpenGLErrors("Texture load");
@@ -61,6 +112,48 @@ void Texture::activate(int textureLocation)
 void Texture::destroy()
 {
     glDeleteTextures(1, &m_id);
+    m_id = 0;
+}
+
+unsigned int Texture::getInternalFormat(TextureFormat format)
+{
+    if (format == TextureFormat::RGBA)
+        return GL_RGBA8;
+    if (format == TextureFormat::RED)
+        return GL_R8;
+    if (format == TextureFormat::RGB)
+        return GL_RGB8;
+    if (format == TextureFormat::DEPTH)
+        return GL_DEPTH_COMPONENT24;
+    if (format == TextureFormat::DEPTH24STENCIL8)
+        return GL_DEPTH24_STENCIL8;
+    return 0;
+}
+
+unsigned int Texture::getExternalFormat(TextureFormat format)
+{
+    if (format == TextureFormat::RGBA)
+        return GL_RGBA;
+    if (format == TextureFormat::RED)
+        return GL_RED;
+    if (format == TextureFormat::RGB)
+        return GL_RGB;
+    if (format == TextureFormat::DEPTH)
+        return GL_DEPTH_COMPONENT;
+    if (format == TextureFormat::DEPTH24STENCIL8)
+        return GL_DEPTH_STENCIL;
+    return 0;
+}
+
+unsigned int Texture::getType(TextureFormat format)
+{
+    if (format == TextureFormat::RGBA || format == TextureFormat::RGB || format == TextureFormat::RED)
+        return GL_UNSIGNED_BYTE;
+    if (format == TextureFormat::DEPTH)
+        return GL_FLOAT;
+    if (format == TextureFormat::DEPTH24STENCIL8)
+        return GL_UNSIGNED_INT_24_8;
+    return 0;
 }
 
 Cubemap::Cubemap()

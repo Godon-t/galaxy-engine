@@ -2,6 +2,7 @@
 
 #include "pch.hpp"
 
+#include "Application.hpp"
 #include "Core.hpp"
 #include "gl_headers.hpp"
 #include "rendering/CameraManager.hpp"
@@ -14,7 +15,10 @@ Renderer::Renderer()
     , m_frontCommandBufferIdx(0)
     , m_frontend(&m_commandBuffers[m_frontCommandBufferIdx])
     , m_backend()
+    , m_lightManager()
 {
+    m_backend.initDebugCallback();
+
     m_cubemapFramebufferID   = m_backend.instantiateCubemapFrameBuffer(1024);
     m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8);
     m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
@@ -32,6 +36,8 @@ Renderer::Renderer()
     m_cubemap_orientations[4] = { 0, 0, 1 };
     m_cubemap_orientations[5] = { 0, 0, -1 };
     m_cubemap_ups[4] = m_cubemap_ups[5] = { 0, -1, 0 };
+
+    // m_frontend.attachTextureToDepthFramebuffer(m_testRectText, m_testRectFB);
 }
 
 Renderer::~Renderer()
@@ -51,12 +57,22 @@ Renderer& Renderer::getInstance()
     return renderer;
 }
 
+void Renderer::init()
+{
+    m_lightManager.init();
+}
+
 void Renderer::beginSceneRender(const mat4& camTransform, const vec2& dimmensions)
 {
-    m_currentView = CameraManager::processViewMatrix(camTransform);
-    m_currentProj = CameraManager::processProjectionMatrix(vec2(dimmensions));
+    beginCanva(camTransform, dimmensions, m_sceneFrameBufferID, FramebufferTextureFormat::DEPTH24RGBA8);
+}
 
-    m_frontend.beginCanva(m_currentView, m_currentProj, m_sceneFrameBufferID, FramebufferTextureFormat::DEPTH24STENCIL8);
+void Renderer::beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx)
+{
+    m_currentView = CameraManager::processViewMatrix(camTransform);
+    m_currentProj = CameraManager::processProjectionMatrix(dimmensions);
+
+    m_frontend.beginCanva(m_currentView, m_currentProj, framebufferID, framebufferFormat);
 }
 
 void Renderer::endSceneRender()
@@ -64,6 +80,11 @@ void Renderer::endSceneRender()
     m_frontend.endCanva();
     applyPostProcessing();
     m_frontend.processCanvas();
+}
+
+void Renderer::shadowPass()
+{
+    m_lightManager.shadowPass(Application::getInstance().getRootNodePtr().get());
 }
 
 void Renderer::applyPostProcessing()

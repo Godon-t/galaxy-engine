@@ -11,6 +11,7 @@ public:
     }
 
     virtual void draw() override;
+    virtual void lightPassDraw() override;
 
     void accept(Galaxy::NodeVisitor& visitor) override;
     void loadMesh(std::string path);

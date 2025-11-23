@@ -2,6 +2,7 @@
 
 #include "Backend.hpp"
 #include "Frontend.hpp"
+#include "LightManager.hpp"
 
 #include "data/Transform.hpp"
 #include "nodes/Node.hpp"
@@ -15,6 +16,7 @@ enum FilterEnum {
 class Renderer {
 public:
     static Renderer& getInstance();
+    void init();
 
     inline void changeUsedProgram(ProgramType prog) { m_frontend.changeUsedProgram(prog); }
 
@@ -22,11 +24,20 @@ public:
 
     void beginSceneRender(const mat4& camTransform, const vec2& dimmensions);
     void beginSceneRender(const vec3& camPosition, const vec3& camDirection, const vec3& camUp, const vec2& dimmensions);
-
     inline void beginCanvaNoBuffer() { m_frontend.beginCanvaNoBuffer(); }
+    void beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1);
+    inline void beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1)
+    {
+        m_frontend.beginCanva(viewMat, projectionMat, framebufferID, framebufferFormat, cubemapIdx);
+    }
     inline void endCanva() { m_frontend.endCanva(); }
+    inline void linkCanvaColorToTexture(renderID textureID) { m_frontend.linkCanvaColorToTexture(textureID); }
+    inline void linkCanvaDepthToTexture(renderID textureID) { m_frontend.linkCanvaDepthToTexture(textureID); }
+    inline void storeCanva(std::string path) { m_frontend.storeCanvaResult(path); }
 
     void endSceneRender();
+
+    void shadowPass();
 
     void renderFrame();
 
@@ -36,7 +47,7 @@ public:
     inline renderID instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx = 0) { return m_backend.instanciateMesh(mesh, surfaceIdx); }
     inline void clearMesh(renderID meshID) { m_backend.clearMesh(meshID); }
 
-    inline renderID instanciateTexture(ResourceHandle<Image> image) { return m_backend.instanciateTexture(image); }
+    inline renderID instanciateTexture(ResourceHandle<Image> image) { return m_backend.instantiateTexture(image); }
     inline void bindTexture(renderID textureInstanceID, char* uniformName) { m_frontend.bindTexture(textureInstanceID, uniformName); }
     inline void clearTexture(renderID textureID) { m_backend.clearTexture(textureID); }
 
@@ -47,7 +58,9 @@ public:
 
     inline renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback) { return m_backend.generateCube(dimmension, inward, destroyCallback); }
     inline renderID generateQuad(vec2 dimmensions, std::function<void()> destroyCallback) { return m_backend.generateQuad(dimmensions, destroyCallback); }
+    inline renderID generatePyramid(float baseSize, float height, std::function<void()> destroyCallback) { return m_backend.generatePyramid(baseSize, height, destroyCallback); }
 
+    inline renderID instantiateTexture() { return m_backend.instantiateTexture(); }
     inline renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces) { return m_backend.instanciateCubemap(faces); }
     inline renderID instanciateCubemap() { return m_backend.instanciateCubemap(); }
     inline void clearCubemap(renderID cubemapID) { m_backend.clearCubemap(cubemapID); }
@@ -64,7 +77,15 @@ public:
 
     inline void debugMessage(std::string message) { m_frontend.addDebugMsg(message); }
 
-    inline void setUniform(char* uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
+    inline void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID) { m_frontend.attachTextureToColorFramebuffer(textureID, framebufferID); }
+    inline void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID) { m_frontend.attachTextureToDepthFramebuffer(textureID, framebufferID); }
+
+    inline void setUniform(std::string uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
+    inline void setUniform(std::string uniformName, mat4 value) { m_frontend.setUniform(uniformName, value); }
+    inline void setUniform(std::string uniformName, vec3 value) { m_frontend.setUniform(uniformName, value); }
+    inline void setUnicolorObjectColor(const vec3& color) { m_frontend.setUnicolorObjectColor(color); }
+
+    inline void setCullMode(renderID visualInstanceID, CullMode mode) { m_backend.setCullMode(visualInstanceID, mode); }
 
     // TODO: Resizing unbind framebuffer
     void resize(unsigned int width, unsigned int height)
@@ -84,12 +105,13 @@ public:
     inline unsigned int getRawSceneTextureID() { return m_backend.getFrameBufferTextureID(m_sceneFrameBufferID); }
     inline unsigned int getPostProcSceneTextureID() { return m_backend.getFrameBufferTextureID(m_postProcessingBufferID); }
 
+    inline LightManager& getLightManager() { return m_lightManager; }
+
 private:
     Renderer();
     ~Renderer();
 
     void switchCommandBuffer();
-
     void applyPostProcessing();
     // TODO: double buffering of commands not used currently (no multithreading)
     std::vector<std::vector<RenderCommand>> m_commandBuffers;
@@ -97,6 +119,7 @@ private:
 
     Frontend m_frontend;
     Backend m_backend;
+    LightManager m_lightManager;
 
     renderID m_sceneFrameBufferID;
     renderID m_postProcessingBufferID;

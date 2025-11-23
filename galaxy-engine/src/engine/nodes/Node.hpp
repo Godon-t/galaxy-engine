@@ -50,6 +50,7 @@ public:
     void clearChilds();
     std::vector<Node*> getChildren() const;
     size_t getChildCount() const;
+    bool getInRoot() const { return m_inRoot; }
 
     std::string getName() { return m_name; }
 
@@ -64,6 +65,7 @@ public:
 
     virtual void process(double delta) { }
     virtual void draw();
+    virtual void lightPassDraw();
 
     virtual void updateTransformAndChilds(const mat4& matrix = mat4(1));
     virtual void forceUpdateTransformAndChilds(const mat4& matrix);

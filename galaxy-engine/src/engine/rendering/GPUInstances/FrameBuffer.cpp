@@ -4,6 +4,8 @@
 #include "gl_headers.hpp"
 #include "rendering/OpenglHelper.hpp"
 
+#include <fstream>
+
 namespace Galaxy {
 void bindColorAttachmentTexture(GLuint* id, int width, int height, GLenum internalFormat, GLenum format)
 {
@@ -26,8 +28,20 @@ void bindDepthAttachment(GLuint* id, int width, int height, GLenum format)
     glGenTextures(1, id);
     glBindTexture(GL_TEXTURE_2D, *id);
 
+    // Decide pixel format and type based on requested internal format
+    GLenum pixelFormat = GL_DEPTH_COMPONENT;
+    GLenum pixelType   = GL_UNSIGNED_BYTE;
+
+    if (format == GL_DEPTH24_STENCIL8) {
+        pixelFormat = GL_DEPTH_STENCIL;
+        pixelType   = GL_UNSIGNED_INT_24_8;
+    } else if (format == GL_DEPTH_COMPONENT24) {
+        pixelFormat = GL_DEPTH_COMPONENT;
+        pixelType   = GL_UNSIGNED_INT;
+    }
+
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
-        GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        pixelFormat, pixelType, nullptr);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -55,6 +69,7 @@ FrameBuffer::FrameBuffer(int width, int height, FramebufferTextureFormat format)
 }
 void FrameBuffer::bind()
 {
+
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 }
 
@@ -70,35 +85,77 @@ void FrameBuffer::resize(unsigned int newWidth, unsigned int newHeight)
     invalidate();
 }
 
-void FrameBuffer::attachTexture(unsigned int attachment, unsigned int textureId, unsigned int target)
+void FrameBuffer::attachTexture(unsigned int attachment, Texture& texture, unsigned int target)
 {
+    unsigned int textureId = texture.getId();
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, target, textureId, 0);
 
     if (attachment == GL_COLOR_ATTACHMENT0) {
         if (!m_externalColor)
-            destroy();
+            glDeleteTextures(1, &m_attachedColor);
+
+        texture.resize(m_width, m_height);
+        texture.setFormat(TextureFormat::RGBA);
+
         m_externalColor = true;
-        m_attachedColor = textureId;
+        m_attachedColor = texture.getId();
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, m_attachedColor, 0);
     } else if (attachment == GL_DEPTH_ATTACHMENT) {
         if (!m_externalDepth)
-            destroy();
+            glDeleteTextures(1, &m_attachedDepth);
+
         m_externalDepth = true;
-        m_attachedDepth = textureId;
+
+        texture.resize(m_width, m_height);
+        texture.setFormat(TextureFormat::DEPTH);
+
+        m_attachedDepth = texture.getId();
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, target, m_attachedDepth, 0);
+    }
+
+    if (m_format == FramebufferTextureFormat::DEPTH || m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
     }
 
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
 }
 
-void FrameBuffer::attachColorTexture(unsigned int textureID)
+void FrameBuffer::savePPM(char* filename, bool depth)
 {
-    attachTexture(GL_COLOR_ATTACHMENT0, textureID, GL_TEXTURE_2D);
+    std::ofstream output_image(filename);
+
+    /// READ THE CONTENT FROM THE FBO
+    // glReadBuffer(GL_COLOR_ATTACHMENT0);
+    float* pixels = new float[m_width * m_height];
+    glReadPixels(0, 0, m_width, m_height, GL_DEPTH_COMPONENT, GL_FLOAT, pixels);
+
+    output_image << "P3" << std::endl;
+    output_image << m_width << " " << m_height << std::endl;
+    output_image << "255" << std::endl;
+
+    int k = 0;
+    for (int i = 0; i < m_width; i++) {
+        for (int j = 0; j < m_height; j++) {
+            output_image << (unsigned int)(255 * pixels[k]) << " " << (unsigned int)(255 * pixels[k]) << " " << (unsigned int)(255 * pixels[k]) << " ";
+            k = k + 1;
+        }
+        output_image << std::endl;
+    }
+    delete pixels;
+    output_image.close();
 }
 
-void FrameBuffer::attachDepthTexture(unsigned int textureID)
+void FrameBuffer::attachColorTexture(Texture& texture)
 {
-    attachTexture(GL_DEPTH_ATTACHMENT, textureID, GL_TEXTURE_2D);
+    attachTexture(GL_COLOR_ATTACHMENT0, texture, GL_TEXTURE_2D);
+}
+
+void FrameBuffer::attachDepthTexture(Texture& texture)
+{
+    attachTexture(GL_DEPTH_ATTACHMENT, texture, GL_TEXTURE_2D);
 }
 
 void FrameBuffer::invalidate()
@@ -117,8 +174,15 @@ void FrameBuffer::invalidate()
     } else if (m_format == FramebufferTextureFormat::DEPTH24RGBA8) {
         bindColorAttachmentTexture(&m_attachedColor, m_width, m_height, GL_RGBA8, GL_RGBA);
         bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH24_STENCIL8);
+    } else if (m_format == FramebufferTextureFormat::DEPTH) {
+        bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH_COMPONENT24);
     } else {
         GLX_CORE_ASSERT(false, "Framebuffer format not handled");
+    }
+
+    if (m_format == FramebufferTextureFormat::DEPTH || m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
     }
 
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;

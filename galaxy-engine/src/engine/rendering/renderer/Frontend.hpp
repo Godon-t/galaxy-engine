@@ -18,6 +18,9 @@ public:
     void beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1);
     void endCanva();
     void processCanvas();
+    void linkCanvaColorToTexture(renderID textureID);
+    void linkCanvaDepthToTexture(renderID textureID);
+    void storeCanvaResult(std::string& path);
 
     void submit(renderID meshID);
     void submit(renderID meshID, const Transform& transform);
@@ -36,10 +39,15 @@ public:
     // TODO: rename to match setActiveProgram command
     void changeUsedProgram(ProgramType program);
     void initPostProcessing(renderID frameBufferID);
-    void setUniform(char* uniformName, bool value);
+
+    void setUniform(std::string uniformName, bool value);
+    void setUniform(std::string uniformName, mat4 value);
+    void setUniform(std::string uniformName, vec3 value);
+
     void setViewport(vec2 position, vec2 dimmension);
     void updateCubemap(renderID targetID, unsigned int resolution);
     void addDebugMsg(std::string message);
+    void setUnicolorObjectColor(const vec3& color);
 
     void submitPBR(renderID meshID, renderID materialID, const Transform& transform);
 
@@ -62,6 +70,7 @@ private:
     void setViewMatrix(const math::mat4& view);
     void setProjectionMatrix(const math::mat4& projection);
     void pushCommand(RenderCommand command);
+    void saveFrameBuffer(renderID framebufferID, std::string& path);
 
     std::unordered_map<renderID, bool> m_materialsTransparency;
 

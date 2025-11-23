@@ -57,6 +57,10 @@ public:
     {
         visit(static_cast<Node&>(node));
     }
+    void visit(SpotLight& node) override
+    {
+        visit(static_cast<Node3D&>(node));
+    }
 
 private:
     AddNodeMenu m_addNodeMenu;

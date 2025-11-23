@@ -24,7 +24,7 @@ public:
 private:
     struct LightData {
         int idx;
-        math::mat4 lightSpaceMatrix;
+        math::mat4 transformationMatrix;
         renderID shadowMapID;
 
         LightData()
@@ -34,7 +34,7 @@ private:
         }
         LightData(int lightIdx, math::mat4& matrix)
             : idx(lightIdx)
-            , lightSpaceMatrix(matrix)
+            , transformationMatrix(matrix)
             , shadowMapID(0)
         {
         }

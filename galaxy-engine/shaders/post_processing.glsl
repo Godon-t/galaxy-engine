@@ -28,8 +28,8 @@ in vec2 TexCoords;
 uniform sampler2D sceneBuffer;
 uniform sampler2D depthBuffer;
 uniform mat4 view;
-uniform float zNear = 0.0;
-uniform float zFar  = 999.0;
+uniform float zNear = 0.1;
+uniform float zFar  = 9999.0;
 
 float linearDepth(float depth)
 {
@@ -54,8 +54,12 @@ void main()
     float depthLeft  = texture(depthBuffer, TexCoords - vec2(res, 0)).r;
     float depth      = texture(depthBuffer, TexCoords).r;
 
-    float f = depth - (depthUp + depthDown + depthLeft + depthRight) / 4.f;
+    depth   = linearDepth(depth) / zFar;
+    float f = depth - (linearDepth(depthUp) + linearDepth(depthDown) + linearDepth(depthLeft) + linearDepth(depthRight)) / 4.f;
+    f       = f / zFar;
     f       = smoothstep(0.f, 1.f, f * 100.f);
 
     color = vec4(pix.rgb * (1.f - f), 1);
+    color = vec4(pix.rgb, 1);
+    // color = vec4(vec3(depth), 1.0);
 }

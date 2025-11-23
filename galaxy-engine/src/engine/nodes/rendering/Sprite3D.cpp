@@ -21,7 +21,8 @@ void Sprite3D::draw()
 }
 void Sprite3D::lightPassDraw()
 {
-    Renderer::getInstance().submit(m_rectID, m_transform);
+    if (m_initialized)
+        Renderer::getInstance().submit(m_rectID, m_transform);
 }
 void Sprite3D::accept(Galaxy::NodeVisitor& visitor)
 {

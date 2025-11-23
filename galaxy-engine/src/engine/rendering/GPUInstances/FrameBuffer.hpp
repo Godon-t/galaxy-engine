@@ -35,6 +35,7 @@ public:
     void attachTexture(unsigned int attachment, Texture& texture, unsigned int target);
     void attachColorTexture(Texture& texture);
     void attachDepthTexture(Texture& texture);
+    void savePPM(char* filename, bool depth = true);
 
 private:
     FramebufferTextureFormat m_format;

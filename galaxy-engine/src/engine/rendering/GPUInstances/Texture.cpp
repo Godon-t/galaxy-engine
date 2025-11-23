@@ -119,7 +119,7 @@ unsigned int Texture::getInternalFormat(TextureFormat format)
     if (format == TextureFormat::RGB)
         return GL_RGB8;
     if (format == TextureFormat::DEPTH)
-        return GL_DEPTH_COMPONENT24;
+        return GL_DEPTH_COMPONENT16;
     if (format == TextureFormat::DEPTH24STENCIL8)
         return GL_DEPTH24_STENCIL8;
     return 0;
@@ -134,7 +134,7 @@ unsigned int Texture::getExternalFormat(TextureFormat format)
     if (format == TextureFormat::RGB)
         return GL_RGB;
     if (format == TextureFormat::DEPTH)
-        return GL_DEPTH_COMPONENT24;
+        return GL_DEPTH_COMPONENT;
     if (format == TextureFormat::DEPTH24STENCIL8)
         return GL_DEPTH_STENCIL;
     return 0;
@@ -145,7 +145,7 @@ unsigned int Texture::getType(TextureFormat format)
     if (format == TextureFormat::RGBA || format == TextureFormat::RGB || format == TextureFormat::RED)
         return GL_UNSIGNED_BYTE;
     if (format == TextureFormat::DEPTH)
-        return GL_UNSIGNED_INT;
+        return GL_FLOAT;
     if (format == TextureFormat::DEPTH24STENCIL8)
         return GL_UNSIGNED_INT_24_8;
     return 0;

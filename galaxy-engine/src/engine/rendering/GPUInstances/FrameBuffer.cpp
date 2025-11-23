@@ -4,6 +4,8 @@
 #include "gl_headers.hpp"
 #include "rendering/OpenglHelper.hpp"
 
+#include <fstream>
+
 namespace Galaxy {
 void bindColorAttachmentTexture(GLuint* id, int width, int height, GLenum internalFormat, GLenum format)
 {
@@ -67,7 +69,12 @@ FrameBuffer::FrameBuffer(int width, int height, FramebufferTextureFormat format)
 }
 void FrameBuffer::bind()
 {
+
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    if (m_format == FramebufferTextureFormat::DEPTH || m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+    }
 }
 
 void FrameBuffer::unbind()
@@ -113,6 +120,31 @@ void FrameBuffer::attachTexture(unsigned int attachment, Texture& texture, unsig
 
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
+}
+
+void FrameBuffer::savePPM(char* filename, bool depth)
+{
+    std::ofstream output_image(filename);
+
+    /// READ THE CONTENT FROM THE FBO
+    // glReadBuffer(GL_COLOR_ATTACHMENT0);
+    float* pixels = new float[m_width * m_height];
+    glReadPixels(0, 0, m_width, m_height, GL_DEPTH_COMPONENT, GL_FLOAT, pixels);
+
+    output_image << "P3" << std::endl;
+    output_image << m_width << " " << m_height << std::endl;
+    output_image << "255" << std::endl;
+
+    int k = 0;
+    for (int i = 0; i < m_width; i++) {
+        for (int j = 0; j < m_height; j++) {
+            output_image << (unsigned int)(255 * pixels[k]) << " " << (unsigned int)(255 * pixels[k]) << " " << (unsigned int)(255 * pixels[k]) << " ";
+            k = k + 1;
+        }
+        output_image << std::endl;
+    }
+    delete pixels;
+    output_image.close();
 }
 
 void FrameBuffer::attachColorTexture(Texture& texture)

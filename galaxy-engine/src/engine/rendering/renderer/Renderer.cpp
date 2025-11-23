@@ -17,6 +17,8 @@ Renderer::Renderer()
     , m_backend()
     , m_lightManager()
 {
+    m_backend.initDebugCallback();
+
     m_cubemapFramebufferID   = m_backend.instantiateCubemapFrameBuffer(1024);
     m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8);
     m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
@@ -35,10 +37,7 @@ Renderer::Renderer()
     m_cubemap_orientations[5] = { 0, 0, -1 };
     m_cubemap_ups[4] = m_cubemap_ups[5] = { 0, -1, 0 };
 
-    m_testRect     = generateQuad(vec2(500), []() {});
-    m_testRectFB   = instanciateFrameBuffer(500, 500, FramebufferTextureFormat::DEPTH24STENCIL8);
-    m_testRectText = instantiateTexture();
-    m_frontend.attachTextureToDepthFramebuffer(m_testRectText, m_testRectFB);
+    // m_frontend.attachTextureToDepthFramebuffer(m_testRectText, m_testRectFB);
 }
 
 Renderer::~Renderer()
@@ -78,18 +77,6 @@ void Renderer::beginCanva(const mat4& camTransform, const vec2& dimmensions, ren
 
 void Renderer::endSceneRender()
 {
-    Transform center;
-    center.localRotateY(90);
-    vec3 scale(50, 50, 1);
-    center.setLocalScale(scale);
-    mat4 view = CameraManager::processViewMatrix(center.getGlobalModelMatrix());
-
-    m_frontend.beginCanva(view, m_currentProj, m_testRectFB, FramebufferTextureFormat::DEPTH24STENCIL8);
-    Application::getInstance().getRootNodePtr()->draw();
-    m_frontend.endCanva();
-    m_frontend.changeUsedProgram(ProgramType::TEXTURE);
-    m_frontend.bindTexture(m_testRectText, "sampledTexture");
-    m_frontend.submit(m_testRect, center);
     m_frontend.endCanva();
     applyPostProcessing();
     m_frontend.processCanvas();

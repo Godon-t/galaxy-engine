@@ -55,12 +55,17 @@ uniform bool useRoughnessMap = false;
 uniform bool useAoMap        = false;
 
 // lights
-const int MAX_LIGHT                    = 20;
-uniform int lightCount                 = 1;
-uniform vec3 lightPositions[MAX_LIGHT] = vec3[MAX_LIGHT](
-    vec3(0.f, 2.f, 0.f), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0));
-uniform vec3 lightColors[MAX_LIGHT] = vec3[MAX_LIGHT](
-    vec3(1.f), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0));
+const int MAX_LIGHT    = 20;
+uniform int lightCount = 1;
+struct Light {
+    vec3 position;
+    float pad0;
+    vec3 color;
+    float pad1;
+    mat4 lightMatrix;
+};
+
+uniform Light lights[MAX_LIGHT];
 
 in vec2 v_texCoords;
 in vec3 v_worldPos;
@@ -183,11 +188,11 @@ void main()
 
     for (int i = 0; i < lightCount; ++i) {
         // calculate per-light radiance
-        vec3 L            = normalize(lightPositions[i] - v_worldPos);
+        vec3 L            = normalize(lights[i].position - v_worldPos);
         vec3 H            = normalize(V + L);
-        float distance    = length(lightPositions[i] - v_worldPos);
+        float distance    = length(lights[i].position - v_worldPos);
         float attenuation = 1.f / (distance * distance);
-        vec3 radiance     = lightColors[i] * attenuation;
+        vec3 radiance     = lights[i].color * attenuation;
 
         // cook-torrance brdf
         float NDF = DistributionGGX(N, H, roughness);

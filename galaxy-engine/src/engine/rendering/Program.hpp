@@ -107,7 +107,7 @@ public:
     ProgramShadow() = default;
     ProgramShadow(std::string path);
     ProgramType type() const override { return ProgramType::SHADOW_DEPTH; }
-    
+
     void setLightSpaceMatrix(const mat4& lightSpaceMatrix);
 
 private:

@@ -118,6 +118,10 @@ public:
         if (ImGui::Checkbox("Cast Shadows", &castShadows)) {
             node.setCastShadows(castShadows);
         }
+
+        if (ImGui::Button("Update light")) {
+            node.updateLight();
+        }
     }
     void transformEdit(Transform& transform)
     {

@@ -23,6 +23,7 @@ enum RenderCommandType {
     setUniform,
     setViewport,
     updateCubemap,
+    saveFrameBuffer,
 
     debugMsg
 };
@@ -124,6 +125,11 @@ struct DebugMsgCommand {
     char* msg;
 };
 
+struct SaveFrameBufferCommand {
+    char* path;
+    renderID frameBufferID;
+};
+
 struct RenderCommand {
     ~RenderCommand() = default;
 
@@ -154,6 +160,7 @@ struct RenderCommand {
         UpdateCubemapCommand updateCubemap;
 
         DebugMsgCommand debugMsg;
+        SaveFrameBufferCommand saveFrameBuffer;
     };
 };
 } // namespace Galaxy

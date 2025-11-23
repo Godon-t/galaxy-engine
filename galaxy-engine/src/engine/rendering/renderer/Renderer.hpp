@@ -33,6 +33,7 @@ public:
     inline void endCanva() { m_frontend.endCanva(); }
     inline void linkCanvaColorToTexture(renderID textureID) { m_frontend.linkCanvaColorToTexture(textureID); }
     inline void linkCanvaDepthToTexture(renderID textureID) { m_frontend.linkCanvaDepthToTexture(textureID); }
+    inline void storeCanva(std::string path) { m_frontend.storeCanvaResult(path); }
 
     void endSceneRender();
 
@@ -81,6 +82,7 @@ public:
 
     inline void setUniform(std::string uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, mat4 value) { m_frontend.setUniform(uniformName, value); }
+    inline void setUniform(std::string uniformName, vec3 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUnicolorObjectColor(const vec3& color) { m_frontend.setUnicolorObjectColor(color); }
 
     // TODO: Resizing unbind framebuffer
@@ -124,10 +126,6 @@ private:
 
     mat4 m_currentView;
     mat4 m_currentProj;
-
-    renderID m_testRect;
-    renderID m_testRectText;
-    renderID m_testRectFB;
 
     vec3 m_cubemap_orientations[6], m_cubemap_ups[6];
 

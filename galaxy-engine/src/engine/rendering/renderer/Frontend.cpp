@@ -61,6 +61,8 @@ void Frontend::processCanvas()
         dumpCommandsToBuffer(canva);
 
         if (canva.useBuffer) {
+            if (canva.storeResult)
+                saveFrameBuffer(canva.framebufferID, canva.storagePath);
             unbindFrameBuffer(canva.framebufferID, canva.cubemapIdx >= 0);
         }
     }
@@ -77,6 +79,12 @@ void Frontend::linkCanvaColorToTexture(renderID textureID)
 void Frontend::linkCanvaDepthToTexture(renderID textureID)
 {
     m_canvas[m_currentCanvaIdx].depthTargetID = textureID;
+}
+
+void Frontend::storeCanvaResult(std::string& path)
+{
+    m_canvas[m_currentCanvaIdx].storeResult = true;
+    m_canvas[m_currentCanvaIdx].storagePath = path;
 }
 
 void Frontend::submit(renderID meshID)
@@ -148,6 +156,21 @@ void Frontend::pushCommand(RenderCommand command)
         m_canvas[m_currentCanvaIdx].endCommands.push_back(command);
     else
         m_canvas[m_currentCanvaIdx].commands.push_back(command);
+}
+
+void Frontend::saveFrameBuffer(renderID framebufferID, std::string& path)
+{
+    SaveFrameBufferCommand saveFramebufferC;
+    char* copy = new char[path.size() + 1];
+    std::strcpy(copy, path.c_str());
+    saveFramebufferC.path          = copy;
+    saveFramebufferC.frameBufferID = framebufferID;
+
+    RenderCommand command;
+    command.type            = RenderCommandType::saveFrameBuffer;
+    command.saveFrameBuffer = saveFramebufferC;
+
+    pushCommand(command);
 }
 
 mat4 Frontend::getProjectionMatrix()
@@ -289,6 +312,21 @@ void Frontend::setUniform(std::string uniformName, mat4 value)
     uniformCommand.uniformName = copyString(uniformName);
     uniformCommand.type        = MAT4;
     uniformCommand.matrixValue = value;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::setUniform(std::string uniformName, vec3 value)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.type        = VEC3;
+    uniformCommand.valueVec3.x = value.r;
+    uniformCommand.valueVec3.y = value.g;
+    uniformCommand.valueVec3.z = value.b;
     RenderCommand command;
     command.type       = RenderCommandType::setUniform;
     command.setUniform = uniformCommand;

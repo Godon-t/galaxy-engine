@@ -107,7 +107,7 @@ public:
 
     renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format);
     renderID instantiateCubemapFrameBuffer(unsigned int size);
-    
+
     void clearFrameBuffer(renderID frameBufferID);
     void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height);
     void resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size);
@@ -117,6 +117,8 @@ public:
     void setProjectionMatrix(const mat4& projectionMatrix);
     unsigned int getFrameBufferTextureID(renderID frameBufferID);
     unsigned int getFrameBufferDepthTextureID(renderID frameBufferID);
+
+    void initDebugCallback();
 
     void destroy();
 
@@ -141,6 +143,7 @@ private:
     void processCommand(UpdateCubemapCommand& command);
 
     void processCommand(DebugMsgCommand& command);
+    void processCommand(SaveFrameBufferCommand& command);
 
     RenderGpuResourceTable<VisualInstance> m_visualInstances;
     RenderGpuResourceTable<Texture> m_textureInstances;

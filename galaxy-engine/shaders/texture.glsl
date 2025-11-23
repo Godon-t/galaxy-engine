@@ -29,5 +29,5 @@ uniform sampler2D sampledTexture;
 
 void main()
 {
-    color = vec4(texture(sampledTexture, texCoords).rgb, 1.0);
+    color = vec4(vec3(texture(sampledTexture, texCoords).r), 1.0);
 }

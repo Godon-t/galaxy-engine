@@ -33,6 +33,7 @@ Backend::Backend(size_t maxSize)
     glEnable(GL_CULL_FACE);
     // glDisable(GL_CULL_FACE);
 
+    // TODO: Change the way Program object are created
     m_mainProgram           = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
     m_skyboxProgram         = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
     m_irradianceProgram     = std::move(ProgramSkybox(engineRes("shaders/filters/irradiance.glsl")));
@@ -438,6 +439,45 @@ unsigned int Backend::getFrameBufferDepthTextureID(renderID frameBufferID)
     return m_frameBufferInstances.get(frameBufferID)->getDepthTextureID();
 }
 
+void Backend::initDebugCallback()
+{
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback([](GLenum source, GLenum type, GLuint id,
+                               GLenum severity, GLsizei length,
+                               const GLchar* message, const void* userParam) {
+        (void)source;
+        (void)type;
+        (void)id;
+        (void)length;
+        (void)userParam;
+        if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
+            return;
+
+        char* severityChr;
+        switch (severity) {
+        case GL_DEBUG_SEVERITY_HIGH:
+            severityChr = "High";
+            break;
+        case GL_DEBUG_SEVERITY_MEDIUM:
+            severityChr = "Medium";
+            break;
+        case GL_DEBUG_SEVERITY_LOW:
+            severityChr = "Low";
+            break;
+        default:
+            severityChr = "Unknown";
+            break;
+        }
+        GLX_CORE_WARN("GL DEBUG (severity={0}): {1}", severityChr, message);
+
+        if (severity == GL_DEBUG_SEVERITY_HIGH) {
+            raise(SIGTRAP);
+        }
+    },
+        nullptr);
+}
+
 renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
 {
     renderID cubemapID = instanciateCubemap();
@@ -684,6 +724,13 @@ void Backend::processCommand(DebugMsgCommand& command)
     free(command.msg);
 }
 
+void Backend::processCommand(SaveFrameBufferCommand& command)
+{
+    m_frameBufferInstances.get(command.frameBufferID)->savePPM(command.path);
+
+    free(command.path);
+}
+
 void Backend::processCommand(RenderCommand& command)
 {
     switch (command.type) {
@@ -743,6 +790,9 @@ void Backend::processCommand(RenderCommand& command)
         break;
     case RenderCommandType::debugMsg:
         processCommand(command.debugMsg);
+        break;
+    case RenderCommandType::saveFrameBuffer:
+        processCommand(command.saveFrameBuffer);
         break;
     default:
         GLX_CORE_ERROR("Unknown render command");

@@ -71,10 +71,6 @@ void FrameBuffer::bind()
 {
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    if (m_format == FramebufferTextureFormat::DEPTH || m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-    }
 }
 
 void FrameBuffer::unbind()
@@ -116,6 +112,11 @@ void FrameBuffer::attachTexture(unsigned int attachment, Texture& texture, unsig
         m_attachedDepth = texture.getId();
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, target, m_attachedDepth, 0);
+    }
+
+    if (m_format == FramebufferTextureFormat::DEPTH || m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
     }
 
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
@@ -177,6 +178,11 @@ void FrameBuffer::invalidate()
         bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH_COMPONENT24);
     } else {
         GLX_CORE_ASSERT(false, "Framebuffer format not handled");
+    }
+
+    if (m_format == FramebufferTextureFormat::DEPTH || m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
     }
 
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;

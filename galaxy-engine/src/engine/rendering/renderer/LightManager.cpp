@@ -43,7 +43,7 @@ void LightManager::shadowPass(Node* sceneRoot)
 {
     auto& ri = Renderer::getInstance();
 
-    math::mat4 projMat  = CameraManager::processProjectionMatrix(vec2(512, 512));
+    math::mat4 projMat  = CameraManager::processProjectionMatrix(vec2(1024, 1024));
     int currentLightIdx = 0;
     for (auto& [id, lightData] : m_lights) {
         if (currentLightIdx >= m_maxLights)
@@ -57,11 +57,16 @@ void LightManager::shadowPass(Node* sceneRoot)
 
         ri.setUniform("lights[" + std::to_string(id) + "].lightMatrix", lightSpaceMatrix);
         ri.setUniform("lights[" + std::to_string(id) + "].position", vec3(lightSpaceMatrix[0][3], lightSpaceMatrix[1][3], lightSpaceMatrix[2][3]));
+        // ri.setUniform("lights[" + std::to_string(id) + "].color", lightData.color);
 
         ri.changeUsedProgram(SHADOW_DEPTH);
         ri.setUniform("lightSpaceMatrix", lightSpaceMatrix);
         sceneRoot->lightPassDraw();
         ri.endCanva();
+
+        ri.changeUsedProgram(PBR);
+        ri.bindTexture(lightData.shadowMapID, "shadowMap");
+        ri.setUniform("lightSpaceMatrix", lightSpaceMatrix);
         currentLightIdx++;
     }
 

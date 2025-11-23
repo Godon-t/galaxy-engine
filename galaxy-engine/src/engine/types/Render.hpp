@@ -45,3 +45,9 @@ enum class FramebufferTextureFormat {
     // Defaults
     // Depth = DEPTH24STENCIL8
 };
+
+enum CullMode {
+    FRONT_CULLING,
+    BACK_CULLING,
+    BOTH_CULLING
+};

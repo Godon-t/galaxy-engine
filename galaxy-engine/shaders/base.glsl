@@ -63,9 +63,15 @@ struct Light {
     vec3 color;
     float pad1;
     mat4 lightMatrix;
+    // shadow map
 };
 
 uniform Light lights[MAX_LIGHT];
+
+uniform vec3 lightPositions[MAX_LIGHT] = vec3[MAX_LIGHT](
+    vec3(0.f, 2.f, 0.f), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0));
+uniform vec3 lightColors[MAX_LIGHT] = vec3[MAX_LIGHT](
+    vec3(1.f), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0));
 
 in vec2 v_texCoords;
 in vec3 v_worldPos;
@@ -130,22 +136,14 @@ vec3 getNormalFromNormalMap()
 
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 {
-    // Perspective division
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords      = projCoords * 0.5 + 0.5;
 
-    // Transform to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
-
-    // Get closest depth value from light's perspective
+    float currentDepth = projCoords.z;
     float closestDepth = texture(shadowMap, projCoords.xy).r;
 
-    // Get depth of current fragment from light's perspective
-    float currentDepth = projCoords.z;
+    float bias = 0.001;
 
-    // Bias pour éviter le shadow acne
-    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-
-    // PCF (Percentage Closer Filtering) pour adoucir les ombres
     float shadow   = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
     for (int x = -1; x <= 1; ++x) {
@@ -156,9 +154,10 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
     }
     shadow /= 9.0;
 
-    // Keep shadow at 0.0 when outside far plane
     if (projCoords.z > 1.0)
         shadow = 0.0;
+
+    // shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
 
     return shadow;
 }
@@ -245,4 +244,8 @@ void main()
     colorPBR = pow(colorPBR, vec3(1.0 / 2.2));
 
     color = vec4(colorPBR, transparency);
+
+    // vec3 L       = normalize(lights[0].position - v_worldPos);
+    // float shadow = ShadowCalculation(v_fragPosLightSpace, N, L);
+    // color        = vec4(vec3(shadow), transparency);
 }

@@ -118,6 +118,8 @@ public:
     unsigned int getFrameBufferTextureID(renderID frameBufferID);
     unsigned int getFrameBufferDepthTextureID(renderID frameBufferID);
 
+    void setCullMode(renderID visualInstanceID, CullMode mode);
+
     void initDebugCallback();
 
     void destroy();

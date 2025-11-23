@@ -85,6 +85,8 @@ public:
     inline void setUniform(std::string uniformName, vec3 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUnicolorObjectColor(const vec3& color) { m_frontend.setUnicolorObjectColor(color); }
 
+    inline void setCullMode(renderID visualInstanceID, CullMode mode) { m_backend.setCullMode(visualInstanceID, mode); }
+
     // TODO: Resizing unbind framebuffer
     void resize(unsigned int width, unsigned int height)
     {

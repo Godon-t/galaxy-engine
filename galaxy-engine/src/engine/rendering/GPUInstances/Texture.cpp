@@ -35,6 +35,11 @@ void Texture::resize(int width, int height)
     glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    if (m_format == TextureFormat::DEPTH24STENCIL8 || m_format == TextureFormat::DEPTH) {
+        float borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    }
+
     glTextureStorage2D(m_id, 1, internalFormat, width, height);
     checkOpenGLErrors("Texture resize");
 }
@@ -119,7 +124,7 @@ unsigned int Texture::getInternalFormat(TextureFormat format)
     if (format == TextureFormat::RGB)
         return GL_RGB8;
     if (format == TextureFormat::DEPTH)
-        return GL_DEPTH_COMPONENT16;
+        return GL_DEPTH_COMPONENT24;
     if (format == TextureFormat::DEPTH24STENCIL8)
         return GL_DEPTH24_STENCIL8;
     return 0;

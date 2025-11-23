@@ -439,6 +439,11 @@ unsigned int Backend::getFrameBufferDepthTextureID(renderID frameBufferID)
     return m_frameBufferInstances.get(frameBufferID)->getDepthTextureID();
 }
 
+void Backend::setCullMode(renderID visualInstanceID, CullMode mode)
+{
+    m_visualInstances.get(visualInstanceID)->setCullMode(mode);
+}
+
 void Backend::initDebugCallback()
 {
     glEnable(GL_DEBUG_OUTPUT);

@@ -36,7 +36,8 @@ void SpotLight::enteredRoot()
     if (m_visualPyramidID == 0) {
         m_visualPyramidID  = Renderer::getInstance().generatePyramid(0.3f, 0.5f, []() {});
         m_debugShadowMapID = Renderer::getInstance().generateQuad(vec2(2, 2), [] {});
-        m_initialized      = true;
+        Renderer::getInstance().setCullMode(m_debugShadowMapID, CullMode::BOTH_CULLING);
+        m_initialized = true;
     }
 }
 

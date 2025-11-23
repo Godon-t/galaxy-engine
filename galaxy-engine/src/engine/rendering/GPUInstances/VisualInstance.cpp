@@ -5,10 +5,13 @@
 #include "rendering/OpenglHelper.hpp"
 
 namespace Galaxy {
+CullMode VisualInstance::s_cullMode = FRONT_CULLING;
+
 VisualInstance::VisualInstance()
     : m_VAO(0)
     , m_VBO(0)
     , m_EBO(0)
+    , m_cullMode(FRONT_CULLING)
 {
 }
 
@@ -85,6 +88,19 @@ void VisualInstance::init(const std::vector<Vertex>& vertices, const std::vector
 void VisualInstance::draw()
 {
     glBindVertexArray(m_VAO);
+
+    if (m_cullMode != s_cullMode) {
+        if (m_cullMode == FRONT_CULLING) {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+        } else if (m_cullMode == BACK_CULLING) {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_FRONT);
+        } else {
+            glDisable(GL_CULL_FACE);
+        }
+        s_cullMode = m_cullMode;
+    }
 
     glDrawElements(
         GL_TRIANGLES, // mode

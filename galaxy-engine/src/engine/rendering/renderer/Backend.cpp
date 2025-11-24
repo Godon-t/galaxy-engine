@@ -41,6 +41,7 @@ Backend::Backend(size_t maxSize)
     m_unicolorProgram       = std::move(ProgramUnicolor(engineRes("shaders/unicolor.glsl")));
     m_postProcessingProgram = std::move(ProgramPostProc(engineRes("shaders/post_processing.glsl")));
     m_shadowProgram         = std::move(ProgramShadow(engineRes("shaders/shadow_depth.glsl")));
+    m_computeOctahedralProgram = std::move(ProgramComputeOctahedral(engineRes("shaders/compute_octahedral.glsl")));
 
     m_activeProgram = &m_mainProgram;
 

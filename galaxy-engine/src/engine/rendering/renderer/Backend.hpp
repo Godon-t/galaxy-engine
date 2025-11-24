@@ -164,6 +164,7 @@ private:
     ProgramUnicolor m_unicolorProgram;
     ProgramPostProc m_postProcessingProgram;
     ProgramShadow m_shadowProgram;
+    ProgramComputeOctahedral m_computeOctahedralProgram;
     Program* m_activeProgram;
 
     friend class Renderer;

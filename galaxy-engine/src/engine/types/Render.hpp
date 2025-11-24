@@ -16,7 +16,8 @@ enum ProgramType {
     UNICOLOR,
     POST_PROCESSING,
     FILTER_IRRADIANCE,
-    SHADOW_DEPTH
+    SHADOW_DEPTH,
+    COMPUTE_OCTAHEDRAL
 };
 
 struct Vertex {

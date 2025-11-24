@@ -186,9 +186,8 @@ void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemap
     vec2 pos(0);
 
     m_frontend.beginCanvaNoBuffer();
-    m_frontend.addDebugMsg("Rendering from point");
     m_frontend.updateCubemap(targetCubemapID, 1024);
-    m_frontend.attachCubemapToFramebuffer(m_cubemapFramebufferID, targetCubemapID);
+    m_frontend.attachCubemapToFramebuffer(targetCubemapID, m_cubemapFramebufferID);
     m_frontend.endCanva();
 
     mat4 projection = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);
@@ -196,9 +195,9 @@ void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemap
         auto viewMatrix = lookAt(position, position + m_cubemap_orientations[i], m_cubemap_ups[i]);
 
         m_frontend.beginCanva(viewMatrix, projection, m_cubemapFramebufferID, FramebufferTextureFormat::DEPTH24RGBA8, i);
-        // m_frontend.setViewport(pos, size);
-        // root.draw();
-        // m_frontend.setViewport(restorePos, restoreSize);
+        m_frontend.setViewport(pos, size);
+        root.draw();
+        m_frontend.setViewport(restorePos, restoreSize);
         m_frontend.endCanva();
     }
 }

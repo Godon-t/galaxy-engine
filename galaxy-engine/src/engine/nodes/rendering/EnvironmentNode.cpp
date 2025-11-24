@@ -18,17 +18,7 @@ void EnvironmentNode::accept(Galaxy::NodeVisitor& visitor)
 inline void EnvironmentNode::draw()
 {
     Node::draw();
-    if (updateRendering) {
-        updateRendering        = false;
-        auto& rendererInstance = Renderer::getInstance();
-        rendererInstance.renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), m_renderingCubemap);
-        rendererInstance.beginCanvaNoBuffer();
-        rendererInstance.debugMessage("Binding after rendering from point");
-        rendererInstance.changeUsedProgram(SKYBOX);
-        rendererInstance.useCubemap(m_renderingCubemap, "skybox");
-        rendererInstance.endCanva();
-
-    } else if (m_skyboxCubemapID != 0) {
+    if (m_skyboxCubemapID != 0) {
         auto& ri = Renderer::getInstance();
         ri.changeUsedProgram(SKYBOX);
         ri.submit(m_cubeMeshID, m_transform);
@@ -62,7 +52,6 @@ void EnvironmentNode::enteredRoot()
     m_renderingCubemap    = Renderer::getInstance().instanciateCubemap();
 
     Renderer::getInstance().resizeCubemap(m_renderingCubemap, 1024);
-    updateRendering = false;
 }
 
 } // namespace Galaxy

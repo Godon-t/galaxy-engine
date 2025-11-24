@@ -124,7 +124,7 @@ void EditorLayer::onUpdate()
         //     Application::getInstance().getRootNodePtr()->draw();
         //     renderer.endShadowPass();
         // }
-        renderer.shadowPass();
+        // renderer.shadowPass();
         renderer.beginSceneRender(cameraTransform, m_viewportSize);
         // TODO: should the application handle the render ?
         Application::getInstance().getRootNodePtr()->draw();

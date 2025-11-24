@@ -15,11 +15,17 @@ enum RenderCommandType {
     useTexture,
     useCubemap,
     attachTextureToFramebuffer,
+    attachCubemapToFramebuffer,
     bindMaterial,
     bindFrameBuffer,
     unbindFrameBuffer,
     initPostProcess,
-    SetUniform
+    setUniform,
+    setViewport,
+    updateCubemap,
+    saveFrameBuffer,
+
+    debugMsg
 };
 
 struct SetViewCommand {
@@ -65,6 +71,11 @@ struct AttachTextureToFramebufferCommand {
     bool isDepth = false;
 };
 
+struct AttachCubemapToFramebufferCommand {
+    renderID cubemapID;
+    renderID framebufferID;
+};
+
 struct BindMaterialCommand {
     renderID materialRenderID;
 };
@@ -83,17 +94,45 @@ struct InitPostProcessCommand {
 };
 
 enum SetValueTypes {
-    BOOL
+    BOOL,
+    VEC3,
+    MAT4
 };
 struct SetUniformCommand {
     SetValueTypes type;
     char* uniformName;
     union {
         bool valueBool;
+        struct {
+            float x, y, z;
+        } valueVec3;
     };
+    // TODO: fix this !!!
+    math::mat4 matrixValue;
+};
+
+struct SetViewportCommand {
+    math::vec2 position;
+    math::vec2 size;
+};
+
+struct UpdateCubemapCommand {
+    renderID targetID;
+    unsigned int resolution;
+};
+
+struct DebugMsgCommand {
+    char* msg;
+};
+
+struct SaveFrameBufferCommand {
+    char* path;
+    renderID frameBufferID;
 };
 
 struct RenderCommand {
+    ~RenderCommand() = default;
+
     RenderCommand()
         : type(RenderCommandType::draw)
     {
@@ -112,10 +151,16 @@ struct RenderCommand {
         UseTextureCommand useTexture;
         UseCubemapCommand useCubemap;
         AttachTextureToFramebufferCommand attachTextureToFramebuffer;
+        AttachCubemapToFramebufferCommand attachCubemapToFramebuffer;
         BindMaterialCommand bindMaterial;
         BindFrameBufferCommand bindFrameBuffer;
         InitPostProcessCommand initPostProcess;
         SetUniformCommand setUniform;
+        SetViewportCommand setViewport;
+        UpdateCubemapCommand updateCubemap;
+
+        DebugMsgCommand debugMsg;
+        SaveFrameBufferCommand saveFrameBuffer;
     };
 };
 } // namespace Galaxy

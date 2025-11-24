@@ -1,14 +1,20 @@
 #pragma once
 
+#include "types/Render.hpp"
+
 namespace Galaxy {
 class Texture {
 public:
     Texture()
         : m_id(0)
+        , m_format(TextureFormat::RGBA)
     {
     }
 
     Texture(unsigned char* data, int width, int height, int nbChannels);
+
+    void resize(int width, int height);
+    void setFormat(TextureFormat format);
 
     void init(unsigned char* data, int width, int height, int nbChannels);
 
@@ -24,10 +30,17 @@ public:
     void activate(int textureLocation);
 
     void destroy();
+    unsigned int m_id;
 
 private:
-    unsigned int m_id;
-    unsigned int m_format;
+    unsigned int getInternalFormat(TextureFormat format);
+    unsigned int getExternalFormat(TextureFormat format);
+    unsigned int getType(TextureFormat format);
+
+    TextureFormat m_format;
+
+    unsigned int m_width;
+    unsigned int m_height;
 
     static int s_currentFreeActivationInt;
     static int s_maxActivationInt;
@@ -36,7 +49,7 @@ private:
 struct Cubemap {
     unsigned int cubemapID  = 0;
     unsigned int resolution = 0;
-    bool useFloat           = false;
+    bool useFloat           = true;
 
     Cubemap();
 

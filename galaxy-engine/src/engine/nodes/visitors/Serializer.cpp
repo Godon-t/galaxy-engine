@@ -10,6 +10,7 @@
 #include "nodes/rendering/MeshInstance.hpp"
 #include "nodes/rendering/MultiMeshInstance.hpp"
 #include "nodes/rendering/Sprite3D.hpp"
+#include "nodes/rendering/lighting/SpotLight.hpp"
 #include "types/Math.hpp"
 
 #include <fstream>
@@ -87,5 +88,16 @@ void SceneSerializer::visit(EnvironmentNode& node)
     visit(static_cast<Node&>(node));
     if (node.getEnvResourceID() != 0)
         m_yaml << YAML::Key << "EnvID" << YAML::Value << node.getEnvResourceID();
+}
+
+void SceneSerializer::visit(SpotLight& node)
+{
+    visit(static_cast<Node3D&>(node));
+    m_yaml << YAML::Key << "Intensity" << YAML::Value << node.getIntensity();
+    m_yaml << YAML::Key << "Color" << YAML::Value << node.getColor();
+    m_yaml << YAML::Key << "CutoffAngle" << YAML::Value << node.getCutoffAngle();
+    m_yaml << YAML::Key << "OuterCutoffAngle" << YAML::Value << node.getOuterCutoffAngle();
+    m_yaml << YAML::Key << "Range" << YAML::Value << node.getRange();
+    m_yaml << YAML::Key << "CastShadows" << YAML::Value << node.getCastShadows();
 }
 }

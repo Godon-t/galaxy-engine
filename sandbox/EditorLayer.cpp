@@ -7,6 +7,29 @@
 namespace Galaxy {
 std::unordered_map<Galaxy::uuid, std::string> ResourceAccess::paths;
 
+// Helper function to find the first SpotLight in the scene
+static SpotLight* findFirstSpotLight(Node* node)
+{
+    if (!node)
+        return nullptr;
+
+    // Check if the current node is a SpotLight
+    SpotLight* spotLight = dynamic_cast<SpotLight*>(node);
+    if (spotLight) {
+        return spotLight;
+    }
+
+    // Recursively search in children
+    for (Node* child : node->getChildren()) {
+        SpotLight* found = findFirstSpotLight(child);
+        if (found) {
+            return found;
+        }
+    }
+
+    return nullptr;
+}
+
 EditorLayer::EditorLayer(const char* projectPath)
     : Layer("Editor layer")
     , m_mode(EditorMode::Edit)
@@ -48,6 +71,7 @@ void EditorLayer::onAttach()
     auto height = Application::getInstance().getWindow().getHeight();
 
     auto& renderer = Renderer::getInstance();
+    renderer.init();
     renderer.resize(width, height);
 
     InputManager::addAction(Action(GLX_KEY_ESCAPE, "editor_exit"));
@@ -86,8 +110,22 @@ void EditorLayer::onUpdate()
             updateCamera();
         }
 
-        renderer.beginSceneRender(cameraTransform, m_viewportSize);
+        // // Find the first spotlight for shadow mapping
+        // SpotLight* mainLight = findFirstSpotLight(Application::getInstance().getRootNodePtr().get());
 
+        // // PASS 1: Generate shadow map if a spotlight exists and casts shadows
+        // if (mainLight && mainLight->getCastShadows()) {
+        //     vec3 lightPos = mainLight->getTransform()->getGlobalPosition();
+        //     vec3 lightDir = mainLight->getDirection();
+        //     float fov = mainLight->getOuterCutoffAngle() * 2.0f;
+        //     float range = mainLight->getRange();
+
+        //     renderer.beginShadowPass(lightPos, lightDir, fov, 0.1f, range);
+        //     Application::getInstance().getRootNodePtr()->draw();
+        //     renderer.endShadowPass();
+        // }
+        // renderer.shadowPass();
+        renderer.beginSceneRender(cameraTransform, m_viewportSize);
         // TODO: should the application handle the render ?
         Application::getInstance().getRootNodePtr()->draw();
         // m_selectedScene->getNodePtr()->draw();

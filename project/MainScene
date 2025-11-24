@@ -5850,3 +5850,16 @@ Root:
         Rotation: [0, 1.67377079, 0]
         Scale: [33, 39, 35]
       ImageID: 9191191296558105831
+    - Type: SpotLight
+      Childs:
+        []
+      Transform:
+        Position: [0, 23, 0]
+        Rotation: [0, 0, 0]
+        Scale: [24, 23, 1]
+      Intensity: 1
+      Color: [1, 1, 1]
+      CutoffAngle: 45
+      OuterCutoffAngle: 55
+      Range: 10
+      CastShadows: true

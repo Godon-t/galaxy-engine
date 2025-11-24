@@ -87,7 +87,8 @@ public:
     renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices, std::function<void()> destroyCallback = nullptr);
     void clearMesh(renderID meshID);
 
-    renderID instanciateTexture(ResourceHandle<Image> image);
+    renderID instantiateTexture();
+    renderID instantiateTexture(ResourceHandle<Image> image);
     void clearTexture(renderID textureID);
 
     renderID instanciateMaterial(ResourceHandle<Material> material);
@@ -98,20 +99,28 @@ public:
 
     renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback);
     renderID generateQuad(vec2 dimmensions, std::function<void()> destroyCallback);
+    renderID generatePyramid(float baseSize, float height, std::function<void()> destroyCallback);
 
     renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces);
-    renderID instanciateCubemap();
+    renderID instanciateCubemap(int resolution = 1024);
     void clearCubemap(renderID cubemapID);
 
     renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format);
     renderID instantiateCubemapFrameBuffer(unsigned int size);
+
     void clearFrameBuffer(renderID frameBufferID);
     void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height);
+    void resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size);
     // TODO: Wrong way ?
     FramebufferTextureFormat getFramebufferFormat(renderID id);
 
     void setProjectionMatrix(const mat4& projectionMatrix);
     unsigned int getFrameBufferTextureID(renderID frameBufferID);
+    unsigned int getFrameBufferDepthTextureID(renderID frameBufferID);
+
+    void setCullMode(renderID visualInstanceID, CullMode mode);
+
+    void initDebugCallback();
 
     void destroy();
 
@@ -127,10 +136,16 @@ private:
     void processCommand(UseTextureCommand& command);
     void processCommand(UseCubemapCommand& command);
     void processCommand(AttachTextureToFramebufferCommand& command);
+    void processCommand(AttachCubemapToFramebufferCommand& command);
     void processCommand(BindMaterialCommand& command);
     void processCommand(BindFrameBufferCommand& command, bool bind);
     void processCommand(InitPostProcessCommand& command);
     void processCommand(SetUniformCommand& command);
+    void processCommand(SetViewportCommand& command);
+    void processCommand(UpdateCubemapCommand& command);
+
+    void processCommand(DebugMsgCommand& command);
+    void processCommand(SaveFrameBufferCommand& command);
 
     RenderGpuResourceTable<VisualInstance> m_visualInstances;
     RenderGpuResourceTable<Texture> m_textureInstances;
@@ -146,7 +161,9 @@ private:
     ProgramSkybox m_skyboxProgram;
     ProgramSkybox m_irradianceProgram;
     ProgramTexture m_textureProgram;
+    ProgramUnicolor m_unicolorProgram;
     ProgramPostProc m_postProcessingProgram;
+    ProgramShadow m_shadowProgram;
     Program* m_activeProgram;
 
     friend class Renderer;

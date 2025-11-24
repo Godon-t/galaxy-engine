@@ -12,11 +12,16 @@ struct RenderCanva {
     mat4 viewMat;
     mat4 projectionMat;
     renderID framebufferID;
-    renderID targetTextureID;
     FramebufferTextureFormat format;
     std::unordered_map<renderID, std::vector<RenderCommand>> materialToSubmitCommand;
     std::vector<RenderCommand> commands;
+    std::vector<RenderCommand> endCommands;
+    renderID colorTargetID;
+    renderID depthTargetID;
     int cubemapIdx;
+    bool useBuffer;
+    bool storeResult;
+    std::string storagePath;
 
     RenderCanva(const mat4& view, const mat4& projection, renderID framebuffer, FramebufferTextureFormat framebufferFormat)
         : viewMat(view)
@@ -24,7 +29,10 @@ struct RenderCanva {
         , framebufferID(framebuffer)
         , format(framebufferFormat)
         , cubemapIdx(-1)
-        , targetTextureID(0)
+        , useBuffer(true)
+        , colorTargetID(0)
+        , depthTargetID(0)
+        , storeResult(false)
     {
     }
 
@@ -34,7 +42,15 @@ struct RenderCanva {
         , framebufferID(framebuffer)
         , format(framebufferFormat)
         , cubemapIdx(cubemapIndex)
-        , targetTextureID(0)
+        , useBuffer(true)
+        , colorTargetID(0)
+        , depthTargetID(0)
+        , storeResult(false)
+    {
+    }
+
+    RenderCanva()
+        : useBuffer(false)
     {
     }
     ~RenderCanva() = default;

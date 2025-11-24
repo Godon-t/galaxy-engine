@@ -1,9 +1,28 @@
 #include "Frontend.hpp"
 
 namespace Galaxy {
+char* copyString(const std::string& str)
+{
+    char* cstr = new char[str.size() + 1];
+    std::strcpy(cstr, str.c_str());
+    return cstr;
+}
+
 Frontend::Frontend(std::vector<RenderCommand>* commandBuffer)
 {
     m_frontBuffer = commandBuffer;
+}
+
+void Frontend::beginCanvaNoBuffer()
+{
+    auto canva = RenderCanva();
+
+    if (m_currentCanvaIdx == -1) {
+        m_canvas.push_back(canva);
+        m_currentCanvaIdx = 0;
+    } else {
+        m_canvas.insert(m_canvas.begin() + m_currentCanvaIdx, canva);
+    }
 }
 
 void Frontend::beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx)
@@ -23,27 +42,49 @@ void Frontend::endCanva()
     m_currentCanvaIdx++;
 }
 
-void Frontend::attachCurrentCanva(renderID targetTextureID)
-{
-    m_canvas[m_currentCanvaIdx].targetTextureID = targetTextureID;
-}
-
 void Frontend::processCanvas()
 {
+    auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
     for (auto& canva : m_canvas) {
-        auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
-        bindFrameBuffer(canva.framebufferID, canva.cubemapIdx);
-        clear(clearColor);
-        setViewMatrix(canva.viewMat);
-        setProjectionMatrix(canva.projectionMat);
-        changeUsedProgram(ProgramType::PBR);
+        if (canva.useBuffer) {
+            bindFrameBuffer(canva.framebufferID, canva.cubemapIdx);
+            if (canva.colorTargetID != 0)
+                attachTextureToColorFramebuffer(canva.colorTargetID, canva.framebufferID);
+            if (canva.depthTargetID != 0)
+                attachTextureToDepthFramebuffer(canva.depthTargetID, canva.framebufferID);
+            clear(clearColor);
+            setViewMatrix(canva.viewMat);
+            setProjectionMatrix(canva.projectionMat);
+            changeUsedProgram(ProgramType::PBR);
+        }
 
         dumpCommandsToBuffer(canva);
-        unbindFrameBuffer(canva.framebufferID, canva.cubemapIdx >= 0);
+
+        if (canva.useBuffer) {
+            if (canva.storeResult)
+                saveFrameBuffer(canva.framebufferID, canva.storagePath);
+            unbindFrameBuffer(canva.framebufferID, canva.cubemapIdx >= 0);
+        }
     }
 
     m_canvas.clear();
     m_currentCanvaIdx = 0;
+}
+
+void Frontend::linkCanvaColorToTexture(renderID textureID)
+{
+    m_canvas[m_currentCanvaIdx].colorTargetID = textureID;
+}
+
+void Frontend::linkCanvaDepthToTexture(renderID textureID)
+{
+    m_canvas[m_currentCanvaIdx].depthTargetID = textureID;
+}
+
+void Frontend::storeCanvaResult(std::string& path)
+{
+    m_canvas[m_currentCanvaIdx].storeResult = true;
+    m_canvas[m_currentCanvaIdx].storagePath = path;
 }
 
 void Frontend::submit(renderID meshID)
@@ -111,8 +152,25 @@ void Frontend::pushCommand(RenderCommand command)
 {
     if (m_canvas.size() == 0 || m_currentCanvaIdx >= m_canvas.size())
         m_frontBuffer->push_back(command);
+    else if (!m_canvas[m_currentCanvaIdx].materialToSubmitCommand.empty())
+        m_canvas[m_currentCanvaIdx].endCommands.push_back(command);
     else
         m_canvas[m_currentCanvaIdx].commands.push_back(command);
+}
+
+void Frontend::saveFrameBuffer(renderID framebufferID, std::string& path)
+{
+    SaveFrameBufferCommand saveFramebufferC;
+    char* copy = new char[path.size() + 1];
+    std::strcpy(copy, path.c_str());
+    saveFramebufferC.path          = copy;
+    saveFramebufferC.frameBufferID = framebufferID;
+
+    RenderCommand command;
+    command.type            = RenderCommandType::saveFrameBuffer;
+    command.saveFrameBuffer = saveFramebufferC;
+
+    pushCommand(command);
 }
 
 mat4 Frontend::getProjectionMatrix()
@@ -161,7 +219,19 @@ void Frontend::attachTextureToDepthFramebuffer(renderID textureID, renderID fram
     pushCommand(command);
 }
 
-void Frontend::bindCubemap(renderID cubemapInstanceID, char* uniformName)
+void Frontend::attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID)
+{
+    AttachCubemapToFramebufferCommand attachCommand;
+    attachCommand.cubemapID     = cubemapID;
+    attachCommand.framebufferID = framebufferID;
+    RenderCommand command;
+    command.type                       = RenderCommandType::attachCubemapToFramebuffer;
+    command.attachCubemapToFramebuffer = attachCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::useCubemap(renderID cubemapInstanceID, char* uniformName)
 {
     UseCubemapCommand useCubemapCommand;
     useCubemapCommand.instanceID  = cubemapInstanceID;
@@ -223,15 +293,96 @@ void Frontend::initPostProcessing(renderID frameBufferID)
     pushCommand(command);
 }
 
-void Frontend::setUniform(char* uniformName, bool value)
+void Frontend::setUniform(std::string uniformName, bool value)
 {
     SetUniformCommand uniformCommand;
-    uniformCommand.uniformName = uniformName;
+    uniformCommand.uniformName = copyString(uniformName);
     uniformCommand.type        = BOOL;
     uniformCommand.valueBool   = value;
     RenderCommand command;
-    command.type       = RenderCommandType::SetUniform;
+    command.type       = RenderCommandType::setUniform;
     command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::setUniform(std::string uniformName, mat4 value)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.type        = MAT4;
+    uniformCommand.matrixValue = value;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::setUniform(std::string uniformName, vec3 value)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.type        = VEC3;
+    uniformCommand.valueVec3.x = value.r;
+    uniformCommand.valueVec3.y = value.g;
+    uniformCommand.valueVec3.z = value.b;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::setUnicolorObjectColor(const vec3& color)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = (char*)"objectColor";
+    uniformCommand.type        = VEC3;
+    uniformCommand.valueVec3.x = color.r;
+    uniformCommand.valueVec3.y = color.g;
+    uniformCommand.valueVec3.z = color.b;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::setViewport(vec2 position, vec2 dimmension)
+{
+    SetViewportCommand setViewportCommand;
+    setViewportCommand.position = position;
+    setViewportCommand.size     = dimmension;
+    RenderCommand command;
+    command.type        = RenderCommandType::setViewport;
+    command.setViewport = setViewportCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::updateCubemap(renderID targetID, unsigned int resolution)
+{
+    UpdateCubemapCommand update;
+    update.targetID   = targetID;
+    update.resolution = resolution;
+    RenderCommand command;
+    command.type          = RenderCommandType::updateCubemap;
+    command.updateCubemap = update;
+
+    pushCommand(command);
+}
+
+void Frontend::addDebugMsg(std::string message)
+{
+    DebugMsgCommand debug;
+    char* copy = new char[message.size() + 1];
+    std::strcpy(copy, message.c_str());
+    debug.msg = copy;
+
+    RenderCommand command;
+    command.type     = RenderCommandType::debugMsg;
+    command.debugMsg = debug;
 
     pushCommand(command);
 }
@@ -320,6 +471,9 @@ void Frontend::dumpCommandsToBuffer(RenderCanva& canva)
     depthMask.state        = true;
     depthCommand.depthMask = depthMask;
     m_frontBuffer->push_back(depthCommand);
+
+    for (auto& command : canva.endCommands)
+        m_frontBuffer->push_back(command);
 }
 
 void Frontend::setCommandBuffer(std::vector<RenderCommand>* newBuffer)

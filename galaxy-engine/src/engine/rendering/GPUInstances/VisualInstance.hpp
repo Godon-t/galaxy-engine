@@ -9,6 +9,9 @@ namespace Galaxy {
 class VisualInstance {
     int m_nbOfIndices = 0;
     unsigned int m_VAO, m_VBO, m_EBO;
+    CullMode m_cullMode;
+
+    static CullMode s_cullMode;
 
 public:
     VisualInstance();
@@ -22,5 +25,6 @@ public:
 
     void init(const std::vector<Vertex>& vertices, const std::vector<short unsigned int>& indices);
     void draw();
+    inline void setCullMode(CullMode newMode) { m_cullMode = newMode; }
 };
 }

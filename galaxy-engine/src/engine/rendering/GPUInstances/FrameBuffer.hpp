@@ -7,6 +7,9 @@
 namespace Galaxy {
 
 // TODO: Change to use Texture object directly
+// TODO: Add option for border
+//    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+//    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 class FrameBuffer {
 public:
     FrameBuffer();
@@ -29,9 +32,10 @@ public:
         invalidate();
     }
     inline FramebufferTextureFormat getFormat() const { return m_format; }
-    void attachTexture(unsigned int attachment, unsigned int textureId, unsigned int target);
-    void attachColorTexture(unsigned int textureID);
-    void attachDepthTexture(unsigned int textureID);
+    void attachTexture(unsigned int attachment, Texture& texture, unsigned int target);
+    void attachColorTexture(Texture& texture);
+    void attachDepthTexture(Texture& texture);
+    void savePPM(char* filename, bool depth = true);
 
 private:
     FramebufferTextureFormat m_format;
@@ -39,6 +43,9 @@ private:
     unsigned int m_attachedColor;
     unsigned int m_attachedDepth;
     int m_width, m_height;
+
+    bool m_externalColor = false;
+    bool m_externalDepth = false;
 
     void invalidate();
 };
@@ -48,6 +55,8 @@ public:
     CubemapFrameBuffer();
     CubemapFrameBuffer(int size);
     ~CubemapFrameBuffer() = default;
+
+    void attachCubemap(Cubemap cubemap);
 
     void bind(int idx);
     void unbind();

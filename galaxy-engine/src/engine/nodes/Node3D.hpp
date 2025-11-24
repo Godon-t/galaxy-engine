@@ -31,5 +31,6 @@ public:
     void accept(Galaxy::NodeVisitor& visitor) override;
 
     inline virtual void draw() override { Node::draw(); }
+    inline virtual void lightPassDraw() override { Node::lightPassDraw(); }
 };
 }

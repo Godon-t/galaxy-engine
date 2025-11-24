@@ -23,12 +23,18 @@ public:
     inline virtual void draw() override;
     void testingFunc()
     {
-        renderID provisoryCubemap = Renderer::getInstance().instanciateCubemap();
-        Renderer::getInstance().renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), provisoryCubemap);
-        Renderer::getInstance().applyFilterOnCubemap(m_cubeMeshID, provisoryCubemap, m_irradianceCubemapID, FilterEnum::IRRADIANCE);
+        auto& rendererInstance = Renderer::getInstance();
+        rendererInstance.renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), m_renderingCubemap);
 
-        Renderer::getInstance().bindCubemap(m_irradianceCubemapID, "irradianceMap");
-        Renderer::getInstance().setUniform("useIrradianceMap", true);
+        rendererInstance.beginCanvaNoBuffer();
+        rendererInstance.changeUsedProgram(SKYBOX);
+        rendererInstance.useCubemap(m_renderingCubemap, "skybox");
+        rendererInstance.endCanva();
+
+        // Renderer::getInstance().applyFilterOnCubemap(m_cubeMeshID, provisoryCubemap, m_irradianceCubemapID, FilterEnum::IRRADIANCE);
+
+        // Renderer::getInstance().bindCubemap(m_irradianceCubemapID, "irradianceMap");
+        // Renderer::getInstance().setUniform("useIrradianceMap", true);
     }
     void loadEnv(ResourceHandle<Environment> env);
     inline uuid getEnvResourceID() const { return m_env.getResource().getResourceID(); }
@@ -41,6 +47,7 @@ private:
     renderID m_skyboxCubemapID;
     renderID m_irradianceCubemapID;
     renderID m_cubeMeshID;
+    renderID m_renderingCubemap;
 
     Transform m_transform;
 };

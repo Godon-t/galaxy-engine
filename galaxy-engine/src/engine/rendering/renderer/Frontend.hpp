@@ -14,10 +14,13 @@ class Frontend {
 public:
     Frontend(std::vector<RenderCommand>* commandBuffer);
 
+    void beginCanvaNoBuffer();
     void beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1);
     void endCanva();
-    void attachCurrentCanva(renderID targetTextureID);
     void processCanvas();
+    void linkCanvaColorToTexture(renderID textureID);
+    void linkCanvaDepthToTexture(renderID textureID);
+    void storeCanvaResult(std::string& path);
 
     void submit(renderID meshID);
     void submit(renderID meshID, const Transform& transform);
@@ -28,14 +31,23 @@ public:
     void bindTexture(renderID textureInstanceID, char* uniformName);
     void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID);
     void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID);
-    void bindCubemap(renderID cubemapInstanceID, char* uniformName);
+    void attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID);
+    void useCubemap(renderID cubemapInstanceID, char* uniformName);
     void bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx = -1);
     void unbindFrameBuffer(renderID frameBufferInstanceID, bool cubemap = false);
     void bindMaterial(renderID materialRenderID);
     // TODO: rename to match setActiveProgram command
     void changeUsedProgram(ProgramType program);
     void initPostProcessing(renderID frameBufferID);
-    void setUniform(char* uniformName, bool value);
+
+    void setUniform(std::string uniformName, bool value);
+    void setUniform(std::string uniformName, mat4 value);
+    void setUniform(std::string uniformName, vec3 value);
+
+    void setViewport(vec2 position, vec2 dimmension);
+    void updateCubemap(renderID targetID, unsigned int resolution);
+    void addDebugMsg(std::string message);
+    void setUnicolorObjectColor(const vec3& color);
 
     void submitPBR(renderID meshID, renderID materialID, const Transform& transform);
 
@@ -45,7 +57,7 @@ public:
     inline void removeMaterialID(renderID matID)
     {
         m_materialsTransparency.erase(matID);
-        m_materialToSubmitCommand.erase(matID);
+        // m_materialToSubmitCommand.erase(matID);
     }
 
 private:
@@ -58,13 +70,12 @@ private:
     void setViewMatrix(const math::mat4& view);
     void setProjectionMatrix(const math::mat4& projection);
     void pushCommand(RenderCommand command);
+    void saveFrameBuffer(renderID framebufferID, std::string& path);
 
     std::unordered_map<renderID, bool> m_materialsTransparency;
 
     std::vector<RenderCanva> m_canvas;
     size_t m_currentCanvaIdx;
-
-    std::unordered_map<renderID, std::vector<RenderCommand>> m_materialToSubmitCommand;
 
     std::vector<RenderCommand>* m_frontBuffer;
 

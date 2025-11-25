@@ -347,6 +347,20 @@ void Frontend::setUniform(std::string uniformName, vec3 value)
     pushCommand(command);
 }
 
+void Frontend::setUniform(std::string uniformName, vec2 value)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.type        = VEC2;
+    uniformCommand.valueVec2.x = value.r;
+    uniformCommand.valueVec2.y = value.g;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
 void Frontend::setUnicolorObjectColor(const vec3& color)
 {
     SetUniformCommand uniformCommand;

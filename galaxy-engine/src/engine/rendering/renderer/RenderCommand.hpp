@@ -96,6 +96,7 @@ struct InitPostProcessCommand {
 enum SetValueTypes {
     BOOL,
     FLOAT,
+    VEC2,
     VEC3,
     MAT4
 };
@@ -107,6 +108,9 @@ struct SetUniformCommand {
         struct {
             float x, y, z;
         } valueVec3;
+        struct {
+            float x, y;
+        } valueVec2;
         float valueFloat;
     };
     // TODO: fix this !!!

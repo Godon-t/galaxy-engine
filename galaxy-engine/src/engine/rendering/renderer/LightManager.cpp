@@ -9,6 +9,13 @@ LightManager::LightManager()
     , m_probesFrameBuffer(0)
     , m_renderingCubemap(0)
     , m_fullQuad(0)
+    , m_gridDimX(0)
+    , m_gridDimY(0)
+    , m_gridDimZ(0)
+    , m_probeDistance(1.f)
+    , m_textureWidth(2048)
+    , m_textureHeight(1024)
+    , m_probeResolution(512)
 {
 }
 
@@ -24,13 +31,14 @@ void LightManager::init()
     m_fullQuad = ri.generateQuad(vec2(2, 2), []() {});
 
     m_renderingCubemap = ri.instanciateCubemap();
-    ri.resizeCubemap(m_renderingCubemap, 1024);
-
+    ri.resizeCubemap(m_renderingCubemap, m_probeResolution);
     // TODO: pass to a format for normals in addition to colors and depths
-    m_probesFrameBuffer = ri.instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH24RGBA8);
-
+    m_probesFrameBuffer = ri.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8);
     ri.beginCanvaNoBuffer();
     ri.attachTextureToColorFramebuffer(m_probeRadianceTexture, m_probesFrameBuffer);
+
+    resizeProbeFieldGrid(2, 2, 2);
+
     ri.endCanva();
 }
 
@@ -108,15 +116,58 @@ void LightManager::updateProbeField()
     mat4 identity(1);
 
     ri.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
-    ri.renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), m_renderingCubemap);
+    for (auto& probe : m_probeGrid) {
+        ri.renderFromPoint(probe.position, *Application::getInstance().getRootNodePtr().get(), m_renderingCubemap);
 
-    ri.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
-    ri.useCubemap(m_renderingCubemap, "environmentMap");
-    ri.setUniform("scale", 1.f);
-    ri.setViewport(vec2(0), vec2(1024));
-    ri.submit(m_fullQuad);
+        ri.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
+        ri.useCubemap(m_renderingCubemap, "environmentMap");
 
+        ri.setUniform("scale", vec2(1.f / (float)m_textureWidth, 1.f / (float)m_textureHeight));
+        ri.setViewport(getProbeTexCoord(probe.probeCoord), vec2(m_probeResolution));
+        ri.submit(m_fullQuad);
+    }
+    ri.saveCanvaResult("probes.ppm");
     ri.endCanva();
+}
+
+void LightManager::resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween)
+{
+    m_gridDimX      = width;
+    m_gridDimY      = height;
+    m_gridDimZ      = depth;
+    m_probeDistance = spaceBetween;
+
+    m_probeGrid.resize(width * height * depth);
+
+    m_textureWidth  = width * height * m_probeResolution;
+    m_textureHeight = depth * m_probeResolution;
+
+    Renderer::getInstance().resizeFrameBuffer(m_probesFrameBuffer, m_textureWidth, m_textureHeight);
+
+    for (int z = 0; z < depth; z++) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                vec3 position(x, y, z);
+                position *= m_probeDistance;
+
+                unsigned int probeIdx            = getCellCoord(x, y, z);
+                m_probeGrid[probeIdx].probeCoord = probeIdx;
+                m_probeGrid[probeIdx].position   = position;
+            }
+        }
+    }
+}
+
+unsigned int LightManager::getCellCoord(unsigned int x, unsigned int y, unsigned int z)
+{
+    return z * m_gridDimX * m_gridDimY + y * m_gridDimX + x;
+}
+
+vec2 LightManager::getProbeTexCoord(unsigned int probeGridIdx)
+{
+    unsigned int probesByWidth = m_textureWidth / m_probeResolution;
+    vec2 texturePos((probeGridIdx / probesByWidth) * m_probeResolution, (probeGridIdx % probesByWidth) * m_probeResolution);
+    return texturePos;
 }
 
 } // namespace Galaxy

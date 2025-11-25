@@ -708,6 +708,9 @@ void Backend::processCommand(SetUniformCommand& command)
     } else if (command.type == SetValueTypes::VEC3) {
         glUniform3f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName),
             command.valueVec3.x, command.valueVec3.y, command.valueVec3.z);
+    } else if (command.type == SetValueTypes::VEC2) {
+        glUniform2f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName),
+            command.valueVec2.x, command.valueVec2.y);
     } else if (command.type == SetValueTypes::MAT4) {
         glUniformMatrix4fv(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), 1, GL_FALSE, &command.matrixValue[0][0]);
     }

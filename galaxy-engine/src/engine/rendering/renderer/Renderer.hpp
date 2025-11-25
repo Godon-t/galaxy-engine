@@ -30,6 +30,7 @@ public:
     {
         m_frontend.beginCanva(viewMat, projectionMat, framebufferID, framebufferFormat, cubemapIdx);
     }
+    inline void saveCanvaResult(std::string path) { m_frontend.storeCanvaResult(path); }
     inline void endCanva() { m_frontend.endCanva(); }
     inline void linkCanvaColorToTexture(renderID textureID) { m_frontend.linkCanvaColorToTexture(textureID); }
     inline void linkCanvaDepthToTexture(renderID textureID) { m_frontend.linkCanvaDepthToTexture(textureID); }
@@ -85,6 +86,7 @@ public:
     inline void setUniform(std::string uniformName, float value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, mat4 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, vec3 value) { m_frontend.setUniform(uniformName, value); }
+    inline void setUniform(std::string uniformName, vec2 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUnicolorObjectColor(const vec3& color) { m_frontend.setUnicolorObjectColor(color); }
 
     inline void setCullMode(renderID visualInstanceID, CullMode mode) { m_backend.setCullMode(visualInstanceID, mode); }

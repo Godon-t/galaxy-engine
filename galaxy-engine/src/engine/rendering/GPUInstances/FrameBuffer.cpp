@@ -128,9 +128,9 @@ void FrameBuffer::savePPM(char* filename, bool depth)
     std::ofstream output_image(filename);
 
     /// READ THE CONTENT FROM THE FBO
-    // glReadBuffer(GL_COLOR_ATTACHMENT0);
-    float* pixels = new float[m_width * m_height];
-    glReadPixels(0, 0, m_width, m_height, GL_DEPTH_COMPONENT, GL_FLOAT, pixels);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+    float* pixels = new float[m_width * m_height * 4];
+    glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_FLOAT, pixels);
 
     output_image << "P3" << std::endl;
     output_image << m_width << " " << m_height << std::endl;
@@ -139,12 +139,12 @@ void FrameBuffer::savePPM(char* filename, bool depth)
     int k = 0;
     for (int i = 0; i < m_width; i++) {
         for (int j = 0; j < m_height; j++) {
-            output_image << (unsigned int)(255 * pixels[k]) << " " << (unsigned int)(255 * pixels[k]) << " " << (unsigned int)(255 * pixels[k]) << " ";
-            k = k + 1;
+            output_image << (unsigned int)(255 * pixels[k]) << " " << (unsigned int)(255 * pixels[k + 1]) << " " << (unsigned int)(255 * pixels[k + 2]) << " ";
+            k = k + 4;
         }
         output_image << std::endl;
     }
-    delete pixels;
+    delete[] pixels;
     output_image.close();
 }
 

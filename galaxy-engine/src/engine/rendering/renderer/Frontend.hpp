@@ -44,6 +44,7 @@ public:
     void setUniform(std::string uniformName, float value);
     void setUniform(std::string uniformName, mat4 value);
     void setUniform(std::string uniformName, vec3 value);
+    void setUniform(std::string uniformName, vec2 value);
 
     void setViewport(vec2 position, vec2 dimmension);
     void updateCubemap(renderID targetID, unsigned int resolution);

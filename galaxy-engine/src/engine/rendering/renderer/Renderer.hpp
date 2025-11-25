@@ -22,7 +22,7 @@ public:
 
     // inline void setProjectionMatrix(math::mat4& projection) { m_frontend.setProjectionMatrix(projection); }
 
-    void beginSceneRender(const mat4& camTransform, const vec2& dimmensions);
+    void beginSceneRender(const mat4& camTransform);
     void beginSceneRender(const vec3& camPosition, const vec3& camDirection, const vec3& camUp, const vec2& dimmensions);
     inline void beginCanvaNoBuffer() { m_frontend.beginCanvaNoBuffer(); }
     void beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1);
@@ -95,6 +95,8 @@ public:
     {
         m_backend.resizeFrameBuffer(m_sceneFrameBufferID, width, height);
         m_backend.resizeFrameBuffer(m_postProcessingBufferID, width, height);
+        m_mainViewportSize.x = width;
+        m_mainViewportSize.y = height;
     }
 
     inline void submitPBR(renderID meshID, renderID materialID, const Transform& transform) { m_frontend.submitPBR(meshID, materialID, transform); }
@@ -131,6 +133,7 @@ private:
 
     mat4 m_currentView;
     mat4 m_currentProj;
+    vec2 m_mainViewportSize;
 
     vec3 m_cubemap_orientations[6], m_cubemap_ups[6];
 

@@ -82,8 +82,6 @@ void EditorLayer::onAttach()
 
     InputManager::addAction(Action(GLX_KEY_Q, "editor_down"));
     InputManager::addAction(Action(GLX_KEY_E, "editor_up"));
-
-    m_viewportSize = vec2(200);
 }
 
 void EditorLayer::onDetach()
@@ -125,7 +123,7 @@ void EditorLayer::onUpdate()
         //     renderer.endShadowPass();
         // }
         // renderer.shadowPass();
-        renderer.beginSceneRender(cameraTransform, m_viewportSize);
+        renderer.beginSceneRender(cameraTransform);
         // TODO: should the application handle the render ?
         Application::getInstance().getRootNodePtr()->draw();
         // m_selectedScene->getNodePtr()->draw();
@@ -226,6 +224,9 @@ void EditorLayer::displayViewport(bool validScene)
         if (m_viewportSize != *(vec2*)&pannelSize) {
             // TODO: resize here and on resize event ?
             m_viewportSize = { pannelSize.x, pannelSize.y };
+
+            Renderer::getInstance().resize(m_viewportSize.x, m_viewportSize.y);
+            Renderer::getInstance().resizeFrameBuffer(m_viewportFrameID, m_viewportSize.x, m_viewportSize.y);
         }
         ImGui::PopStyleVar();
         // TODO: bad design if I have to use textureID outside of Renderer. Will cause problem when multithreading renderer.
@@ -331,11 +332,6 @@ void EditorLayer::onEvent(Event& evt)
         if (mouseBtn.getButton() == 1) {
             m_rightClickDown = mouseBtn.isPressed();
         }
-    } else if (evt.getEventType() == EventType::WindowResize) {
-        WindowResizeEvent& resize = (WindowResizeEvent&)evt;
-        vec2 newDim               = vec2(resize.getWidth(), resize.getHeight());
-        Renderer::getInstance().resize(newDim.x, newDim.y);
-        Renderer::getInstance().resizeFrameBuffer(m_viewportFrameID, m_viewportSize.x, m_viewportSize.y);
     }
 }
 void EditorLayer::updateCamera()

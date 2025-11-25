@@ -1,9 +1,14 @@
 #include "LightManager.hpp"
+#include "core/Application.hpp"
 #include "engine/rendering/CameraManager.hpp"
 #include "engine/rendering/renderer/Renderer.hpp"
 
 namespace Galaxy {
 LightManager::LightManager()
+    : m_shadowMapFrameBufferID(0)
+    , m_probesFrameBuffer(0)
+    , m_renderingCubemap(0)
+    , m_fullQuad(0)
 {
 }
 
@@ -13,7 +18,20 @@ LightManager::~LightManager()
 
 void LightManager::init()
 {
-    m_shadowMapFrameBufferID = Renderer::getInstance().instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH);
+    auto& ri                 = Renderer::getInstance();
+    m_shadowMapFrameBufferID = ri.instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH);
+
+    m_fullQuad = ri.generateQuad(vec2(2, 2), []() {});
+
+    m_renderingCubemap = ri.instanciateCubemap();
+    ri.resizeCubemap(m_renderingCubemap, 1024);
+
+    // TODO: pass to a format for normals in addition to colors and depths
+    m_probesFrameBuffer = ri.instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH24RGBA8);
+
+    ri.beginCanvaNoBuffer();
+    ri.attachTextureToColorFramebuffer(m_probeRadianceTexture, m_probesFrameBuffer);
+    ri.endCanva();
 }
 
 int LightManager::registerLight(const SpotLight* desc)
@@ -77,6 +95,28 @@ void LightManager::shadowPass(Node* sceneRoot)
     // m_frontend.bindTexture(lightTextureID, "sampledTexture");
     // m_frontend.submit(m_debugPlane, transfo);
     // m_frontend.endCanva();
+}
+
+renderID LightManager::getProbesRadianceTexture()
+{
+    return m_probeRadianceTexture;
+}
+
+void LightManager::updateProbeField()
+{
+    auto& ri = Renderer::getInstance();
+    mat4 identity(1);
+
+    ri.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
+    ri.renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), m_renderingCubemap);
+
+    ri.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
+    ri.useCubemap(m_renderingCubemap, "environmentMap");
+    ri.setUniform("scale", 1.f);
+    ri.setViewport(vec2(0), vec2(1024));
+    ri.submit(m_fullQuad);
+
+    ri.endCanva();
 }
 
 } // namespace Galaxy

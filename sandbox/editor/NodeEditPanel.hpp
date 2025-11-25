@@ -123,6 +123,15 @@ public:
             node.updateLight();
         }
     }
+    void visit(GINode& node)
+    {
+        visit(static_cast<Node3D&>(node));
+
+        ImGui::SeparatorText("Global Illumination");
+        if (ImGui::Button("Update probes"))
+            node.updateProbes();
+    }
+
     void transformEdit(Transform& transform)
     {
         ImGui::SeparatorText("Transform");

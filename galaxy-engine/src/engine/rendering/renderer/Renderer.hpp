@@ -42,6 +42,7 @@ public:
     void renderFrame();
 
     inline void submit(renderID meshID, const Transform& transform) { m_frontend.submit(meshID, transform); }
+    inline void submit(renderID meshID) { m_frontend.submit(meshID); }
 
     inline renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices) { return m_backend.instanciateMesh(vertices, indices); }
     inline renderID instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx = 0) { return m_backend.instanciateMesh(mesh, surfaceIdx); }
@@ -81,11 +82,13 @@ public:
     inline void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID) { m_frontend.attachTextureToDepthFramebuffer(textureID, framebufferID); }
 
     inline void setUniform(std::string uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
+    inline void setUniform(std::string uniformName, float value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, mat4 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, vec3 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUnicolorObjectColor(const vec3& color) { m_frontend.setUnicolorObjectColor(color); }
 
     inline void setCullMode(renderID visualInstanceID, CullMode mode) { m_backend.setCullMode(visualInstanceID, mode); }
+    inline void setViewport(vec2 position, vec2 size) { m_frontend.setViewport(position, size); }
 
     // TODO: Resizing unbind framebuffer
     void resize(unsigned int width, unsigned int height)
@@ -97,7 +100,6 @@ public:
     inline void submitPBR(renderID meshID, renderID materialID, const Transform& transform) { m_frontend.submitPBR(meshID, materialID, transform); }
     void renderFromPoint(vec3 position, Node& root, renderID targetCubemapID);
     void applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter);
-    void computeOctahedralFromCubemap(renderID sourceCubemapID, renderID targetOctahedralID);
 
     inline int getDrawCallsCount() { return m_drawCount; }
 

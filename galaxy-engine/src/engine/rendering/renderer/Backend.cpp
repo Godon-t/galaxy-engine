@@ -34,13 +34,13 @@ Backend::Backend(size_t maxSize)
     // glDisable(GL_CULL_FACE);
 
     // TODO: Change the way Program object are created
-    m_mainProgram           = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
-    m_skyboxProgram         = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
-    m_irradianceProgram     = std::move(ProgramSkybox(engineRes("shaders/filters/irradiance.glsl")));
-    m_textureProgram        = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
-    m_unicolorProgram       = std::move(ProgramUnicolor(engineRes("shaders/unicolor.glsl")));
-    m_postProcessingProgram = std::move(ProgramPostProc(engineRes("shaders/post_processing.glsl")));
-    m_shadowProgram         = std::move(ProgramShadow(engineRes("shaders/shadow_depth.glsl")));
+    m_mainProgram              = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
+    m_skyboxProgram            = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
+    m_irradianceProgram        = std::move(ProgramSkybox(engineRes("shaders/filters/irradiance.glsl")));
+    m_textureProgram           = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
+    m_unicolorProgram          = std::move(ProgramUnicolor(engineRes("shaders/unicolor.glsl")));
+    m_postProcessingProgram    = std::move(ProgramPostProc(engineRes("shaders/post_processing.glsl")));
+    m_shadowProgram            = std::move(ProgramShadow(engineRes("shaders/shadow_depth.glsl")));
     m_computeOctahedralProgram = std::move(ProgramComputeOctahedral(engineRes("shaders/compute_octahedral.glsl")));
 
     m_activeProgram = &m_mainProgram;
@@ -597,6 +597,8 @@ void Backend::processCommand(SetActiveProgramCommand& command)
         m_activeProgram = &m_irradianceProgram;
     else if (command.program == SHADOW_DEPTH)
         m_activeProgram = &m_shadowProgram;
+    else if (command.program == COMPUTE_OCTAHEDRAL)
+        m_activeProgram = &m_computeOctahedralProgram;
     else
         GLX_CORE_ASSERT(false, "unknown asked program!");
 
@@ -701,6 +703,8 @@ void Backend::processCommand(SetUniformCommand& command)
 {
     if (command.type == SetValueTypes::BOOL) {
         glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueBool ? GL_TRUE : GL_FALSE);
+    } else if (command.type == SetValueTypes::FLOAT) {
+        glUniform1f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueFloat);
     } else if (command.type == SetValueTypes::VEC3) {
         glUniform3f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName),
             command.valueVec3.x, command.valueVec3.y, command.valueVec3.z);

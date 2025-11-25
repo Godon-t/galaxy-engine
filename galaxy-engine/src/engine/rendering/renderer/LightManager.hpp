@@ -21,6 +21,9 @@ public:
     void shadowPass(Node* sceneRoot);
     renderID getShadowMapID(lightID light) { return m_lights[light].shadowMapID; }
 
+    renderID getProbesRadianceTexture();
+    void updateProbeField();
+
 private:
     struct LightData {
         int idx;
@@ -46,5 +49,10 @@ private:
     int m_maxLights         = 100;
 
     renderID m_shadowMapFrameBufferID;
+
+    renderID m_fullQuad;
+    renderID m_renderingCubemap;
+    renderID m_probesFrameBuffer;
+    renderID m_probeRadianceTexture;
 };
 } // namespace Galaxy

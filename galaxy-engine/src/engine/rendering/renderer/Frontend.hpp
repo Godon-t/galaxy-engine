@@ -21,6 +21,7 @@ public:
     void linkCanvaColorToTexture(renderID textureID);
     void linkCanvaDepthToTexture(renderID textureID);
     void storeCanvaResult(std::string& path);
+    void avoidCanvaBufferClear();
 
     void submit(renderID meshID);
     void submit(renderID meshID, const Transform& transform);

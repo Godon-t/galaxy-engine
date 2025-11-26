@@ -31,6 +31,7 @@ public:
         m_frontend.beginCanva(viewMat, projectionMat, framebufferID, framebufferFormat, cubemapIdx);
     }
     inline void saveCanvaResult(std::string path) { m_frontend.storeCanvaResult(path); }
+    inline void avoidCanvaClear() { m_frontend.avoidCanvaBufferClear(); }
     inline void endCanva() { m_frontend.endCanva(); }
     inline void linkCanvaColorToTexture(renderID textureID) { m_frontend.linkCanvaColorToTexture(textureID); }
     inline void linkCanvaDepthToTexture(renderID textureID) { m_frontend.linkCanvaDepthToTexture(textureID); }

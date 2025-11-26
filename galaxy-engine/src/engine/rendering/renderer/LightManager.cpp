@@ -37,7 +37,7 @@ void LightManager::init()
     ri.beginCanvaNoBuffer();
     ri.attachTextureToColorFramebuffer(m_probeRadianceTexture, m_probesFrameBuffer);
 
-    resizeProbeFieldGrid(2, 2, 2);
+    resizeProbeFieldGrid(2, 2, 2, 100.f);
 
     ri.endCanva();
 }
@@ -115,17 +115,24 @@ void LightManager::updateProbeField()
     auto& ri = Renderer::getInstance();
     mat4 identity(1);
 
-    ri.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
     for (auto& probe : m_probeGrid) {
         ri.renderFromPoint(probe.position, *Application::getInstance().getRootNodePtr().get(), m_renderingCubemap);
 
+        ri.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
+        ri.avoidCanvaClear();
         ri.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
+        // ri.setUniform("scale", vec2(m_textureWidth / (float)m_probeResolution, m_textureHeight / (float)m_probeResolution));
         ri.useCubemap(m_renderingCubemap, "environmentMap");
 
-        ri.setUniform("scale", vec2(1.f / (float)m_textureWidth, 1.f / (float)m_textureHeight));
-        ri.setViewport(getProbeTexCoord(probe.probeCoord), vec2(m_probeResolution));
+        vec2 viewportCoords = getProbeTexCoord(probe.probeCoord);
+        ri.setViewport(viewportCoords, vec2(m_probeResolution));
+        ri.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
         ri.submit(m_fullQuad);
+        ri.endCanva();
     }
+
+    ri.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
+    ri.avoidCanvaClear();
     ri.saveCanvaResult("probes.ppm");
     ri.endCanva();
 }
@@ -166,7 +173,9 @@ unsigned int LightManager::getCellCoord(unsigned int x, unsigned int y, unsigned
 vec2 LightManager::getProbeTexCoord(unsigned int probeGridIdx)
 {
     unsigned int probesByWidth = m_textureWidth / m_probeResolution;
-    vec2 texturePos((probeGridIdx / probesByWidth) * m_probeResolution, (probeGridIdx % probesByWidth) * m_probeResolution);
+    unsigned int xPosition     = (probeGridIdx % probesByWidth) * m_probeResolution;
+    unsigned int yPosition     = (probeGridIdx / probesByWidth) * m_probeResolution;
+    vec2 texturePos(xPosition, yPosition);
     return texturePos;
 }
 

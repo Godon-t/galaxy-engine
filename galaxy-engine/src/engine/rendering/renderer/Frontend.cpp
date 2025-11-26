@@ -52,7 +52,8 @@ void Frontend::processCanvas()
                 attachTextureToColorFramebuffer(canva.colorTargetID, canva.framebufferID);
             if (canva.depthTargetID != 0)
                 attachTextureToDepthFramebuffer(canva.depthTargetID, canva.framebufferID);
-            clear(clearColor);
+            if (canva.clearBuffer)
+                clear(clearColor);
             setViewMatrix(canva.viewMat);
             setProjectionMatrix(canva.projectionMat);
             changeUsedProgram(ProgramType::PBR);
@@ -85,6 +86,11 @@ void Frontend::storeCanvaResult(std::string& path)
 {
     m_canvas[m_currentCanvaIdx].storeResult = true;
     m_canvas[m_currentCanvaIdx].storagePath = path;
+}
+
+void Frontend::avoidCanvaBufferClear()
+{
+    m_canvas[m_currentCanvaIdx].clearBuffer = false;
 }
 
 void Frontend::submit(renderID meshID)

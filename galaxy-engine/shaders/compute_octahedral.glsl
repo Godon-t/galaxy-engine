@@ -47,15 +47,13 @@ vec3 octahedral_unmapping(vec2 co)
 ////////////////////////////////////////////////
 
 uniform samplerCube environmentMap;
-uniform vec2 scale;
-uniform vec2 offset;
 
 in vec2 texCoords;
 out vec4 color;
 
 void main()
 {
-    vec3 dir      = octahedral_unmapping(offset + texCoords * scale);
+    vec3 dir      = octahedral_unmapping(texCoords);
     vec3 envColor = texture(environmentMap, dir).rgb;
     color         = vec4(envColor, 1.0);
 }

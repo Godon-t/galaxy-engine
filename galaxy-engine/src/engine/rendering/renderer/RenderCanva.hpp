@@ -22,6 +22,7 @@ struct RenderCanva {
     bool useBuffer;
     bool storeResult;
     std::string storagePath;
+    bool clearBuffer;
 
     RenderCanva(const mat4& view, const mat4& projection, renderID framebuffer, FramebufferTextureFormat framebufferFormat)
         : viewMat(view)
@@ -33,6 +34,7 @@ struct RenderCanva {
         , colorTargetID(0)
         , depthTargetID(0)
         , storeResult(false)
+        , clearBuffer(true)
     {
     }
 
@@ -46,6 +48,7 @@ struct RenderCanva {
         , colorTargetID(0)
         , depthTargetID(0)
         , storeResult(false)
+        , clearBuffer(true)
     {
     }
 

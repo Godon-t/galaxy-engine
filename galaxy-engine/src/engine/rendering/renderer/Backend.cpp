@@ -647,7 +647,10 @@ void Backend::processCommand(AttachTextureToFramebufferCommand& command)
 void Backend::processCommand(AttachCubemapToFramebufferCommand& command)
 {
     // TODO: Beware of memory handling !!!
-    m_cubemapFrameBufferInstances.get(command.framebufferID)->attachCubemap(*m_cubemapInstances.get(command.cubemapID));
+    if (command.depth)
+        m_cubemapFrameBufferInstances.get(command.framebufferID)->attachDepthCubemap(*m_cubemapInstances.get(command.cubemapID));
+    else
+        m_cubemapFrameBufferInstances.get(command.framebufferID)->attachColorCubemap(*m_cubemapInstances.get(command.cubemapID), 0);
 }
 
 void Backend::processCommand(BindMaterialCommand& command)

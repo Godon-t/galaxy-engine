@@ -225,11 +225,12 @@ void Frontend::attachTextureToDepthFramebuffer(renderID textureID, renderID fram
     pushCommand(command);
 }
 
-void Frontend::attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID)
+void Frontend::attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID, bool depth)
 {
     AttachCubemapToFramebufferCommand attachCommand;
     attachCommand.cubemapID     = cubemapID;
     attachCommand.framebufferID = framebufferID;
+    attachCommand.depth         = depth;
     RenderCommand command;
     command.type                       = RenderCommandType::attachCubemapToFramebuffer;
     command.attachCubemapToFramebuffer = attachCommand;

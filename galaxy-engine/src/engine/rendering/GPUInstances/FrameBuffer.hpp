@@ -35,7 +35,7 @@ public:
     void attachTexture(unsigned int attachment, Texture& texture, unsigned int target);
     void attachColorTexture(Texture& texture);
     void attachDepthTexture(Texture& texture);
-    void savePPM(char* filename, bool depth = true);
+    void savePPM(char* filename);
 
 private:
     FramebufferTextureFormat m_format;
@@ -56,7 +56,8 @@ public:
     CubemapFrameBuffer(int size);
     ~CubemapFrameBuffer() = default;
 
-    void attachCubemap(Cubemap cubemap);
+    void attachDepthCubemap(Cubemap cubemap);
+    void attachColorCubemap(Cubemap cubemap, int idx);
 
     void bind(int idx);
     void unbind();
@@ -66,9 +67,11 @@ public:
     void resize(unsigned int newSize);
 
 private:
-    unsigned int m_fbo, m_rbo;
+    unsigned int m_fbo;
     unsigned int m_size;
 
+    std::vector<Cubemap> m_colorCubemaps;
+    Cubemap m_depthCubemap;
     Cubemap m_cubemap;
 
     void invalidate();

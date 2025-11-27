@@ -23,13 +23,8 @@ public:
     inline virtual void draw() override;
     void testingFunc()
     {
-        auto& rendererInstance = Renderer::getInstance();
-        rendererInstance.renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), m_renderingCubemap);
-
-        rendererInstance.beginCanvaNoBuffer();
-        rendererInstance.changeUsedProgram(SKYBOX);
-        rendererInstance.useCubemap(m_renderingCubemap, "skybox");
-        rendererInstance.endCanva();
+        // auto& rendererInstance = Renderer::getInstance();
+        // rendererInstance.renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), m_renderingCubemap, m_depthRenderingCubemap);
 
         // Renderer::getInstance().applyFilterOnCubemap(m_cubeMeshID, provisoryCubemap, m_irradianceCubemapID, FilterEnum::IRRADIANCE);
 

@@ -46,14 +46,24 @@ vec3 octahedral_unmapping(vec2 co)
 }
 ////////////////////////////////////////////////
 
-uniform samplerCube environmentMap;
+uniform samplerCube radianceCubemap;
+uniform samplerCube depthCubemap;
 
 in vec2 texCoords;
 out vec4 color;
 
+uniform float zNear = 0.1;
+uniform float zFar  = 9999.0;
+float linearDepth(float depth)
+{
+    float z = depth * 2.0 - 1.0;
+    return (2.0 * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
+}
+
 void main()
 {
     vec3 dir      = octahedral_unmapping(texCoords);
-    vec3 envColor = texture(environmentMap, dir).rgb;
+    vec3 envColor = texture(radianceCubemap, dir).rgb;
     color         = vec4(envColor, 1.0);
+    gl_FragDepth  = linearDepth(texture(depthCubemap, dir).r) / zFar;
 }

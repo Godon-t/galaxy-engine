@@ -80,7 +80,7 @@ public:
 
     inline void debugMessage(std::string message) { m_frontend.addDebugMsg(message); }
 
-    inline void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID) { m_frontend.attachTextureToColorFramebuffer(textureID, framebufferID); }
+    inline void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int colorIdx) { m_frontend.attachTextureToColorFramebuffer(textureID, framebufferID, colorIdx); }
     inline void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID) { m_frontend.attachTextureToDepthFramebuffer(textureID, framebufferID); }
 
     inline void setUniform(std::string uniformName, bool value) { m_frontend.setUniform(uniformName, value); }

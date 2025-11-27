@@ -30,7 +30,7 @@ public:
     mat4 getProjectionMatrix();
 
     void bindTexture(renderID textureInstanceID, char* uniformName);
-    void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID);
+    void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int attachmentIdx);
     void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID);
     void attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID, bool depth = false);
     void useCubemap(renderID cubemapInstanceID, char* uniformName);

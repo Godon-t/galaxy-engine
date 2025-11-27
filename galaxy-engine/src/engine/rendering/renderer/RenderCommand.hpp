@@ -68,7 +68,7 @@ struct UseCubemapCommand {
 struct AttachTextureToFramebufferCommand {
     renderID textureID;
     renderID framebufferID;
-    bool isDepth = false;
+    int attachmentIdx;
 };
 
 struct AttachCubemapToFramebufferCommand {

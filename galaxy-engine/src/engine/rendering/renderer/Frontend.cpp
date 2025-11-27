@@ -49,7 +49,7 @@ void Frontend::processCanvas()
         if (canva.useBuffer) {
             bindFrameBuffer(canva.framebufferID, canva.cubemapIdx);
             if (canva.colorTargetID != 0)
-                attachTextureToColorFramebuffer(canva.colorTargetID, canva.framebufferID);
+                attachTextureToColorFramebuffer(canva.colorTargetID, canva.framebufferID, 0);
             if (canva.depthTargetID != 0)
                 attachTextureToDepthFramebuffer(canva.depthTargetID, canva.framebufferID);
             if (canva.clearBuffer)
@@ -74,6 +74,9 @@ void Frontend::processCanvas()
 
 void Frontend::linkCanvaColorToTexture(renderID textureID)
 {
+    // if (idx >= m_canvas[m_currentCanvaIdx].colorTargetIDs.size())
+    //     m_canvas[m_currentCanvaIdx].colorTargetIDs.resize(idx + 1);
+    // m_canvas[m_currentCanvaIdx].colorTargetIDs[idx] = textureID;
     m_canvas[m_currentCanvaIdx].colorTargetID = textureID;
 }
 
@@ -197,12 +200,12 @@ void Frontend::bindTexture(renderID textureInstanceID, char* uniformName)
     pushCommand(command);
 }
 
-void Frontend::attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID)
+void Frontend::attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int attachmentIdx)
 {
     AttachTextureToFramebufferCommand attachCommand;
     attachCommand.textureID     = textureID;
     attachCommand.framebufferID = framebufferID;
-    attachCommand.isDepth       = false;
+    attachCommand.attachmentIdx = attachmentIdx;
 
     RenderCommand command;
     command.type                       = RenderCommandType::attachTextureToFramebuffer;
@@ -216,7 +219,7 @@ void Frontend::attachTextureToDepthFramebuffer(renderID textureID, renderID fram
     AttachTextureToFramebufferCommand attachCommand;
     attachCommand.textureID     = textureID;
     attachCommand.framebufferID = framebufferID;
-    attachCommand.isDepth       = true;
+    attachCommand.attachmentIdx = -1;
 
     RenderCommand command;
     command.type                       = RenderCommandType::attachTextureToFramebuffer;

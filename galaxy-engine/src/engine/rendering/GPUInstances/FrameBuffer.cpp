@@ -61,10 +61,11 @@ FrameBuffer::FrameBuffer()
 
 FrameBuffer::FrameBuffer(int width, int height, FramebufferTextureFormat format)
 {
-    m_format = format;
-    m_width  = width;
-    m_height = height;
-    m_fbo    = 0;
+    m_format      = format;
+    m_width       = width;
+    m_height      = height;
+    m_fbo         = 0;
+    m_colorsCount = 1;
     invalidate();
 }
 void FrameBuffer::bind()
@@ -83,44 +84,6 @@ void FrameBuffer::resize(unsigned int newWidth, unsigned int newHeight)
     m_width  = newWidth;
     m_height = newHeight;
     invalidate();
-}
-
-void FrameBuffer::attachTexture(unsigned int attachment, Texture& texture, unsigned int target)
-{
-    unsigned int textureId = texture.getId();
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-
-    if (attachment == GL_COLOR_ATTACHMENT0) {
-        if (!m_externalColor)
-            glDeleteTextures(1, &m_attachedColor);
-
-        texture.resize(m_width, m_height);
-        texture.setFormat(TextureFormat::RGBA);
-
-        m_externalColor = true;
-        m_attachedColor = texture.getId();
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, m_attachedColor, 0);
-    } else if (attachment == GL_DEPTH_ATTACHMENT) {
-        if (!m_externalDepth)
-            glDeleteTextures(1, &m_attachedDepth);
-
-        m_externalDepth = true;
-
-        texture.resize(m_width, m_height);
-        texture.setFormat(TextureFormat::DEPTH);
-
-        m_attachedDepth = texture.getId();
-
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, target, m_attachedDepth, 0);
-    }
-
-    if (m_format == FramebufferTextureFormat::DEPTH || m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-    }
-
-    bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
-    GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
 }
 
 void FrameBuffer::savePPM(char* filename)
@@ -176,14 +139,51 @@ void FrameBuffer::savePPM(char* filename)
     }
 }
 
-void FrameBuffer::attachColorTexture(Texture& texture)
+void FrameBuffer::attachColorTexture(Texture& texture, int idx)
 {
-    attachTexture(GL_COLOR_ATTACHMENT0, texture, GL_TEXTURE_2D);
+    if (idx >= m_colorsCount) {
+        GLX_CORE_ERROR("Can't bind texture to framebuffer's color attachment: {0}", idx);
+        return;
+    }
+
+    unsigned int textureId = texture.getId();
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    if (!m_externalColors[idx])
+        glDeleteTextures(1, &m_attachedColors[idx]);
+
+    texture.resize(m_width, m_height);
+    texture.setFormat(TextureFormat::RGBA);
+
+    m_externalColors[idx] = true;
+    m_attachedColors[idx] = texture.getId();
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + idx, GL_TEXTURE_2D, m_attachedColors[idx], 0);
+
+    bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
 }
 
 void FrameBuffer::attachDepthTexture(Texture& texture)
 {
-    attachTexture(GL_DEPTH_ATTACHMENT, texture, GL_TEXTURE_2D);
+    unsigned int textureId = texture.getId();
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
+    if (!m_externalDepth)
+        glDeleteTextures(1, &m_attachedDepth);
+
+    m_externalDepth = true;
+
+    texture.resize(m_width, m_height);
+    texture.setFormat(TextureFormat::DEPTH);
+
+    m_attachedDepth = texture.getId();
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_attachedDepth, 0);
+
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+
+    bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
 }
 
 void FrameBuffer::invalidate()
@@ -194,13 +194,16 @@ void FrameBuffer::invalidate()
     glCreateFramebuffers(1, &m_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
+    m_externalColors.resize(m_colorsCount);
+    m_attachedColors.resize(m_colorsCount);
+
     // TODO: 3 cases, rgba, depth or rgba and depth
     if (m_format == FramebufferTextureFormat::RGBA8) {
-        bindColorAttachmentTexture(&m_attachedColor, m_width, m_height, GL_RGBA8, GL_RGBA);
+        bindColorAttachmentTexture(&m_attachedColors[0], m_width, m_height, GL_RGBA8, GL_RGBA);
     } else if (m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
         bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH24_STENCIL8);
     } else if (m_format == FramebufferTextureFormat::DEPTH24RGBA8) {
-        bindColorAttachmentTexture(&m_attachedColor, m_width, m_height, GL_RGBA8, GL_RGBA);
+        bindColorAttachmentTexture(&m_attachedColors[0], m_width, m_height, GL_RGBA8, GL_RGBA);
         bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH24_STENCIL8);
     } else if (m_format == FramebufferTextureFormat::DEPTH) {
         bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH_COMPONENT24);
@@ -213,6 +216,14 @@ void FrameBuffer::invalidate()
         glReadBuffer(GL_NONE);
     }
 
+    if (m_format == FramebufferTextureFormat::DEPTH24RGBA8 || m_format == FramebufferTextureFormat::RGBA8) {
+        std::vector<GLenum> drawBuffers;
+        for (int i = 0; i < m_colorsCount; i++) {
+            drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
+        }
+        glDrawBuffers(drawBuffers.size(), drawBuffers.data());
+    }
+
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     GLX_CORE_ASSERT(complete, "Framebuffer not complete");
 
@@ -222,12 +233,12 @@ void FrameBuffer::invalidate()
 
 void FrameBuffer::destroy()
 {
-    glDeleteTextures(1, &m_attachedColor);
+    glDeleteTextures(1, &m_attachedColors[0]);
     glDeleteTextures(1, &m_attachedDepth);
     glDeleteFramebuffers(1, &m_fbo);
-    m_attachedColor = 0;
-    m_attachedDepth = 0;
-    m_fbo           = 0;
+    m_attachedColors[0] = 0;
+    m_attachedDepth     = 0;
+    m_fbo               = 0;
 }
 
 CubemapFrameBuffer::CubemapFrameBuffer()

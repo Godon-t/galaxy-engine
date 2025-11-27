@@ -21,10 +21,16 @@ public:
 
     void destroy();
 
-    inline unsigned int getColorTextureID() { return m_attachedColor; }
+    inline unsigned int getColorTextureID() { return m_attachedColors[0]; }
     inline unsigned int getDepthTextureID() { return m_attachedDepth; }
 
     void resize(unsigned int newWidth, unsigned int newHeight);
+
+    inline void setColorsCount(unsigned int count)
+    {
+        m_colorsCount = count;
+        invalidate();
+    }
 
     inline void setFormat(FramebufferTextureFormat format)
     {
@@ -32,19 +38,20 @@ public:
         invalidate();
     }
     inline FramebufferTextureFormat getFormat() const { return m_format; }
-    void attachTexture(unsigned int attachment, Texture& texture, unsigned int target);
-    void attachColorTexture(Texture& texture);
+    void attachColorTexture(Texture& texture, int idx);
     void attachDepthTexture(Texture& texture);
     void savePPM(char* filename);
 
 private:
     FramebufferTextureFormat m_format;
+    unsigned int m_colorsCount;
     unsigned int m_fbo;
-    unsigned int m_attachedColor;
-    unsigned int m_attachedDepth;
     int m_width, m_height;
 
-    bool m_externalColor = false;
+    std::vector<unsigned int> m_attachedColors;
+    std::vector<bool> m_externalColors;
+
+    unsigned int m_attachedDepth;
     bool m_externalDepth = false;
 
     void invalidate();

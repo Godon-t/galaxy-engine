@@ -636,10 +636,10 @@ void Backend::processCommand(AttachTextureToFramebufferCommand& command)
 {
     auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
     auto& texture     = *m_textureInstances.get(command.textureID);
-    if (command.isDepth)
+    if (command.attachmentIdx < 0)
         framebuffer.attachDepthTexture(texture);
     else
-        framebuffer.attachColorTexture(texture);
+        framebuffer.attachColorTexture(texture, command.attachmentIdx);
 
     checkOpenGLErrors("Attach texture to framebuffer");
 }

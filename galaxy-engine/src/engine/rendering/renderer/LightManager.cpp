@@ -24,6 +24,9 @@ LightManager::~LightManager()
 {
 }
 
+renderID startVisu(0);
+renderID endVisu(0);
+
 void LightManager::init()
 {
     auto& ri                 = Renderer::getInstance();
@@ -41,7 +44,15 @@ void LightManager::init()
     // ri.attachTextureToDepthFramebuffer(m_probeDepthTexture, m_probesFrameBuffer);
     // ri.attachTextureToColorFramebuffer(m_probeRadianceTexture, m_probesFrameBuffer);
 
-    resizeProbeFieldGrid(1, 1, 1, 100.f);
+    m_debugStartVisu = ri.generateCube(0.2f, false, []() {});
+    m_debugEndVisu   = ri.generateCube(0.2f, false, []() {});
+
+    m_debugStartTransform.translate(vec3(-500.f, 10.f, -80.f));
+    m_debugEndTransform.translate(vec3(800.f, 50.f, 80.f));
+    m_debugStartTransform.computeModelMatrix();
+    m_debugEndTransform.computeModelMatrix();
+
+    resizeProbeFieldGrid(2, 2, 2, 100.f);
 
     ri.endCanva();
 }
@@ -68,6 +79,15 @@ void LightManager::unregisterLight(int id)
 {
     m_lights.erase(id);
 }
+
+void LightManager::debugDraw()
+{
+    auto& ri = Renderer::getInstance();
+
+    ri.submit(m_debugStartVisu, m_debugStartTransform);
+    ri.submit(m_debugEndVisu, m_debugEndTransform);
+}
+
 
 void LightManager::shadowPass(Node* sceneRoot)
 {
@@ -119,6 +139,9 @@ void LightManager::updateProbeField()
     auto& ri = Renderer::getInstance();
     mat4 identity(1);
 
+    vec3 debugStart = m_debugStartTransform.getGlobalPosition();
+    vec3 debugEnd  = m_debugEndTransform.getGlobalPosition();
+
     for (auto& probe : m_probeGrid) {
         ri.renderFromPoint(probe.position, *Application::getInstance().getRootNodePtr().get(), m_colorRenderingCubemap, m_depthRenderingCubemap);
 
@@ -128,6 +151,12 @@ void LightManager::updateProbeField()
         // ri.setUniform("scale", vec2(m_textureWidth / (float)m_probeResolution, m_textureHeight / (float)m_probeResolution));
         ri.useCubemap(m_colorRenderingCubemap, "radianceCubemap");
         ri.useCubemap(m_depthRenderingCubemap, "depthCubemap");
+
+
+        ri.setUniform("debugStart", debugStart);
+        ri.setUniform("debugEnd", debugEnd);
+        ri.setUniform("debugProbePos", probe.position);
+
 
         vec2 viewportCoords = getProbeTexCoord(probe.probeCoord);
         ri.setViewport(viewportCoords, vec2(m_probeResolution));

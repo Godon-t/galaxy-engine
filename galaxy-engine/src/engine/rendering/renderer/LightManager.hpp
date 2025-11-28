@@ -2,6 +2,7 @@
 
 #include "engine/nodes/Node.hpp"
 #include "engine/nodes/rendering/lighting/SpotLight.hpp"
+#include "engine/data/Transform.hpp"
 
 #include "engine/types/Math.hpp"
 #include "engine/types/Render.hpp"
@@ -25,6 +26,7 @@ public:
 
     void updateProbeField();
     void resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween = 10.f);
+    void debugDraw();
 
 private:
     struct LightData {
@@ -79,5 +81,8 @@ private:
     float m_probeDistance;
 
     std::vector<ProbeData> m_probeGrid;
+
+    Transform m_debugStartTransform, m_debugEndTransform;
+    renderID m_debugStartVisu, m_debugEndVisu;
 };
 } // namespace Galaxy

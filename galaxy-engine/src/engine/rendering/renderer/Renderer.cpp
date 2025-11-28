@@ -67,6 +67,8 @@ void Renderer::beginSceneRender(const mat4& camTransform)
 {
     beginCanva(camTransform, m_mainViewportSize, m_sceneFrameBufferID, FramebufferTextureFormat::DEPTH24RGBA8);
     m_frontend.setViewport(vec2(0), m_mainViewportSize);
+
+    m_lightManager.debugDraw();
 }
 
 void Renderer::beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx)

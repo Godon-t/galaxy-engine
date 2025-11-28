@@ -157,10 +157,11 @@ unsigned int Texture::getType(TextureFormat format)
 }
 
 Cubemap::Cubemap()
+    : format(TextureFormat::RGBA)
 {
     glGenTextures(1, &cubemapID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
-    resize(64);
+    resize(16);
 }
 
 void Cubemap::activate(unsigned int uniLoc)
@@ -174,25 +175,33 @@ void Cubemap::activate(unsigned int uniLoc)
 
 void Cubemap::destroy()
 {
-    if (cubemapID)
+    if (cubemapID) {
         glDeleteTextures(1, &cubemapID);
+        cubemapID = 0;
+    }
 }
 
-void Cubemap::allocateFaces(unsigned int res)
+void Cubemap::allocateFaces()
 {
-    resolution = res;
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
+
     for (int i = 0; i < 6; i++) {
-        if (useFloat)
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F,
-                resolution, resolution, 0, GL_RGB, GL_FLOAT, nullptr);
-        else
+        if (format == TextureFormat::RGB) {
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB8,
                 resolution, resolution, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        } else if (format == TextureFormat::DEPTH) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT24,
+                resolution, resolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        }
     }
-    // paramétrage par défaut
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -203,8 +212,18 @@ void Cubemap::allocateFaces(unsigned int res)
 
 void Cubemap::resize(unsigned int res)
 {
-    if (res != resolution)
-        allocateFaces(res);
+    if (res != resolution) {
+        resolution = res;
+        allocateFaces();
+    }
+}
+
+void Cubemap::setFormat(TextureFormat newFormat)
+{
+    if (newFormat != format) {
+        format = newFormat;
+        allocateFaces();
+    }
 }
 
 } // namespace Galaxy

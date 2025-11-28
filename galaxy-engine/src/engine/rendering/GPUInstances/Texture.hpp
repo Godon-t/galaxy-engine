@@ -50,13 +50,15 @@ struct Cubemap {
     unsigned int cubemapID  = 0;
     unsigned int resolution = 0;
     bool useFloat           = true;
+    TextureFormat format;
 
     Cubemap();
 
     void activate(unsigned int uniLoc);
 
     void destroy();
-    void allocateFaces(unsigned int res);
+    void allocateFaces();
     void resize(unsigned int res);
+    void setFormat(TextureFormat newFormat);
 };
 } // namespace Galaxy

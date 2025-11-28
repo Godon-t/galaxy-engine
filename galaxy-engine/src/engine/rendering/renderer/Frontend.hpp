@@ -21,6 +21,7 @@ public:
     void linkCanvaColorToTexture(renderID textureID);
     void linkCanvaDepthToTexture(renderID textureID);
     void storeCanvaResult(std::string& path);
+    void avoidCanvaBufferClear();
 
     void submit(renderID meshID);
     void submit(renderID meshID, const Transform& transform);
@@ -29,9 +30,9 @@ public:
     mat4 getProjectionMatrix();
 
     void bindTexture(renderID textureInstanceID, char* uniformName);
-    void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID);
+    void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int attachmentIdx);
     void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID);
-    void attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID);
+    void attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID, bool depth = false);
     void useCubemap(renderID cubemapInstanceID, char* uniformName);
     void bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx = -1);
     void unbindFrameBuffer(renderID frameBufferInstanceID, bool cubemap = false);
@@ -41,8 +42,10 @@ public:
     void initPostProcessing(renderID frameBufferID);
 
     void setUniform(std::string uniformName, bool value);
+    void setUniform(std::string uniformName, float value);
     void setUniform(std::string uniformName, mat4 value);
     void setUniform(std::string uniformName, vec3 value);
+    void setUniform(std::string uniformName, vec2 value);
 
     void setViewport(vec2 position, vec2 dimmension);
     void updateCubemap(renderID targetID, unsigned int resolution);

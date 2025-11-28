@@ -49,10 +49,11 @@ void Frontend::processCanvas()
         if (canva.useBuffer) {
             bindFrameBuffer(canva.framebufferID, canva.cubemapIdx);
             if (canva.colorTargetID != 0)
-                attachTextureToColorFramebuffer(canva.colorTargetID, canva.framebufferID);
+                attachTextureToColorFramebuffer(canva.colorTargetID, canva.framebufferID, 0);
             if (canva.depthTargetID != 0)
                 attachTextureToDepthFramebuffer(canva.depthTargetID, canva.framebufferID);
-            clear(clearColor);
+            if (canva.clearBuffer)
+                clear(clearColor);
             setViewMatrix(canva.viewMat);
             setProjectionMatrix(canva.projectionMat);
             changeUsedProgram(ProgramType::PBR);
@@ -73,6 +74,9 @@ void Frontend::processCanvas()
 
 void Frontend::linkCanvaColorToTexture(renderID textureID)
 {
+    // if (idx >= m_canvas[m_currentCanvaIdx].colorTargetIDs.size())
+    //     m_canvas[m_currentCanvaIdx].colorTargetIDs.resize(idx + 1);
+    // m_canvas[m_currentCanvaIdx].colorTargetIDs[idx] = textureID;
     m_canvas[m_currentCanvaIdx].colorTargetID = textureID;
 }
 
@@ -85,6 +89,11 @@ void Frontend::storeCanvaResult(std::string& path)
 {
     m_canvas[m_currentCanvaIdx].storeResult = true;
     m_canvas[m_currentCanvaIdx].storagePath = path;
+}
+
+void Frontend::avoidCanvaBufferClear()
+{
+    m_canvas[m_currentCanvaIdx].clearBuffer = false;
 }
 
 void Frontend::submit(renderID meshID)
@@ -191,12 +200,12 @@ void Frontend::bindTexture(renderID textureInstanceID, char* uniformName)
     pushCommand(command);
 }
 
-void Frontend::attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID)
+void Frontend::attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int attachmentIdx)
 {
     AttachTextureToFramebufferCommand attachCommand;
     attachCommand.textureID     = textureID;
     attachCommand.framebufferID = framebufferID;
-    attachCommand.isDepth       = false;
+    attachCommand.attachmentIdx = attachmentIdx;
 
     RenderCommand command;
     command.type                       = RenderCommandType::attachTextureToFramebuffer;
@@ -210,7 +219,7 @@ void Frontend::attachTextureToDepthFramebuffer(renderID textureID, renderID fram
     AttachTextureToFramebufferCommand attachCommand;
     attachCommand.textureID     = textureID;
     attachCommand.framebufferID = framebufferID;
-    attachCommand.isDepth       = true;
+    attachCommand.attachmentIdx = -1;
 
     RenderCommand command;
     command.type                       = RenderCommandType::attachTextureToFramebuffer;
@@ -219,11 +228,12 @@ void Frontend::attachTextureToDepthFramebuffer(renderID textureID, renderID fram
     pushCommand(command);
 }
 
-void Frontend::attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID)
+void Frontend::attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID, bool depth)
 {
     AttachCubemapToFramebufferCommand attachCommand;
     attachCommand.cubemapID     = cubemapID;
     attachCommand.framebufferID = framebufferID;
+    attachCommand.depth         = depth;
     RenderCommand command;
     command.type                       = RenderCommandType::attachCubemapToFramebuffer;
     command.attachCubemapToFramebuffer = attachCommand;
@@ -306,6 +316,19 @@ void Frontend::setUniform(std::string uniformName, bool value)
     pushCommand(command);
 }
 
+void Frontend::setUniform(std::string uniformName, float value)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.type        = FLOAT;
+    uniformCommand.valueFloat  = value;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
 void Frontend::setUniform(std::string uniformName, mat4 value)
 {
     SetUniformCommand uniformCommand;
@@ -327,6 +350,20 @@ void Frontend::setUniform(std::string uniformName, vec3 value)
     uniformCommand.valueVec3.x = value.r;
     uniformCommand.valueVec3.y = value.g;
     uniformCommand.valueVec3.z = value.b;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::setUniform(std::string uniformName, vec2 value)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.type        = VEC2;
+    uniformCommand.valueVec2.x = value.r;
+    uniformCommand.valueVec2.y = value.g;
     RenderCommand command;
     command.type       = RenderCommandType::setUniform;
     command.setUniform = uniformCommand;

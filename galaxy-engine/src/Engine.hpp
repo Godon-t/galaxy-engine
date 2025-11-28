@@ -15,6 +15,7 @@
 #include "nodes/rendering/MeshInstance.hpp"
 #include "nodes/rendering/MultiMeshInstance.hpp"
 #include "nodes/rendering/Sprite3D.hpp"
+#include "nodes/rendering/lighting/GINode.hpp"
 #include "nodes/rendering/lighting/SpotLight.hpp"
 #include "nodes/visitors/NodeVisitor.hpp"
 

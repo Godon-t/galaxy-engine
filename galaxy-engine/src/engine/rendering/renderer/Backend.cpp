@@ -34,13 +34,14 @@ Backend::Backend(size_t maxSize)
     // glDisable(GL_CULL_FACE);
 
     // TODO: Change the way Program object are created
-    m_mainProgram           = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
-    m_skyboxProgram         = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
-    m_irradianceProgram     = std::move(ProgramSkybox(engineRes("shaders/filters/irradiance.glsl")));
-    m_textureProgram        = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
-    m_unicolorProgram       = std::move(ProgramUnicolor(engineRes("shaders/unicolor.glsl")));
-    m_postProcessingProgram = std::move(ProgramPostProc(engineRes("shaders/post_processing.glsl")));
-    m_shadowProgram         = std::move(ProgramShadow(engineRes("shaders/shadow_depth.glsl")));
+    m_mainProgram              = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
+    m_skyboxProgram            = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
+    m_irradianceProgram        = std::move(ProgramSkybox(engineRes("shaders/filters/irradiance.glsl")));
+    m_textureProgram           = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
+    m_unicolorProgram          = std::move(ProgramUnicolor(engineRes("shaders/unicolor.glsl")));
+    m_postProcessingProgram    = std::move(ProgramPostProc(engineRes("shaders/post_processing.glsl")));
+    m_shadowProgram            = std::move(ProgramShadow(engineRes("shaders/shadow_depth.glsl")));
+    m_computeOctahedralProgram = std::move(ProgramComputeOctahedral(engineRes("shaders/compute_octahedral.glsl")));
 
     m_activeProgram = &m_mainProgram;
 
@@ -596,6 +597,8 @@ void Backend::processCommand(SetActiveProgramCommand& command)
         m_activeProgram = &m_irradianceProgram;
     else if (command.program == SHADOW_DEPTH)
         m_activeProgram = &m_shadowProgram;
+    else if (command.program == COMPUTE_OCTAHEDRAL)
+        m_activeProgram = &m_computeOctahedralProgram;
     else
         GLX_CORE_ASSERT(false, "unknown asked program!");
 
@@ -633,10 +636,10 @@ void Backend::processCommand(AttachTextureToFramebufferCommand& command)
 {
     auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
     auto& texture     = *m_textureInstances.get(command.textureID);
-    if (command.isDepth)
+    if (command.attachmentIdx < 0)
         framebuffer.attachDepthTexture(texture);
     else
-        framebuffer.attachColorTexture(texture);
+        framebuffer.attachColorTexture(texture, command.attachmentIdx);
 
     checkOpenGLErrors("Attach texture to framebuffer");
 }
@@ -644,7 +647,10 @@ void Backend::processCommand(AttachTextureToFramebufferCommand& command)
 void Backend::processCommand(AttachCubemapToFramebufferCommand& command)
 {
     // TODO: Beware of memory handling !!!
-    m_cubemapFrameBufferInstances.get(command.framebufferID)->attachCubemap(*m_cubemapInstances.get(command.cubemapID));
+    if (command.depth)
+        m_cubemapFrameBufferInstances.get(command.framebufferID)->attachDepthCubemap(*m_cubemapInstances.get(command.cubemapID));
+    else
+        m_cubemapFrameBufferInstances.get(command.framebufferID)->attachColorCubemap(*m_cubemapInstances.get(command.cubemapID), 0);
 }
 
 void Backend::processCommand(BindMaterialCommand& command)
@@ -700,9 +706,14 @@ void Backend::processCommand(SetUniformCommand& command)
 {
     if (command.type == SetValueTypes::BOOL) {
         glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueBool ? GL_TRUE : GL_FALSE);
+    } else if (command.type == SetValueTypes::FLOAT) {
+        glUniform1f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueFloat);
     } else if (command.type == SetValueTypes::VEC3) {
         glUniform3f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName),
             command.valueVec3.x, command.valueVec3.y, command.valueVec3.z);
+    } else if (command.type == SetValueTypes::VEC2) {
+        glUniform2f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName),
+            command.valueVec2.x, command.valueVec2.y);
     } else if (command.type == SetValueTypes::MAT4) {
         glUniformMatrix4fv(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), 1, GL_FALSE, &command.matrixValue[0][0]);
     }

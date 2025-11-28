@@ -113,4 +113,11 @@ public:
 private:
     unsigned int m_lightSpaceMatrixLocation;
 };
+
+class ProgramComputeOctahedral : public Program {
+public:
+    ProgramComputeOctahedral() = default;
+    ProgramComputeOctahedral(std::string path);
+    ProgramType type() const override { return ProgramType::COMPUTE_OCTAHEDRAL; }
+};
 }

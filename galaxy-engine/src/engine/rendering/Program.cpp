@@ -312,4 +312,8 @@ void ProgramShadow::setLightSpaceMatrix(const mat4& lightSpaceMatrix)
 {
     glUniformMatrix4fv(m_lightSpaceMatrixLocation, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
 }
+ProgramComputeOctahedral::ProgramComputeOctahedral(std::string path)
+    : Program(path)
+{
+}
 }

@@ -61,10 +61,11 @@ FrameBuffer::FrameBuffer()
 
 FrameBuffer::FrameBuffer(int width, int height, FramebufferTextureFormat format)
 {
-    m_format = format;
-    m_width  = width;
-    m_height = height;
-    m_fbo    = 0;
+    m_format      = format;
+    m_width       = width;
+    m_height      = height;
+    m_fbo         = 0;
+    m_colorsCount = 1;
     invalidate();
 }
 void FrameBuffer::bind()
@@ -85,77 +86,104 @@ void FrameBuffer::resize(unsigned int newWidth, unsigned int newHeight)
     invalidate();
 }
 
-void FrameBuffer::attachTexture(unsigned int attachment, Texture& texture, unsigned int target)
+void FrameBuffer::savePPM(char* filename)
 {
+    {
+        std::string outputPath = std::string(filename) + "_c0.ppm";
+        std::ofstream output_image(outputPath.c_str());
+
+        /// READ THE CONTENT FROM THE FBO
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        float* pixels = new float[m_width * m_height * 4];
+        glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_FLOAT, pixels);
+
+        output_image << "P3" << std::endl;
+        output_image << m_width << " " << m_height << std::endl;
+        output_image << "255" << std::endl;
+
+        int k = 0;
+        for (int i = 0; i < m_width; i++) {
+            for (int j = 0; j < m_height; j++) {
+                output_image << (unsigned int)(255 * pixels[k]) << " " << (unsigned int)(255 * pixels[k + 1]) << " " << (unsigned int)(255 * pixels[k + 2]) << " ";
+                k = k + 4;
+            }
+            output_image << std::endl;
+        }
+        delete[] pixels;
+        output_image.close();
+    }
+
+    // If we have a depth component alongside color, save a _d.pgm file
+    if ((m_format == FramebufferTextureFormat::DEPTH24RGBA8 || m_format == FramebufferTextureFormat::DEPTH24STENCIL8) && m_attachedDepth != 0) {
+        std::string outputPath = std::string(filename) + "_d.pgm";
+        std::ofstream outputImage(outputPath.c_str());
+
+        /// READ THE DEPTH CONTENT FROM THE FBO
+        float* d_pixels = new float[m_width * m_height];
+        glReadPixels(0, 0, m_width, m_height, GL_DEPTH_COMPONENT, GL_FLOAT, d_pixels);
+
+        outputImage << "P2" << std::endl;
+        outputImage << m_width << " " << m_height << std::endl;
+        outputImage << "255" << std::endl;
+
+        for (int y = 0; y < m_height; ++y) {
+            for (int x = 0; x < m_width; ++x) {
+                int k            = y * m_width + x;
+                unsigned int val = (unsigned int)(255.0f * d_pixels[k]);
+                outputImage << val << " ";
+            }
+            outputImage << std::endl;
+        }
+        delete[] d_pixels;
+        outputImage.close();
+    }
+}
+
+void FrameBuffer::attachColorTexture(Texture& texture, int idx)
+{
+    if (idx >= m_colorsCount) {
+        GLX_CORE_ERROR("Can't bind texture to framebuffer's color attachment: {0}", idx);
+        return;
+    }
+
     unsigned int textureId = texture.getId();
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    if (!m_externalColors[idx])
+        glDeleteTextures(1, &m_attachedColors[idx]);
 
-    if (attachment == GL_COLOR_ATTACHMENT0) {
-        if (!m_externalColor)
-            glDeleteTextures(1, &m_attachedColor);
+    texture.resize(m_width, m_height);
+    texture.setFormat(TextureFormat::RGBA);
 
-        texture.resize(m_width, m_height);
-        texture.setFormat(TextureFormat::RGBA);
-
-        m_externalColor = true;
-        m_attachedColor = texture.getId();
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, m_attachedColor, 0);
-    } else if (attachment == GL_DEPTH_ATTACHMENT) {
-        if (!m_externalDepth)
-            glDeleteTextures(1, &m_attachedDepth);
-
-        m_externalDepth = true;
-
-        texture.resize(m_width, m_height);
-        texture.setFormat(TextureFormat::DEPTH);
-
-        m_attachedDepth = texture.getId();
-
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, target, m_attachedDepth, 0);
-    }
-
-    if (m_format == FramebufferTextureFormat::DEPTH || m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
-        glDrawBuffer(GL_NONE);
-        glReadBuffer(GL_NONE);
-    }
+    m_externalColors[idx] = true;
+    m_attachedColors[idx] = texture.getId();
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + idx, GL_TEXTURE_2D, m_attachedColors[idx], 0);
 
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
 }
 
-void FrameBuffer::savePPM(char* filename, bool depth)
-{
-    std::ofstream output_image(filename);
-
-    /// READ THE CONTENT FROM THE FBO
-    // glReadBuffer(GL_COLOR_ATTACHMENT0);
-    float* pixels = new float[m_width * m_height];
-    glReadPixels(0, 0, m_width, m_height, GL_DEPTH_COMPONENT, GL_FLOAT, pixels);
-
-    output_image << "P3" << std::endl;
-    output_image << m_width << " " << m_height << std::endl;
-    output_image << "255" << std::endl;
-
-    int k = 0;
-    for (int i = 0; i < m_width; i++) {
-        for (int j = 0; j < m_height; j++) {
-            output_image << (unsigned int)(255 * pixels[k]) << " " << (unsigned int)(255 * pixels[k]) << " " << (unsigned int)(255 * pixels[k]) << " ";
-            k = k + 1;
-        }
-        output_image << std::endl;
-    }
-    delete pixels;
-    output_image.close();
-}
-
-void FrameBuffer::attachColorTexture(Texture& texture)
-{
-    attachTexture(GL_COLOR_ATTACHMENT0, texture, GL_TEXTURE_2D);
-}
-
 void FrameBuffer::attachDepthTexture(Texture& texture)
 {
-    attachTexture(GL_DEPTH_ATTACHMENT, texture, GL_TEXTURE_2D);
+    unsigned int textureId = texture.getId();
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
+    if (!m_externalDepth)
+        glDeleteTextures(1, &m_attachedDepth);
+
+    m_externalDepth = true;
+
+    texture.resize(m_width, m_height);
+    texture.setFormat(TextureFormat::DEPTH);
+
+    m_attachedDepth = texture.getId();
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_attachedDepth, 0);
+
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+
+    bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
 }
 
 void FrameBuffer::invalidate()
@@ -166,13 +194,16 @@ void FrameBuffer::invalidate()
     glCreateFramebuffers(1, &m_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
+    m_externalColors.resize(m_colorsCount);
+    m_attachedColors.resize(m_colorsCount);
+
     // TODO: 3 cases, rgba, depth or rgba and depth
     if (m_format == FramebufferTextureFormat::RGBA8) {
-        bindColorAttachmentTexture(&m_attachedColor, m_width, m_height, GL_RGBA8, GL_RGBA);
+        bindColorAttachmentTexture(&m_attachedColors[0], m_width, m_height, GL_RGBA8, GL_RGBA);
     } else if (m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
         bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH24_STENCIL8);
     } else if (m_format == FramebufferTextureFormat::DEPTH24RGBA8) {
-        bindColorAttachmentTexture(&m_attachedColor, m_width, m_height, GL_RGBA8, GL_RGBA);
+        bindColorAttachmentTexture(&m_attachedColors[0], m_width, m_height, GL_RGBA8, GL_RGBA);
         bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH24_STENCIL8);
     } else if (m_format == FramebufferTextureFormat::DEPTH) {
         bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH_COMPONENT24);
@@ -185,6 +216,14 @@ void FrameBuffer::invalidate()
         glReadBuffer(GL_NONE);
     }
 
+    if (m_format == FramebufferTextureFormat::DEPTH24RGBA8 || m_format == FramebufferTextureFormat::RGBA8) {
+        std::vector<GLenum> drawBuffers;
+        for (int i = 0; i < m_colorsCount; i++) {
+            drawBuffers.push_back(GL_COLOR_ATTACHMENT0 + i);
+        }
+        glDrawBuffers(drawBuffers.size(), drawBuffers.data());
+    }
+
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     GLX_CORE_ASSERT(complete, "Framebuffer not complete");
 
@@ -194,12 +233,12 @@ void FrameBuffer::invalidate()
 
 void FrameBuffer::destroy()
 {
-    glDeleteTextures(1, &m_attachedColor);
+    glDeleteTextures(1, &m_attachedColors[0]);
     glDeleteTextures(1, &m_attachedDepth);
     glDeleteFramebuffers(1, &m_fbo);
-    m_attachedColor = 0;
-    m_attachedDepth = 0;
-    m_fbo           = 0;
+    m_attachedColors[0] = 0;
+    m_attachedDepth     = 0;
+    m_fbo               = 0;
 }
 
 CubemapFrameBuffer::CubemapFrameBuffer()
@@ -213,24 +252,44 @@ CubemapFrameBuffer::CubemapFrameBuffer(int size)
     invalidate();
 }
 
-void CubemapFrameBuffer::attachCubemap(Cubemap cubemap)
+void CubemapFrameBuffer::attachDepthCubemap(Cubemap cubemap)
 {
-    m_cubemap = cubemap;
-    resize(cubemap.resolution);
+    m_depthCubemap = cubemap;
+    m_depthCubemap.setFormat(TextureFormat::DEPTH);
+    m_depthCubemap.resize(m_size);
+}
+
+void CubemapFrameBuffer::attachColorCubemap(Cubemap cubemap, int idx)
+{
+    if (idx >= m_colorCubemaps.size())
+        m_colorCubemaps.resize(idx + 1);
+
+    m_colorCubemaps[idx] = cubemap;
+    m_colorCubemaps[idx].setFormat(TextureFormat::RGB);
+    m_colorCubemaps[idx].resize(m_size);
 }
 
 void CubemapFrameBuffer::bind(int idx)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     // TODO: Depend on cubemap mode: color, depth or both
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_cubemap.cubemapID, 0);
-    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_cubemap.cubemapID, 0);
+    GLenum attachments[m_colorCubemaps.size()];
+    for (int i = 0; i < m_colorCubemaps.size(); i++) {
+        attachments[i] = GL_COLOR_ATTACHMENT0 + i;
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachments[i], GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_colorCubemaps[i].cubemapID, 0);
+    }
 
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    if (m_depthCubemap.cubemapID) {
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_depthCubemap.cubemapID, 0);
+    }
 
+    glDrawBuffers(m_colorCubemaps.size(), attachments);
+
+    checkOpenGLErrors("Bind framebuffer face idx");
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     GLX_CORE_ASSERT(complete, "Cubemap framebuffer not complete after bind face {0}", idx);
-    checkOpenGLErrors("Bind framebuffer face idx");
 }
 
 void CubemapFrameBuffer::unbind()
@@ -240,8 +299,9 @@ void CubemapFrameBuffer::unbind()
 
 void CubemapFrameBuffer::destroy()
 {
-    glDeleteRenderbuffers(1, &m_rbo);
     glDeleteFramebuffers(1, &m_fbo);
+
+    m_fbo = 0;
 }
 
 void CubemapFrameBuffer::resize(unsigned int newSize)
@@ -257,13 +317,7 @@ void CubemapFrameBuffer::invalidate()
 
     glGenFramebuffers(1, &m_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-    glGenRenderbuffers(1, &m_rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, m_size, m_size);
-
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
+    glDrawBuffer(GL_NONE);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     checkOpenGLErrors("Cubemap frame buffer initialization");

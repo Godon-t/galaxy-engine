@@ -22,7 +22,7 @@ public:
 
     // inline void setProjectionMatrix(math::mat4& projection) { m_frontend.setProjectionMatrix(projection); }
 
-    void beginSceneRender(const mat4& camTransform, const vec2& dimmensions);
+    void beginSceneRender(const mat4& camTransform);
     void beginSceneRender(const vec3& camPosition, const vec3& camDirection, const vec3& camUp, const vec2& dimmensions);
     inline void beginCanvaNoBuffer() { m_frontend.beginCanvaNoBuffer(); }
     void beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1);
@@ -30,6 +30,8 @@ public:
     {
         m_frontend.beginCanva(viewMat, projectionMat, framebufferID, framebufferFormat, cubemapIdx);
     }
+    inline void saveCanvaResult(std::string path) { m_frontend.storeCanvaResult(path); }
+    inline void avoidCanvaClear() { m_frontend.avoidCanvaBufferClear(); }
     inline void endCanva() { m_frontend.endCanva(); }
     inline void linkCanvaColorToTexture(renderID textureID) { m_frontend.linkCanvaColorToTexture(textureID); }
     inline void linkCanvaDepthToTexture(renderID textureID) { m_frontend.linkCanvaDepthToTexture(textureID); }
@@ -42,6 +44,7 @@ public:
     void renderFrame();
 
     inline void submit(renderID meshID, const Transform& transform) { m_frontend.submit(meshID, transform); }
+    inline void submit(renderID meshID) { m_frontend.submit(meshID); }
 
     inline renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices) { return m_backend.instanciateMesh(vertices, indices); }
     inline renderID instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx = 0) { return m_backend.instanciateMesh(mesh, surfaceIdx); }
@@ -77,25 +80,30 @@ public:
 
     inline void debugMessage(std::string message) { m_frontend.addDebugMsg(message); }
 
-    inline void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID) { m_frontend.attachTextureToColorFramebuffer(textureID, framebufferID); }
+    inline void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int colorIdx) { m_frontend.attachTextureToColorFramebuffer(textureID, framebufferID, colorIdx); }
     inline void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID) { m_frontend.attachTextureToDepthFramebuffer(textureID, framebufferID); }
 
     inline void setUniform(std::string uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
+    inline void setUniform(std::string uniformName, float value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, mat4 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, vec3 value) { m_frontend.setUniform(uniformName, value); }
+    inline void setUniform(std::string uniformName, vec2 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUnicolorObjectColor(const vec3& color) { m_frontend.setUnicolorObjectColor(color); }
 
     inline void setCullMode(renderID visualInstanceID, CullMode mode) { m_backend.setCullMode(visualInstanceID, mode); }
+    inline void setViewport(vec2 position, vec2 size) { m_frontend.setViewport(position, size); }
 
     // TODO: Resizing unbind framebuffer
     void resize(unsigned int width, unsigned int height)
     {
         m_backend.resizeFrameBuffer(m_sceneFrameBufferID, width, height);
         m_backend.resizeFrameBuffer(m_postProcessingBufferID, width, height);
+        m_mainViewportSize.x = width;
+        m_mainViewportSize.y = height;
     }
 
     inline void submitPBR(renderID meshID, renderID materialID, const Transform& transform) { m_frontend.submitPBR(meshID, materialID, transform); }
-    void renderFromPoint(vec3 position, Node& root, renderID targetCubemapID);
+    void renderFromPoint(vec3 position, Node& root, renderID targetColorCubemapID, renderID targetDepthCubemapID);
     void applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter);
 
     inline int getDrawCallsCount() { return m_drawCount; }
@@ -128,6 +136,7 @@ private:
 
     mat4 m_currentView;
     mat4 m_currentProj;
+    vec2 m_mainViewportSize;
 
     vec3 m_cubemap_orientations[6], m_cubemap_ups[6];
 

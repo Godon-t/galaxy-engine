@@ -1,9 +1,22 @@
 #include "LightManager.hpp"
+#include "core/Application.hpp"
 #include "engine/rendering/CameraManager.hpp"
 #include "engine/rendering/renderer/Renderer.hpp"
 
 namespace Galaxy {
 LightManager::LightManager()
+    : m_shadowMapFrameBufferID(0)
+    , m_probesFrameBuffer(0)
+    , m_colorRenderingCubemap(0)
+    , m_depthRenderingCubemap(0)
+    , m_fullQuad(0)
+    , m_gridDimX(0)
+    , m_gridDimY(0)
+    , m_gridDimZ(0)
+    , m_probeDistance(1.f)
+    , m_textureWidth(2048)
+    , m_textureHeight(1024)
+    , m_probeResolution(512)
 {
 }
 
@@ -13,7 +26,24 @@ LightManager::~LightManager()
 
 void LightManager::init()
 {
-    m_shadowMapFrameBufferID = Renderer::getInstance().instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH);
+    auto& ri                 = Renderer::getInstance();
+    m_shadowMapFrameBufferID = ri.instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH);
+
+    m_fullQuad = ri.generateQuad(vec2(2, 2), []() {});
+
+    m_colorRenderingCubemap = ri.instanciateCubemap();
+    m_depthRenderingCubemap = ri.instanciateCubemap();
+    // ri.resizeCubemap(m_colorRenderingCubemap, m_probeResolution);
+
+    // TODO: pass to a format for normals in addition to colors and depths
+    m_probesFrameBuffer = ri.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8);
+    ri.beginCanvaNoBuffer();
+    // ri.attachTextureToDepthFramebuffer(m_probeDepthTexture, m_probesFrameBuffer);
+    // ri.attachTextureToColorFramebuffer(m_probeRadianceTexture, m_probesFrameBuffer);
+
+    resizeProbeFieldGrid(1, 1, 1, 100.f);
+
+    ri.endCanva();
 }
 
 int LightManager::registerLight(const SpotLight* desc)
@@ -77,6 +107,81 @@ void LightManager::shadowPass(Node* sceneRoot)
     // m_frontend.bindTexture(lightTextureID, "sampledTexture");
     // m_frontend.submit(m_debugPlane, transfo);
     // m_frontend.endCanva();
+}
+
+renderID LightManager::getProbesRadianceTexture()
+{
+    return m_probeRadianceTexture;
+}
+
+void LightManager::updateProbeField()
+{
+    auto& ri = Renderer::getInstance();
+    mat4 identity(1);
+
+    for (auto& probe : m_probeGrid) {
+        ri.renderFromPoint(probe.position, *Application::getInstance().getRootNodePtr().get(), m_colorRenderingCubemap, m_depthRenderingCubemap);
+
+        ri.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
+        ri.avoidCanvaClear();
+        ri.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
+        // ri.setUniform("scale", vec2(m_textureWidth / (float)m_probeResolution, m_textureHeight / (float)m_probeResolution));
+        ri.useCubemap(m_colorRenderingCubemap, "radianceCubemap");
+        ri.useCubemap(m_depthRenderingCubemap, "depthCubemap");
+
+        vec2 viewportCoords = getProbeTexCoord(probe.probeCoord);
+        ri.setViewport(viewportCoords, vec2(m_probeResolution));
+        ri.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
+        ri.submit(m_fullQuad);
+        ri.endCanva();
+    }
+
+    ri.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
+    ri.avoidCanvaClear();
+    ri.saveCanvaResult("probes");
+    ri.endCanva();
+}
+
+void LightManager::resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween)
+{
+    m_gridDimX      = width;
+    m_gridDimY      = height;
+    m_gridDimZ      = depth;
+    m_probeDistance = spaceBetween;
+
+    m_probeGrid.resize(width * height * depth);
+
+    m_textureWidth  = width * height * m_probeResolution;
+    m_textureHeight = depth * m_probeResolution;
+
+    Renderer::getInstance().resizeFrameBuffer(m_probesFrameBuffer, m_textureWidth, m_textureHeight);
+
+    for (int z = 0; z < depth; z++) {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                vec3 position(x, y, z);
+                position *= m_probeDistance;
+
+                unsigned int probeIdx            = getCellCoord(x, y, z);
+                m_probeGrid[probeIdx].probeCoord = probeIdx;
+                m_probeGrid[probeIdx].position   = position;
+            }
+        }
+    }
+}
+
+unsigned int LightManager::getCellCoord(unsigned int x, unsigned int y, unsigned int z)
+{
+    return z * m_gridDimX * m_gridDimY + y * m_gridDimX + x;
+}
+
+vec2 LightManager::getProbeTexCoord(unsigned int probeGridIdx)
+{
+    unsigned int probesByWidth = m_textureWidth / m_probeResolution;
+    unsigned int xPosition     = (probeGridIdx % probesByWidth) * m_probeResolution;
+    unsigned int yPosition     = (probeGridIdx / probesByWidth) * m_probeResolution;
+    vec2 texturePos(xPosition, yPosition);
+    return texturePos;
 }
 
 } // namespace Galaxy

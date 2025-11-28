@@ -16,6 +16,7 @@ Renderer::Renderer()
     , m_frontend(&m_commandBuffers[m_frontCommandBufferIdx])
     , m_backend()
     , m_lightManager()
+    , m_mainViewportSize(1024)
 {
     m_backend.initDebugCallback();
 
@@ -62,9 +63,10 @@ void Renderer::init()
     m_lightManager.init();
 }
 
-void Renderer::beginSceneRender(const mat4& camTransform, const vec2& dimmensions)
+void Renderer::beginSceneRender(const mat4& camTransform)
 {
-    beginCanva(camTransform, dimmensions, m_sceneFrameBufferID, FramebufferTextureFormat::DEPTH24RGBA8);
+    beginCanva(camTransform, m_mainViewportSize, m_sceneFrameBufferID, FramebufferTextureFormat::DEPTH24RGBA8);
+    m_frontend.setViewport(vec2(0), m_mainViewportSize);
 }
 
 void Renderer::beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx)
@@ -173,21 +175,14 @@ void Renderer::applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, rend
     // glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 }
 
-void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemapID)
+void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetColorCubemapID, renderID targetDepthCubemapID)
 {
-    GLint viewport[4];
-    // TODO: Find a way to retrieve current viewport size or to restore after render
-    glGetIntegerv(GL_VIEWPORT, viewport);
-
-    vec2 restorePos(viewport[0], viewport[1]);
-    vec2 restoreSize(viewport[2], viewport[3]);
-
     vec2 size(1024);
     vec2 pos(0);
 
     m_frontend.beginCanvaNoBuffer();
-    m_frontend.updateCubemap(targetCubemapID, 1024);
-    m_frontend.attachCubemapToFramebuffer(targetCubemapID, m_cubemapFramebufferID);
+    m_frontend.attachCubemapToFramebuffer(targetColorCubemapID, m_cubemapFramebufferID, false);
+    m_frontend.attachCubemapToFramebuffer(targetDepthCubemapID, m_cubemapFramebufferID, true);
     m_frontend.endCanva();
 
     mat4 projection = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);
@@ -197,7 +192,6 @@ void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetCubemap
         m_frontend.beginCanva(viewMatrix, projection, m_cubemapFramebufferID, FramebufferTextureFormat::DEPTH24RGBA8, i);
         m_frontend.setViewport(pos, size);
         root.draw();
-        m_frontend.setViewport(restorePos, restoreSize);
         m_frontend.endCanva();
     }
 }

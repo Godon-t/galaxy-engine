@@ -21,6 +21,11 @@ public:
     void shadowPass(Node* sceneRoot);
     renderID getShadowMapID(lightID light) { return m_lights[light].shadowMapID; }
 
+    renderID getProbesRadianceTexture();
+
+    void updateProbeField();
+    void resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween = 10.f);
+
 private:
     struct LightData {
         int idx;
@@ -40,11 +45,39 @@ private:
         }
     };
 
+    struct ProbeCell {
+        // from 0 to 1 with order x, y, z
+        unsigned int probes[8];
+    };
+    struct ProbeData {
+        unsigned int probeCoord;
+        vec3 position;
+    };
+
     std::unordered_map<lightID, LightData> m_lights;
     lightID m_nextLightID   = 0;
     int m_currentLightCount = 0;
     int m_maxLights         = 100;
 
     renderID m_shadowMapFrameBufferID;
+
+    unsigned int getCellCoord(unsigned int x, unsigned int y, unsigned int z);
+    vec2 getProbeTexCoord(unsigned int probeGridIdx);
+
+    renderID m_fullQuad;
+    renderID m_colorRenderingCubemap;
+    renderID m_depthRenderingCubemap;
+    renderID m_probesFrameBuffer;
+    unsigned int m_probeResolution;
+    unsigned int m_textureWidth;
+    unsigned int m_textureHeight;
+    renderID m_probeRadianceTexture;
+    renderID m_probeDepthTexture;
+    unsigned int m_gridDimX;
+    unsigned int m_gridDimY;
+    unsigned int m_gridDimZ;
+    float m_probeDistance;
+
+    std::vector<ProbeData> m_probeGrid;
 };
 } // namespace Galaxy

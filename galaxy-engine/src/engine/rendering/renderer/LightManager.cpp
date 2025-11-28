@@ -59,9 +59,10 @@ void LightManager::init()
 
 int LightManager::registerLight(LightData desc)
 {
-    desc.idx = m_currentLightCount++;
-    lightID id = m_nextLightID++;
-    m_lights[id]              = desc;
+    desc.idx                = m_currentLightCount++;
+    lightID id              = m_nextLightID++;
+    m_lights[id]            = desc;
+    m_lights[id].needUpdate = true;
 
     Renderer::getInstance().beginCanvaNoBuffer();
     Renderer::getInstance().changeUsedProgram(ProgramType::PBR);
@@ -76,6 +77,12 @@ int LightManager::registerLight(LightData desc)
 void LightManager::updateLightTransform(lightID id, math::mat4 transform)
 {
     m_lights[id].transformationMatrix = transform;
+    m_lights[id].needUpdate           = true;
+}
+
+void LightManager::updateLightColor(lightID id, math::vec3 color)
+{
+    m_lights[id].color      = color;
     m_lights[id].needUpdate = true;
 }
 
@@ -92,25 +99,24 @@ void LightManager::debugDraw()
     ri.submit(m_debugEndVisu, m_debugEndTransform);
 }
 
-
 void LightManager::shadowPass(Node* sceneRoot)
 {
     auto& ri = Renderer::getInstance();
-    
+
     ri.beginCanvaNoBuffer();
     ri.changeUsedProgram(PBR);
-    for(auto& light: m_lights){
-        if(!light.second.needUpdate)
+    for (auto& light : m_lights) {
+        if (!light.second.needUpdate)
             continue;
-        
+
         light.second.needUpdate = false;
-        
+
         auto uniformName = "lightPositions[" + std::to_string(light.second.idx) + "]";
         ri.setUniform(uniformName, vec3(light.second.transformationMatrix[3]));
         uniformName = "lightColors[" + std::to_string(light.second.idx) + "]";
         ri.setUniform(uniformName, light.second.color);
 
-        //         ri.setUniform("lights[" + std::to_string(id) + "].lightMatrix", lightSpaceMatrix);
+        // ri.setUniform("lights[" + std::to_string(id) + "].lightMatrix", lightSpaceMatrix);
         // ri.setUniform("lights[" + std::to_string(id) + "].position", vec3(lightSpaceMatrix[3]));
         // ri.setUniform("lights[" + std::to_string(id) + "].color", lightData.color);
     }
@@ -159,7 +165,7 @@ void LightManager::updateProbeField()
     mat4 identity(1);
 
     vec3 debugStart = m_debugStartTransform.getGlobalPosition();
-    vec3 debugEnd  = m_debugEndTransform.getGlobalPosition();
+    vec3 debugEnd   = m_debugEndTransform.getGlobalPosition();
 
     for (auto& probe : m_probeGrid) {
         ri.renderFromPoint(probe.position, *Application::getInstance().getRootNodePtr().get(), m_colorRenderingCubemap, m_depthRenderingCubemap);
@@ -171,11 +177,9 @@ void LightManager::updateProbeField()
         ri.useCubemap(m_colorRenderingCubemap, "radianceCubemap");
         ri.useCubemap(m_depthRenderingCubemap, "depthCubemap");
 
-
         ri.setUniform("debugStart", debugStart);
         ri.setUniform("debugEnd", debugEnd);
         ri.setUniform("debugProbePos", probe.position);
-
 
         vec2 viewportCoords = getProbeTexCoord(probe.probeCoord);
         ri.setViewport(viewportCoords, vec2(m_probeResolution));

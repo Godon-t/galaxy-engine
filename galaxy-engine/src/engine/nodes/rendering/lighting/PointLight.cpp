@@ -1,8 +1,7 @@
 #include "PointLight.hpp"
 
-#include "engine/rendering/renderer/Renderer.hpp"
 #include "engine/rendering/renderer/LightManager.hpp"
-
+#include "engine/rendering/renderer/Renderer.hpp"
 
 namespace Galaxy {
 
@@ -15,10 +14,10 @@ PointLight::PointLight(std::string name)
 
 PointLight::~PointLight()
 {
-    if(m_lightID != 0) {
+    if (m_lightID != 0) {
         Renderer::getInstance().getLightManager().unregisterLight(m_lightID);
     }
-    if(m_visualCubeID != 0) {
+    if (m_visualCubeID != 0) {
         Renderer::getInstance().clearMesh(m_visualCubeID);
     }
 }
@@ -28,9 +27,9 @@ void PointLight::enteredRoot()
     Light::enteredRoot();
 
     LightData desc;
-    desc.type = LightType::POINTLIGHT;
+    desc.type                 = LightType::POINTLIGHT;
     desc.transformationMatrix = getTransform()->getGlobalModelMatrix();
-    m_lightID = Renderer::getInstance().getLightManager().registerLight(desc);
+    m_lightID                 = Renderer::getInstance().getLightManager().registerLight(desc);
 
     updateLight();
 
@@ -54,9 +53,9 @@ void PointLight::draw()
 
 void PointLight::updateLight()
 {
+    m_transform.computeModelMatrix();
+    Renderer::getInstance().getLightManager().updateLightColor(m_lightID, m_color);
     Renderer::getInstance().getLightManager().updateLightTransform(m_lightID, getTransform()->getGlobalModelMatrix());
 }
-
-
 
 }

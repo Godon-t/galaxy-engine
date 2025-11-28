@@ -85,28 +85,33 @@ public:
             node.testingFunc();
         }
     }
-    void visit(Light& node)
+    bool visit(Light& node)
     {
         visit(static_cast<Node3D&>(node));
-
+        bool modified = node.getTransform()->dirty;
         ImGui::SeparatorText("Light Properties");
         float intensity = node.getIntensity();
         if (ImGui::DragFloat("Intensity", &intensity, 0.01f, 0.0f, 10.0f)) {
             node.setIntensity(intensity);
+            modified = true;
         }
         vec3 color = node.getColor();
         if (ImGui::ColorEdit3("Color", &color[0])) {
             node.setColor(color);
+            modified = true;
         }
 
         float range = node.getRange();
         if (ImGui::DragFloat("Range", &range, 0.1f, 0.1f, 100.0f)) {
             node.setRange(range);
+            modified = true;
         }
+
+        return modified;
     }
     void visit(SpotLight& node)
     {
-        visit(static_cast<Light&>(node));
+        bool modified = visit(static_cast<Light&>(node));
 
         ImGui::SeparatorText("SpotLight Properties");
         float cutoffAngle = node.getCutoffAngle();
@@ -124,20 +129,19 @@ public:
             node.setCastShadows(castShadows);
         }
 
-        if (ImGui::Button("Update light")) {
+        if (ImGui::Button("Update light") || modified) {
             node.updateLight();
         }
     }
 
     void visit(PointLight& node) override
     {
-        visit(static_cast<Light&>(node));
+        bool modified = visit(static_cast<Light&>(node));
 
-        if (ImGui::Button("Update light")) {
+        if (modified) {
             node.updateLight();
         }
     }
-
 
     void visit(GINode& node)
     {

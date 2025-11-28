@@ -2,8 +2,8 @@
 
 #include "Application.hpp"
 #include "SpotLight.hpp"
-#include "rendering/renderer/Renderer.hpp"
 #include "rendering/renderer/LightManager.hpp"
+#include "rendering/renderer/Renderer.hpp"
 
 namespace Galaxy {
 
@@ -29,9 +29,8 @@ SpotLight::~SpotLight()
 void SpotLight::enteredRoot()
 {
     LightData desc;
-    desc.type = LightType::SPOTLIGHT;
+    desc.type                 = LightType::SPOTLIGHT;
     desc.transformationMatrix = getTransform()->getGlobalModelMatrix();
-
 
     m_lightID = Renderer::getInstance().getLightManager().registerLight(desc);
     // Créer la pyramide de visualisation
@@ -55,7 +54,7 @@ void SpotLight::draw()
     if (m_initialized && m_visualPyramidID != 0) {
         // Renderer::getInstance().changeUsedProgram(UNICOLOR);
         // Renderer::getInstance().setUnicolorObjectColor(m_color);
-        
+
         auto& ri = Renderer::getInstance();
         ri.changeUsedProgram(UNICOLOR);
         ri.setUniform("objectColor", m_color);
@@ -77,6 +76,8 @@ void SpotLight::setCastShadows(bool castShadows)
 
 void SpotLight::updateLight()
 {
+    m_transform.computeModelMatrix();
+    Renderer::getInstance().getLightManager().updateLightColor(m_lightID, m_color);
     Renderer::getInstance().getLightManager().updateLightTransform(m_lightID, getTransform()->getGlobalModelMatrix());
 }
 

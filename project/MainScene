@@ -5854,12 +5854,22 @@ Root:
       Childs:
         []
       Transform:
-        Position: [0, 23, 0]
+        Position: [30, 3, 0]
         Rotation: [0, 0, 0]
         Scale: [24, 23, 1]
       Intensity: 1
-      Color: [1, 1, 1]
+      Color: [0.607843161, 0.87843138, 0.654901981]
+      Range: 10
       CutoffAngle: 45
       OuterCutoffAngle: 55
-      Range: 10
       CastShadows: true
+    - Type: PointLight
+      Childs:
+        []
+      Transform:
+        Position: [-11, 0, 0]
+        Rotation: [0, 0, 0]
+        Scale: [1, 1, 1]
+      Intensity: 1
+      Color: [1, 0.678431392, 1]
+      Range: 10

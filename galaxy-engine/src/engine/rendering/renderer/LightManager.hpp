@@ -1,8 +1,8 @@
 #pragma once
 
+#include "engine/data/Transform.hpp"
 #include "engine/nodes/Node.hpp"
 #include "engine/nodes/rendering/lighting/SpotLight.hpp"
-#include "engine/data/Transform.hpp"
 
 #include "engine/types/Math.hpp"
 #include "engine/types/Render.hpp"
@@ -24,12 +24,14 @@ struct LightData {
     LightData()
         : idx(-1)
         , shadowMapID(0)
+        , color(1)
     {
     }
     LightData(int lightIdx, math::mat4& matrix)
         : idx(lightIdx)
         , transformationMatrix(matrix)
         , shadowMapID(0)
+        , color(1)
     {
     }
 };
@@ -42,8 +44,8 @@ public:
     void init();
 
     int registerLight(LightData desc);
-    void updateLightPos(int id, math::vec3 position);
     void updateLightTransform(lightID id, math::mat4 transform);
+    void updateLightColor(lightID id, math::vec3 color);
     void unregisterLight(int id);
     void shadowPass(Node* sceneRoot);
     renderID getShadowMapID(lightID light) { return m_lights[light].shadowMapID; }

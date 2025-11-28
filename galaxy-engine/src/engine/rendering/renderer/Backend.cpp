@@ -708,6 +708,8 @@ void Backend::processCommand(SetUniformCommand& command)
         glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueBool ? GL_TRUE : GL_FALSE);
     } else if (command.type == SetValueTypes::FLOAT) {
         glUniform1f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueFloat);
+    } else if (command.type == SetValueTypes::INT) {
+        glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueInt);
     } else if (command.type == SetValueTypes::VEC3) {
         glUniform3f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName),
             command.valueVec3.x, command.valueVec3.y, command.valueVec3.z);

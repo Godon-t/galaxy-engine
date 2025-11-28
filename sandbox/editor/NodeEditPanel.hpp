@@ -85,11 +85,11 @@ public:
             node.testingFunc();
         }
     }
-    void visit(SpotLight& node)
+    void visit(Light& node)
     {
         visit(static_cast<Node3D&>(node));
 
-        ImGui::SeparatorText("SpotLight Properties");
+        ImGui::SeparatorText("Light Properties");
         float intensity = node.getIntensity();
         if (ImGui::DragFloat("Intensity", &intensity, 0.01f, 0.0f, 10.0f)) {
             node.setIntensity(intensity);
@@ -99,6 +99,16 @@ public:
             node.setColor(color);
         }
 
+        float range = node.getRange();
+        if (ImGui::DragFloat("Range", &range, 0.1f, 0.1f, 100.0f)) {
+            node.setRange(range);
+        }
+    }
+    void visit(SpotLight& node)
+    {
+        visit(static_cast<Light&>(node));
+
+        ImGui::SeparatorText("SpotLight Properties");
         float cutoffAngle = node.getCutoffAngle();
         if (ImGui::SliderFloat("Cutoff Angle", &cutoffAngle, 0.0f, 90.0f)) {
             node.setCutoffAngle(cutoffAngle);
@@ -107,11 +117,6 @@ public:
         float outerCutoffAngle = node.getOuterCutoffAngle();
         if (ImGui::SliderFloat("Outer Cutoff Angle", &outerCutoffAngle, 0.0f, 90.0f)) {
             node.setOuterCutoffAngle(outerCutoffAngle);
-        }
-
-        float range = node.getRange();
-        if (ImGui::DragFloat("Range", &range, 0.1f, 0.1f, 100.0f)) {
-            node.setRange(range);
         }
 
         bool castShadows = node.getCastShadows();
@@ -123,6 +128,17 @@ public:
             node.updateLight();
         }
     }
+
+    void visit(PointLight& node) override
+    {
+        visit(static_cast<Light&>(node));
+
+        if (ImGui::Button("Update light")) {
+            node.updateLight();
+        }
+    }
+
+
     void visit(GINode& node)
     {
         visit(static_cast<Node3D&>(node));

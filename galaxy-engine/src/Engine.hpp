@@ -17,6 +17,7 @@
 #include "nodes/rendering/Sprite3D.hpp"
 #include "nodes/rendering/lighting/GINode.hpp"
 #include "nodes/rendering/lighting/SpotLight.hpp"
+#include "nodes/rendering/lighting/PointLight.hpp"
 #include "nodes/visitors/NodeVisitor.hpp"
 
 #include "project/Project.hpp"

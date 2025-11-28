@@ -8,9 +8,6 @@
 
 namespace Galaxy {
 class SceneSerializer : public NodeVisitor {
-private:
-    YAML::Emitter m_yaml;
-
 public:
     void serialize(Scene& root, const char* outputPath);
 
@@ -22,5 +19,12 @@ public:
     void visit(Sprite3D& node) override;
     void visit(EnvironmentNode& node) override;
     void visit(SpotLight& node) override;
+    void visit(PointLight& node) override;
+    void visit(GINode& node) override;
+
+private:
+    YAML::Emitter m_yaml;
+
+    void visitLightCommon(Light& node);
 };
 }

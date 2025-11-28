@@ -57,13 +57,16 @@ void LightManager::init()
     ri.endCanva();
 }
 
-int LightManager::registerLight(const SpotLight* desc)
+int LightManager::registerLight(LightData desc)
 {
+    desc.idx = m_currentLightCount++;
     lightID id = m_nextLightID++;
-    int idx    = m_currentLightCount++;
+    m_lights[id]              = desc;
 
-    math::mat4 lightTransform = desc->getTransform()->getGlobalModelMatrix(); // Use
-    m_lights[id]              = LightData(idx, lightTransform);
+    Renderer::getInstance().beginCanvaNoBuffer();
+    Renderer::getInstance().changeUsedProgram(ProgramType::PBR);
+    Renderer::getInstance().setUniform("lightCount", m_currentLightCount);
+    Renderer::getInstance().endCanva();
 
     renderID shadowMapID     = Renderer::getInstance().instantiateTexture();
     m_lights[id].shadowMapID = shadowMapID;
@@ -73,6 +76,7 @@ int LightManager::registerLight(const SpotLight* desc)
 void LightManager::updateLightTransform(lightID id, math::mat4 transform)
 {
     m_lights[id].transformationMatrix = transform;
+    m_lights[id].needUpdate = true;
 }
 
 void LightManager::unregisterLight(int id)
@@ -92,33 +96,48 @@ void LightManager::debugDraw()
 void LightManager::shadowPass(Node* sceneRoot)
 {
     auto& ri = Renderer::getInstance();
+    
+    ri.beginCanvaNoBuffer();
+    ri.changeUsedProgram(PBR);
+    for(auto& light: m_lights){
+        if(!light.second.needUpdate)
+            continue;
+        
+        light.second.needUpdate = false;
+        
+        auto uniformName = "lightPositions[" + std::to_string(light.second.idx) + "]";
+        ri.setUniform(uniformName, vec3(light.second.transformationMatrix[3]));
+        uniformName = "lightColors[" + std::to_string(light.second.idx) + "]";
+        ri.setUniform(uniformName, light.second.color);
 
-    math::mat4 projMat  = CameraManager::processProjectionMatrix(vec2(1024, 1024));
-    int currentLightIdx = 0;
-    for (auto& [id, lightData] : m_lights) {
-        if (currentLightIdx >= m_maxLights)
-            break;
-
-        math::mat4 view             = CameraManager::processViewMatrix(lightData.transformationMatrix);
-        math::mat4 lightSpaceMatrix = projMat * view;
-
-        ri.beginCanva(view, projMat, m_shadowMapFrameBufferID, FramebufferTextureFormat::DEPTH);
-        ri.linkCanvaDepthToTexture(lightData.shadowMapID);
-
-        ri.setUniform("lights[" + std::to_string(id) + "].lightMatrix", lightSpaceMatrix);
-        ri.setUniform("lights[" + std::to_string(id) + "].position", vec3(lightSpaceMatrix[0][3], lightSpaceMatrix[1][3], lightSpaceMatrix[2][3]));
+        //         ri.setUniform("lights[" + std::to_string(id) + "].lightMatrix", lightSpaceMatrix);
+        // ri.setUniform("lights[" + std::to_string(id) + "].position", vec3(lightSpaceMatrix[3]));
         // ri.setUniform("lights[" + std::to_string(id) + "].color", lightData.color);
-
-        ri.changeUsedProgram(SHADOW_DEPTH);
-        ri.setUniform("lightSpaceMatrix", lightSpaceMatrix);
-        sceneRoot->lightPassDraw();
-        ri.endCanva();
-
-        ri.changeUsedProgram(PBR);
-        ri.bindTexture(lightData.shadowMapID, "shadowMap");
-        ri.setUniform("lightSpaceMatrix", lightSpaceMatrix);
-        currentLightIdx++;
     }
+    ri.endCanva();
+
+    // math::mat4 projMat  = CameraManager::processProjectionMatrix(vec2(1024, 1024));
+    // int currentLightIdx = 0;
+    // for (auto& [id, lightData] : m_lights) {
+    //     if (currentLightIdx >= m_maxLights)
+    //         break;
+
+    //     math::mat4 view             = CameraManager::processViewMatrix(lightData.transformationMatrix);
+    //     math::mat4 lightSpaceMatrix = projMat * view;
+
+    //     ri.beginCanva(view, projMat, m_shadowMapFrameBufferID, FramebufferTextureFormat::DEPTH);
+    //     ri.linkCanvaDepthToTexture(lightData.shadowMapID);
+
+    //     ri.changeUsedProgram(SHADOW_DEPTH);
+    //     ri.setUniform("lightSpaceMatrix", lightSpaceMatrix);
+    //     sceneRoot->lightPassDraw();
+    //     ri.endCanva();
+
+    //     ri.changeUsedProgram(PBR);
+    //     ri.bindTexture(lightData.shadowMapID, "shadowMap");
+    //     ri.setUniform("lightSpaceMatrix", lightSpaceMatrix);
+    //     currentLightIdx++;
+    // }
 
     //     beginCanva(transform.getGlobalModelMatrix(), dim, m_shadowMapFrameBufferID, FramebufferTextureFormat::DEPTH24);
     // attachTextureToDepthFramebuffer(lightTextureID, m_shadowMapFrameBufferID);

@@ -329,6 +329,19 @@ void Frontend::setUniform(std::string uniformName, float value)
     pushCommand(command);
 }
 
+void Frontend::setUniform(std::string uniformName, int value)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.type        = INT;
+    uniformCommand.valueInt    = value;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
 void Frontend::setUniform(std::string uniformName, mat4 value)
 {
     SetUniformCommand uniformCommand;

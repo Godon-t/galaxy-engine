@@ -8,6 +8,7 @@
 #include "rendering/Sprite3D.hpp"
 #include "rendering/lighting/GINode.hpp"
 #include "rendering/lighting/SpotLight.hpp"
+#include "rendering/lighting/PointLight.hpp"
 
 namespace Galaxy {
 std::unique_ptr<Node> constructNode(std::string& type)
@@ -28,6 +29,8 @@ std::unique_ptr<Node> constructNode(std::string& type)
         return std::make_unique<EnvironmentNode>();
     } else if (type == "SpotLight") {
         return std::make_unique<SpotLight>();
+    } else if (type == "PointLight") {
+        return std::make_unique<PointLight>();
     } else if (type == "GINode") {
         return std::make_unique<GINode>();
     } else {

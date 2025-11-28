@@ -122,7 +122,7 @@ void EditorLayer::onUpdate()
         //     Application::getInstance().getRootNodePtr()->draw();
         //     renderer.endShadowPass();
         // }
-        // renderer.shadowPass();
+        renderer.shadowPass();
         renderer.beginSceneRender(cameraTransform);
         // TODO: should the application handle the render ?
         Application::getInstance().getRootNodePtr()->draw();

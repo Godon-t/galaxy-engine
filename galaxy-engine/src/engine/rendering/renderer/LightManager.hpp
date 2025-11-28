@@ -8,6 +8,32 @@
 #include "engine/types/Render.hpp"
 
 namespace Galaxy {
+enum LightType {
+    SPOTLIGHT = 0,
+    POINTLIGHT,
+};
+struct LightData {
+    LightType type;
+    int idx;
+    math::mat4 transformationMatrix;
+    renderID shadowMapID;
+    bool needUpdate = true;
+    vec3 color;
+    float intensity;
+
+    LightData()
+        : idx(-1)
+        , shadowMapID(0)
+    {
+    }
+    LightData(int lightIdx, math::mat4& matrix)
+        : idx(lightIdx)
+        , transformationMatrix(matrix)
+        , shadowMapID(0)
+    {
+    }
+};
+
 class LightManager {
 public:
     LightManager();
@@ -15,7 +41,7 @@ public:
 
     void init();
 
-    int registerLight(const SpotLight* desc);
+    int registerLight(LightData desc);
     void updateLightPos(int id, math::vec3 position);
     void updateLightTransform(lightID id, math::mat4 transform);
     void unregisterLight(int id);
@@ -29,24 +55,6 @@ public:
     void debugDraw();
 
 private:
-    struct LightData {
-        int idx;
-        math::mat4 transformationMatrix;
-        renderID shadowMapID;
-
-        LightData()
-            : idx(-1)
-            , shadowMapID(0)
-        {
-        }
-        LightData(int lightIdx, math::mat4& matrix)
-            : idx(lightIdx)
-            , transformationMatrix(matrix)
-            , shadowMapID(0)
-        {
-        }
-    };
-
     struct ProbeCell {
         // from 0 to 1 with order x, y, z
         unsigned int probes[8];

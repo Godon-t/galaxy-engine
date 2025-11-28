@@ -84,6 +84,7 @@ public:
     inline void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID) { m_frontend.attachTextureToDepthFramebuffer(textureID, framebufferID); }
 
     inline void setUniform(std::string uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
+    inline void setUniform(std::string uniformName, int value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, float value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, mat4 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, vec3 value) { m_frontend.setUniform(uniformName, value); }

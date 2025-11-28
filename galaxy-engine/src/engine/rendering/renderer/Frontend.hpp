@@ -43,6 +43,7 @@ public:
 
     void setUniform(std::string uniformName, bool value);
     void setUniform(std::string uniformName, float value);
+    void setUniform(std::string uniformName, int value);
     void setUniform(std::string uniformName, mat4 value);
     void setUniform(std::string uniformName, vec3 value);
     void setUniform(std::string uniformName, vec2 value);

@@ -61,6 +61,10 @@ public:
     {
         visit(static_cast<Node3D&>(node));
     }
+    void visit(PointLight& node) override
+    {
+        visit(static_cast<Node3D&>(node));
+    }
     void visit(GINode& node) override
     {
         visit(static_cast<Node3D&>(node));

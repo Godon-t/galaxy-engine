@@ -11,6 +11,8 @@
 #include "nodes/rendering/MultiMeshInstance.hpp"
 #include "nodes/rendering/Sprite3D.hpp"
 #include "nodes/rendering/lighting/SpotLight.hpp"
+#include "nodes/rendering/lighting/PointLight.hpp"
+#include "nodes/rendering/lighting/GINode.hpp"
 #include "types/Math.hpp"
 
 #include <fstream>
@@ -90,14 +92,31 @@ void SceneSerializer::visit(EnvironmentNode& node)
         m_yaml << YAML::Key << "EnvID" << YAML::Value << node.getEnvResourceID();
 }
 
-void SceneSerializer::visit(SpotLight& node)
+void SceneSerializer::visitLightCommon(Light& node)
 {
     visit(static_cast<Node3D&>(node));
+
     m_yaml << YAML::Key << "Intensity" << YAML::Value << node.getIntensity();
     m_yaml << YAML::Key << "Color" << YAML::Value << node.getColor();
+    m_yaml << YAML::Key << "Range" << YAML::Value << node.getRange();
+}
+
+void SceneSerializer::visit(SpotLight& node)
+{
+    visitLightCommon(static_cast<Light&>(node));
     m_yaml << YAML::Key << "CutoffAngle" << YAML::Value << node.getCutoffAngle();
     m_yaml << YAML::Key << "OuterCutoffAngle" << YAML::Value << node.getOuterCutoffAngle();
-    m_yaml << YAML::Key << "Range" << YAML::Value << node.getRange();
     m_yaml << YAML::Key << "CastShadows" << YAML::Value << node.getCastShadows();
 }
+
+void SceneSerializer::visit(PointLight& node)
+{
+    visitLightCommon(static_cast<Light&>(node));
+}
+
+void SceneSerializer::visit(GINode& node)
+{
+    visit(static_cast<Node3D&>(node));
+}
+
 }

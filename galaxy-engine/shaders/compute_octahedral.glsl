@@ -348,7 +348,7 @@ float computeMinDistLinePolyline(vec2 uv, vec3 p0, vec3 p1)
 int traceRayInProbe(vec3 p0, vec3 p1, sampler2D depthTex)
 {
     vec3 fallbackDir = normalize(p1 - p0 + vec3(1e-6));
-    int totalSubdivisions = 256;
+    int totalSubdivisions = 8;
 
     for (int i = 0; i < totalSubdivisions; ++i) {
         float t = float(i) / float(totalSubdivisions);

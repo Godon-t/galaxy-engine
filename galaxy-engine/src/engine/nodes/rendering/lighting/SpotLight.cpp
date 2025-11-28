@@ -3,6 +3,7 @@
 #include "Application.hpp"
 #include "SpotLight.hpp"
 #include "rendering/renderer/Renderer.hpp"
+#include "rendering/renderer/LightManager.hpp"
 
 namespace Galaxy {
 
@@ -10,11 +11,8 @@ SpotLight::SpotLight(std::string name)
     : Light(name)
     , m_lightID(0)
     , m_visualPyramidID(0)
-    , m_intensity(1.0f)
-    , m_color(vec3(1.0f, 1.0f, 1.0f))
     , m_cutoffAngle(45.0f)
     , m_outerCutoffAngle(55.0f)
-    , m_range(10.0f)
     , m_castShadows(true)
     , m_initialized(false)
 {
@@ -30,7 +28,12 @@ SpotLight::~SpotLight()
 
 void SpotLight::enteredRoot()
 {
-    m_lightID = Renderer::getInstance().getLightManager().registerLight(this);
+    LightData desc;
+    desc.type = LightType::SPOTLIGHT;
+    desc.transformationMatrix = getTransform()->getGlobalModelMatrix();
+
+
+    m_lightID = Renderer::getInstance().getLightManager().registerLight(desc);
     // Créer la pyramide de visualisation
     // La base de la pyramide est orientée dans la direction de projection (vers -Z local)
     if (m_visualPyramidID == 0) {
@@ -52,11 +55,15 @@ void SpotLight::draw()
     if (m_initialized && m_visualPyramidID != 0) {
         // Renderer::getInstance().changeUsedProgram(UNICOLOR);
         // Renderer::getInstance().setUnicolorObjectColor(m_color);
-        // Renderer::getInstance().submit(m_visualPyramidID, m_transform);
+        
+        auto& ri = Renderer::getInstance();
+        ri.changeUsedProgram(UNICOLOR);
+        ri.setUniform("objectColor", m_color);
+        ri.submit(m_visualPyramidID, m_transform);
 
-        Renderer::getInstance().changeUsedProgram(TEXTURE);
-        Renderer::getInstance().bindTexture(Renderer::getInstance().getLightManager().getShadowMapID(m_lightID), "sampledTexture");
-        Renderer::getInstance().submit(m_debugShadowMapID, m_transform);
+        ri.changeUsedProgram(TEXTURE);
+        ri.bindTexture(ri.getLightManager().getShadowMapID(m_lightID), "sampledTexture");
+        ri.submit(m_debugShadowMapID, m_transform);
     }
 
     // Appeler le draw de la classe parente pour dessiner les enfants

@@ -97,6 +97,7 @@ struct InitPostProcessCommand {
 enum SetValueTypes {
     BOOL,
     FLOAT,
+    INT,
     VEC2,
     VEC3,
     MAT4
@@ -113,6 +114,7 @@ struct SetUniformCommand {
             float x, y;
         } valueVec2;
         float valueFloat;
+        int valueInt;
     };
     // TODO: fix this !!!
     math::mat4 matrixValue;

@@ -67,8 +67,6 @@ void Renderer::beginSceneRender(const mat4& camTransform)
 {
     beginCanva(camTransform, m_mainViewportSize, m_sceneFrameBufferID, FramebufferTextureFormat::DEPTH24RGBA8);
     m_frontend.setViewport(vec2(0), m_mainViewportSize);
-
-    m_lightManager.debugDraw();
 }
 
 void Renderer::beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx)
@@ -81,6 +79,8 @@ void Renderer::beginCanva(const mat4& camTransform, const vec2& dimmensions, ren
 
 void Renderer::endSceneRender()
 {
+    m_lightManager.debugDraw();
+    m_frontend.drawDebug();
     m_frontend.endCanva();
     applyPostProcessing();
     m_frontend.processCanvas();
@@ -194,6 +194,8 @@ void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetColorCu
         m_frontend.beginCanva(viewMatrix, projection, m_cubemapFramebufferID, FramebufferTextureFormat::DEPTH24RGBA8, i);
         m_frontend.setViewport(pos, size);
         root.draw();
+        m_lightManager.debugDraw();
+        m_frontend.drawDebug();
         m_frontend.endCanva();
     }
 }

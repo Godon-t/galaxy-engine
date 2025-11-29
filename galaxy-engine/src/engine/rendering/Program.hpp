@@ -14,9 +14,11 @@ private:
     unsigned int m_modelLocation, m_viewLocation, m_projectionLocation;
     void compile(unsigned int id, const char* content);
     std::unordered_map<unsigned int, std::string> preProcess(const std::string& source);
-    void link(unsigned int vertID, unsigned int fragID);
+
+    void link(std::vector<unsigned int> shaderIDs);
 
     void init(const char* vertexContent, const char* fragmentContent);
+    void init(const std::unordered_map<unsigned int, std::string>& shaderContents);
 
 public:
     Program() = default;
@@ -120,4 +122,12 @@ public:
     ProgramComputeOctahedral(std::string path);
     ProgramType type() const override { return ProgramType::COMPUTE_OCTAHEDRAL; }
 };
-}
+
+class ProgramDebugLines : public Program {
+public:
+    ProgramDebugLines() = default;
+    ProgramDebugLines(std::string path);
+    ProgramType type() const override { return ProgramType::NONE; }
+};
+
+} // namespace Galaxy

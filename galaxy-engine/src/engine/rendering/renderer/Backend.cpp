@@ -43,13 +43,19 @@ Backend::Backend(size_t maxSize)
     m_shadowProgram            = std::move(ProgramShadow(engineRes("shaders/shadow_depth.glsl")));
     m_computeOctahedralProgram = std::move(ProgramComputeOctahedral(engineRes("shaders/compute_octahedral.glsl")));
 
+    m_debugLinesProgram = std::move(ProgramDebugLines(engineRes("shaders/debug/line_draw.glsl")));
+
     m_activeProgram = &m_mainProgram;
+
+    m_debugLines.init();
 
     checkOpenGLErrors("Renderer constructor");
 }
 
 void Backend::destroy()
 {
+    m_debugLines.destroy();
+
     m_materialInstances.removeAll([this](MaterialInstance& mat) {
         for (auto& text : mat.images) {
             m_textureInstances.tryRemove(text);
@@ -551,6 +557,9 @@ void Backend::processCommand(SetViewCommand& setViewCommand)
     m_postProcessingProgram.use();
     m_postProcessingProgram.updateViewMatrix(setViewCommand.view);
 
+    m_debugLinesProgram.use();
+    m_debugLinesProgram.updateViewMatrix(setViewCommand.view);
+
     m_activeProgram->use();
 }
 void Backend::setProjectionMatrix(const mat4& projectionMatrix)
@@ -573,6 +582,9 @@ void Backend::setProjectionMatrix(const mat4& projectionMatrix)
 
     m_postProcessingProgram.use();
     m_postProcessingProgram.updateProjectionMatrix(projectionMatrix);
+
+    m_debugLinesProgram.use();
+    m_debugLinesProgram.updateProjectionMatrix(projectionMatrix);
 
     m_activeProgram->use();
 }
@@ -742,11 +754,22 @@ void Backend::processCommand(DebugMsgCommand& command)
     free(command.msg);
 }
 
+void Backend::processCommand(DrawDebugLineCommand& command)
+{
+    m_debugLines.addLine(command.start, command.end, vec3(0, 1, 0));
+}
+
 void Backend::processCommand(SaveFrameBufferCommand& command)
 {
     m_frameBufferInstances.get(command.frameBufferID)->savePPM(command.path);
 
     free(command.path);
+}
+
+void Backend::debugDraw()
+{
+    m_debugLinesProgram.use();
+    m_debugLines.draw();
 }
 
 void Backend::processCommand(RenderCommand& command)
@@ -808,6 +831,12 @@ void Backend::processCommand(RenderCommand& command)
         break;
     case RenderCommandType::debugMsg:
         processCommand(command.debugMsg);
+        break;
+    case RenderCommandType::drawDebugLine:
+        processCommand(command.drawDebugLine);
+        break;
+    case RenderCommandType::executeDebugCommands:
+        debugDraw();
         break;
     case RenderCommandType::saveFrameBuffer:
         processCommand(command.saveFrameBuffer);

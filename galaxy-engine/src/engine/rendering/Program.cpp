@@ -10,12 +10,27 @@
 
 using namespace math;
 namespace Galaxy {
+std::string shaderTypeStr(GLenum type)
+{
+    switch (type) {
+    case GL_VERTEX_SHADER:
+        return "vertex";
+    case GL_FRAGMENT_SHADER:
+        return "fragment";
+    case GL_GEOMETRY_SHADER:
+        return "geometry";
+    default:
+        return "unknown";
+    }
+}
 static GLenum shaderTypeFromString(const std::string& type)
 {
     if (type == "vertex")
         return GL_VERTEX_SHADER;
     else if (type == "fragment")
         return GL_FRAGMENT_SHADER;
+    else if (type == "geometry")
+        return GL_GEOMETRY_SHADER;
 
     return 0;
 }
@@ -64,11 +79,12 @@ std::unordered_map<unsigned int, std::string> Program::preProcess(const std::str
     return res;
 }
 
-void Program::link(unsigned int vertID, unsigned int fragID)
+void Program::link(std::vector<unsigned int> shaderIDs)
 {
     m_programID = glCreateProgram();
-    glAttachShader(m_programID, vertID);
-    glAttachShader(m_programID, fragID);
+    for (auto id : shaderIDs) {
+        glAttachShader(m_programID, id);
+    }
     glLinkProgram(m_programID);
 
     // check
@@ -82,11 +98,10 @@ void Program::link(unsigned int vertID, unsigned int fragID)
         printf("%s\n", &ProgramErrorMessage[0]);
     }
 
-    glDetachShader(m_programID, vertID);
-    glDetachShader(m_programID, fragID);
-
-    glDeleteShader(vertID);
-    glDeleteShader(fragID);
+    for (auto id : shaderIDs) {
+        glDetachShader(m_programID, id);
+        glDeleteShader(id);
+    }
 }
 
 void Program::init(const char* vertexContent, const char* fragmentContent)
@@ -101,7 +116,33 @@ void Program::init(const char* vertexContent, const char* fragmentContent)
     compile(FragmentShaderID, fragmentContent);
 
     GLX_CORE_INFO("Linking program");
-    link(VertexShaderID, FragmentShaderID);
+    link({ VertexShaderID, FragmentShaderID });
+
+    glUseProgram(m_programID);
+
+    m_modelLocation      = glGetUniformLocation(m_programID, "model");
+    m_viewLocation       = glGetUniformLocation(m_programID, "view");
+    m_projectionLocation = glGetUniformLocation(m_programID, "projection");
+
+    mat4 view = lookAt(vec3(0, 0, 0), vec3(0, 0, -1), vec3(0, 1, 0));
+    updateViewMatrix(view);
+    mat4 projection = perspective(radians(45.f), 16.f / 9.f, 0.1f, 9999.0f);
+    updateProjectionMatrix(projection);
+    checkOpenGLErrors("Program initialization");
+}
+
+void Program::init(const std::unordered_map<unsigned int, std::string>& shaderContents)
+{
+    std::vector<unsigned int> shaderIDs;
+    for (const auto& [type, content] : shaderContents) {
+        GLuint shaderID = glCreateShader(type);
+        GLX_CORE_INFO("Compiling shader of type {0}", shaderTypeStr(type));
+        compile(shaderID, content.c_str());
+        shaderIDs.push_back(shaderID);
+    }
+
+    GLX_CORE_INFO("Linking program");
+    link(shaderIDs);
 
     glUseProgram(m_programID);
 
@@ -144,7 +185,7 @@ Program::Program(const std::string& shaderPath)
 
     auto shaders = preProcess(shaderCode);
 
-    init(shaders[GL_VERTEX_SHADER].c_str(), shaders[GL_FRAGMENT_SHADER].c_str());
+    init(shaders);
 }
 
 Program::Program(Program&& other) noexcept
@@ -316,4 +357,10 @@ ProgramComputeOctahedral::ProgramComputeOctahedral(std::string path)
     : Program(path)
 {
 }
+
+ProgramDebugLines::ProgramDebugLines(std::string path)
+    : Program(path)
+{
 }
+
+} // namespace Galaxy

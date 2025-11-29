@@ -44,11 +44,11 @@ void LightManager::init()
     // ri.attachTextureToDepthFramebuffer(m_probeDepthTexture, m_probesFrameBuffer);
     // ri.attachTextureToColorFramebuffer(m_probeRadianceTexture, m_probesFrameBuffer);
 
-    m_debugStartVisu = ri.generateCube(0.2f, false, []() {});
-    m_debugEndVisu   = ri.generateCube(0.2f, false, []() {});
+    m_debugStartVisu = ri.generateCube(1.f, false, []() {});
+    m_debugEndVisu   = ri.generateCube(1.f, false, []() {});
 
-    m_debugStartTransform.translate(vec3(-500.f, 10.f, -80.f));
-    m_debugEndTransform.translate(vec3(800.f, 50.f, 80.f));
+    m_debugStartTransform.translate(vec3(-50.f, 10.f, -80.f));
+    m_debugEndTransform.translate(vec3(80.f, 50.f, 80.f));
     m_debugStartTransform.computeModelMatrix();
     m_debugEndTransform.computeModelMatrix();
 
@@ -97,6 +97,11 @@ void LightManager::debugDraw()
 
     ri.submit(m_debugStartVisu, m_debugStartTransform);
     ri.submit(m_debugEndVisu, m_debugEndTransform);
+
+    vec3 debugStart = m_debugStartTransform.getGlobalPosition();
+    vec3 debugEnd   = m_debugEndTransform.getGlobalPosition();
+
+    ri.submitDebugLine(debugStart, debugEnd);
 }
 
 void LightManager::shadowPass(Node* sceneRoot)

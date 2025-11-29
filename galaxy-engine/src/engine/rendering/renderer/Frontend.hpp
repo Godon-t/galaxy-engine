@@ -50,8 +50,10 @@ public:
 
     void setViewport(vec2 position, vec2 dimmension);
     void updateCubemap(renderID targetID, unsigned int resolution);
+
     void addDebugMsg(std::string message);
-    void setUnicolorObjectColor(const vec3& color);
+    void submitDebugLine(vec3 start, vec3 end, vec3 color);
+    void drawDebug();
 
     void submitPBR(renderID meshID, renderID materialID, const Transform& transform);
 

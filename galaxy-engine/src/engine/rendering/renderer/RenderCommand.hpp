@@ -25,7 +25,9 @@ enum RenderCommandType {
     updateCubemap,
     saveFrameBuffer,
 
-    debugMsg
+    debugMsg,
+    drawDebugLine,
+    executeDebugCommands
 };
 
 struct SetViewCommand {
@@ -105,6 +107,7 @@ enum SetValueTypes {
 struct SetUniformCommand {
     SetValueTypes type;
     char* uniformName;
+    // TODO: replace with std::variant
     union {
         bool valueBool;
         struct {
@@ -132,6 +135,11 @@ struct UpdateCubemapCommand {
 
 struct DebugMsgCommand {
     char* msg;
+};
+
+struct DrawDebugLineCommand {
+    math::vec3 start;
+    math::vec3 end;
 };
 
 struct SaveFrameBufferCommand {
@@ -169,6 +177,7 @@ struct RenderCommand {
         UpdateCubemapCommand updateCubemap;
 
         DebugMsgCommand debugMsg;
+        DrawDebugLineCommand drawDebugLine;
         SaveFrameBufferCommand saveFrameBuffer;
     };
 };

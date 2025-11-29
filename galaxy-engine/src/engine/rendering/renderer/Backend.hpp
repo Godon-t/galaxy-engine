@@ -2,6 +2,7 @@
 
 #include "RenderCommand.hpp"
 #include "core/Log.hpp"
+#include "rendering/GPUInstances/DebugLines.hpp"
 #include "rendering/GPUInstances/FrameBuffer.hpp"
 #include "rendering/GPUInstances/Texture.hpp"
 #include "rendering/GPUInstances/VisualInstance.hpp"
@@ -145,7 +146,9 @@ private:
     void processCommand(UpdateCubemapCommand& command);
 
     void processCommand(DebugMsgCommand& command);
+    void processCommand(DrawDebugLineCommand& command);
     void processCommand(SaveFrameBufferCommand& command);
+    void debugDraw();
 
     RenderGpuResourceTable<VisualInstance> m_visualInstances;
     RenderGpuResourceTable<Texture> m_textureInstances;
@@ -166,6 +169,9 @@ private:
     ProgramShadow m_shadowProgram;
     ProgramComputeOctahedral m_computeOctahedralProgram;
     Program* m_activeProgram;
+
+    ProgramDebugLines m_debugLinesProgram;
+    DebugLines m_debugLines;
 
     friend class Renderer;
 };

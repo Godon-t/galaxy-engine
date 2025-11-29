@@ -97,6 +97,7 @@ add_library(galaxy-engine
 	src/engine/rendering/GPUInstances/VisualInstance.cpp
 	src/engine/rendering/GPUInstances/Texture.cpp
 	src/engine/rendering/GPUInstances/FrameBuffer.cpp
+	src/engine/rendering/GPUInstances/DebugLines.cpp
 	
 	src/engine/resource/ResourceSerializer.cpp
 	src/engine/resource/Image.cpp

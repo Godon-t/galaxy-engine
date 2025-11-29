@@ -79,6 +79,7 @@ public:
     inline FramebufferTextureFormat getFramebufferFormat(renderID framebufferID) { return m_backend.getFramebufferFormat(framebufferID); }
 
     inline void debugMessage(std::string message) { m_frontend.addDebugMsg(message); }
+    inline void submitDebugLine(vec3 start, vec3 end) { m_frontend.submitDebugLine(start, end, vec3(0, 1, 0)); }
 
     inline void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int colorIdx) { m_frontend.attachTextureToColorFramebuffer(textureID, framebufferID, colorIdx); }
     inline void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID) { m_frontend.attachTextureToDepthFramebuffer(textureID, framebufferID); }
@@ -89,7 +90,6 @@ public:
     inline void setUniform(std::string uniformName, mat4 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, vec3 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, vec2 value) { m_frontend.setUniform(uniformName, value); }
-    inline void setUnicolorObjectColor(const vec3& color) { m_frontend.setUnicolorObjectColor(color); }
 
     inline void setCullMode(renderID visualInstanceID, CullMode mode) { m_backend.setCullMode(visualInstanceID, mode); }
     inline void setViewport(vec2 position, vec2 size) { m_frontend.setViewport(position, size); }

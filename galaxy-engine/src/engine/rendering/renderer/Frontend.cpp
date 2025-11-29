@@ -384,21 +384,6 @@ void Frontend::setUniform(std::string uniformName, vec2 value)
     pushCommand(command);
 }
 
-void Frontend::setUnicolorObjectColor(const vec3& color)
-{
-    SetUniformCommand uniformCommand;
-    uniformCommand.uniformName = (char*)"objectColor";
-    uniformCommand.type        = VEC3;
-    uniformCommand.valueVec3.x = color.r;
-    uniformCommand.valueVec3.y = color.g;
-    uniformCommand.valueVec3.z = color.b;
-    RenderCommand command;
-    command.type       = RenderCommandType::setUniform;
-    command.setUniform = uniformCommand;
-
-    pushCommand(command);
-}
-
 void Frontend::setViewport(vec2 position, vec2 dimmension)
 {
     SetViewportCommand setViewportCommand;
@@ -433,6 +418,27 @@ void Frontend::addDebugMsg(std::string message)
     RenderCommand command;
     command.type     = RenderCommandType::debugMsg;
     command.debugMsg = debug;
+
+    pushCommand(command);
+}
+
+void Frontend::submitDebugLine(vec3 start, vec3 end, vec3 color)
+{
+    DrawDebugLineCommand drawCommand;
+    drawCommand.start = start;
+    drawCommand.end   = end;
+
+    RenderCommand command;
+    command.type          = RenderCommandType::drawDebugLine;
+    command.drawDebugLine = drawCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::drawDebug()
+{
+    RenderCommand command;
+    command.type = RenderCommandType::executeDebugCommands;
 
     pushCommand(command);
 }

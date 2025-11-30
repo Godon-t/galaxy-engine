@@ -69,10 +69,10 @@ std::unordered_map<unsigned int, std::string> Program::preProcess(const std::str
     size_t includePos         = source.find(includeToken, 0);
 
     while (includePos != std::string::npos) {
-        size_t eol = source.find_first_of("\r\n", includePos);
+        size_t eol = processedSource.find_first_of("\r\n", includePos);
         GLX_CORE_ASSERT(eol != std::string::npos, "Syntax error");
         size_t begin        = includePos + includeTokenLength + 1;
-        std::string incFile = source.substr(begin, eol - begin);
+        std::string incFile = processedSource.substr(begin, eol - begin);
 
         std::string fullPath = engineRes("shaders/include/") + incFile;
         std::ifstream includeStream(fullPath, std::ios::in);
@@ -84,7 +84,8 @@ std::unordered_map<unsigned int, std::string> Program::preProcess(const std::str
         includeStream.close();
 
         processedSource.replace(includePos, (eol - includePos), includeContent);
-        includePos = processedSource.find(includeToken, includePos + includeContent.size());
+        // find an include inside the included content
+        includePos = processedSource.find(includeToken, 0);
     }
 
     while (pos != std::string::npos) {

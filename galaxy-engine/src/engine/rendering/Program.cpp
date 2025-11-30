@@ -1,5 +1,6 @@
 #include "Program.hpp"
 
+#include "Helper.hpp"
 #include "Log.hpp"
 #include "OpenglHelper.hpp"
 #include "gl_headers.hpp"
@@ -60,20 +61,46 @@ std::unordered_map<unsigned int, std::string> Program::preProcess(const std::str
     const char* typeToken  = "#type";
     size_t typeTokenLength = strlen(typeToken);
     size_t pos             = source.find(typeToken, 0);
+
+    std::string processedSource = source;
+
+    const char* includeToken  = "#include";
+    size_t includeTokenLength = strlen(includeToken);
+    size_t includePos         = source.find(includeToken, 0);
+
+    while (includePos != std::string::npos) {
+        size_t eol = source.find_first_of("\r\n", includePos);
+        GLX_CORE_ASSERT(eol != std::string::npos, "Syntax error");
+        size_t begin        = includePos + includeTokenLength + 1;
+        std::string incFile = source.substr(begin, eol - begin);
+
+        std::string fullPath = engineRes("shaders/include/") + incFile;
+        std::ifstream includeStream(fullPath, std::ios::in);
+        GLX_CORE_ASSERT(includeStream.is_open(), "Can't open include file", fullPath);
+
+        std::stringstream sstr;
+        sstr << includeStream.rdbuf();
+        std::string includeContent = sstr.str();
+        includeStream.close();
+
+        processedSource.replace(includePos, (eol - includePos), includeContent);
+        includePos = processedSource.find(includeToken, includePos + includeContent.size());
+    }
+
     while (pos != std::string::npos) {
-        size_t eol = source.find_first_of("\r\n", pos);
+        size_t eol = processedSource.find_first_of("\r\n", pos);
         GLX_CORE_ASSERT(eol != std::string::npos, "Syntax error");
         size_t begin     = pos + typeTokenLength + 1;
-        std::string type = source.substr(begin, eol - begin);
+        std::string type = processedSource.substr(begin, eol - begin);
 
         unsigned int typeEnum = shaderTypeFromString(type);
         GLX_CORE_ASSERT(typeEnum != 0, "Unknown shader type '{0}'", type);
 
-        size_t nextLinePos = source.find_first_not_of("\r\n", eol);
-        pos                = source.find(typeToken, nextLinePos);
-        res[typeEnum]      = source.substr(
+        size_t nextLinePos = processedSource.find_first_not_of("\r\n", eol);
+        pos                = processedSource.find(typeToken, nextLinePos);
+        res[typeEnum]      = processedSource.substr(
             nextLinePos,
-            pos - (nextLinePos == source.size() ? source.size() - 1 : nextLinePos));
+            pos - (nextLinePos == processedSource.size() ? processedSource.size() - 1 : nextLinePos));
     }
 
     return res;

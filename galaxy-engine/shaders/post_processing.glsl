@@ -5,8 +5,11 @@ layout(location = 0) in vec3 vertices_position_modelspace;
 layout(location = 1) in vec2 texCoord;
 
 out vec2 TexCoords;
+out vec3 worldCoord;
+out vec3 cameraPos;
 
 uniform mat4 projection;
+uniform mat4 view;
 uniform mat4 model;
 
 void main()
@@ -14,6 +17,14 @@ void main()
     TexCoords   = texCoord;
     TexCoords.y = 1.f - TexCoords.y;
     gl_Position = vec4(vertices_position_modelspace.x, vertices_position_modelspace.y, 0, 1);
+
+    cameraPos              = vec3(inverse(view)[3]);
+    vec4 ndc               = vec4(vertices_position_modelspace.x, vertices_position_modelspace.y, -1.0, 1.0);
+    mat4 invViewProjection = inverse(projection * view);
+    vec4 viewSpacePos      = invViewProjection * ndc;
+    viewSpacePos /= viewSpacePos.w;
+
+    worldCoord = viewSpacePos.xyz;
 }
 
 ///////////////////////////////////////////////////////////
@@ -30,6 +41,8 @@ const int MISS    = 1;
 const int UNKNOWN = 2;
 
 in vec2 TexCoords;
+in vec3 cameraPos;
+in vec3 worldCoord;
 
 uniform sampler2D sceneBuffer;
 uniform sampler2D depthBuffer;
@@ -80,27 +93,73 @@ int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float t
     return MISS; // MISS (aucune intersection trouvée)
 }
 
+vec3 getColourFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeTex, ivec3 gridDim, float cellSize, float probeTexSingleSize, vec3 fieldOrigin)
+{
+    vec3 rayDir           = rayEnd - rayStart;
+    float rayLength       = length(rayDir);
+    vec3 rayDirNorm       = rayDir / rayLength;
+    float t               = 0.0;
+    float stepSize        = 0.01;
+    vec3 accumulatedColor = vec3(0.0);
+    int totalSamples      = 0;
+
+    while (t <= 1.0) {
+        vec3 p3d = mix(rayStart, rayEnd, t);
+
+        // déterminer dans quelle cellule on est
+        vec3 localPos     = p3d - fieldOrigin;
+        ivec3 cellIndices = ivec3(floor(localPos / cellSize));
+
+        // vérifier si on est hors de la grille
+        if (cellIndices.x < 0 || cellIndices.y < 0 || cellIndices.z < 0 || cellIndices.x >= gridDim.x || cellIndices.y >= gridDim.y || cellIndices.z >= gridDim.z) {
+            t += stepSize;
+            continue;
+        }
+
+        // obtenir la position de la sonde
+        int probeGridIdx = cellIndices.z * gridDim.x * gridDim.y + cellIndices.y * gridDim.x + cellIndices.x;
+        vec3 probePos    = vec3(cellIndices) * cellSize + fieldOrigin + vec3(cellSize * 0.5);
+
+        // obtenir les coordonnées UV dans la texture de sonde
+        int probesByWidth   = (gridDim.x * gridDim.y);
+        int xPosition       = (probeGridIdx % probesByWidth) * int(probeTexSingleSize);
+        int yPosition       = (probeGridIdx / probesByWidth) * int(probeTexSingleSize);
+        vec2 probeTexOrigin = vec2(xPosition, yPosition);
+
+        // échantillonner la sonde
+        vec3 centeredP3d = p3d - probePos;
+        vec3 dir         = safeNormalize(centeredP3d, vec3(1e-6));
+        vec2 uv          = octahedral_mapping(dir);
+        uv *= probeTexSingleSize;
+        uv += probeTexOrigin;
+        uv /= vec2(textureSize(probeTex, 0));
+
+        vec3 probeColor = texture(probeTex, uv).rgb;
+
+        // accumuler la couleur
+        accumulatedColor += probeColor;
+        totalSamples++;
+        t += stepSize;
+    }
+    if (totalSamples > 0)
+        accumulatedColor /= float(totalSamples);
+    return accumulatedColor;
+}
+
 void main()
 {
-    vec4 pix = texture(sceneBuffer, TexCoords);
+    // vec4 pix = texture(sceneBuffer, TexCoords);
 
-    float res = 0.005f;
+    // float res = 0.005f;
 
-    float depthUp    = texture(depthBuffer, TexCoords + vec2(0, res)).r;
-    float depthDown  = texture(depthBuffer, TexCoords - vec2(0, res)).r;
-    float depthRight = texture(depthBuffer, TexCoords + vec2(res, 0)).r;
-    float depthLeft  = texture(depthBuffer, TexCoords - vec2(res, 0)).r;
-    float depth      = texture(depthBuffer, TexCoords).r;
+    float depth            = texture(depthBuffer, TexCoords).r;
+    float linearDepthValue = linearDepth(depth);
 
-    depth   = linearDepth(depth) / zFar;
-    float f = depth - (linearDepth(depthUp) + linearDepth(depthDown) + linearDepth(depthLeft) + linearDepth(depthRight)) / 4.f;
-    f       = f / zFar;
-    f       = smoothstep(0.f, 1.f, f * 100.f);
+    vec3 rayStart = cameraPos;
+    vec3 rayDir   = normalize(worldCoord - rayStart);
+    vec3 rayEnd   = rayStart + rayDir * linearDepthValue;
+    color.rgb     = getColourFromProbeField(rayStart, rayEnd, probeIrradianceField, probeFieldGridDim, probeFieldCellSize, probeTextureSingleSize, probeFieldOrigin);
 
-    color = vec4(pix.rgb * (1.f - f), 1);
-    color = vec4(pix.rgb, 1);
-    // color = vec4(vec3(depth), 1.0);
-
-    vec3 viewDir  = normalize((view * vec4(0, 0, -1, 0)).xyz);
-    vec3 viewOrig = (inverse(view) * vec4(0, 0, 0, 1)).xyz;
+    color.a = 1.0;
+    // gl_FragDepth    = 0.f;
 }

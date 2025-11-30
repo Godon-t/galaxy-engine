@@ -19,15 +19,15 @@ void main()
 
 vec2 octahedral_mapping(vec3 co)
 {
-    // projection onto octahedron
+    // Projection onto octahedron
     co /= dot(vec3(1), abs(co));
 
-    // out-folding of the downward faces
-    if (co.y < 0.0) {
-        co.xy = (1.0 - abs(co.zx)) * sign(co.xz);
+    // Out-folding of the downward faces
+    if (co.z < 0.0) {
+        co.xy = (1.0 - abs(co.yx)) * sign(co.xy);
     }
 
-    // mapping to [0;1]ˆ2 texture space
+    // Mapping to [0;1]^2 texture space
     return co.xy * 0.5 + 0.5;
 }
 
@@ -92,27 +92,6 @@ float distPointSegment(vec2 p, vec2 a, vec2 b)
     float h   = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
     vec2 proj = a + ba * h;
     return length(p - proj);
-}
-
-// Applique un effet miroir aux bords et retourne des UV dans [0,1]
-// Permet de gérer les continuités entre triangles adjacents
-vec2 mirrorAndWrapUV(vec2 uv)
-{
-    vec2 m  = abs(uv - 0.5) + 0.5;
-    vec2 f  = floor(m);
-    float x = f.x - f.y;
-    if (x != 0.0) {
-        uv = 1.0 - uv;
-    }
-    return fract(uv);
-}
-
-// Échantillonne la cubemap en utilisant le dépliage octaédral
-vec3 sampleCubemapFromOctaUV(vec2 uv, samplerCube cubemap)
-{
-    vec3 unnorm = octahedral_unmapping_unnorm(uv);
-    vec3 dir    = normalize(unnorm);
-    return texture(cubemap, dir).rgb;
 }
 
 // Calcule la distance minimale d'un point UV aux arêtes des triangles octaédraux
@@ -386,7 +365,6 @@ float drawPointMarkerAlpha(vec2 fragUV, vec3 point, float radiusPx)
 {
     // projeter le point 3D en UV
     vec2 pUV = octahedral_mapping(normalize(point));
-    pUV      = mirrorAndWrapUV(pUV);
 
     // convertir le rayon pixel en coordonnées UV
     float radiusUV = radiusPx;
@@ -426,21 +404,9 @@ void main()
     color         = vec4(envColor, 1.0);
     gl_FragDepth  = linearDepth(texture(depthCubemap, dir).r) / zFar;
 
-    if (length(texCoords - debugStart.xy) < 0.01)
-        color = vec4(1, 0, 0, 1);
-
     //////////////////////////////////////////////////////////////////////:
-
-    // coordonnées UV normalisées [0,1]
-    vec2 uv = texCoords;
-
-    // appliquer le mirroring pour gérer les bords de la carte octahedral car les coins sont voisins
-    uv = mirrorAndWrapUV(uv);
-
-    // echantillonner la cubemap en utilisant le décodage octaédral
-    vec3 baseColor = sampleCubemapFromOctaUV(uv, radianceCubemap);
-
-    vec3 outColor = baseColor;
+    vec2 uv       = texCoords;
+    vec3 outColor = envColor;
 
     // Optionnel : overlay couleur selon l'indice du triangle octaédral ainsi que les bord des triangles
     if (showTriangleIndexOverlay()) {
@@ -478,16 +444,8 @@ void main()
     float minDistRay = computeMinDistLinePolyline(uv, debugStart - debugProbePos, debugEnd - debugProbePos);
     float rayAlpha   = lineAlphaFromDist(minDistRay);
     vec3 rayCol      = vec3(1.0, 0.2, 0.1);
-    // superposer le rayon par-dessus la cubemap et les bords
+    // // superposer le rayon par-dessus la cubemap et les bords
     outColor = mix(outColor, rayCol, clamp(rayAlpha, 0.0, 1.0));
 
-    // dessiner les points de début et de fin avec des couleurs distinctes
-    // float startAlpha = drawPointMarkerAlpha(uv, debugStart, 6.0);
-    // vec3 startCol = vec3(0.2, 1.0, 0.2);
-    // outColor = mix(outColor, startCol, startAlpha);
-
-    // float endAlpha = drawPointMarkerAlpha(uv, debugEnd, 5.0);
-    // vec3 endCol = vec3(0.2, 0.6, 1.0);
-    // outColor = mix(outColor, endCol, endAlpha);
     color.rgb = outColor;
 }

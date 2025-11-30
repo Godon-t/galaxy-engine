@@ -360,9 +360,9 @@ void Frontend::setUniform(std::string uniformName, vec3 value)
     SetUniformCommand uniformCommand;
     uniformCommand.uniformName = copyString(uniformName);
     uniformCommand.type        = VEC3;
-    uniformCommand.valueVec3.x = value.r;
-    uniformCommand.valueVec3.y = value.g;
-    uniformCommand.valueVec3.z = value.b;
+    uniformCommand.valueVec3.x = value.x;
+    uniformCommand.valueVec3.y = value.y;
+    uniformCommand.valueVec3.z = value.z;
     RenderCommand command;
     command.type       = RenderCommandType::setUniform;
     command.setUniform = uniformCommand;

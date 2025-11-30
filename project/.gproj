@@ -1,29 +1,83 @@
 Name: UI
 Resources:
-  - Id: 6820203558531210241
-    Path: sponza/textures/floor_gloss.gres
-  - Id: 920216281820911546
-    Path: sponza/textures/vase_dif.gres
+  - Id: 7609576021294043234
+    Path: sponza/textures/sponza_curtain_diff.gres
+  - Id: 14506311978727021876
+    Path: sponza/sponza_material_11.gres
+  - Id: 1591827038535620869
+    Path: sponza/sponza_material_14.gres
+  - Id: 8248098557589857308
+    Path: sponza/textures/background.gres
+  - Id: 2245600370368257916
+    Path: sponza/sponza_material_25.gres
+  - Id: 6737703828383164329
+    Path: sponza/textures/sponza_arch_diff.gres
+  - Id: 5712841567714907640
+    Path: sponza/sponza_material_10.gres
+  - Id: 7125598846024743055
+    Path: sponza/sponza_material_18.gres
+  - Id: 10339201993013654278
+    Path: sponza/textures/sponza_fabric_diff.gres
+  - Id: 2443619676918727450
+    Path: sponza/sponza_material_19.gres
+  - Id: 1205475052319988562
+    Path: sponza/textures/sponza_column_c_diff.gres
+  - Id: 15840224054029888677
+    Path: sponza/textures/sponza_column_a_diff.gres
+  - Id: 2188540146888508743
+    Path: sponza/textures/vase_plant.gres
+  - Id: 9191191296558105831
+    Path: sponza/textures/sponza_curtain_blue_diff.gres
+  - Id: 204476243022672643
+    Path: sponza/sponza_material_8.gres
+  - Id: 2894855353715685891
+    Path: sponza/sponza_material_1.gres
+  - Id: 17478949813480650645
+    Path: sponza/textures/sponza_thorn_diff.gres
+  - Id: 2044262210834871915
+    Path: sponza/sponza.gres
+  - Id: 18226765341820020210
+    Path: sponza/sponza_material_23.gres
+  - Id: 9973010134724864162
+    Path: sponza/textures/vase_round.gres
+  - Id: 13062769230811284464
+    Path: sponza/textures/sponza_ceiling_a_diff.gres
+  - Id: 6336548819683030413
+    Path: sponza/textures/sponza_floor_a_diff.gres
+  - Id: 8472703128743682711
+    Path: sponza/sponza_material_5.gres
+  - Id: 8266292047429895562
+    Path: sponza/sponza_material_22.gres
+  - Id: 12022925688087868335
+    Path: sponza/sponza_material_24.gres
+  - Id: 13858493358062474481
+    Path: sponza/sponza_material_16.gres
+  - Id: 5248253481962024936
+    Path: sponza/sponza_material_21.gres
+  - Id: 9859272189864598093
+    Path: sponza/sponza_material_20.gres
+  - Id: 9655488091755718130
+    Path: sponza/sponza_material_4.gres
+  - Id: 1097610545970168729
+    Path: env.gres
+  - Id: 6427595578390582013
+    Path: sponza/textures/spnza_bricks_a_spec.gres
   - Id: 10761741252048044689
     Path: sponza/sponza_material_17.gres
   - Id: 1913999298050395962
     Path: sponza/sponza_material_12.gres
-  - Id: 6427595578390582013
-    Path: sponza/textures/spnza_bricks_a_spec.gres
-  - Id: 16395404793738613127
-    Path: sponza/sponza_material_6.gres
-  - Id: 866533353429722957
-    Path: sponza/textures/chain_texture.gres
-  - Id: 107279995900684053
-    Path: sponza/sponza_material_3.gres
   - Id: 2847845718039847283
     Path: sponza/textures/spnza_bricks_a_diff.gres
-  - Id: 1097610545970168729
-    Path: env.gres
-  - Id: 9655488091755718130
-    Path: sponza/sponza_material_4.gres
-  - Id: 9859272189864598093
-    Path: sponza/sponza_material_20.gres
+  - Id: 107279995900684053
+    Path: sponza/sponza_material_3.gres
+  - Id: 866533353429722957
+    Path: sponza/textures/chain_texture.gres
+  - Id: 920216281820911546
+    Path: sponza/textures/vase_dif.gres
+  - Id: 16395404793738613127
+    Path: sponza/sponza_material_6.gres
+  - Id: 6820203558531210241
+    Path: sponza/textures/floor_gloss.gres
   - Id: 6665458683310066478
     Path: sponza/textures/sponza_curtain_green_diff.gres
   - Id: 10585035000240150844
@@ -46,66 +100,12 @@ Resources:
     Path: sponza/sponza_material_13.gres
   - Id: 18430314122962635754
     Path: sponza/textures/sponza_details_diff.gres
-  - Id: 12022925688087868335
-    Path: sponza/sponza_material_24.gres
-  - Id: 13858493358062474481
-    Path: sponza/sponza_material_16.gres
-  - Id: 5248253481962024936
-    Path: sponza/sponza_material_21.gres
   - Id: 5432452851204825469
     Path: sponza/textures/vase_hanging.gres
   - Id: 17224574636237938875
     Path: sponza/textures/sponza_flagpole_diff.gres
   - Id: 1794917575284473627
     Path: sponza/textures/sponza_fabric_blue_diff.gres
-  - Id: 8266292047429895562
-    Path: sponza/sponza_material_22.gres
-  - Id: 8472703128743682711
-    Path: sponza/sponza_material_5.gres
-  - Id: 6336548819683030413
-    Path: sponza/textures/sponza_floor_a_diff.gres
-  - Id: 13062769230811284464
-    Path: sponza/textures/sponza_ceiling_a_diff.gres
-  - Id: 9973010134724864162
-    Path: sponza/textures/vase_round.gres
-  - Id: 18226765341820020210
-    Path: sponza/sponza_material_23.gres
-  - Id: 2044262210834871915
-    Path: sponza/sponza.gres
-  - Id: 17478949813480650645
-    Path: sponza/textures/sponza_thorn_diff.gres
-  - Id: 2894855353715685891
-    Path: sponza/sponza_material_1.gres
-  - Id: 204476243022672643
-    Path: sponza/sponza_material_8.gres
-  - Id: 9191191296558105831
-    Path: sponza/textures/sponza_curtain_blue_diff.gres
-  - Id: 2188540146888508743
-    Path: sponza/textures/vase_plant.gres
-  - Id: 15840224054029888677
-    Path: sponza/textures/sponza_column_a_diff.gres
-  - Id: 1205475052319988562
-    Path: sponza/textures/sponza_column_c_diff.gres
-  - Id: 2443619676918727450
-    Path: sponza/sponza_material_19.gres
-  - Id: 10339201993013654278
-    Path: sponza/textures/sponza_fabric_diff.gres
-  - Id: 7125598846024743055
-    Path: sponza/sponza_material_18.gres
-  - Id: 5712841567714907640
-    Path: sponza/sponza_material_10.gres
-  - Id: 6737703828383164329
-    Path: sponza/textures/sponza_arch_diff.gres
-  - Id: 2245600370368257916
-    Path: sponza/sponza_material_25.gres
-  - Id: 8248098557589857308
-    Path: sponza/textures/background.gres
-  - Id: 1591827038535620869
-    Path: sponza/sponza_material_14.gres
-  - Id: 14506311978727021876
-    Path: sponza/sponza_material_11.gres
-  - Id: 7609576021294043234
-    Path: sponza/textures/sponza_curtain_diff.gres
 Scenes:
   - Id: 7857652255564026288
     Path: MainScene

@@ -41,8 +41,8 @@ void LightManager::init()
     // TODO: pass to a format for normals in addition to colors and depths
     m_probesFrameBuffer = ri.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8);
     ri.beginCanvaNoBuffer();
-    ri.attachTextureToDepthFramebuffer(m_probeDepthTexture, m_probesFrameBuffer);
-    ri.attachTextureToColorFramebuffer(m_probeRadianceTexture, m_probesFrameBuffer, 0);
+    // ri.attachTextureToDepthFramebuffer(m_probeDepthTexture, m_probesFrameBuffer);
+    // ri.attachTextureToColorFramebuffer(m_probeRadianceTexture, m_probesFrameBuffer, 0);
 
     m_debugStartVisu = ri.generateCube(1.f, false, []() {});
     m_debugEndVisu   = ri.generateCube(1.f, false, []() {});
@@ -100,6 +100,11 @@ void LightManager::debugDraw()
 
     vec3 debugStart = m_debugStartTransform.getGlobalPosition();
     vec3 debugEnd   = m_debugEndTransform.getGlobalPosition();
+
+    ri.changeUsedProgram(POST_PROCESSING);
+    ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeIrradianceField", 0);
+    // ri.bindTexture(m_probeRadianceTexture, "probeIrradianceField");
+    // ri.bindTexture(m_probeDepthTexture, "probeDepthField");
 
     ri.submitDebugLine(debugStart, debugEnd);
 }
@@ -196,10 +201,6 @@ void LightManager::updateProbeField()
     ri.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
     ri.avoidCanvaClear();
     ri.saveCanvaResult("probes");
-
-    ri.changeUsedProgram(POST_PROCESSING);
-    ri.bindTexture(m_probeRadianceTexture, "probeIrradianceField");
-    ri.bindTexture(m_probeDepthTexture, "probeDepthField");
     ri.endCanva();
 }
 

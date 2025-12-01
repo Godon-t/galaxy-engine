@@ -24,6 +24,7 @@ enum RenderCommandType {
     setViewport,
     updateCubemap,
     saveFrameBuffer,
+    setFramebufferAsTextureUniformCommand,
 
     debugMsg,
     drawDebugLine,
@@ -104,6 +105,12 @@ enum SetValueTypes {
     VEC3,
     MAT4
 };
+struct SetFramebufferAsTextureUniformCommand {
+    renderID framebufferID;
+    char* uniformName;
+    int textureIdx;
+};
+
 struct SetUniformCommand {
     SetValueTypes type;
     char* uniformName;
@@ -175,6 +182,7 @@ struct RenderCommand {
         SetUniformCommand setUniform;
         SetViewportCommand setViewport;
         UpdateCubemapCommand updateCubemap;
+        SetFramebufferAsTextureUniformCommand setFramebufferAsTextureUniform;
 
         DebugMsgCommand debugMsg;
         DrawDebugLineCommand drawDebugLine;

@@ -54,6 +54,7 @@ uniform ivec3 probeFieldGridDim      = ivec3(2, 2, 2);
 uniform float probeFieldCellSize     = 100.f;
 uniform float probeTextureSingleSize = 512.f;
 uniform vec3 probeFieldOrigin        = vec3(0.f);
+uniform vec3[8] probePositions;
 
 uniform sampler2D probeIrradianceField;
 uniform sampler2D probeDepthField;
@@ -146,6 +147,34 @@ vec3 getColourFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeTex, ive
     return accumulatedColor;
 }
 
+// int getCellCoord(int x, int y, int z)
+// {
+//     return z * probeFieldGridDim.x * probeFieldGridDim.y + y * probeFieldGridDim.x + x;
+// }
+
+
+// int getClosesProbeIdx(vec3 position){
+//     int closestIdx = -1;
+//     float minDist  = 1e20;
+    
+//     vec3 probePositionF = floor((position - probeFieldOrigin) / probeFieldCellSize);
+
+//     ivec3 probePositionI = ivec3(probePositionF);
+//     int pbX = clamp((int) probePositionF.x, 0, int(probeFieldGridDim.x - 1));
+//     int pbY = clamp((int) probePositionF.y, 0, int(probeFieldGridDim.y - 1));
+//     int pbZ = clamp((int) probePositionF.z, 0, int(probeFieldGridDim.z - 1));
+
+//     return getCellCoord(probePositionI.x, probePositionI.y, probePositionI.z);
+// }
+
+// vec2 getProbeTexCoord(int probeGridIdx, sampler2D probeTex)
+// {
+//     int probesByWidth = textureSize(probeTex, 0).x / probeTextureSingleSize;
+//     int xPosition     = (probeGridIdx % probesByWidth) * probeTextureSingleSize;
+//     int yPosition     = (probeGridIdx / probesByWidth) * probeTextureSingleSize;
+//     return vec2(xPosition, yPosition);
+// }
+
 void main()
 {
     // vec4 pix = texture(sceneBuffer, TexCoords);
@@ -159,6 +188,7 @@ void main()
     vec3 rayDir   = normalize(worldCoord - rayStart);
     vec3 rayEnd   = rayStart + rayDir * linearDepthValue;
     color.rgb     = getColourFromProbeField(rayStart, rayEnd, probeIrradianceField, probeFieldGridDim, probeFieldCellSize, probeTextureSingleSize, probeFieldOrigin);
+
 
     color.a = 1.0;
     // gl_FragDepth    = 0.f;

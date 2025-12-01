@@ -186,6 +186,19 @@ void FrameBuffer::attachDepthTexture(Texture& texture)
     GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
 }
 
+// TODO: Should work with texture bound
+void FrameBuffer::setAsTextureUniform(unsigned int uniLocation, int textureIdx){
+    if (textureIdx >= 0){
+        Texture tex;
+        tex.m_id = m_attachedColors[textureIdx];
+        tex.activate(uniLocation);
+    } else {
+        Texture tex;
+        tex.m_id = m_attachedDepth;
+        tex.activate(uniLocation);
+    }
+}
+
 void FrameBuffer::invalidate()
 {
     if (m_fbo != 0)

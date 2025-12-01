@@ -21,8 +21,10 @@ public:
 
     void destroy();
 
-    inline unsigned int getColorTextureID() { return m_attachedColors[0]; }
+    inline unsigned int getColorTextureID(int idx=0) { return m_attachedColors[idx]; }
     inline unsigned int getDepthTextureID() { return m_attachedDepth; }
+
+    void setAsTextureUniform(unsigned int uniLocation, int textureIdx = -1);
 
     void resize(unsigned int newWidth, unsigned int newHeight);
 

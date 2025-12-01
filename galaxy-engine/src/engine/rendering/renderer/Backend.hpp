@@ -144,6 +144,7 @@ private:
     void processCommand(SetUniformCommand& command);
     void processCommand(SetViewportCommand& command);
     void processCommand(UpdateCubemapCommand& command);
+    void processCommand(SetFramebufferAsTextureUniformCommand& command);
 
     void processCommand(DebugMsgCommand& command);
     void processCommand(DrawDebugLineCommand& command);

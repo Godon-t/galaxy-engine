@@ -748,6 +748,15 @@ void Backend::processCommand(UpdateCubemapCommand& command)
     checkOpenGLErrors("Update cubemap");
 }
 
+void Backend::processCommand(SetFramebufferAsTextureUniformCommand& command)
+{
+    auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
+    auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
+    framebuffer.setAsTextureUniform(uniLoc, command.textureIdx);
+    checkOpenGLErrors("Bind framebuffer texture as uniform");
+    free(command.uniformName);
+}
+
 void Backend::processCommand(DebugMsgCommand& command)
 {
     GLX_CORE_TRACE(command.msg);
@@ -828,6 +837,9 @@ void Backend::processCommand(RenderCommand& command)
         break;
     case RenderCommandType::updateCubemap:
         processCommand(command.updateCubemap);
+        break;
+    case RenderCommandType::setFramebufferAsTextureUniformCommand:
+        processCommand(command.setFramebufferAsTextureUniform);
         break;
     case RenderCommandType::debugMsg:
         processCommand(command.debugMsg);

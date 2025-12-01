@@ -384,6 +384,18 @@ void Frontend::setUniform(std::string uniformName, vec2 value)
     pushCommand(command);
 }
 
+void Frontend::setFramebufferAsTextureUniform(renderID framebufferID, std::string uniformName, int textureIdx){
+    SetFramebufferAsTextureUniformCommand setTextureCommand;
+    setTextureCommand.framebufferID = framebufferID;
+    setTextureCommand.uniformName = copyString(uniformName);
+    setTextureCommand.textureIdx = textureIdx;
+    RenderCommand command;
+    command.type = RenderCommandType::setFramebufferAsTextureUniformCommand;
+    command.setFramebufferAsTextureUniform = setTextureCommand;
+
+    pushCommand(command);
+}
+
 void Frontend::setViewport(vec2 position, vec2 dimmension)
 {
     SetViewportCommand setViewportCommand;

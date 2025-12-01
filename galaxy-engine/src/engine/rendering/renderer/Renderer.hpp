@@ -84,6 +84,8 @@ public:
     inline void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int colorIdx) { m_frontend.attachTextureToColorFramebuffer(textureID, framebufferID, colorIdx); }
     inline void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID) { m_frontend.attachTextureToDepthFramebuffer(textureID, framebufferID); }
 
+    inline void setFramebufferAsTextureUniform(renderID framebufferID, std::string uniformName, int textureIdx){m_frontend.setFramebufferAsTextureUniform(framebufferID, uniformName, textureIdx);}
+
     inline void setUniform(std::string uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, int value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, float value) { m_frontend.setUniform(uniformName, value); }

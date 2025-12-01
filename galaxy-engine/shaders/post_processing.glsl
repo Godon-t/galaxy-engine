@@ -65,33 +65,62 @@ float linearDepth(float depth)
     return (2.0 * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
 }
 
-int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float t)
+int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float t, vec2 scale, vec2 probeTextureUpperLeft)
 {
-    vec3 fallbackDir = normalize(p1 - p0 + vec3(1e-6));
-    float stepSize   = 0.01;
-
+    // centrer les positions par rapport à la probe
     vec3 centeredP0 = p0 - probePos;
     vec3 centeredP1 = p1 - probePos;
-    while (t <= 1.0) {
-        vec3 p3d = mix(centeredP0, centeredP1, t);
-
-        vec3 dir = safeNormalize(p3d, fallbackDir);
-        vec2 uv  = octahedral_mapping(dir);
-
-        float depthRay   = length(p3d);
-        float depthProbe = texture(depthTex, uv).r;
-
-        // --- logique HIT / MISS / UNKNOWN ---
-        if (depthRay > depthProbe + 1e-3) {
-            return UNKNOWN;
-        } else if (depthRay >= depthProbe - 1e-3) {
-            return HIT; // HIT
+    
+    // calculer les t ou le rayon change de triangle octahédral
+    float ts[9];
+    int numSegments = computeOctahedralIntersections(centeredP0, centeredP1, ts);
+    numSegments = numSegments-1;
+    
+    // parcourir chaque segment entre les changements de triangle
+    for (int segIdx = 0; segIdx < numSegments;++segIdx) {
+        float t0 = ts[segIdx];
+        float t1 = ts[segIdx +1];
+        
+        // calculer les positions 3D aux extrémités du segment
+        vec3 p3d0 = mix(centeredP0, centeredP1, t0);
+        vec3 p3d1 = mix(centeredP0, centeredP1, t1);
+        
+        // calculer les distances aux extrémités
+        float depth0 = length(p3d0);
+        float depth1 = length(p3d1);
+        
+        // calculer les directions et projeter en 2D octahedral
+        vec3 fallbackDir = normalize(centeredP1 - centeredP0 +vec3(1e-6));
+        vec3 dir0 = safeNormalize(p3d0, fallbackDir);
+        vec3 dir1 = safeNormalize(p3d1, fallbackDir);
+        
+        vec2 uv0 = octahedral_mapping(dir0);
+        vec2 uv1 = octahedral_mapping(dir1);
+        
+        // mettre a l'échelle et décaler les UV dans la texture globale
+        uv0 = (uv0+scale)+probeTextureUpperLeft;
+        uv1 = (uv1+scale)+probeTextureUpperLeft;
+        
+        // ray marching en 2D le long de ce segment
+        int steps = 32; //32 car c'est un compromis entre précision et perf
+        for (int i = 0; i <= steps; ++i) {
+            float s = float(i) / float(steps);
+            
+            // interpoler en 2D
+            vec2 uv = mix(uv0, uv1, s);
+            float depthRay = mix(depth0, depth1, s);
+            float depthProbe = texture(depthTex, uv).r;
+            
+            // logique HIT / MISS / UNKNOWN
+            if (depthRay > depthProbe + 1e-3) {
+                return UNKNOWN;
+            } else if (depthRay >= depthProbe - 1e-3) {
+                return HIT;
+            }
         }
-
-        t += stepSize;
     }
-
-    return MISS; // MISS (aucune intersection trouvée)
+    
+    return MISS;
 }
 
 vec3 getColourFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeTex, ivec3 gridDim, float cellSize, float probeTexSingleSize, vec3 fieldOrigin)

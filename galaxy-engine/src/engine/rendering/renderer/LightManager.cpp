@@ -39,7 +39,7 @@ void LightManager::init()
     // ri.resizeCubemap(m_colorRenderingCubemap, m_probeResolution);
 
     // TODO: pass to a format for normals in addition to colors and depths
-    m_probesFrameBuffer = ri.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8);
+    m_probesFrameBuffer = ri.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8, 2);
     ri.beginCanvaNoBuffer();
     // ri.attachTextureToDepthFramebuffer(m_probeDepthTexture, m_probesFrameBuffer);
     // ri.attachTextureToColorFramebuffer(m_probeRadianceTexture, m_probesFrameBuffer, 0);
@@ -52,7 +52,7 @@ void LightManager::init()
     m_debugStartTransform.computeModelMatrix();
     m_debugEndTransform.computeModelMatrix();
 
-    resizeProbeFieldGrid(2, 2, 2, 100.f);
+    resizeProbeFieldGrid(1, 1, 1, 100.f);
 
     ri.endCanva();
 }
@@ -103,6 +103,7 @@ void LightManager::debugDraw()
 
     ri.changeUsedProgram(POST_PROCESSING);
     ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeIrradianceField", 0);
+    ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeDepthField", 1);
     // ri.bindTexture(m_probeRadianceTexture, "probeIrradianceField");
     // ri.bindTexture(m_probeDepthTexture, "probeDepthField");
 

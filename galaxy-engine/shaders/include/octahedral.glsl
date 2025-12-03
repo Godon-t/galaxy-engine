@@ -82,71 +82,45 @@ int getOctahedralTriangle(vec3 dir)
 
 // Calcule l'intersection d'un segment 3D avec les faces de l'octaèdre
 // Retourne tous les paramètres t où le segment change de triangle
-int computeOctahedralIntersections(vec3 p0, vec3 p1, out float ts[9])
+int computeOctahedralIntersections(vec3 p0, vec3 p1, out float ts[8]) // Taille doublée !
 {
-    ts[0]     = 0.0;
-    ts[1]     = 1.0;
+    float temp[8];
+    temp[0]   = 0.0;
+    temp[1]   = 1.0;
     int count = 2;
 
     // Les 3 plans principaux x=0, y=0, z=0
     for (int i = 0; i < 3; ++i) {
-        float a = (i == 0) ? p0.x : (i == 1) ? p0.y
-                                             : p0.z;
-        float b = (i == 0) ? p1.x : (i == 1) ? p1.y
-                                             : p1.z;
+        float a = p0[i];
+        float b = p1[i];
+
         float d = b - a;
         if (abs(d) > 1e-6) {
             float t = -a / d;
             if (t > 1e-5 && t < 1.0 - 1e-5) {
-                ts[count] = t;
-                count     = count + 1;
+                temp[count] = t;
+                count       = count + 1;
             }
         }
     }
 
-    // Les 6 plans diagonaux qui séparent les triangles adjacents
-    // Ces plans passent par l'origine et ont pour normales les combinaisons de signes
-    vec3 normals[6];
-    normals[0] = vec3(1.0, 1.0, 1.0);
-    normals[1] = vec3(1.0, 1.0, -1.0);
-    normals[2] = vec3(1.0, -1.0, 1.0);
-    normals[3] = vec3(1.0, -1.0, -1.0);
-    normals[4] = vec3(-1.0, 1.0, 1.0);
-    normals[5] = vec3(-1.0, 1.0, -1.0);
-
-    for (int i = 0; i < 6; ++i) {
-        vec3 normal = normals[i];
-        float a     = dot(p0, normal);
-        float b     = dot(p1, normal);
-        float d     = b - a;
-        if (abs(d) > 1e-6) {
-            float t = -a / d;
-            if (t > 1e-5 && t < 1.0 - 1e-5) {
-                ts[count] = t;
-                count     = count + 1;
-            }
+    // Trier temp[0..count-1] (insertion sort par exemple)
+    for (int i = 1; i < count; i++) {
+        float key = temp[i];
+        int j     = i - 1;
+        while (j >= 0 && temp[j] > key) {
+            temp[j + 1] = temp[j];
+            j--;
         }
+        temp[j + 1] = key;
     }
 
-    // Tri par insertion
-    for (int i = 0; i < count - 1; ++i) {
-        for (int j = i + 1; j < count; ++j) {
-            if (ts[i] > ts[j]) {
-                float tmp = ts[i];
-                ts[i]     = ts[j];
-                ts[j]     = tmp;
-            }
-        }
+    // Convertir en segments : dupliquer les points intermédiaires
+    int outCount = 0;
+    for (int i = 0; i < count - 1; i++) {
+        ts[outCount++] = temp[i]; // Début du segment
+        ts[outCount++] = temp[i + 1] - 0.01; // Fin du segment
     }
 
-    // Suppression des doublons
-    int m = 0;
-    for (int i = 0; i < count; ++i) {
-        if (i == 0 || abs(ts[i] - ts[m - 1]) > 1e-4) {
-            ts[m] = ts[i];
-            m     = m + 1;
-        }
-    }
-
-    return m;
+    return outCount; // Retourne le nombre de valeurs (= 2 * nombre de segments)
 }

@@ -106,7 +106,7 @@ public:
     renderID instanciateCubemap(int resolution = 1024);
     void clearCubemap(renderID cubemapID);
 
-    renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format);
+    renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1);
     renderID instantiateCubemapFrameBuffer(unsigned int size);
 
     void clearFrameBuffer(renderID frameBufferID);

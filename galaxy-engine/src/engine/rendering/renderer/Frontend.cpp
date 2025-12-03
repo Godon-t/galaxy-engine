@@ -228,12 +228,12 @@ void Frontend::attachTextureToDepthFramebuffer(renderID textureID, renderID fram
     pushCommand(command);
 }
 
-void Frontend::attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID, bool depth)
+void Frontend::attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID, int colorIdx)
 {
     AttachCubemapToFramebufferCommand attachCommand;
     attachCommand.cubemapID     = cubemapID;
     attachCommand.framebufferID = framebufferID;
-    attachCommand.depth         = depth;
+    attachCommand.colorIdx      = colorIdx;
     RenderCommand command;
     command.type                       = RenderCommandType::attachCubemapToFramebuffer;
     command.attachCubemapToFramebuffer = attachCommand;
@@ -384,13 +384,14 @@ void Frontend::setUniform(std::string uniformName, vec2 value)
     pushCommand(command);
 }
 
-void Frontend::setFramebufferAsTextureUniform(renderID framebufferID, std::string uniformName, int textureIdx){
+void Frontend::setFramebufferAsTextureUniform(renderID framebufferID, std::string uniformName, int textureIdx)
+{
     SetFramebufferAsTextureUniformCommand setTextureCommand;
     setTextureCommand.framebufferID = framebufferID;
-    setTextureCommand.uniformName = copyString(uniformName);
-    setTextureCommand.textureIdx = textureIdx;
+    setTextureCommand.uniformName   = copyString(uniformName);
+    setTextureCommand.textureIdx    = textureIdx;
     RenderCommand command;
-    command.type = RenderCommandType::setFramebufferAsTextureUniformCommand;
+    command.type                           = RenderCommandType::setFramebufferAsTextureUniformCommand;
     command.setFramebufferAsTextureUniform = setTextureCommand;
 
     pushCommand(command);

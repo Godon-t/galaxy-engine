@@ -284,16 +284,16 @@ renderID Backend::generateQuad(vec2 dimmensions, std::function<void()> destroyCa
     std::vector<Vertex> vertices;
     Vertex v1, v2, v3, v4;
     v1.position = vec3(-half.x, half.y, 0);
-    v1.texCoord = vec2(0, 0);
+    v1.texCoord = vec2(0, 1);
 
     v2.position = vec3(half.x, half.y, 0);
-    v2.texCoord = vec2(1, 0);
+    v2.texCoord = vec2(1, 1);
 
     v3.position = vec3(-half.x, -half.y, 0);
-    v3.texCoord = vec2(0, 1);
+    v3.texCoord = vec2(0, 0);
 
     v4.position = vec3(half.x, -half.y, 0);
-    v4.texCoord = vec2(1, 1);
+    v4.texCoord = vec2(1, 0);
 
     vertices.push_back(v1);
     vertices.push_back(v2);
@@ -389,10 +389,11 @@ void Backend::clearCubemap(renderID cubemapID)
     }
 }
 
-renderID Backend::instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format)
+renderID Backend::instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount)
 {
     renderID frameBufferID = m_frameBufferInstances.createResourceInstance();
     m_frameBufferInstances.get(frameBufferID)->setFormat(format);
+    m_frameBufferInstances.get(frameBufferID)->setColorsCount(colorCount);
     m_frameBufferInstances.get(frameBufferID)->resize(width, height);
     m_frameBufferInstances.get(frameBufferID)->unbind();
     checkOpenGLErrors("Instantiate frameBuffer");
@@ -556,6 +557,7 @@ void Backend::processCommand(SetViewCommand& setViewCommand)
 
     m_postProcessingProgram.use();
     m_postProcessingProgram.updateViewMatrix(setViewCommand.view);
+    m_postProcessingProgram.updateInverseViewMatrix(inverse(setViewCommand.view));
 
     m_debugLinesProgram.use();
     m_debugLinesProgram.updateViewMatrix(setViewCommand.view);
@@ -582,6 +584,7 @@ void Backend::setProjectionMatrix(const mat4& projectionMatrix)
 
     m_postProcessingProgram.use();
     m_postProcessingProgram.updateProjectionMatrix(projectionMatrix);
+    m_postProcessingProgram.updateInverseProjectionMatrix(inverse(projectionMatrix));
 
     m_debugLinesProgram.use();
     m_debugLinesProgram.updateProjectionMatrix(projectionMatrix);
@@ -659,10 +662,10 @@ void Backend::processCommand(AttachTextureToFramebufferCommand& command)
 void Backend::processCommand(AttachCubemapToFramebufferCommand& command)
 {
     // TODO: Beware of memory handling !!!
-    if (command.depth)
+    if (command.colorIdx < 0)
         m_cubemapFrameBufferInstances.get(command.framebufferID)->attachDepthCubemap(*m_cubemapInstances.get(command.cubemapID));
     else
-        m_cubemapFrameBufferInstances.get(command.framebufferID)->attachColorCubemap(*m_cubemapInstances.get(command.cubemapID), 0);
+        m_cubemapFrameBufferInstances.get(command.framebufferID)->attachColorCubemap(*m_cubemapInstances.get(command.cubemapID), command.colorIdx);
 }
 
 void Backend::processCommand(BindMaterialCommand& command)
@@ -750,7 +753,7 @@ void Backend::processCommand(UpdateCubemapCommand& command)
 
 void Backend::processCommand(SetFramebufferAsTextureUniformCommand& command)
 {
-    auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
+    auto uniLoc       = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
     auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
     framebuffer.setAsTextureUniform(uniLoc, command.textureIdx);
     checkOpenGLErrors("Bind framebuffer texture as uniform");

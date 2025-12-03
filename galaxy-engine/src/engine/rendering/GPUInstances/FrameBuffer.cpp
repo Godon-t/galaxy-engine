@@ -7,7 +7,7 @@
 #include <fstream>
 
 namespace Galaxy {
-void bindColorAttachmentTexture(GLuint* id, int width, int height, GLenum internalFormat, GLenum format)
+void bindColorAttachmentTexture(GLuint* id, int width, int height, GLenum internalFormat, GLenum format, int idx)
 {
     glCreateTextures(GL_TEXTURE_2D, 1, id);
     glBindTexture(GL_TEXTURE_2D, *id);
@@ -20,7 +20,7 @@ void bindColorAttachmentTexture(GLuint* id, int width, int height, GLenum intern
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *id, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + idx, GL_TEXTURE_2D, *id, 0);
 }
 
 void bindDepthAttachment(GLuint* id, int width, int height, GLenum format)
@@ -88,12 +88,12 @@ void FrameBuffer::resize(unsigned int newWidth, unsigned int newHeight)
 
 void FrameBuffer::savePPM(char* filename)
 {
-    {
-        std::string outputPath = std::string(filename) + "_c0.ppm";
+    for (int i = 0; i < m_colorsCount; i++) {
+        std::string outputPath = std::string(filename) + "_c" + std::to_string(i) + ".ppm";
         std::ofstream output_image(outputPath.c_str());
 
         /// READ THE CONTENT FROM THE FBO
-        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glReadBuffer(GL_COLOR_ATTACHMENT0 + i);
         float* pixels = new float[m_width * m_height * 4];
         glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_FLOAT, pixels);
 
@@ -187,8 +187,9 @@ void FrameBuffer::attachDepthTexture(Texture& texture)
 }
 
 // TODO: Should work with texture bound
-void FrameBuffer::setAsTextureUniform(unsigned int uniLocation, int textureIdx){
-    if (textureIdx >= 0){
+void FrameBuffer::setAsTextureUniform(unsigned int uniLocation, int textureIdx)
+{
+    if (textureIdx >= 0) {
         Texture tex;
         tex.m_id = m_attachedColors[textureIdx];
         tex.activate(uniLocation);
@@ -212,11 +213,13 @@ void FrameBuffer::invalidate()
 
     // TODO: 3 cases, rgba, depth or rgba and depth
     if (m_format == FramebufferTextureFormat::RGBA8) {
-        bindColorAttachmentTexture(&m_attachedColors[0], m_width, m_height, GL_RGBA8, GL_RGBA);
+        for (int i = 0; i < m_colorsCount; i++)
+            bindColorAttachmentTexture(&m_attachedColors[i], m_width, m_height, GL_RGBA8, GL_RGBA, i);
     } else if (m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
         bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH24_STENCIL8);
     } else if (m_format == FramebufferTextureFormat::DEPTH24RGBA8) {
-        bindColorAttachmentTexture(&m_attachedColors[0], m_width, m_height, GL_RGBA8, GL_RGBA);
+        for (int i = 0; i < m_colorsCount; i++)
+            bindColorAttachmentTexture(&m_attachedColors[i], m_width, m_height, GL_RGBA8, GL_RGBA, i);
         bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH24_STENCIL8);
     } else if (m_format == FramebufferTextureFormat::DEPTH) {
         bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH_COMPONENT24);

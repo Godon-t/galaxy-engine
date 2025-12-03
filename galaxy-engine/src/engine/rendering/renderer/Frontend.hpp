@@ -32,7 +32,7 @@ public:
     void bindTexture(renderID textureInstanceID, char* uniformName);
     void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int attachmentIdx);
     void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID);
-    void attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID, bool depth = false);
+    void attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID, int colorIdx = 0);
     void useCubemap(renderID cubemapInstanceID, char* uniformName);
     void bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx = -1);
     void unbindFrameBuffer(renderID frameBufferInstanceID, bool cubemap = false);

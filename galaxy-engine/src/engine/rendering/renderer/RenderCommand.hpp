@@ -77,7 +77,7 @@ struct AttachTextureToFramebufferCommand {
 struct AttachCubemapToFramebufferCommand {
     renderID cubemapID;
     renderID framebufferID;
-    bool depth;
+    int colorIdx;
 };
 
 struct BindMaterialCommand {

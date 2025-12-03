@@ -69,7 +69,7 @@ public:
     inline void clearCubemap(renderID cubemapID) { m_backend.clearCubemap(cubemapID); }
     inline void useCubemap(renderID cubemapInstanceID, char* uniformName) { return m_frontend.useCubemap(cubemapInstanceID, uniformName); }
 
-    inline renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format) { return m_backend.instanciateFrameBuffer(width, height, format); }
+    inline renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1) { return m_backend.instanciateFrameBuffer(width, height, format, colorCount); }
     inline void clearFrameBuffer(renderID frameBufferID) { m_backend.clearFrameBuffer(frameBufferID); }
     inline void bindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.bindFrameBuffer(frameBufferInstanceID); }
     inline void unbindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.unbindFrameBuffer(frameBufferInstanceID); }
@@ -84,7 +84,7 @@ public:
     inline void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int colorIdx) { m_frontend.attachTextureToColorFramebuffer(textureID, framebufferID, colorIdx); }
     inline void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID) { m_frontend.attachTextureToDepthFramebuffer(textureID, framebufferID); }
 
-    inline void setFramebufferAsTextureUniform(renderID framebufferID, std::string uniformName, int textureIdx){m_frontend.setFramebufferAsTextureUniform(framebufferID, uniformName, textureIdx);}
+    inline void setFramebufferAsTextureUniform(renderID framebufferID, std::string uniformName, int textureIdx) { m_frontend.setFramebufferAsTextureUniform(framebufferID, uniformName, textureIdx); }
 
     inline void setUniform(std::string uniformName, bool value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, int value) { m_frontend.setUniform(uniformName, value); }

@@ -357,6 +357,20 @@ ProgramPostProc::ProgramPostProc(std::string path)
 {
     m_colorLocation = glGetUniformLocation(getProgramID(), "sceneBuffer");
     m_depthLocation = glGetUniformLocation(getProgramID(), "depthBuffer");
+
+    m_inverseProjectionLocation = glGetUniformLocation(getProgramID(), "inverseProjection");
+    m_inverseViewLocation       = glGetUniformLocation(getProgramID(), "inverseView");
+    m_cameraPositionLocation    = glGetUniformLocation(getProgramID(), "cameraPos");
+}
+void ProgramPostProc::updateInverseViewMatrix(const mat4& invView)
+{
+    glUniformMatrix4fv(m_inverseViewLocation, 1, GL_FALSE, &invView[0][0]);
+    vec3 camPos = vec3(invView[3]);
+    glUniform3fv(m_cameraPositionLocation, 1, &camPos[0]);
+}
+void ProgramPostProc::updateInverseProjectionMatrix(const mat4& invProjection)
+{
+    glUniformMatrix4fv(m_inverseProjectionLocation, 1, GL_FALSE, &invProjection[0][0]);
 }
 void ProgramPostProc::setTextures(unsigned int colorTexture, unsigned int depthTexture)
 {

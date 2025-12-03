@@ -102,62 +102,57 @@ void showTrianglesOverlay(vec2 uv, inout vec3 outColor, samplerCube cubemap)
 // projeté sur la carte octahedral. La trajectoire est subdivisée finement
 // pour capturer la courbure de la projection tout en détectant les discontinuités
 // aux bords de l'UV map (quand le rayon passe d'un côté à l'autre du au voisin).
-float computeMinDistLinePolyline(vec2 uv, vec3 p0, vec3 p1)
+float computeMinDistLinePolyline(vec3 p0, vec3 p1, vec3 probePos, float t, vec2 scale, vec2 probeTextureUpperLeft, vec2 fragUV)
 {
     float minDist    = 1e6;
     vec3 fallbackDir = normalize(p1 - p0 + vec3(1e-6));
 
     // subdiviser le segment 3D pour avoir une courbe continue
-    int totalSubdivisions = 256;
+    int totalSubdivisions = 32;
 
-    // création des segments pour former le segments final
-    for (int i = 0; i < totalSubdivisions; ++i) {
-        float t0 = float(i) / float(totalSubdivisions);
-        float t1 = float(i + 1) / float(totalSubdivisions);
+    // centrer les positions par rapport à la probe
+    vec3 centeredP0 = p0 - probePos;
+    vec3 centeredP1 = p1 - probePos;
 
-        // points 3D le long du segment actuelle
-        vec3 p3d0 = mix(p0, p1, t0);
-        vec3 p3d1 = mix(p0, p1, t1);
+    // calculer les t ou le rayon change de triangle octahédral
+    float ts[8];
+    int numSegments = computeOctahedralIntersections(centeredP0, centeredP1, ts);
+    numSegments     = numSegments - 1;
 
-        // obtenir des directions
-        vec3 dir0 = safeNormalize(p3d0, fallbackDir);
-        vec3 dir1 = safeNormalize(p3d1, fallbackDir);
+    // parcourir chaque segment entre les changements de triangle
+    for (int segIdx = 0; segIdx < numSegments; segIdx += 2) {
+        float t0 = ts[segIdx];
+        float t1 = ts[segIdx + 1];
 
-        // projeter sur la carte octahedral
+        // calculer les positions 3D aux extrémités du segment
+        vec3 p3d0 = mix(centeredP0, centeredP1, t0);
+        vec3 p3d1 = mix(centeredP0, centeredP1, t1);
+
+        // calculer les distances aux extrémités
+        float depth0 = length(p3d0);
+        float depth1 = length(p3d1);
+
+        // calculer les directions et projeter en 2D octahedral
+        vec3 fallbackDir = normalize(centeredP1 - centeredP0 + vec3(1e-6));
+        vec3 dir0        = safeNormalize(p3d0, fallbackDir);
+        vec3 dir1        = safeNormalize(p3d1, fallbackDir);
+
         vec2 uv0 = octahedral_mapping(dir0);
         vec2 uv1 = octahedral_mapping(dir1);
 
-        // vérifier si on traverse un bord (discontinuiter)
-        vec2 delta     = uv1 - uv0;
-        float maxDelta = max(abs(delta.x), abs(delta.y));
+        // mettre a l'échelle et décaler les UV dans la texture globale
+        uv0 = (uv0 * scale) + probeTextureUpperLeft;
+        uv1 = (uv1 * scale) + probeTextureUpperLeft;
 
-        if (maxDelta < 0.5) {
-            // subdiviser encore ce micro-segment pour capturer la courbure en UV
-            // (la projection octahedral n'est pas linéaire)
-            int microSubs = 4;
-            for (int j = 0; j < microSubs; ++j) {
+        for (int i = 0; i < totalSubdivisions; ++i) {
+            float s = float(i) / float(totalSubdivisions);
 
-                float s0 = float(j) / float(microSubs);
-                float s1 = float(j + 1) / float(microSubs);
+            vec2 samplingPos = mix(uv0, uv1, s);
 
-                float ta = mix(t0, t1, s0);
-                float tb = mix(t0, t1, s1);
-
-                vec3 pa = mix(p0, p1, ta);
-                vec3 pb = mix(p0, p1, tb);
-
-                vec3 dira = safeNormalize(pa, fallbackDir);
-                vec3 dirb = safeNormalize(pb, fallbackDir);
-
-                vec2 uva = octahedral_mapping(dira);
-                vec2 uvb = octahedral_mapping(dirb);
-
-                float d = distPointSegment(uv, uva, uvb);
-                minDist = min(minDist, d);
+            if (length(fragUV - samplingPos) < 0.01) {
+                return 0.0;
             }
         }
-        // Sinon, c'est une discontinuité aux bords de l'UV map, on ne trace pas
     }
-
-    return minDist;
+    return 1.0;
 }

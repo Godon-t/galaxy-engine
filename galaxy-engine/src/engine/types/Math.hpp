@@ -13,6 +13,7 @@ using quat = glm::quat;
 
 using glm::degrees;
 using glm::eulerAngles;
+using glm::inverse;
 using glm::length;
 using glm::lookAt;
 using glm::perspective;

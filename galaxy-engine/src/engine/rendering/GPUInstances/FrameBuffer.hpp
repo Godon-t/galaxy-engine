@@ -21,7 +21,7 @@ public:
 
     void destroy();
 
-    inline unsigned int getColorTextureID(int idx=0) { return m_attachedColors[idx]; }
+    inline unsigned int getColorTextureID(int idx = 0) { return m_attachedColors[idx]; }
     inline unsigned int getDepthTextureID() { return m_attachedDepth; }
 
     void setAsTextureUniform(unsigned int uniLocation, int textureIdx = -1);
@@ -81,7 +81,6 @@ private:
 
     std::vector<Cubemap> m_colorCubemaps;
     Cubemap m_depthCubemap;
-    Cubemap m_cubemap;
 
     void invalidate();
 };

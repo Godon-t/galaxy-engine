@@ -97,9 +97,14 @@ public:
     ProgramPostProc(std::string path);
     ProgramType type() const override { return ProgramType::POST_PROCESSING; }
 
+    void updateInverseViewMatrix(const mat4& invView);
+    void updateInverseProjectionMatrix(const mat4& invProjection);
     void setTextures(unsigned int colorTexture, unsigned int depthTexture);
 
 private:
+    unsigned int m_inverseProjectionLocation;
+    unsigned int m_inverseViewLocation;
+    unsigned int m_cameraPositionLocation;
     unsigned int m_depthLocation;
     unsigned int m_colorLocation;
 };

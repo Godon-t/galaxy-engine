@@ -18,6 +18,7 @@ void main()
 #include debug.glsl
 
 uniform samplerCube radianceCubemap;
+uniform samplerCube normalCubemap;
 uniform samplerCube depthCubemap;
 
 uniform vec3 debugStart;
@@ -26,7 +27,8 @@ uniform vec3 debugProbePos;
 
 in vec2 texCoords;
 layout(location = 0) out vec4 color;
-layout(location = 1) out vec4 radialDepth;
+layout(location = 1) out vec4 normal;
+layout(location = 2) out vec4 radialDepth;
 
 uniform float zNear = 0.1;
 uniform float zFar  = 9999.0;
@@ -43,8 +45,6 @@ void main()
     color         = vec4(envColor, 1.0);
 
     float radial = texture(depthCubemap, dir).r;
-    gl_FragDepth = radial;
-    radialDepth  = vec4(radial, 0, 0, 0);
 
     //////////////////////////////////////////////////////////////////////:
     vec2 uv       = texCoords;
@@ -61,5 +61,11 @@ void main()
     // // // superposer le rayon par-dessus la cubemap et les bords
     // outColor = mix(outColor, rayCol, clamp(rayAlpha, 0.0, 1.0));
 
-    color.rgb = outColor;
+    gl_FragDepth  = radial;
+    color.rgb     = outColor;
+    radialDepth.r = radial;
+    normal.rgb    = texture(normalCubemap, dir).rgb;
+
+    radialDepth.a = 1.0;
+    normal.a      = 1.0;
 }

@@ -78,6 +78,7 @@ private:
 
     renderID m_fullQuad;
     renderID m_colorRenderingCubemap;
+    renderID m_normalRenderingCubemap;
     renderID m_depthRenderingCubemap;
     renderID m_probesFrameBuffer;
     unsigned int m_probeResolution;

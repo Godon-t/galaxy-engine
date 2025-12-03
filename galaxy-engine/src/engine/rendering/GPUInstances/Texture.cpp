@@ -193,6 +193,12 @@ void Cubemap::allocateFaces()
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+        } else if (format == TextureFormat::RGBA) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA8,
+                resolution, resolution, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         } else if (format == TextureFormat::DEPTH) {
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT24,
                 resolution, resolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);

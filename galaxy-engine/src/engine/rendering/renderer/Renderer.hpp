@@ -106,7 +106,7 @@ public:
     }
 
     inline void submitPBR(renderID meshID, renderID materialID, const Transform& transform) { m_frontend.submitPBR(meshID, materialID, transform); }
-    void renderFromPoint(vec3 position, Node& root, renderID targetColorCubemapID, renderID targetDepthCubemapID);
+    void renderFromPoint(vec3 position, Node& root, renderID targetColorCubemapID, renderID targetDepthCubemapID, renderID targetNormalCubemapID);
     void applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter);
 
     inline int getDrawCallsCount() { return m_drawCount; }

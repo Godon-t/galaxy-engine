@@ -265,6 +265,7 @@ CubemapFrameBuffer::CubemapFrameBuffer()
 CubemapFrameBuffer::CubemapFrameBuffer(int size)
 {
     m_size = size;
+    m_depthCubemap.setFormat(TextureFormat::DEPTH);
     invalidate();
 }
 
@@ -281,7 +282,7 @@ void CubemapFrameBuffer::attachColorCubemap(Cubemap cubemap, int idx)
         m_colorCubemaps.resize(idx + 1);
 
     m_colorCubemaps[idx] = cubemap;
-    m_colorCubemaps[idx].setFormat(TextureFormat::RGB);
+    m_colorCubemaps[idx].setFormat(TextureFormat::RGBA);
     m_colorCubemaps[idx].resize(m_size);
 }
 
@@ -289,10 +290,14 @@ void CubemapFrameBuffer::bind(int idx)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     // TODO: Depend on cubemap mode: color, depth or both
-    GLenum attachments[m_colorCubemaps.size()];
+    std::vector<GLenum> attachments;
     for (int i = 0; i < m_colorCubemaps.size(); i++) {
-        attachments[i] = GL_COLOR_ATTACHMENT0 + i;
-        glFramebufferTexture2D(GL_FRAMEBUFFER, attachments[i], GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_colorCubemaps[i].cubemapID, 0);
+        if (m_colorCubemaps[i].cubemapID == 0)
+            continue;
+        attachments.push_back(GL_COLOR_ATTACHMENT0 + i);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_colorCubemaps[i].cubemapID, 0);
+
+        GLX_CORE_ASSERT(glIsTexture(m_colorCubemaps[i].cubemapID), "Cubemap attachement texture not valid");
     }
 
     if (m_depthCubemap.cubemapID) {
@@ -301,11 +306,11 @@ void CubemapFrameBuffer::bind(int idx)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_depthCubemap.cubemapID, 0);
     }
 
-    glDrawBuffers(m_colorCubemaps.size(), attachments);
+    glDrawBuffers(attachments.size(), attachments.data());
 
     checkOpenGLErrors("Bind framebuffer face idx");
-    bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
-    GLX_CORE_ASSERT(complete, "Cubemap framebuffer not complete after bind face {0}", idx);
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    GLX_CORE_ASSERT(status == GL_FRAMEBUFFER_COMPLETE, "Cubemap framebuffer not complete after bind face {0}", idx);
 }
 
 void CubemapFrameBuffer::unbind()
@@ -337,5 +342,13 @@ void CubemapFrameBuffer::invalidate()
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     checkOpenGLErrors("Cubemap frame buffer initialization");
+
+    for (auto& cm : m_colorCubemaps) {
+        cm.resize(m_size);
+        cm.setFormat(TextureFormat::RGBA);
+    }
+
+    if (m_depthCubemap.cubemapID != 0)
+        m_depthCubemap.resize(m_size);
 }
 }

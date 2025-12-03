@@ -177,14 +177,15 @@ void Renderer::applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, rend
     // glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 }
 
-void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetColorCubemapID, renderID targetDepthCubemapID)
+void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetColorCubemapID, renderID targetDepthCubemapID, renderID targetNormalCubemapID)
 {
     vec2 size(1024);
     vec2 pos(0);
 
     m_frontend.beginCanvaNoBuffer();
     m_frontend.attachCubemapToFramebuffer(targetColorCubemapID, m_cubemapFramebufferID, 0);
-    m_frontend.attachCubemapToFramebuffer(targetDepthCubemapID, m_cubemapFramebufferID, 1);
+    m_frontend.attachCubemapToFramebuffer(targetDepthCubemapID, m_cubemapFramebufferID, -1);
+    m_frontend.attachCubemapToFramebuffer(targetNormalCubemapID, m_cubemapFramebufferID, 1);
     m_frontend.endCanva();
 
     mat4 projection = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);

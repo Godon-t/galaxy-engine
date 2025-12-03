@@ -69,7 +69,8 @@ in vec3 v_camPos;
 in vec4 v_fragPosLightSpace;
 
 layout(location = 0) out vec4 color;
-layout(location = 1) out vec4 depthAttachment;
+layout(location = 1) out vec4 normalAttachment;
+layout(location = 2) out vec4 depthAttachment;
 
 const float PI = 3.14159265359;
 /*--------------------------------------PBR--------------------------------------*/
@@ -244,4 +245,5 @@ void main()
 
     float radialDist = length(v_worldPos - v_camPos);
     depthAttachment  = vec4(radialDist, 0.0, 0.0, 1.0);
+    normalAttachment = vec4(normal, 1.0);
 }

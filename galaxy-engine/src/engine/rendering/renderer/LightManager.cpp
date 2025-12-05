@@ -50,7 +50,7 @@ void LightManager::init()
     ri.setTextureFormat(m_probeFieldDepth, TextureFormat::DEPTH);
 
     ri.attachTextureToColorFramebuffer(m_probeFieldColor, m_probesFrameBuffer, 0);
-    ri.attachTextureToColorFramebuffer(m_probeFieldNormal, m_probesFrameBuffer, 0);
+    ri.attachTextureToColorFramebuffer(m_probeFieldNormal, m_probesFrameBuffer, 1);
     ri.attachTextureToDepthFramebuffer(m_probeFieldDepth, m_probesFrameBuffer);
 
     m_colorRenderingCubemap  = ri.instanciateCubemap();

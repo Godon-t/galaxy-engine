@@ -30,18 +30,42 @@ renderID endVisu(0);
 
 void LightManager::init()
 {
-    auto& ri                 = Renderer::getInstance();
-    m_shadowMapFrameBufferID = ri.instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH);
+    auto& ri = Renderer::getInstance();
+    // TODO: attach texture to framebuffer
+    m_shadowMapFrameBufferID = ri.instantiateFrameBuffer(1024, 1024);
+    m_probesFrameBuffer      = ri.instantiateFrameBuffer(m_textureWidth, m_textureHeight);
 
     m_fullQuad = ri.generateQuad(vec2(2, 2), []() {});
+
+    m_probeFieldColor  = ri.instantiateTexture();
+    m_probeFieldNormal = ri.instantiateTexture();
+    m_probeFieldDepth  = ri.instantiateTexture();
+
+    ri.resizeTexture(m_probeFieldColor, m_textureWidth, m_textureHeight);
+    ri.resizeTexture(m_probeFieldNormal, m_textureWidth, m_textureHeight);
+    ri.resizeTexture(m_probeFieldDepth, m_textureWidth, m_textureHeight);
+
+    ri.setTextureFormat(m_probeFieldColor, TextureFormat::RGBA);
+    ri.setTextureFormat(m_probeFieldNormal, TextureFormat::RGB);
+    ri.setTextureFormat(m_probeFieldDepth, TextureFormat::DEPTH);
+
+    ri.attachTextureToColorFramebuffer(m_probeFieldColor, m_probesFrameBuffer, 0);
+    ri.attachTextureToColorFramebuffer(m_probeFieldNormal, m_probesFrameBuffer, 0);
+    ri.attachTextureToDepthFramebuffer(m_probeFieldDepth, m_probesFrameBuffer);
 
     m_colorRenderingCubemap  = ri.instanciateCubemap();
     m_normalRenderingCubemap = ri.instanciateCubemap();
     m_depthRenderingCubemap  = ri.instanciateCubemap();
+
+    ri.resizeCubemap(m_colorRenderingCubemap, m_probeResolution);
+    ri.setCubemapFormat(m_colorRenderingCubemap, TextureFormat::RGBA);
+    ri.resizeCubemap(m_normalRenderingCubemap, m_probeResolution);
+    ri.setCubemapFormat(m_normalRenderingCubemap, TextureFormat::RGB);
+    ri.resizeCubemap(m_depthRenderingCubemap, m_probeResolution);
+    ri.setCubemapFormat(m_depthRenderingCubemap, TextureFormat::RADIAL_DISTANCE);
     // ri.resizeCubemap(m_colorRenderingCubemap, m_probeResolution);
 
     // TODO: pass to a format for normals in addition to colors and depths
-    m_probesFrameBuffer = ri.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8, 3);
     ri.beginCanvaNoBuffer();
     // ri.attachTextureToDepthFramebuffer(m_probeDepthTexture, m_probesFrameBuffer);
     // ri.attachTextureToColorFramebuffer(m_probeRadianceTexture, m_probesFrameBuffer, 0);
@@ -105,7 +129,7 @@ void LightManager::debugDraw()
 
     ri.changeUsedProgram(POST_PROCESSING);
     ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeIrradianceField", 0);
-    ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeDepthField", 1);
+    ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeDepthField", -1);
     // ri.bindTexture(m_probeRadianceTexture, "probeIrradianceField");
     // ri.bindTexture(m_probeDepthTexture, "probeDepthField");
 
@@ -144,7 +168,7 @@ void LightManager::shadowPass(Node* sceneRoot)
     //     math::mat4 view             = CameraManager::processViewMatrix(lightData.transformationMatrix);
     //     math::mat4 lightSpaceMatrix = projMat * view;
 
-    //     ri.beginCanva(view, projMat, m_shadowMapFrameBufferID, FramebufferTextureFormat::DEPTH);
+    //     ri.beginCanva(view, projMat, m_shadowMapFrameBufferID);
     //     ri.linkCanvaDepthToTexture(lightData.shadowMapID);
 
     //     ri.changeUsedProgram(SHADOW_DEPTH);
@@ -158,7 +182,7 @@ void LightManager::shadowPass(Node* sceneRoot)
     //     currentLightIdx++;
     // }
 
-    //     beginCanva(transform.getGlobalModelMatrix(), dim, m_shadowMapFrameBufferID, FramebufferTextureFormat::DEPTH24);
+    //     beginCanva(transform.getGlobalModelMatrix(), dim, m_shadowMapFrameBufferID);
     // attachTextureToDepthFramebuffer(lightTextureID, m_shadowMapFrameBufferID);
     // Application::getInstance().getRootNodePtr()->lightPassDraw();
     // m_frontend.changeUsedProgram(ProgramType::TEXTURE);
@@ -183,7 +207,7 @@ void LightManager::updateProbeField()
     for (auto& probe : m_probeGrid) {
         ri.renderFromPoint(probe.position, *Application::getInstance().getRootNodePtr().get(), m_colorRenderingCubemap, m_depthRenderingCubemap, m_normalRenderingCubemap);
 
-        ri.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
+        ri.beginCanva(identity, identity, m_probesFrameBuffer);
         ri.avoidCanvaClear();
         ri.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
         // ri.setUniform("scale", vec2(m_textureWidth / (float)m_probeResolution, m_textureHeight / (float)m_probeResolution));
@@ -202,7 +226,7 @@ void LightManager::updateProbeField()
         ri.endCanva();
     }
 
-    ri.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
+    ri.beginCanva(identity, identity, m_probesFrameBuffer);
     ri.avoidCanvaClear();
     ri.saveCanvaResult("probes");
     ri.endCanva();

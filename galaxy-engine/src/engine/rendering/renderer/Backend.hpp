@@ -106,14 +106,13 @@ public:
     renderID instanciateCubemap(int resolution = 1024);
     void clearCubemap(renderID cubemapID);
 
-    renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1);
+    renderID instantiateFrameBuffer(unsigned int width, unsigned int height);
     renderID instantiateCubemapFrameBuffer(unsigned int size);
 
     void clearFrameBuffer(renderID frameBufferID);
+    void resizeTexture(renderID textureID, unsigned int width, unsigned int height);
     void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height);
     void resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size);
-    // TODO: Wrong way ?
-    FramebufferTextureFormat getFramebufferFormat(renderID id);
 
     void setProjectionMatrix(const mat4& projectionMatrix);
     unsigned int getFrameBufferTextureID(renderID frameBufferID);
@@ -144,6 +143,7 @@ private:
     void processCommand(SetUniformCommand& command);
     void processCommand(SetViewportCommand& command);
     void processCommand(UpdateCubemapCommand& command);
+    void processCommand(UpdateTextureCommand& command);
     void processCommand(SetFramebufferAsTextureUniformCommand& command);
 
     void processCommand(DebugMsgCommand& command);

@@ -54,6 +54,9 @@ uniform bool useMetallicMap  = false;
 uniform bool useRoughnessMap = false;
 uniform bool useAoMap        = false;
 
+uniform float zFar  = 9999.0;
+uniform float zNear = 0.1;
+
 // lights
 const int MAX_LIGHT                    = 20;
 uniform int lightCount                 = 3;
@@ -69,8 +72,8 @@ in vec3 v_camPos;
 in vec4 v_fragPosLightSpace;
 
 layout(location = 0) out vec4 color;
-layout(location = 1) out vec4 normalAttachment;
-layout(location = 2) out vec4 depthAttachment;
+layout(location = 1) out vec3 normalAttachment;
+layout(location = 2) out float depthAttachment;
 
 const float PI = 3.14159265359;
 /*--------------------------------------PBR--------------------------------------*/
@@ -241,9 +244,9 @@ void main()
     colorPBR = colorPBR / (colorPBR + vec3(1.0));
     colorPBR = pow(colorPBR, vec3(1.0 / 2.2));
 
-    color = vec4(colorPBR, transparency);
-
     float radialDist = length(v_worldPos - v_camPos);
-    depthAttachment  = vec4(radialDist, 0.0, 0.0, 1.0);
-    normalAttachment = vec4(normal, 1.0);
+    depthAttachment  = clamp(radialDist / zFar, 0.0, 1.0);
+
+    color            = vec4(colorPBR, transparency);
+    normalAttachment = vec3(0.5); // normal;
 }

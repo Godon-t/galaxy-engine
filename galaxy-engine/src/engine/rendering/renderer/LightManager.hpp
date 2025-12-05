@@ -80,7 +80,12 @@ private:
     renderID m_colorRenderingCubemap;
     renderID m_normalRenderingCubemap;
     renderID m_depthRenderingCubemap;
+
     renderID m_probesFrameBuffer;
+    renderID m_probeFieldColor;
+    renderID m_probeFieldNormal;
+    renderID m_probeFieldDepth;
+
     unsigned int m_probeResolution;
     unsigned int m_textureWidth;
     unsigned int m_textureHeight;

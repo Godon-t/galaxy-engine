@@ -11,6 +11,31 @@ public:
     {
     }
 
+    Texture(const Texture&)            = delete;
+    Texture& operator=(const Texture&) = delete;
+
+    Texture(Texture&& other) noexcept
+        : m_id(other.m_id)
+        , m_format(other.m_format)
+        , m_width(other.m_width)
+        , m_height(other.m_height)
+    {
+        other.m_id = 0; // ← CRUCIAL
+    }
+
+    Texture& operator=(Texture&& other) noexcept
+    {
+        if (this != &other) {
+            destroy();
+            m_id       = other.m_id;
+            m_format   = other.m_format;
+            m_width    = other.m_width;
+            m_height   = other.m_height;
+            other.m_id = 0;
+        }
+        return *this;
+    }
+
     Texture(unsigned char* data, int width, int height, int nbChannels);
 
     void resize(int width, int height);

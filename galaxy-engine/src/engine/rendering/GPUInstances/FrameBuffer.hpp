@@ -13,48 +13,66 @@ namespace Galaxy {
 class FrameBuffer {
 public:
     FrameBuffer();
-    FrameBuffer(int width, int height, FramebufferTextureFormat format);
-    ~FrameBuffer() { }
+    FrameBuffer(int width, int height);
+    ~FrameBuffer() { destroy(); }
+
+    // Move semantics
+    FrameBuffer(const FrameBuffer&)            = delete;
+    FrameBuffer& operator=(const FrameBuffer&) = delete;
+
+    FrameBuffer(FrameBuffer&& other) noexcept
+        : m_fbo(other.m_fbo)
+        , m_width(other.m_width)
+        , m_height(other.m_height)
+        , m_attachedColors(std::move(other.m_attachedColors))
+        , m_attachedDepth(other.m_attachedDepth)
+    {
+        other.m_fbo           = 0;
+        other.m_attachedDepth = nullptr;
+    }
+
+    FrameBuffer& operator=(FrameBuffer&& other) noexcept
+    {
+        if (this != &other) {
+            destroy();
+            m_fbo            = other.m_fbo;
+            m_width          = other.m_width;
+            m_height         = other.m_height;
+            m_attachedColors = std::move(other.m_attachedColors);
+            m_attachedDepth  = other.m_attachedDepth;
+
+            other.m_fbo           = 0;
+            other.m_attachedDepth = nullptr;
+        }
+        return *this;
+    }
 
     void bind();
     void unbind();
-
     void destroy();
 
-    inline unsigned int getColorTextureID(int idx = 0) { return m_attachedColors[idx]; }
-    inline unsigned int getDepthTextureID() { return m_attachedDepth; }
+    inline unsigned int getColorTextureID(int idx = 0)
+    {
+        auto it = m_attachedColors.find(idx);
+        return (it != m_attachedColors.end()) ? it->second->getId() : 0;
+    }
+    inline unsigned int getDepthTextureID()
+    {
+        return m_attachedDepth ? m_attachedDepth->getId() : 0;
+    }
 
     void setAsTextureUniform(unsigned int uniLocation, int textureIdx = -1);
-
     void resize(unsigned int newWidth, unsigned int newHeight);
-
-    inline void setColorsCount(unsigned int count)
-    {
-        m_colorsCount = count;
-        invalidate();
-    }
-
-    inline void setFormat(FramebufferTextureFormat format)
-    {
-        m_format = format;
-        invalidate();
-    }
-    inline FramebufferTextureFormat getFormat() const { return m_format; }
     void attachColorTexture(Texture& texture, int idx);
     void attachDepthTexture(Texture& texture);
     void savePPM(char* filename);
 
 private:
-    FramebufferTextureFormat m_format;
-    unsigned int m_colorsCount;
     unsigned int m_fbo;
     int m_width, m_height;
 
-    std::vector<unsigned int> m_attachedColors;
-    std::vector<bool> m_externalColors;
-
-    unsigned int m_attachedDepth;
-    bool m_externalDepth = false;
+    std::unordered_map<int, Texture*> m_attachedColors;
+    Texture* m_attachedDepth = nullptr;
 
     void invalidate();
 };

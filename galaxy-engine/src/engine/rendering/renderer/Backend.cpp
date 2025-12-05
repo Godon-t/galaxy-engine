@@ -389,11 +389,9 @@ void Backend::clearCubemap(renderID cubemapID)
     }
 }
 
-renderID Backend::instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount)
+renderID Backend::instantiateFrameBuffer(unsigned int width, unsigned int height)
 {
     renderID frameBufferID = m_frameBufferInstances.createResourceInstance();
-    m_frameBufferInstances.get(frameBufferID)->setFormat(format);
-    m_frameBufferInstances.get(frameBufferID)->setColorsCount(colorCount);
     m_frameBufferInstances.get(frameBufferID)->resize(width, height);
     m_frameBufferInstances.get(frameBufferID)->unbind();
     checkOpenGLErrors("Instantiate frameBuffer");
@@ -422,6 +420,11 @@ void Backend::clearFrameBuffer(renderID frameBufferID)
     checkOpenGLErrors("Clear frameBuffer");
 }
 
+void Backend::resizeTexture(renderID textureID, unsigned int width, unsigned int height)
+{
+    m_textureInstances.get(textureID)->resize(width, height);
+}
+
 void Backend::resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height)
 {
     m_frameBufferInstances.get(frameBufferID)->resize(width, height);
@@ -430,11 +433,6 @@ void Backend::resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsi
 void Backend::resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size)
 {
     m_cubemapFrameBufferInstances.get(frameBufferID)->resize(size);
-}
-
-FramebufferTextureFormat Backend::getFramebufferFormat(renderID id)
-{
-    return m_frameBufferInstances.get(id)->getFormat();
 }
 
 unsigned int Backend::getFrameBufferTextureID(renderID frameBufferID)
@@ -673,10 +671,10 @@ void Backend::processCommand(BindMaterialCommand& command)
     GLX_CORE_ASSERT(m_activeProgram->type() == ProgramType::PBR, "PBR Program not active!");
 
     MaterialInstance& material = *m_materialInstances.get(command.materialRenderID);
-    std::array<Texture, TextureType::COUNT> materialTextures;
+    std::array<Texture*, TextureType::COUNT> materialTextures {};
     auto addTexture = [&material, &materialTextures, this](TextureType type) {
         if (material.useImage[type]) {
-            materialTextures[type] = *m_textureInstances.get(material.images[type]);
+            materialTextures[type] = m_textureInstances.get(material.images[type]);
         }
     };
     addTexture(ALBEDO);
@@ -747,8 +745,17 @@ void Backend::processCommand(SetViewportCommand& command)
 
 void Backend::processCommand(UpdateCubemapCommand& command)
 {
-    m_cubemapInstances.get(command.targetID)->resize(command.resolution);
+    if (command.resolution > 0)
+        m_cubemapInstances.get(command.targetID)->resize(command.resolution);
+    if (command.updateFormat)
+        m_cubemapInstances.get(command.targetID)->setFormat(command.format);
     checkOpenGLErrors("Update cubemap");
+}
+
+void Backend::processCommand(UpdateTextureCommand& command)
+{
+    m_textureInstances.get(command.targetID)->setFormat(command.format);
+    checkOpenGLErrors("Update texture");
 }
 
 void Backend::processCommand(SetFramebufferAsTextureUniformCommand& command)
@@ -837,6 +844,9 @@ void Backend::processCommand(RenderCommand& command)
         break;
     case RenderCommandType::setViewport:
         processCommand(command.setViewport);
+        break;
+    case RenderCommandType::updateTexture:
+        processCommand(command.updateTexture);
         break;
     case RenderCommandType::updateCubemap:
         processCommand(command.updateCubemap);

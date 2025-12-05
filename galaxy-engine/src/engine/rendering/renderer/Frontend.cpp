@@ -25,9 +25,9 @@ void Frontend::beginCanvaNoBuffer()
     }
 }
 
-void Frontend::beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx)
+void Frontend::beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, int cubemapIdx)
 {
-    auto canva = RenderCanva(viewMat, projectionMat, framebufferID, framebufferFormat, cubemapIdx);
+    auto canva = RenderCanva(viewMat, projectionMat, framebufferID, cubemapIdx);
 
     if (m_currentCanvaIdx == -1) {
         m_canvas.push_back(canva);
@@ -421,6 +421,31 @@ void Frontend::updateCubemap(renderID targetID, unsigned int resolution)
     pushCommand(command);
 }
 
+void Frontend::updateCubemapFormat(renderID targetID, TextureFormat format)
+{
+    UpdateCubemapCommand update;
+    update.targetID     = targetID;
+    update.format       = format;
+    update.updateFormat = true;
+    RenderCommand command;
+    command.type          = RenderCommandType::updateCubemap;
+    command.updateCubemap = update;
+
+    pushCommand(command);
+}
+
+void Frontend::updateTextureFormat(renderID targetID, TextureFormat format)
+{
+    UpdateTextureCommand update;
+    update.targetID = targetID;
+    update.format   = format;
+    RenderCommand command;
+    command.type          = RenderCommandType::updateTexture;
+    command.updateTexture = update;
+
+    pushCommand(command);
+}
+
 void Frontend::addDebugMsg(std::string message)
 {
     DebugMsgCommand debug;
@@ -467,13 +492,14 @@ void Frontend::submitPBR(renderID meshID, renderID materialID, const Transform& 
     command.draw = drawCommand;
 
     // TODO: Test if it works
-    if (m_currentFramebufferFormat == FramebufferTextureFormat::DEPTH24STENCIL8) {
-        if (!m_materialsTransparency[materialID]) {
-            pushCommand(command);
-        }
-    } else {
-        m_canvas[m_currentCanvaIdx].materialToSubmitCommand[materialID].push_back(command);
-    }
+    m_canvas[m_currentCanvaIdx].materialToSubmitCommand[materialID].push_back(command);
+
+    // case for when the target framebuffer only has depth
+    // if (!m_materialsTransparency[materialID]) {
+    //     pushCommand(command);
+    // } else {
+    //     m_canvas[m_currentCanvaIdx].materialToSubmitCommand[materialID].push_back(command);
+    // }
 }
 
 vec3 Frontend::DistCompare::camPosition = vec3(0);

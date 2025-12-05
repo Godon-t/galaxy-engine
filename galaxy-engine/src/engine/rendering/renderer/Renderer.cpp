@@ -20,10 +20,26 @@ Renderer::Renderer()
 {
     m_backend.initDebugCallback();
 
-    m_cubemapFramebufferID   = m_backend.instantiateCubemapFrameBuffer(1024);
-    m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8);
-    m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
-    m_postProcessingQuadID   = m_backend.generateQuad(vec2(2, 2), [] {});
+    m_cubemapFramebufferID = m_backend.instantiateCubemapFrameBuffer(1024);
+    m_sceneFrameBufferID   = m_backend.instantiateFrameBuffer(100, 100);
+    m_sceneColorTextureID  = m_backend.instantiateTexture();
+    m_sceneDepthTextureID  = m_backend.instantiateTexture();
+    m_finalTextureID       = m_backend.instantiateTexture();
+
+    m_backend.resizeTexture(m_sceneColorTextureID, 100, 100);
+    m_backend.resizeTexture(m_sceneDepthTextureID, 100, 100);
+    m_backend.resizeTexture(m_finalTextureID, 100, 100);
+
+    m_frontend.updateTextureFormat(m_sceneColorTextureID, TextureFormat::RGBA);
+    m_frontend.updateTextureFormat(m_sceneDepthTextureID, TextureFormat::DEPTH);
+    m_frontend.updateTextureFormat(m_finalTextureID, TextureFormat::RGBA);
+
+    m_frontend.attachTextureToColorFramebuffer(m_sceneColorTextureID, m_sceneFrameBufferID, 0);
+    m_frontend.attachTextureToDepthFramebuffer(m_sceneDepthTextureID, m_sceneFrameBufferID);
+
+    m_postProcessingBufferID = m_backend.instantiateFrameBuffer(100, 100);
+    m_frontend.attachTextureToColorFramebuffer(m_finalTextureID, m_postProcessingBufferID, 0);
+    m_postProcessingQuadID = m_backend.generateQuad(vec2(2, 2), [] {});
 
     m_cubemap_orientations[0] = { 1, 0, 0 };
     m_cubemap_orientations[1] = { -1, 0, 0 };
@@ -65,16 +81,16 @@ void Renderer::init()
 
 void Renderer::beginSceneRender(const mat4& camTransform)
 {
-    beginCanva(camTransform, m_mainViewportSize, m_sceneFrameBufferID, FramebufferTextureFormat::DEPTH24RGBA8);
+    beginCanva(camTransform, m_mainViewportSize, m_sceneFrameBufferID);
     m_frontend.setViewport(vec2(0), m_mainViewportSize);
 }
 
-void Renderer::beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx)
+void Renderer::beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, int cubemapIdx)
 {
     m_currentView = CameraManager::processViewMatrix(camTransform);
     m_currentProj = CameraManager::processProjectionMatrix(dimmensions);
 
-    m_frontend.beginCanva(m_currentView, m_currentProj, framebufferID, framebufferFormat);
+    m_frontend.beginCanva(m_currentView, m_currentProj, framebufferID);
 }
 
 void Renderer::endSceneRender()
@@ -93,7 +109,7 @@ void Renderer::shadowPass()
 
 void Renderer::applyPostProcessing()
 {
-    m_frontend.beginCanva(m_currentView, m_currentProj, m_postProcessingBufferID, FramebufferTextureFormat::RGBA8);
+    m_frontend.beginCanva(m_currentView, m_currentProj, m_postProcessingBufferID);
     m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING);
     m_frontend.initPostProcessing(m_sceneFrameBufferID);
     m_frontend.submit(m_postProcessingQuadID);
@@ -163,7 +179,7 @@ void Renderer::applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, rend
     // Transform transformTemp;
     // for (int i = 0; i < 6; i++) {
     //     auto viewMatrix = lookAt(camPosition, camPosition + camDirection, camUp);
-    //     m_frontend.beginCanva(viewMatrix, projectionMatrix, targetID, FramebufferTextureFormat::DEPTH24RGBA8, i);
+    //     m_frontend.beginCanva(viewMatrix, projectionMatrix, targetID, i);
 
     //     beginSceneRender(position, m_cubemap_orientations[i], m_cubemap_ups[i], dimmensions);
     //     prgToUse();
@@ -184,15 +200,15 @@ void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetColorCu
 
     m_frontend.beginCanvaNoBuffer();
     m_frontend.attachCubemapToFramebuffer(targetColorCubemapID, m_cubemapFramebufferID, 0);
-    m_frontend.attachCubemapToFramebuffer(targetDepthCubemapID, m_cubemapFramebufferID, -1);
     m_frontend.attachCubemapToFramebuffer(targetNormalCubemapID, m_cubemapFramebufferID, 1);
+    m_frontend.attachCubemapToFramebuffer(targetDepthCubemapID, m_cubemapFramebufferID, 2);
     m_frontend.endCanva();
 
     mat4 projection = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);
     for (int i = 0; i < 6; i++) {
         auto viewMatrix = lookAt(position, position + m_cubemap_orientations[i], m_cubemap_ups[i]);
 
-        m_frontend.beginCanva(viewMatrix, projection, m_cubemapFramebufferID, FramebufferTextureFormat::DEPTH24RGBA8, i);
+        m_frontend.beginCanva(viewMatrix, projection, m_cubemapFramebufferID, i);
         m_frontend.setViewport(pos, size);
         root.draw();
         m_lightManager.debugDraw();

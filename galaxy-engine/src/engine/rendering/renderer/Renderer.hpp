@@ -25,10 +25,10 @@ public:
     void beginSceneRender(const mat4& camTransform);
     void beginSceneRender(const vec3& camPosition, const vec3& camDirection, const vec3& camUp, const vec2& dimmensions);
     inline void beginCanvaNoBuffer() { m_frontend.beginCanvaNoBuffer(); }
-    void beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1);
-    inline void beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1)
+    void beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, int cubemapIdx = -1);
+    inline void beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, int cubemapIdx = -1)
     {
-        m_frontend.beginCanva(viewMat, projectionMat, framebufferID, framebufferFormat, cubemapIdx);
+        m_frontend.beginCanva(viewMat, projectionMat, framebufferID, cubemapIdx);
     }
     inline void saveCanvaResult(std::string path) { m_frontend.storeCanvaResult(path); }
     inline void avoidCanvaClear() { m_frontend.avoidCanvaBufferClear(); }
@@ -69,14 +69,16 @@ public:
     inline void clearCubemap(renderID cubemapID) { m_backend.clearCubemap(cubemapID); }
     inline void useCubemap(renderID cubemapInstanceID, char* uniformName) { return m_frontend.useCubemap(cubemapInstanceID, uniformName); }
 
-    inline renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1) { return m_backend.instanciateFrameBuffer(width, height, format, colorCount); }
+    inline renderID instantiateFrameBuffer(unsigned int width, unsigned int height) { return m_backend.instantiateFrameBuffer(width, height); }
     inline void clearFrameBuffer(renderID frameBufferID) { m_backend.clearFrameBuffer(frameBufferID); }
     inline void bindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.bindFrameBuffer(frameBufferInstanceID); }
     inline void unbindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.unbindFrameBuffer(frameBufferInstanceID); }
     inline void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height) { m_backend.resizeFrameBuffer(frameBufferID, width, height); }
+    inline void resizeTexture(renderID textureID, unsigned int width, unsigned int height) { m_backend.resizeTexture(textureID, width, height); }
     inline void resizeCubemapFrameBuffer(renderID framebufferID, unsigned int size) { m_backend.resizeCubemapFrameBuffer(framebufferID, size); }
     inline void resizeCubemap(renderID targetID, unsigned int size) { m_frontend.updateCubemap(targetID, size); }
-    inline FramebufferTextureFormat getFramebufferFormat(renderID framebufferID) { return m_backend.getFramebufferFormat(framebufferID); }
+    inline void setCubemapFormat(renderID targetID, TextureFormat format) { m_frontend.updateCubemapFormat(targetID, format); }
+    inline void setTextureFormat(renderID targetID, TextureFormat format) { m_frontend.updateTextureFormat(targetID, format); }
 
     inline void debugMessage(std::string message) { m_frontend.addDebugMsg(message); }
     inline void submitDebugLine(vec3 start, vec3 end) { m_frontend.submitDebugLine(start, end, vec3(0, 1, 0)); }
@@ -133,7 +135,11 @@ private:
     LightManager m_lightManager;
 
     renderID m_sceneFrameBufferID;
+    renderID m_sceneDepthTextureID;
+    renderID m_sceneColorTextureID;
+
     renderID m_postProcessingBufferID;
+    renderID m_finalTextureID;
     renderID m_postProcessingQuadID;
     renderID m_cubemapFramebufferID;
 

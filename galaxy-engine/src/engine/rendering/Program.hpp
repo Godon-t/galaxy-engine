@@ -52,7 +52,7 @@ class ProgramPBR : public Program {
 public:
     ProgramPBR() = default;
     ProgramPBR(std::string path);
-    void updateMaterial(MaterialInstance& mat, std::array<Texture, TextureType::COUNT>& materialTextures);
+    void updateMaterial(MaterialInstance& material, std::array<Texture*, TextureType::COUNT>& materialTextures);
     void setLightSpaceMatrix(const mat4& lightSpaceMatrix);
     ProgramType type() const override { return ProgramType::PBR; }
 

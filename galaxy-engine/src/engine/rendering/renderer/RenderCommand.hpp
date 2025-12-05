@@ -22,6 +22,7 @@ enum RenderCommandType {
     initPostProcess,
     setUniform,
     setViewport,
+    updateTexture,
     updateCubemap,
     saveFrameBuffer,
     setFramebufferAsTextureUniformCommand,
@@ -135,9 +136,16 @@ struct SetViewportCommand {
     math::vec2 size;
 };
 
+struct UpdateTextureCommand {
+    renderID targetID;
+    TextureFormat format;
+};
+
 struct UpdateCubemapCommand {
     renderID targetID;
-    unsigned int resolution;
+    unsigned int resolution = 0;
+    bool updateFormat       = false;
+    TextureFormat format;
 };
 
 struct DebugMsgCommand {
@@ -181,6 +189,7 @@ struct RenderCommand {
         InitPostProcessCommand initPostProcess;
         SetUniformCommand setUniform;
         SetViewportCommand setViewport;
+        UpdateTextureCommand updateTexture;
         UpdateCubemapCommand updateCubemap;
         SetFramebufferAsTextureUniformCommand setFramebufferAsTextureUniform;
 

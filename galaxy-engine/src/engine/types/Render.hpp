@@ -31,20 +31,8 @@ enum class TextureFormat {
     RGB,
     RGBA,
     DEPTH,
+    RADIAL_DISTANCE,
     DEPTH24STENCIL8
-};
-
-enum class FramebufferTextureFormat {
-    None = 0,
-
-    RGBA8,
-    // RED_INTEGER,
-    DEPTH24STENCIL8,
-    DEPTH24RGBA8,
-    DEPTH
-
-    // Defaults
-    // Depth = DEPTH24STENCIL8
 };
 
 enum CullMode {

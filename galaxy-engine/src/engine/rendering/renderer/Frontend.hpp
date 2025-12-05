@@ -15,7 +15,7 @@ public:
     Frontend(std::vector<RenderCommand>* commandBuffer);
 
     void beginCanvaNoBuffer();
-    void beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1);
+    void beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, int cubemapIdx = -1);
     void endCanva();
     void processCanvas();
     void linkCanvaColorToTexture(renderID textureID);
@@ -52,6 +52,8 @@ public:
 
     void setViewport(vec2 position, vec2 dimmension);
     void updateCubemap(renderID targetID, unsigned int resolution);
+    void updateCubemapFormat(renderID targetID, TextureFormat format);
+    void updateTextureFormat(renderID targetID, TextureFormat format);
 
     void addDebugMsg(std::string message);
     void submitDebugLine(vec3 start, vec3 end, vec3 color);
@@ -89,6 +91,5 @@ private:
 
     mat4 m_projMat;
     mat4 m_viewMat;
-    FramebufferTextureFormat m_currentFramebufferFormat = FramebufferTextureFormat::None;
 };
 } // namespace Galaxy

@@ -206,6 +206,8 @@ Program::Program(const std::string& shaderPath)
         return;
     }
 
+    GLX_CORE_INFO("Loading shader: {0}", shaderPath);
+
     std::stringstream sstr;
     sstr << shaderStream.rdbuf();
     shaderCode = sstr.str();
@@ -305,7 +307,7 @@ ProgramPBR::ProgramPBR(std::string path)
     glUniform1i(glGetUniformLocation(programID, "useIrradianceMap"), GL_FALSE);
 }
 
-void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture, TextureType::COUNT>& materialTextures)
+void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture*, TextureType::COUNT>& materialTextures)
 {
     glUniform1f(metallicLocation, material.metallic);
     glUniform1f(roughnessLocation, material.roughness);
@@ -316,7 +318,7 @@ void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture, 
     auto activateTexture = [&material, &materialTextures](TextureType type, GLuint useLocation, GLuint mapLocation) {
         glUniform1i(useLocation, material.useImage[type]);
         if (material.useImage[type])
-            materialTextures[type].activate(mapLocation);
+            materialTextures[type]->activate(mapLocation);
     };
 
     activateTexture(ALBEDO, useAlbedoMapLocation, albedoTexLocation);

@@ -409,6 +409,31 @@ void Frontend::setViewport(vec2 position, vec2 dimmension)
     pushCommand(command);
 }
 
+void Frontend::resizeTexture(renderID textureID, unsigned int width, unsigned int height)
+{
+    UpdateTextureCommand update;
+    update.targetID = textureID;
+    update.width    = width;
+    update.height   = height;
+    RenderCommand command;
+    command.type          = RenderCommandType::updateTexture;
+    command.updateTexture = update;
+
+    pushCommand(command);
+}
+
+void Frontend::setTextureFormat(renderID textureID, TextureFormat format)
+{
+    UpdateTextureCommand update;
+    update.targetID  = textureID;
+    update.newFormat = format;
+    RenderCommand command;
+    command.type          = RenderCommandType::updateTexture;
+    command.updateTexture = update;
+
+    pushCommand(command);
+}
+
 void Frontend::updateCubemap(renderID targetID, unsigned int resolution)
 {
     UpdateCubemapCommand update;

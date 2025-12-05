@@ -73,6 +73,8 @@ public:
     inline void clearFrameBuffer(renderID frameBufferID) { m_backend.clearFrameBuffer(frameBufferID); }
     inline void bindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.bindFrameBuffer(frameBufferInstanceID); }
     inline void unbindFrameBuffer(renderID frameBufferInstanceID) { m_frontend.unbindFrameBuffer(frameBufferInstanceID); }
+    inline void resizeTexture(renderID textureID, unsigned int width, unsigned int height) { m_frontend.resizeTexture(textureID, width, height); }
+    inline void setTextureFormat(renderID textureID, TextureFormat newFormat) { m_frontend.setTextureFormat(textureID, newFormat); }
     inline void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height) { m_backend.resizeFrameBuffer(frameBufferID, width, height); }
     inline void resizeCubemapFrameBuffer(renderID framebufferID, unsigned int size) { m_backend.resizeCubemapFrameBuffer(framebufferID, size); }
     inline void resizeCubemap(renderID targetID, unsigned int size) { m_frontend.updateCubemap(targetID, size); }
@@ -106,7 +108,7 @@ public:
     }
 
     inline void submitPBR(renderID meshID, renderID materialID, const Transform& transform) { m_frontend.submitPBR(meshID, materialID, transform); }
-    void renderFromPoint(vec3 position, Node& root, renderID targetColorCubemapID, renderID targetDepthCubemapID);
+    void renderFromPoint(vec3 position, Node& root, renderID targetColorCubemapID, renderID targetNormalCubemapID, renderID targetDepthCubemapID);
     void applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter);
 
     inline int getDrawCallsCount() { return m_drawCount; }

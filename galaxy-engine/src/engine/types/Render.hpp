@@ -31,7 +31,8 @@ enum class TextureFormat {
     RGB,
     RGBA,
     DEPTH,
-    DEPTH24STENCIL8
+    DEPTH24STENCIL8,
+    NONE
 };
 
 enum class FramebufferTextureFormat {

@@ -152,7 +152,6 @@ void FrameBuffer::attachColorTexture(Texture& texture, int idx)
         glDeleteTextures(1, &m_attachedColors[idx]);
 
     texture.resize(m_width, m_height);
-    texture.setFormat(TextureFormat::RGBA);
 
     m_externalColors[idx] = true;
     m_attachedColors[idx] = texture.getId();
@@ -264,8 +263,8 @@ CubemapFrameBuffer::CubemapFrameBuffer()
 
 CubemapFrameBuffer::CubemapFrameBuffer(int size)
 {
-    m_size = size;
-    invalidate();
+    m_depthCubemap.setFormat(TextureFormat::DEPTH);
+    resize(size);
 }
 
 void CubemapFrameBuffer::attachDepthCubemap(Cubemap cubemap)
@@ -323,6 +322,8 @@ void CubemapFrameBuffer::destroy()
 void CubemapFrameBuffer::resize(unsigned int newSize)
 {
     m_size = newSize;
+    if (m_depthCubemap.cubemapID != 0)
+        m_depthCubemap.resize(newSize);
     invalidate();
 }
 

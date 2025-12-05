@@ -51,6 +51,8 @@ public:
     void setFramebufferAsTextureUniform(renderID framebufferID, std::string uniformName, int textureIdx);
 
     void setViewport(vec2 position, vec2 dimmension);
+    void resizeTexture(renderID textureID, unsigned int width, unsigned int height);
+    void setTextureFormat(renderID textureID, TextureFormat format);
     void updateCubemap(renderID targetID, unsigned int resolution);
 
     void addDebugMsg(std::string message);

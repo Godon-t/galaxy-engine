@@ -23,7 +23,7 @@ void main()
 
 #include octahedral.glsl
 
-out vec4 color;
+layout(location = 0) out vec4 color;
 
 const int HIT     = 0;
 const int MISS    = 1;
@@ -36,12 +36,13 @@ uniform mat4 inverseView;
 uniform vec3 cameraPos;
 
 uniform sampler2D sceneBuffer;
+uniform sampler2D normalBuffer;
 uniform sampler2D depthBuffer;
 uniform mat4 view;
 uniform float zNear = 0.1;
-uniform float zFar  = 9999.0;
+uniform float zFar  = 999.0;
 
-uniform ivec3 probeFieldGridDim    = ivec3(1, 1, 1);
+uniform ivec3 probeFieldGridDim    = ivec3(2, 2, 2);
 uniform float probeFieldCellSize   = 100.f;
 uniform int probeTextureSingleSize = 512;
 uniform vec3 probeFieldOrigin      = vec3(0.f);
@@ -56,6 +57,18 @@ float linearDepth(float depth)
     return (2.0 * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
 }
 
+vec3 reconstructWorldPosFromProbe(vec2 uv, sampler2D depthTex, vec3 probePos,
+    float zFar, vec2 scale, vec2 offset)
+{
+    float storedDepth = texture(depthTex, uv * scale + offset).r;
+
+    float distance = storedDepth * zFar;
+
+    vec3 direction = octahedral_unmapping(uv);
+
+    return probePos + direction * distance;
+}
+
 float traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float t, vec2 scale, vec2 probeTextureUpperLeft)
 {
     // centrer les positions par rapport à la probe
@@ -67,10 +80,7 @@ float traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float
     int numSegments = computeOctahedralIntersections(centeredP0, centeredP1, ts);
     numSegments     = numSegments - 1;
 
-
-    vec2 uvTest = octahedral_mapping(safeNormalize(centeredP1, vec3(1, 0, 0)));
-    float probeDepthTest = linearDepth(texture(depthTex, uvTest * scale + probeTextureUpperLeft).r);
-    return probeDepthTest;
+    float bias = 0.05;
 
     // parcourir chaque segment entre les changements de triangle
     for (int segIdx = 0; segIdx < numSegments; segIdx += 2) {
@@ -105,13 +115,13 @@ float traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float
             // interpoler en 2D
             vec2 uv          = mix(uv0, uv1, s);
             float depthRay   = mix(depth0, depth1, s);
-            float depthProbe = linearDepth(texture(depthTex, uv).r);
+            float depthProbe = texture(depthTex, uv).r * zFar;
 
             // logique HIT / MISS / UNKNOWN
-            if (depthRay > depthProbe + 0.01) {
+            if (depthRay > depthProbe + bias) {
                 return 0.0;
                 // return UNKNOWN;
-            } else if (depthRay >= depthProbe - 1e-3) {
+            } else if (depthRay >= depthProbe - bias) {
                 return 1.0;
                 // return HIT;
             }

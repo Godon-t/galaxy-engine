@@ -78,13 +78,17 @@ private:
 
     renderID m_fullQuad;
     renderID m_colorRenderingCubemap;
+    renderID m_normalRenderingCubemap;
     renderID m_depthRenderingCubemap;
+
     renderID m_probesFrameBuffer;
+    renderID m_probeRadianceTexture;
+    renderID m_probeNormalTexture;
+    renderID m_probeDepthTexture;
+
     unsigned int m_probeResolution;
     unsigned int m_textureWidth;
     unsigned int m_textureHeight;
-    renderID m_probeRadianceTexture;
-    renderID m_probeDepthTexture;
     unsigned int m_gridDimX;
     unsigned int m_gridDimY;
     unsigned int m_gridDimZ;

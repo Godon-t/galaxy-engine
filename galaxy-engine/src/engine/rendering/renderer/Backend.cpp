@@ -745,6 +745,16 @@ void Backend::processCommand(SetViewportCommand& command)
     glViewport((int)command.position.x, (int)command.position.y, (int)command.size.x, (int)command.size.y);
 }
 
+void Backend::processCommand(UpdateTextureCommand& command)
+{
+    if (command.newFormat == TextureFormat::NONE)
+        m_textureInstances.get(command.targetID)->resize(command.width, command.height);
+    else
+        m_textureInstances.get(command.targetID)->setFormat(command.newFormat);
+
+    checkOpenGLErrors("Update texture");
+}
+
 void Backend::processCommand(UpdateCubemapCommand& command)
 {
     m_cubemapInstances.get(command.targetID)->resize(command.resolution);
@@ -840,6 +850,9 @@ void Backend::processCommand(RenderCommand& command)
         break;
     case RenderCommandType::updateCubemap:
         processCommand(command.updateCubemap);
+        break;
+    case RenderCommandType::updateTexture:
+        processCommand(command.updateTexture);
         break;
     case RenderCommandType::setFramebufferAsTextureUniformCommand:
         processCommand(command.setFramebufferAsTextureUniform);

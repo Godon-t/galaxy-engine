@@ -22,7 +22,7 @@ void main()
 in vec4 fragPosLightSpace;
 
 uniform float zNear = 0.1;
-uniform float zFar  = 9999.0;
+uniform float zFar  = 999.0;
 float linearDepth(float depth)
 {
     float z = depth * 2.0 - 1.0;

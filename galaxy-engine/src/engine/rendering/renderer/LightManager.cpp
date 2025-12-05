@@ -103,7 +103,7 @@ void LightManager::debugDraw()
 
     ri.changeUsedProgram(POST_PROCESSING);
     ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeIrradianceField", 0);
-    ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeDepthField", 1);
+    ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeDepthField", -1);
     // ri.bindTexture(m_probeRadianceTexture, "probeIrradianceField");
     // ri.bindTexture(m_probeDepthTexture, "probeDepthField");
 

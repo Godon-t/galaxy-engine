@@ -67,6 +67,11 @@ float traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float
     int numSegments = computeOctahedralIntersections(centeredP0, centeredP1, ts);
     numSegments     = numSegments - 1;
 
+
+    vec2 uvTest = octahedral_mapping(safeNormalize(centeredP1, vec3(1, 0, 0)));
+    float probeDepthTest = linearDepth(texture(depthTex, uvTest * scale + probeTextureUpperLeft).r);
+    return probeDepthTest;
+
     // parcourir chaque segment entre les changements de triangle
     for (int segIdx = 0; segIdx < numSegments; segIdx += 2) {
         float t0 = ts[segIdx];

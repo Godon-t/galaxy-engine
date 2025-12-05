@@ -184,7 +184,7 @@ void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetColorCu
 
     m_frontend.beginCanvaNoBuffer();
     m_frontend.attachCubemapToFramebuffer(targetColorCubemapID, m_cubemapFramebufferID, 0);
-    m_frontend.attachCubemapToFramebuffer(targetDepthCubemapID, m_cubemapFramebufferID, 1);
+    m_frontend.attachCubemapToFramebuffer(targetDepthCubemapID, m_cubemapFramebufferID, -1);
     m_frontend.endCanva();
 
     mat4 projection = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);

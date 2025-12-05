@@ -26,7 +26,6 @@ uniform vec3 debugProbePos;
 
 in vec2 texCoords;
 layout(location = 0) out vec4 color;
-layout(location = 1) out vec4 radialDepth;
 
 uniform float zNear = 0.1;
 uniform float zFar  = 9999.0;
@@ -36,15 +35,20 @@ uniform bool showTriangleIndexOverlay = false;
 
 /////////////////////////////////////////////////////////////////////
 
+float linearDepth(float depth)
+{
+    float z = depth * 2.0 - 1.0;
+    return (2.0 * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
+}
+
+
 void main()
 {
     vec3 dir      = octahedral_unmapping(texCoords);
     vec3 envColor = texture(radianceCubemap, dir).rgb;
     color         = vec4(envColor, 1.0);
 
-    float radial = texture(depthCubemap, dir).r;
-    gl_FragDepth = radial;
-    radialDepth  = vec4(radial, 0, 0, 0);
+    gl_FragDepth = linearDepth(texture(depthCubemap, dir).r)/zFar;
 
     //////////////////////////////////////////////////////////////////////:
     vec2 uv       = texCoords;

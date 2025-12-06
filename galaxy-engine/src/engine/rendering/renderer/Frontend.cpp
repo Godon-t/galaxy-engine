@@ -370,6 +370,21 @@ void Frontend::setUniform(std::string uniformName, vec3 value)
     pushCommand(command);
 }
 
+void Frontend::setUniform(std::string uniformName, ivec3 value)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName  = copyString(uniformName);
+    uniformCommand.type         = IVEC3;
+    uniformCommand.valueIVec3.x = value.x;
+    uniformCommand.valueIVec3.y = value.y;
+    uniformCommand.valueIVec3.z = value.z;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
 void Frontend::setUniform(std::string uniformName, vec2 value)
 {
     SetUniformCommand uniformCommand;

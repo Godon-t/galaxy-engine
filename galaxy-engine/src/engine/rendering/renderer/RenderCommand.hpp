@@ -104,6 +104,7 @@ enum SetValueTypes {
     INT,
     VEC2,
     VEC3,
+    IVEC3,
     MAT4
 };
 struct SetFramebufferAsTextureUniformCommand {
@@ -121,6 +122,9 @@ struct SetUniformCommand {
         struct {
             float x, y, z;
         } valueVec3;
+        struct {
+            int x, y, z;
+        } valueIVec3;
         struct {
             float x, y;
         } valueVec2;

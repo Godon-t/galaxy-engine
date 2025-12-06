@@ -221,25 +221,29 @@ void LightManager::updateProbeField()
     ri.endCanva();
 }
 
-void LightManager::resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween)
+void LightManager::resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween, unsigned int probeTextureResolution, vec3 probeFieldCenter)
 {
-    m_gridDimX      = width;
-    m_gridDimY      = height;
-    m_gridDimZ      = depth;
-    m_probeDistance = spaceBetween;
+    m_gridDimX        = width;
+    m_gridDimY        = height;
+    m_gridDimZ        = depth;
+    m_probeDistance   = spaceBetween;
+    m_probeResolution = probeTextureResolution;
+    m_probeFieldStart = probeFieldCenter - vec3(m_gridDimX, m_gridDimY, m_gridDimZ) * spaceBetween / 2.0;
 
     m_probeGrid.resize(width * height * depth);
 
     m_textureWidth  = width * height * m_probeResolution;
     m_textureHeight = depth * m_probeResolution;
 
-    Renderer::getInstance().resizeFrameBuffer(m_probesFrameBuffer, m_textureWidth, m_textureHeight);
+    auto& ri = Renderer::getInstance();
+    ri.resizeFrameBuffer(m_probesFrameBuffer, m_textureWidth, m_textureHeight);
 
     for (int z = 0; z < depth; z++) {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 vec3 position(x, y, z);
                 position *= m_probeDistance;
+                position += m_probeFieldStart;
 
                 unsigned int probeIdx            = getCellCoord(x, y, z);
                 m_probeGrid[probeIdx].probeCoord = probeIdx;
@@ -247,6 +251,14 @@ void LightManager::resizeProbeFieldGrid(unsigned int width, unsigned int height,
             }
         }
     }
+
+    ri.beginCanvaNoBuffer();
+    ri.changeUsedProgram(ProgramType::POST_PROCESSING);
+    ri.setUniform("probeFieldGridDim", ivec3(m_gridDimX, m_gridDimY, m_gridDimZ));
+    ri.setUniform("probeFieldCellSize", m_probeDistance);
+    ri.setUniform("probeTextureSingleSize", (int)m_probeResolution);
+    ri.setUniform("probeFieldOrigin", m_probeFieldStart);
+    ri.endCanva();
 }
 
 unsigned int LightManager::getCellCoord(unsigned int x, unsigned int y, unsigned int z)
@@ -256,7 +268,7 @@ unsigned int LightManager::getCellCoord(unsigned int x, unsigned int y, unsigned
 
 vec2 LightManager::getProbeTexCoord(unsigned int probeGridIdx)
 {
-    unsigned int probesByWidth = m_textureWidth / m_probeResolution;
+    unsigned int probesByWidth = m_gridDimX * m_gridDimY;
     unsigned int xPosition     = (probeGridIdx % probesByWidth) * m_probeResolution;
     unsigned int yPosition     = (probeGridIdx / probesByWidth) * m_probeResolution;
     vec2 texturePos(xPosition, yPosition);

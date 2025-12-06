@@ -53,7 +53,7 @@ public:
     renderID getProbesRadianceTexture();
 
     void updateProbeField();
-    void resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween = 10.f);
+    void resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween = 10.f, unsigned int probeResolution = 512, vec3 probeFieldCenter = vec3(0));
     void debugDraw();
 
 private:
@@ -93,6 +93,7 @@ private:
     unsigned int m_gridDimY;
     unsigned int m_gridDimZ;
     float m_probeDistance;
+    vec3 m_probeFieldStart;
 
     std::vector<ProbeData> m_probeGrid;
 

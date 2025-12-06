@@ -69,18 +69,18 @@ vec3 reconstructWorldPosFromProbe(vec2 uv, sampler2D depthTex, vec3 probePos,
     return probePos + direction * distance;
 }
 
-int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float t, vec2 scale, vec2 probeTextureUpperLeft, out vec2 texelCoords)
+int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, in out float t, vec2 scale, vec2 probeTextureUpperLeft, out vec2 texelCoords)
 {
     // centrer les positions par rapport à la probe
-    vec3 centeredP0 = p0 - probePos;
-    vec3 centeredP1 = p1 - probePos;
+    vec3 centeredP0 = p0 - probePos - probeFieldOrigin;
+    vec3 centeredP1 = p1 - probePos - probeFieldOrigin;
 
     // calculer les t ou le rayon change de triangle octahédral
     float ts[8];
     int numSegments = computeOctahedralIntersections(centeredP0, centeredP1, ts);
     numSegments     = numSegments - 1;
 
-    float bias = 0.5;
+    float bias = 0.05;
 
     // parcourir chaque segment entre les changements de triangle
     for (int segIdx = 0; segIdx < numSegments; segIdx += 2) {
@@ -108,9 +108,10 @@ int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float t
         uv1 = (uv1 * scale) + probeTextureUpperLeft;
 
         // ray marching en 2D le long de ce segment
-        int steps = 64; // 32 car c'est un compromis entre précision et perf
+        int steps = 32; // 32 car c'est un compromis entre précision et perf
         for (int i = 0; i <= steps; ++i) {
             float s = float(i) / float(steps);
+            t       = mix(t0, t1, s);
 
             // interpoler en 2D
             texelCoords      = mix(uv0, uv1, s);
@@ -212,7 +213,7 @@ vec3 getColorFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeIrradianc
         visitedProbes[actualProbeIdx] = probeGridIdx;
 
         vec4 probeTexRect = getProbeTexRect(probeGridIdx, probeIrradianceField, probeTexSingleSize);
-        int result        = traceRayInProbe(rayStart, rayEnd, probePosition * probeFieldCellSize, probeDepthField, t, probeTexRect.zw, probeTexRect.xy, finalTexelCoords);
+        int result        = traceRayInProbe(p3d, rayEnd, probePosition * probeFieldCellSize, probeDepthField, t, probeTexRect.zw, probeTexRect.xy, finalTexelCoords);
 
         if (result == HIT) {
             return texture(probeIrradianceField, finalTexelCoords).rgb;
@@ -221,7 +222,7 @@ vec3 getColorFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeIrradianc
         ite += 1;
     }
 
-    return vec3(0, 0, 1);
+    return vec3(t);
 }
 
 vec3 backgroundBlur(sampler2D colorTexture, sampler2D depthTexture, vec2 uv)

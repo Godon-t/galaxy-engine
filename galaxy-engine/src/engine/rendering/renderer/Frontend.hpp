@@ -46,6 +46,7 @@ public:
     void setUniform(std::string uniformName, int value);
     void setUniform(std::string uniformName, mat4 value);
     void setUniform(std::string uniformName, vec3 value);
+    void setUniform(std::string uniformName, ivec3 value);
     void setUniform(std::string uniformName, vec2 value);
 
     void setFramebufferAsTextureUniform(renderID framebufferID, std::string uniformName, int textureIdx);

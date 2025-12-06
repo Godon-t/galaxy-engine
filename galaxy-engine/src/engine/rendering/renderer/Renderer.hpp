@@ -93,6 +93,7 @@ public:
     inline void setUniform(std::string uniformName, float value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, mat4 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, vec3 value) { m_frontend.setUniform(uniformName, value); }
+    inline void setUniform(std::string uniformName, ivec3 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, vec2 value) { m_frontend.setUniform(uniformName, value); }
 
     inline void setCullMode(renderID visualInstanceID, CullMode mode) { m_backend.setCullMode(visualInstanceID, mode); }

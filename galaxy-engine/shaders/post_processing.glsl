@@ -69,7 +69,7 @@ vec3 reconstructWorldPosFromProbe(vec2 uv, sampler2D depthTex, vec3 probePos,
     return probePos + direction * distance;
 }
 
-float traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float t, vec2 scale, vec2 probeTextureUpperLeft)
+int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float t, vec2 scale, vec2 probeTextureUpperLeft, out vec2 texelCoords)
 {
     // centrer les positions par rapport à la probe
     vec3 centeredP0 = p0 - probePos;
@@ -80,7 +80,7 @@ float traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float
     int numSegments = computeOctahedralIntersections(centeredP0, centeredP1, ts);
     numSegments     = numSegments - 1;
 
-    float bias = 0.05;
+    float bias = 0.5;
 
     // parcourir chaque segment entre les changements de triangle
     for (int segIdx = 0; segIdx < numSegments; segIdx += 2) {
@@ -113,23 +113,20 @@ float traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float
             float s = float(i) / float(steps);
 
             // interpoler en 2D
-            vec2 uv          = mix(uv0, uv1, s);
+            texelCoords      = mix(uv0, uv1, s);
             float depthRay   = mix(depth0, depth1, s);
-            float depthProbe = texture(depthTex, uv).r * zFar;
+            float depthProbe = texture(depthTex, texelCoords).r * zFar;
 
             // logique HIT / MISS / UNKNOWN
             if (depthRay > depthProbe + bias) {
-                return 0.0;
-                // return UNKNOWN;
+                return UNKNOWN;
             } else if (depthRay >= depthProbe - bias) {
-                return 1.0;
-                // return HIT;
+                return HIT;
             }
         }
     }
 
-    return 0.0;
-    // return MISS;
+    return MISS;
 }
 
 int getCellCoord(int x, int y, int z)
@@ -199,45 +196,30 @@ vec3 getColorFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeIrradianc
     int visitedProbes[8];
     int actualProbeIdx = 0;
 
-    vec3 probePosition = getClosestProbePosition(rayStart);
-    int probeGridIdx   = getProbeIdx(probePosition);
+    vec2 finalTexelCoords = vec2(0);
 
-    vec4 probeTexRect = getProbeTexRect(probeGridIdx, probeIrradianceField, probeTexSingleSize);
-    float result      = traceRayInProbe(rayStart, rayEnd, probePosition * probeFieldCellSize, probeDepthField, t, probeTexRect.zw, probeTexRect.xy);
-    return vec3(result);
+    while (t <= 1.0 && ite < 10) {
+        vec3 p3d = mix(rayStart, rayEnd, t);
 
-    // if (result == HIT) {
-    //     return vec3(0, 1, 0);
-    //     // return texture(probeIrradianceField, probeCoords);
-    // } else if (result == MISS)
-    //     return vec3(1, 0, 0);
-    // else
-    //     return vec3(0, 0, 1);
+        vec3 probePosition = getClosestProbePosition(p3d);
+        int probeGridIdx   = getProbeIdx(probePosition);
 
-    // while (t <= 1.0 && ite < 10) {
-    //     vec3 p3d = mix(rayStart, rayEnd, t);
+        for (int i = 0; i < actualProbeIdx; i++) {
+            if (visitedProbes[i] == probeGridIdx) {
+                return vec3(1, 0, 0);
+            }
+        }
+        visitedProbes[actualProbeIdx] = probeGridIdx;
 
-    //     vec3 probePosition = getClosestProbePosition(p3d);
-    //     int probeGridIdx   = getProbeIdx(probePosition);
+        vec4 probeTexRect = getProbeTexRect(probeGridIdx, probeIrradianceField, probeTexSingleSize);
+        int result        = traceRayInProbe(rayStart, rayEnd, probePosition * probeFieldCellSize, probeDepthField, t, probeTexRect.zw, probeTexRect.xy, finalTexelCoords);
 
-    //     for (int i = 0; i < actualProbeIdx; i++) {
-    //         if (visitedProbes[i] == probeGridIdx) {
-    //             return vec3(1, 0, 0);
-    //         }
-    //     }
-    //     visitedProbes[actualProbeIdx] = probeGridIdx;
+        if (result == HIT) {
+            return texture(probeIrradianceField, finalTexelCoords).rgb;
+        }
 
-    //     vec2 probeCoords = getProbeTexCoord(probeGridIdx, probeIrradianceField, probeTexSingleSize);
-
-    //     int result = traceRayInProbe(p3d, rayEnd, probePosition, probeDepthField, t, probeCoords, vec2(4, 1));
-
-    //     if (result == HIT) {
-    //         return vec3(0, 1, 0);
-    //         // return texture(probeIrradianceField, probeCoords);
-    //     }
-
-    //     ite += 1;
-    // }
+        ite += 1;
+    }
 
     return vec3(0, 0, 1);
 }

@@ -95,11 +95,11 @@ class ProgramPostProc : public Program {
 public:
     ProgramPostProc() = default;
     ProgramPostProc(std::string path);
-    ProgramType type() const override { return ProgramType::POST_PROCESSING; }
+    virtual ProgramType type() const override { return ProgramType::POST_PROCESSING; }
 
     void updateInverseViewMatrix(const mat4& invView);
     void updateInverseProjectionMatrix(const mat4& invProjection);
-    void setTextures(unsigned int colorTexture, unsigned int depthTexture);
+    void setTextures(unsigned int colorTexture, unsigned int normalTexture ,unsigned int depthTexture);
 
 private:
     unsigned int m_inverseProjectionLocation;
@@ -107,6 +107,14 @@ private:
     unsigned int m_cameraPositionLocation;
     unsigned int m_depthLocation;
     unsigned int m_colorLocation;
+    unsigned int m_normalLocation;
+};
+
+class ProgramPostProcSSGI : public ProgramPostProc {
+public:
+    ProgramPostProcSSGI() = default;
+    ProgramPostProcSSGI(std::string path);
+    ProgramType type() const override { return ProgramType::POST_PROCESSING_SSGI; }
 };
 
 class ProgramShadow : public Program {

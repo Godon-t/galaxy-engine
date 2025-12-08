@@ -36,6 +36,7 @@ uniform mat4 inverseView;
 uniform vec3 cameraPos;
 
 uniform sampler2D sceneBuffer;
+uniform sampler2D normalBuffer;
 uniform sampler2D depthBuffer;
 uniform mat4 view;
 uniform float zNear = 0.1;

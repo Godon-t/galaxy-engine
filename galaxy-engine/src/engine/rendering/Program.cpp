@@ -357,6 +357,8 @@ ProgramPostProc::ProgramPostProc(std::string path)
 {
     m_colorLocation = glGetUniformLocation(getProgramID(), "sceneBuffer");
     m_depthLocation = glGetUniformLocation(getProgramID(), "depthBuffer");
+    m_normalLocation = glGetUniformLocation(getProgramID(), "normalBuffer");
+    
 
     m_inverseProjectionLocation = glGetUniformLocation(getProgramID(), "inverseProjection");
     m_inverseViewLocation       = glGetUniformLocation(getProgramID(), "inverseView");
@@ -372,7 +374,7 @@ void ProgramPostProc::updateInverseProjectionMatrix(const mat4& invProjection)
 {
     glUniformMatrix4fv(m_inverseProjectionLocation, 1, GL_FALSE, &invProjection[0][0]);
 }
-void ProgramPostProc::setTextures(unsigned int colorTexture, unsigned int depthTexture)
+void ProgramPostProc::setTextures(unsigned int colorTexture, unsigned int normalTexture, unsigned int depthTexture)
 {
     int actInt = Texture::getAvailableActivationInt();
     glActiveTexture(GL_TEXTURE0 + actInt);
@@ -383,7 +385,17 @@ void ProgramPostProc::setTextures(unsigned int colorTexture, unsigned int depthT
     glActiveTexture(GL_TEXTURE0 + actInt);
     glBindTexture(GL_TEXTURE_2D, depthTexture);
     glUniform1i(m_depthLocation, actInt);
+
+    actInt = Texture::getAvailableActivationInt();
+    glActiveTexture(GL_TEXTURE0 + actInt);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
+    glUniform1i(m_normalLocation, actInt);
 }
+
+
+ProgramPostProcSSGI::ProgramPostProcSSGI(std::string path)
+    : ProgramPostProc(path)
+{}
 
 ProgramShadow::ProgramShadow(std::string path)
     : Program(path)

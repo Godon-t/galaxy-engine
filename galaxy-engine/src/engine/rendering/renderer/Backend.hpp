@@ -167,6 +167,7 @@ private:
     ProgramTexture m_textureProgram;
     ProgramUnicolor m_unicolorProgram;
     ProgramPostProc m_postProcessingProgram;
+    ProgramPostProcSSGI m_postProcessingSSGIProgram;
     ProgramShadow m_shadowProgram;
     ProgramComputeOctahedral m_computeOctahedralProgram;
     Program* m_activeProgram;

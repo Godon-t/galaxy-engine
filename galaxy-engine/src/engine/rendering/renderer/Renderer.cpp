@@ -21,7 +21,7 @@ Renderer::Renderer()
     m_backend.initDebugCallback();
 
     m_cubemapFramebufferID   = m_backend.instantiateCubemapFrameBuffer(1024);
-    m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8);
+    m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8, 2);
     m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
     m_postProcessingQuadID   = m_backend.generateQuad(vec2(2, 2), [] {});
 
@@ -94,7 +94,9 @@ void Renderer::shadowPass()
 void Renderer::applyPostProcessing()
 {
     m_frontend.beginCanva(m_currentView, m_currentProj, m_postProcessingBufferID, FramebufferTextureFormat::RGBA8);
-    m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING);
+    // m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING);
+    m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING_SSGI);
+
     m_frontend.initPostProcessing(m_sceneFrameBufferID);
     m_frontend.submit(m_postProcessingQuadID);
     m_frontend.changeUsedProgram(ProgramType::PBR);

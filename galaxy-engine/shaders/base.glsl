@@ -69,6 +69,7 @@ in vec3 v_camPos;
 in vec4 v_fragPosLightSpace;
 
 layout(location = 0) out vec4 color;
+layout(location = 1) out vec4 normalOut;
 
 const float PI = 3.14159265359;
 /*--------------------------------------PBR--------------------------------------*/
@@ -241,5 +242,6 @@ void main()
 
     color = vec4(colorPBR, transparency);
 
-;
+    normalOut = vec4(normal.rgb, 1.0);
+
 }

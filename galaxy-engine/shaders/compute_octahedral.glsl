@@ -38,6 +38,8 @@ uniform bool showTriangleIndexOverlay = false;
 
 /////////////////////////////////////////////////////////////////////
 
+#include utils.glsl
+
 float linearDepth(float depth)
 {
     float z = depth * 2.0 - 1.0;
@@ -46,7 +48,8 @@ float linearDepth(float depth)
 
 void main()
 {
-    vec3 dir      = octahedral_unmapping(texCoords);
+    vec3 dir = octahedral_unmapping(texCoords);
+    // vec3 envColor = computeIrradiance(dir, radianceCubemap);
     vec3 envColor = texture(radianceCubemap, dir).rgb;
     color         = vec4(envColor, 1.0);
 

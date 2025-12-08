@@ -125,6 +125,15 @@ void LightManager::debugDraw()
     // ri.submitDebugLine(debugStart, debugEnd);
 }
 
+std::vector<vec3> LightManager::getProbePositions()
+{
+    std::vector<vec3> res(m_probeGrid.size());
+    for (int i = 0; i < res.size(); i++) {
+        res[i] = m_probeGrid[i].position;
+    }
+    return res;
+}
+
 void LightManager::shadowPass(Node* sceneRoot)
 {
     auto& ri = Renderer::getInstance();
@@ -204,10 +213,6 @@ void LightManager::updateProbeField()
         ri.useCubemap(m_normalRenderingCubemap, "normalCubemap");
         ri.useCubemap(m_depthRenderingCubemap, "depthCubemap");
 
-        ri.setUniform("debugStart", debugStart);
-        ri.setUniform("debugEnd", debugEnd);
-        ri.setUniform("debugProbePos", probe.position);
-
         vec2 viewportCoords = getProbeTexCoord(probe.probeCoord);
         ri.setViewport(viewportCoords, vec2(m_probeResolution));
         ri.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
@@ -221,6 +226,14 @@ void LightManager::updateProbeField()
     ri.endCanva();
 }
 
+void LightManager::updateBias(float newValue)
+{
+    Renderer::getInstance().beginCanvaNoBuffer();
+    Renderer::getInstance().changeUsedProgram(ProgramType::POST_PROCESSING);
+    Renderer::getInstance().setUniform("traceBias", newValue);
+    Renderer::getInstance().endCanva();
+}
+
 void LightManager::resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween, unsigned int probeTextureResolution, vec3 probeFieldCenter)
 {
     m_gridDimX        = width;
@@ -228,7 +241,7 @@ void LightManager::resizeProbeFieldGrid(unsigned int width, unsigned int height,
     m_gridDimZ        = depth;
     m_probeDistance   = spaceBetween;
     m_probeResolution = probeTextureResolution;
-    m_probeFieldStart = probeFieldCenter - vec3(m_gridDimX, m_gridDimY, m_gridDimZ) * spaceBetween / 2.0;
+    m_probeFieldStart = probeFieldCenter - vec3(m_gridDimX - 1, m_gridDimY - 1, m_gridDimZ - 1) * spaceBetween / 2.0;
 
     m_probeGrid.resize(width * height * depth);
 

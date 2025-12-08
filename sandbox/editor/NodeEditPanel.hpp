@@ -148,7 +148,8 @@ public:
         visit(static_cast<Node3D&>(node));
         static int dimmensions[3] = { 2, 2, 2 };
         static float spaceBetween = 50.f;
-        static int res            = 512;
+        static int res            = 128;
+        static float bias         = 0.05f;
 
         ImGui::SeparatorText("Global Illumination");
         if (ImGui::Button("Update probes")) {
@@ -159,6 +160,8 @@ public:
         ImGui::InputInt3("Probe grid dimmensions", dimmensions);
         ImGui::InputFloat("Space between probes", &spaceBetween);
         ImGui::InputInt("Probe texture resolution", &res);
+        if (ImGui::InputFloat("Probe bias", &bias))
+            Renderer::getInstance().getLightManager().updateBias(bias);
     }
 
     void transformEdit(Transform& transform)

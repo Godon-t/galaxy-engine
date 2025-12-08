@@ -39,8 +39,9 @@ uniform sampler2D sceneBuffer;
 uniform sampler2D normalBuffer;
 uniform sampler2D depthBuffer;
 uniform mat4 view;
-uniform float zNear = 0.1;
-uniform float zFar  = 999.0;
+uniform float zNear     = 0.1;
+uniform float zFar      = 999.0;
+uniform float traceBias = 0.05;
 
 uniform ivec3 probeFieldGridDim    = ivec3(2, 2, 2);
 uniform float probeFieldCellSize   = 100.f;
@@ -72,15 +73,13 @@ vec3 reconstructWorldPosFromProbe(vec2 uv, sampler2D depthTex, vec3 probePos,
 int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, in out float t, vec2 scale, vec2 probeTextureUpperLeft, out vec2 texelCoords)
 {
     // centrer les positions par rapport à la probe
-    vec3 centeredP0 = p0 - probePos - probeFieldOrigin;
-    vec3 centeredP1 = p1 - probePos - probeFieldOrigin;
+    vec3 centeredP0 = p0 - probePos;
+    vec3 centeredP1 = p1 - probePos;
 
     // calculer les t ou le rayon change de triangle octahédral
     float ts[8];
     int numSegments = computeOctahedralIntersections(centeredP0, centeredP1, ts);
     numSegments     = numSegments - 1;
-
-    float bias = 0.05;
 
     // parcourir chaque segment entre les changements de triangle
     for (int segIdx = 0; segIdx < numSegments; segIdx += 2) {
@@ -108,7 +107,7 @@ int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, in out 
         uv1 = (uv1 * scale) + probeTextureUpperLeft;
 
         // ray marching en 2D le long de ce segment
-        int steps = 32; // 32 car c'est un compromis entre précision et perf
+        int steps = 64; // 32 car c'est un compromis entre précision et perf
         for (int i = 0; i <= steps; ++i) {
             float s = float(i) / float(steps);
             t       = mix(t0, t1, s);
@@ -118,10 +117,13 @@ int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, in out 
             float depthRay   = mix(depth0, depth1, s);
             float depthProbe = texture(depthTex, texelCoords).r * zFar;
 
+            float adaptiveBias = traceBias * (1.0 + depthRay * 0.001);
+            float diff         = depthRay - depthProbe;
+
             // logique HIT / MISS / UNKNOWN
-            if (depthRay > depthProbe + bias) {
+            if (diff > adaptiveBias) {
                 return UNKNOWN;
-            } else if (depthRay >= depthProbe - bias) {
+            } else if (diff >= -adaptiveBias) {
                 return HIT;
             }
         }
@@ -135,9 +137,22 @@ int getCellCoord(int x, int y, int z)
     return z * probeFieldGridDim.x * probeFieldGridDim.y + y * probeFieldGridDim.x + x;
 }
 
+vec3 fromProbeIdxToCoords(int idx)
+{
+    int z = idx / (probeFieldGridDim.x * probeFieldGridDim.y);
+
+    int remainder = idx % (probeFieldGridDim.x * probeFieldGridDim.y);
+
+    int y = remainder / probeFieldGridDim.x;
+
+    int x = remainder % probeFieldGridDim.x;
+
+    return vec3(x, y, z);
+}
+
 vec3 getClosestProbePosition(vec3 target)
 {
-    return round((target - probeFieldOrigin) / probeFieldCellSize);
+    return floor((target - probeFieldOrigin) / probeFieldCellSize);
 }
 
 int getProbeIdx(vec3 preciseProbePosition)
@@ -188,41 +203,107 @@ vec3 indexToColor(int probeIdx)
         return vec3(0.5);
 }
 
+// To cover all probes in one cell
+int getNextProbeIdx(int probeIdx, int iterator)
+{
+    int nextIdx = iterator * 3 % 8;
+
+    if (nextIdx == 0)
+        return probeIdx;
+    else if (nextIdx == 1)
+        return probeIdx + 1;
+    else if (nextIdx == 2)
+        return probeIdx + probeFieldGridDim.x;
+    else if (nextIdx == 3)
+        return probeIdx + probeFieldGridDim.x + 1;
+    else if (nextIdx == 4)
+        return probeIdx + probeFieldGridDim.x * probeFieldGridDim.y;
+    else if (nextIdx == 5)
+        return probeIdx + probeFieldGridDim.x * probeFieldGridDim.y + 1;
+    else if (nextIdx == 6)
+        return probeIdx + probeFieldGridDim.x * probeFieldGridDim.y + probeFieldGridDim.x;
+    else if (nextIdx == 7)
+        return probeIdx + probeFieldGridDim.x * probeFieldGridDim.y + probeFieldGridDim.x + 1;
+}
+
 vec3 getColorFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeIrradianceField, sampler2D probeDepthField, int probeTexSingleSize)
 {
-    float t        = 0.0;
-    float stepSize = 0.01;
-
-    int ite = 0;
-    int visitedProbes[8];
-    int actualProbeIdx = 0;
-
+    float t               = 0.0;
+    int ite               = 0;
     vec2 finalTexelCoords = vec2(0);
 
-    while (t <= 1.0 && ite < 10) {
+    int baseCellIdx; // Index de la probe au coin (0,0,0) de la cellule
+    bool changeCell = true;
+
+    int loopLimit   = 32;
+    int currentLoop = 0;
+
+    while (t <= 1.0 && currentLoop < loopLimit) {
+        currentLoop += 1;
+
+        if (changeCell) {
+            changeCell = false;
+
+            // Trouver la cellule contenant le point actuel
+            vec3 currentPos  = mix(rayStart, rayEnd, t);
+            vec3 cellGridPos = getClosestProbePosition(currentPos);
+
+            // Vérifier qu'on est dans la grille
+            if (any(lessThan(cellGridPos, vec3(0))) || any(greaterThanEqual(cellGridPos, vec3(probeFieldGridDim)))) {
+                return vec3(0, 0, 1); // Hors grille
+            }
+
+            baseCellIdx = getProbeIdx(cellGridPos);
+            ite         = 0;
+        }
+
+        if (ite >= 8) {
+            t += 0.01;
+            changeCell = true;
+            continue;
+        }
+
+        int currentProbeIdx    = getNextProbeIdx(baseCellIdx, ite);
+        vec3 probeGridPosition = fromProbeIdxToCoords(currentProbeIdx);
+
+        if (any(greaterThanEqual(probeGridPosition, vec3(probeFieldGridDim))) || any(lessThan(probeGridPosition, vec3(0)))) {
+            ite++;
+            continue;
+        }
+
+        vec3 probePosition = probeGridPosition * probeFieldCellSize + probeFieldOrigin;
+
         vec3 p3d = mix(rayStart, rayEnd, t);
 
-        vec3 probePosition = getClosestProbePosition(p3d);
-        int probeGridIdx   = getProbeIdx(probePosition);
+        vec3 currentCellGridPos = getClosestProbePosition(p3d);
+        vec3 baseCellGridPos    = fromProbeIdxToCoords(baseCellIdx);
 
-        for (int i = 0; i < actualProbeIdx; i++) {
-            if (visitedProbes[i] == probeGridIdx) {
-                return vec3(1, 0, 0);
-            }
+        if (any(notEqual(currentCellGridPos, baseCellGridPos))) {
+            changeCell = true;
+            continue;
         }
-        visitedProbes[actualProbeIdx] = probeGridIdx;
 
-        vec4 probeTexRect = getProbeTexRect(probeGridIdx, probeIrradianceField, probeTexSingleSize);
-        int result        = traceRayInProbe(p3d, rayEnd, probePosition * probeFieldCellSize, probeDepthField, t, probeTexRect.zw, probeTexRect.xy, finalTexelCoords);
+        vec4 probeTexRect = getProbeTexRect(currentProbeIdx, probeIrradianceField, probeTexSingleSize);
+        float tBackup     = t;
+        int result        = traceRayInProbe(p3d, rayEnd, probePosition, probeDepthField, t, probeTexRect.zw, probeTexRect.xy, finalTexelCoords);
 
         if (result == HIT) {
             return texture(probeIrradianceField, finalTexelCoords).rgb;
+        } else if (result == MISS) {
+            t = tBackup;
+            ite++;
+        } else if (result == UNKNOWN) {
+            // t a été mis à jour, on change probablement de cellule
+            // changeCell = true;
+            ite++;
         }
-
-        ite += 1;
     }
 
-    return vec3(t);
+    // Couleurs de debug selon la raison de sortie
+    if (t >= 1.0)
+        return vec3(1, 0, 0); // Rayon complet sans hit
+    else
+        return vec3(0, 0, 1); // Limite d'itérations
 }
 
 vec3 backgroundBlur(sampler2D colorTexture, sampler2D depthTexture, vec2 uv)

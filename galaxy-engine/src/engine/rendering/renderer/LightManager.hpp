@@ -53,8 +53,10 @@ public:
     renderID getProbesRadianceTexture();
 
     void updateProbeField();
+    void updateBias(float newValue);
     void resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween = 10.f, unsigned int probeResolution = 512, vec3 probeFieldCenter = vec3(0));
     void debugDraw();
+    std::vector<vec3> getProbePositions();
 
 private:
     struct ProbeCell {

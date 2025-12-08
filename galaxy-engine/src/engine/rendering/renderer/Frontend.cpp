@@ -370,6 +370,21 @@ void Frontend::setUniform(std::string uniformName, vec3 value)
     pushCommand(command);
 }
 
+void Frontend::setUniform(std::string uniformName, ivec3 value)
+{
+    SetUniformCommand uniformCommand;
+    uniformCommand.uniformName  = copyString(uniformName);
+    uniformCommand.type         = IVEC3;
+    uniformCommand.valueIVec3.x = value.x;
+    uniformCommand.valueIVec3.y = value.y;
+    uniformCommand.valueIVec3.z = value.z;
+    RenderCommand command;
+    command.type       = RenderCommandType::setUniform;
+    command.setUniform = uniformCommand;
+
+    pushCommand(command);
+}
+
 void Frontend::setUniform(std::string uniformName, vec2 value)
 {
     SetUniformCommand uniformCommand;
@@ -405,6 +420,31 @@ void Frontend::setViewport(vec2 position, vec2 dimmension)
     RenderCommand command;
     command.type        = RenderCommandType::setViewport;
     command.setViewport = setViewportCommand;
+
+    pushCommand(command);
+}
+
+void Frontend::resizeTexture(renderID textureID, unsigned int width, unsigned int height)
+{
+    UpdateTextureCommand update;
+    update.targetID = textureID;
+    update.width    = width;
+    update.height   = height;
+    RenderCommand command;
+    command.type          = RenderCommandType::updateTexture;
+    command.updateTexture = update;
+
+    pushCommand(command);
+}
+
+void Frontend::setTextureFormat(renderID textureID, TextureFormat format)
+{
+    UpdateTextureCommand update;
+    update.targetID  = textureID;
+    update.newFormat = format;
+    RenderCommand command;
+    command.type          = RenderCommandType::updateTexture;
+    command.updateTexture = update;
 
     pushCommand(command);
 }

@@ -8,7 +8,10 @@ LightManager::LightManager()
     : m_shadowMapFrameBufferID(0)
     , m_probesFrameBuffer(0)
     , m_colorRenderingCubemap(0)
+    , m_normalRenderingCubemap(0)
     , m_depthRenderingCubemap(0)
+    , m_probeNormalTexture(0)
+    , m_probeDepthTexture(0)
     , m_fullQuad(0)
     , m_gridDimX(0)
     , m_gridDimY(0)
@@ -34,15 +37,26 @@ void LightManager::init()
 
     m_fullQuad = ri.generateQuad(vec2(2, 2), []() {});
 
-    m_colorRenderingCubemap = ri.instanciateCubemap();
-    m_depthRenderingCubemap = ri.instanciateCubemap();
+    m_colorRenderingCubemap  = ri.instanciateCubemap();
+    m_depthRenderingCubemap  = ri.instanciateCubemap();
+    m_normalRenderingCubemap = ri.instanciateCubemap();
     // ri.resizeCubemap(m_colorRenderingCubemap, m_probeResolution);
 
     // TODO: pass to a format for normals in addition to colors and depths
-    m_probesFrameBuffer = ri.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8, 2);
+    m_probesFrameBuffer = ri.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8, 3);
+
+    m_probeDepthTexture  = ri.instantiateTexture();
+    m_probeNormalTexture = ri.instantiateTexture();
+
+    ri.setTextureFormat(m_probeDepthTexture, TextureFormat::RGBA);
+    ri.setTextureFormat(m_probeNormalTexture, TextureFormat::RGBA);
+
+    ri.resizeTexture(m_probeDepthTexture, m_textureWidth, m_textureHeight);
+    ri.resizeTexture(m_probeNormalTexture, m_textureWidth, m_textureHeight);
+
     ri.beginCanvaNoBuffer();
-    // ri.attachTextureToDepthFramebuffer(m_probeDepthTexture, m_probesFrameBuffer);
-    // ri.attachTextureToColorFramebuffer(m_probeRadianceTexture, m_probesFrameBuffer, 0);
+    ri.attachTextureToColorFramebuffer(m_probeNormalTexture, m_probesFrameBuffer, 1);
+    ri.attachTextureToColorFramebuffer(m_probeDepthTexture, m_probesFrameBuffer, 2);
 
     m_debugStartVisu = ri.generateCube(1.f, false, []() {});
     m_debugEndVisu   = ri.generateCube(1.f, false, []() {});
@@ -52,7 +66,7 @@ void LightManager::init()
     m_debugStartTransform.computeModelMatrix();
     m_debugEndTransform.computeModelMatrix();
 
-    resizeProbeFieldGrid(1, 1, 1, 100.f);
+    resizeProbeFieldGrid(2, 2, 2, 100.f);
 
     ri.endCanva();
 }
@@ -103,11 +117,21 @@ void LightManager::debugDraw()
 
     ri.changeUsedProgram(POST_PROCESSING);
     ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeIrradianceField", 0);
-    ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeDepthField", -1);
+    ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeNormalField", 1);
+    ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeDepthField", 2);
     // ri.bindTexture(m_probeRadianceTexture, "probeIrradianceField");
     // ri.bindTexture(m_probeDepthTexture, "probeDepthField");
 
-    ri.submitDebugLine(debugStart, debugEnd);
+    // ri.submitDebugLine(debugStart, debugEnd);
+}
+
+std::vector<vec3> LightManager::getProbePositions()
+{
+    std::vector<vec3> res(m_probeGrid.size());
+    for (int i = 0; i < res.size(); i++) {
+        res[i] = m_probeGrid[i].position;
+    }
+    return res;
 }
 
 void LightManager::shadowPass(Node* sceneRoot)
@@ -179,18 +203,15 @@ void LightManager::updateProbeField()
     vec3 debugEnd   = m_debugEndTransform.getGlobalPosition();
 
     for (auto& probe : m_probeGrid) {
-        ri.renderFromPoint(probe.position, *Application::getInstance().getRootNodePtr().get(), m_colorRenderingCubemap, m_depthRenderingCubemap);
+        ri.renderFromPoint(probe.position, *Application::getInstance().getRootNodePtr().get(), m_colorRenderingCubemap, m_normalRenderingCubemap, m_depthRenderingCubemap);
 
         ri.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
         ri.avoidCanvaClear();
         ri.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
         // ri.setUniform("scale", vec2(m_textureWidth / (float)m_probeResolution, m_textureHeight / (float)m_probeResolution));
         ri.useCubemap(m_colorRenderingCubemap, "radianceCubemap");
+        ri.useCubemap(m_normalRenderingCubemap, "normalCubemap");
         ri.useCubemap(m_depthRenderingCubemap, "depthCubemap");
-
-        ri.setUniform("debugStart", debugStart);
-        ri.setUniform("debugEnd", debugEnd);
-        ri.setUniform("debugProbePos", probe.position);
 
         vec2 viewportCoords = getProbeTexCoord(probe.probeCoord);
         ri.setViewport(viewportCoords, vec2(m_probeResolution));
@@ -205,25 +226,37 @@ void LightManager::updateProbeField()
     ri.endCanva();
 }
 
-void LightManager::resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween)
+void LightManager::updateBias(float newValue)
 {
-    m_gridDimX      = width;
-    m_gridDimY      = height;
-    m_gridDimZ      = depth;
-    m_probeDistance = spaceBetween;
+    Renderer::getInstance().beginCanvaNoBuffer();
+    Renderer::getInstance().changeUsedProgram(ProgramType::POST_PROCESSING);
+    Renderer::getInstance().setUniform("traceBias", newValue);
+    Renderer::getInstance().endCanva();
+}
+
+void LightManager::resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween, unsigned int probeTextureResolution, vec3 probeFieldCenter)
+{
+    m_gridDimX        = width;
+    m_gridDimY        = height;
+    m_gridDimZ        = depth;
+    m_probeDistance   = spaceBetween;
+    m_probeResolution = probeTextureResolution;
+    m_probeFieldStart = probeFieldCenter - vec3(m_gridDimX - 1, m_gridDimY - 1, m_gridDimZ - 1) * spaceBetween / 2.0;
 
     m_probeGrid.resize(width * height * depth);
 
     m_textureWidth  = width * height * m_probeResolution;
     m_textureHeight = depth * m_probeResolution;
 
-    Renderer::getInstance().resizeFrameBuffer(m_probesFrameBuffer, m_textureWidth, m_textureHeight);
+    auto& ri = Renderer::getInstance();
+    ri.resizeFrameBuffer(m_probesFrameBuffer, m_textureWidth, m_textureHeight);
 
     for (int z = 0; z < depth; z++) {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 vec3 position(x, y, z);
                 position *= m_probeDistance;
+                position += m_probeFieldStart;
 
                 unsigned int probeIdx            = getCellCoord(x, y, z);
                 m_probeGrid[probeIdx].probeCoord = probeIdx;
@@ -231,6 +264,14 @@ void LightManager::resizeProbeFieldGrid(unsigned int width, unsigned int height,
             }
         }
     }
+
+    ri.beginCanvaNoBuffer();
+    ri.changeUsedProgram(ProgramType::POST_PROCESSING);
+    ri.setUniform("probeFieldGridDim", ivec3(m_gridDimX, m_gridDimY, m_gridDimZ));
+    ri.setUniform("probeFieldCellSize", m_probeDistance);
+    ri.setUniform("probeTextureSingleSize", (int)m_probeResolution);
+    ri.setUniform("probeFieldOrigin", m_probeFieldStart);
+    ri.endCanva();
 }
 
 unsigned int LightManager::getCellCoord(unsigned int x, unsigned int y, unsigned int z)
@@ -240,7 +281,7 @@ unsigned int LightManager::getCellCoord(unsigned int x, unsigned int y, unsigned
 
 vec2 LightManager::getProbeTexCoord(unsigned int probeGridIdx)
 {
-    unsigned int probesByWidth = m_textureWidth / m_probeResolution;
+    unsigned int probesByWidth = m_gridDimX * m_gridDimY;
     unsigned int xPosition     = (probeGridIdx % probesByWidth) * m_probeResolution;
     unsigned int yPosition     = (probeGridIdx / probesByWidth) * m_probeResolution;
     vec2 texturePos(xPosition, yPosition);

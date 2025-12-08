@@ -158,7 +158,7 @@ void Renderer::applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, rend
     // auto projectionMatrix = CameraManager::processProjectionMatrix(vec2(dimmensions));
 
     // mat4 baseProjection = m_frontend.getProjectionMatrix();
-    // mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);
+    // mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 999.f);
     // m_frontend.setProjectionMatrix(projection);
 
     // vec3 position = vec3(0, 0, 0);
@@ -179,21 +179,22 @@ void Renderer::applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, rend
     // glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 }
 
-void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetColorCubemapID, renderID targetDepthCubemapID)
+void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetColorCubemapID, renderID targetNormalCubemapID, renderID targetDepthCubemapID)
 {
     vec2 size(1024);
     vec2 pos(0);
 
     m_frontend.beginCanvaNoBuffer();
     m_frontend.attachCubemapToFramebuffer(targetColorCubemapID, m_cubemapFramebufferID, 0);
-    m_frontend.attachCubemapToFramebuffer(targetDepthCubemapID, m_cubemapFramebufferID, -1);
+    m_frontend.attachCubemapToFramebuffer(targetNormalCubemapID, m_cubemapFramebufferID, 1);
+    m_frontend.attachCubemapToFramebuffer(targetDepthCubemapID, m_cubemapFramebufferID, 2);
     m_frontend.endCanva();
 
-    mat4 projection = perspective(radians(90.0f), 1.f, 0.001f, 9999.f);
+    mat4 projection = perspective(radians(90.0f), 1.f, 0.001f, 999.f);
     for (int i = 0; i < 6; i++) {
         auto viewMatrix = lookAt(position, position + m_cubemap_orientations[i], m_cubemap_ups[i]);
 
-        m_frontend.beginCanva(viewMatrix, projection, m_cubemapFramebufferID, FramebufferTextureFormat::DEPTH24RGBA8, i);
+        m_frontend.beginCanva(viewMatrix, projection, m_cubemapFramebufferID, FramebufferTextureFormat::RGBA8, i);
         m_frontend.setViewport(pos, size);
         root.draw();
         m_lightManager.debugDraw();

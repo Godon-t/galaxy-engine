@@ -47,7 +47,7 @@ void EnvironmentNode::loadEnv(ResourceHandle<Environment> env)
 
 void EnvironmentNode::enteredRoot()
 {
-    m_cubeMeshID          = Renderer::getInstance().generateCube(9999.f, true, [] {});
+    m_cubeMeshID          = Renderer::getInstance().generateCube(999.f, true, [] {});
     m_irradianceCubemapID = Renderer::getInstance().instanciateCubemap();
     m_renderingCubemap    = Renderer::getInstance().instanciateCubemap();
 

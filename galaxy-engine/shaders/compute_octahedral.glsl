@@ -18,6 +18,7 @@ void main()
 #include debug.glsl
 
 uniform samplerCube radianceCubemap;
+uniform samplerCube normalCubemap;
 uniform samplerCube depthCubemap;
 
 uniform vec3 debugStart;
@@ -26,14 +27,18 @@ uniform vec3 debugProbePos;
 
 in vec2 texCoords;
 layout(location = 0) out vec4 color;
+layout(location = 1) out vec4 outNormal;
+layout(location = 2) out vec4 outDepth;
 
 uniform float zNear = 0.1;
-uniform float zFar  = 9999.0;
+uniform float zFar  = 999.0;
 
 // ===================== MAIN =========================
 uniform bool showTriangleIndexOverlay = false;
 
 /////////////////////////////////////////////////////////////////////
+
+#include utils.glsl
 
 float linearDepth(float depth)
 {
@@ -41,14 +46,12 @@ float linearDepth(float depth)
     return (2.0 * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
 }
 
-
 void main()
 {
-    vec3 dir      = octahedral_unmapping(texCoords);
+    vec3 dir = octahedral_unmapping(texCoords);
+    // vec3 envColor = computeIrradiance(dir, radianceCubemap);
     vec3 envColor = texture(radianceCubemap, dir).rgb;
     color         = vec4(envColor, 1.0);
-
-    gl_FragDepth = linearDepth(texture(depthCubemap, dir).r)/zFar;
 
     //////////////////////////////////////////////////////////////////////:
     vec2 uv       = texCoords;
@@ -66,4 +69,12 @@ void main()
     // outColor = mix(outColor, rayCol, clamp(rayAlpha, 0.0, 1.0));
 
     color.rgb = outColor;
+    outNormal = vec4(texture(normalCubemap, dir).rgb, 1.0);
+
+    float rawDepth        = texture(depthCubemap, dir).r;
+    float linearD         = linearDepth(rawDepth);
+    float normalizedDepth = linearD / zFar;
+
+    gl_FragDepth = rawDepth;
+    outDepth     = vec4(rawDepth, 0, 0, 1);
 }

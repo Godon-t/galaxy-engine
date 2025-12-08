@@ -46,11 +46,14 @@ public:
     void setUniform(std::string uniformName, int value);
     void setUniform(std::string uniformName, mat4 value);
     void setUniform(std::string uniformName, vec3 value);
+    void setUniform(std::string uniformName, ivec3 value);
     void setUniform(std::string uniformName, vec2 value);
 
     void setFramebufferAsTextureUniform(renderID framebufferID, std::string uniformName, int textureIdx);
 
     void setViewport(vec2 position, vec2 dimmension);
+    void resizeTexture(renderID textureID, unsigned int width, unsigned int height);
+    void setTextureFormat(renderID textureID, TextureFormat format);
     void updateCubemap(renderID targetID, unsigned int resolution);
 
     void addDebugMsg(std::string message);

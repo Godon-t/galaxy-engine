@@ -739,6 +739,9 @@ void Backend::processCommand(SetUniformCommand& command)
     } else if (command.type == SetValueTypes::VEC3) {
         glUniform3f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName),
             command.valueVec3.x, command.valueVec3.y, command.valueVec3.z);
+    } else if (command.type == SetValueTypes::IVEC3) {
+        glUniform3i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName),
+            command.valueIVec3.x, command.valueIVec3.y, command.valueIVec3.z);
     } else if (command.type == SetValueTypes::VEC2) {
         glUniform2f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName),
             command.valueVec2.x, command.valueVec2.y);
@@ -754,6 +757,16 @@ void Backend::processCommand(SetUniformCommand& command)
 void Backend::processCommand(SetViewportCommand& command)
 {
     glViewport((int)command.position.x, (int)command.position.y, (int)command.size.x, (int)command.size.y);
+}
+
+void Backend::processCommand(UpdateTextureCommand& command)
+{
+    if (command.newFormat == TextureFormat::NONE)
+        m_textureInstances.get(command.targetID)->resize(command.width, command.height);
+    else
+        m_textureInstances.get(command.targetID)->setFormat(command.newFormat);
+
+    checkOpenGLErrors("Update texture");
 }
 
 void Backend::processCommand(UpdateCubemapCommand& command)
@@ -851,6 +864,9 @@ void Backend::processCommand(RenderCommand& command)
         break;
     case RenderCommandType::updateCubemap:
         processCommand(command.updateCubemap);
+        break;
+    case RenderCommandType::updateTexture:
+        processCommand(command.updateTexture);
         break;
     case RenderCommandType::setFramebufferAsTextureUniformCommand:
         processCommand(command.setFramebufferAsTextureUniform);

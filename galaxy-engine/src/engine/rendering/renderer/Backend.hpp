@@ -143,6 +143,7 @@ private:
     void processCommand(InitPostProcessCommand& command);
     void processCommand(SetUniformCommand& command);
     void processCommand(SetViewportCommand& command);
+    void processCommand(UpdateTextureCommand& command);
     void processCommand(UpdateCubemapCommand& command);
     void processCommand(SetFramebufferAsTextureUniformCommand& command);
 

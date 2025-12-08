@@ -53,8 +53,10 @@ public:
     renderID getProbesRadianceTexture();
 
     void updateProbeField();
-    void resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween = 10.f);
+    void updateBias(float newValue);
+    void resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween = 10.f, unsigned int probeResolution = 512, vec3 probeFieldCenter = vec3(0));
     void debugDraw();
+    std::vector<vec3> getProbePositions();
 
 private:
     struct ProbeCell {
@@ -78,17 +80,22 @@ private:
 
     renderID m_fullQuad;
     renderID m_colorRenderingCubemap;
+    renderID m_normalRenderingCubemap;
     renderID m_depthRenderingCubemap;
+
     renderID m_probesFrameBuffer;
+    renderID m_probeRadianceTexture;
+    renderID m_probeNormalTexture;
+    renderID m_probeDepthTexture;
+
     unsigned int m_probeResolution;
     unsigned int m_textureWidth;
     unsigned int m_textureHeight;
-    renderID m_probeRadianceTexture;
-    renderID m_probeDepthTexture;
     unsigned int m_gridDimX;
     unsigned int m_gridDimY;
     unsigned int m_gridDimZ;
     float m_probeDistance;
+    vec3 m_probeFieldStart;
 
     std::vector<ProbeData> m_probeGrid;
 

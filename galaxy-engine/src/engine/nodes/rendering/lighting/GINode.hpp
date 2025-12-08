@@ -20,7 +20,8 @@ protected:
     virtual void enteredRoot() override;
 
 private:
-    renderID m_fieldsVisu;
+    renderID m_probeVisu;
+    std::vector<Transform> m_probeTransforms;
 };
 // expose lightManager method for updating probes field transform
 // expose lightManager method to instantiate probe sphere at the right pos (using global) inside GINode.

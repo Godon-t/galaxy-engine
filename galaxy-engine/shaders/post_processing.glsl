@@ -50,7 +50,11 @@ uniform vec3 probeFieldOrigin      = vec3(0.f);
 uniform vec3[8] probePositions;
 
 uniform sampler2D probeIrradianceField;
+uniform sampler2D probeNormalField;
 uniform sampler2D probeDepthField;
+
+const float minThickness = 0.03; // meters
+const float maxThickness = 0.50;
 
 float linearDepth(float depth)
 {
@@ -70,11 +74,101 @@ vec3 reconstructWorldPosFromProbe(vec2 uv, sampler2D depthTex, vec3 probePos,
     return probePos + direction * distance;
 }
 
+float distanceToIntersection(vec3 rayStart, vec3 rayDirection, vec3 v)
+{
+    float numer;
+    float denom = v.y * rayDirection.z - v.z * rayDirection.y;
+
+    if (abs(denom) > 0.1) {
+        numer = rayStart.y * rayDirection.z - rayStart.z * rayDirection.y;
+    } else {
+        // We're in the yz plane; use another one
+        numer = rayStart.x * rayDirection.y - rayStart.y * rayDirection.x;
+        denom = v.x * rayDirection.y - v.y * rayDirection.x;
+    }
+
+    return numer / denom;
+}
+
+int traceRaySegment(in sampler2D depthField, in vec3 probeSpaceRayStart, in vec3 probeSpaceRayDirection,
+    in vec2 startTexCoord, in vec2 endTexCoord, in vec2 upperLeft, in vec2 scale,
+    inout float tMin, inout float tMax, out vec2 hitProbeTexCoord)
+{
+    vec2 texCoordDelta     = endTexCoord - startTexCoord;
+    float texCoordDistance = length(texCoordDelta);
+    vec2 texCoordDirection = texCoordDelta / texCoordDistance;
+    ivec2 textureSize2d    = textureSize(depthField, 0);
+
+    // Not the way the article do it
+    float texCoordStep = 1 / 32.0;
+
+    // Initial value to detect variation in depth from ray to probe between two steps
+    vec3 directionFromProbeBefore      = octahedral_unmapping(startTexCoord);
+    float distanceFromProbeToRayBefore = max(0.0, distanceToIntersection(probeSpaceRayStart, probeSpaceRayDirection, directionFromProbeBefore));
+
+    for (float d = 0.0; d <= texCoordDistance; d += texCoordStep) {
+        // First half of ray marching
+        vec2 texCoord           = (texCoordDirection * min(d + texCoordStep * 0.5, texCoordDistance)) + startTexCoord;
+        vec3 directionFromProbe = octahedral_unmapping(texCoord);
+
+        float distanceFromProbeToSurface = texelFetch(depthField, ivec2(textureSize2d * texCoord), 0).r * zFar;
+
+        // Second half of ray marching
+        vec2 texCoordAfter                = (texCoordDirection * min(d + texCoordStep, texCoordDistance)) + startTexCoord;
+        vec3 directionFromProbeAfter      = octahedral_unmapping(texCoordAfter);
+        float distanceFromProbeToRayAfter = max(0.0, distanceToIntersection(probeSpaceRayStart, probeSpaceRayDirection, directionFromProbeAfter));
+        float maxDistanceFromProbeToRay   = max(distanceFromProbeToRayAfter, distanceFromProbeToRayBefore);
+
+        // Potential HIT
+        if (maxDistanceFromProbeToRay >= distanceFromProbeToSurface) {
+            float minDistanceFromProbeToRay = min(distanceFromProbeToRayBefore, distanceFromProbeToRayAfter);
+
+            // Intersection of texel from prob onto ray
+            float distanceFromProbeToRay = (minDistanceFromProbeToRay + maxDistanceFromProbeToRay) * 0.5;
+            vec3 probeSpaceHitPoint      = distanceFromProbeToSurface * directionFromProbe;
+            float distanceAlongRay       = dot(probeSpaceHitPoint - probeSpaceRayStart, probeSpaceRayDirection);
+
+            // // I don't understand this normal calculation
+            // vec3 normal = octahedral_unmapping(texelFetch(normalField, ivec2(textureSize2d * texCoord), 0).xy  * lightFieldSurface.normalProbeGrid.readMultiplyFirst.xy + lightFieldSurface.normalProbeGrid.readAddSecond.xy);
+            vec3 normal = vec3(0, 0, -1);
+
+            float surfaceThickness = minThickness + (maxThickness - minThickness) *
+                    // probe and view ray alignment
+                    max(dot(probeSpaceRayDirection, directionFromProbe), 0.0) *
+
+                    // facing normal == thicker surface
+                    (2.0 - abs(dot(probeSpaceRayDirection, normal))) *
+
+                    // scale with distance along the ray
+                    clamp(distanceAlongRay * 0.1, 0.05, 1.0);
+
+            if ((minDistanceFromProbeToRay < distanceFromProbeToSurface + surfaceThickness) && (dot(normal, probeSpaceRayDirection) < 0)) {
+                tMax             = distanceAlongRay;
+                hitProbeTexCoord = texCoord;
+                return HIT;
+            } else {
+                vec3 probeSpaceHitPointBefore = distanceFromProbeToRayBefore * directionFromProbeBefore;
+                float distanceAlongRayBefore  = dot(probeSpaceHitPointBefore - probeSpaceRayStart, probeSpaceRayDirection);
+
+                // didn't understand
+                tMin = max(tMin, min(distanceAlongRay, distanceAlongRayBefore));
+
+                return UNKNOWN;
+            }
+        }
+    }
+
+    return MISS;
+}
+
 int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, in out float t, vec2 scale, vec2 probeTextureUpperLeft, out vec2 texelCoords)
 {
+
     // centrer les positions par rapport à la probe
     vec3 centeredP0 = p0 - probePos;
     vec3 centeredP1 = p1 - probePos;
+
+    vec3 rayDirection = normalize(centeredP1 - centeredP0);
 
     // calculer les t ou le rayon change de triangle octahédral
     float ts[8];
@@ -86,7 +180,6 @@ int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, in out 
         float t0 = ts[segIdx];
         float t1 = ts[segIdx + 1];
 
-        // calculer les positions 3D aux extrémités du segment
         vec3 p3d0 = mix(centeredP0, centeredP1, t0);
         vec3 p3d1 = mix(centeredP0, centeredP1, t1);
 
@@ -102,30 +195,22 @@ int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, in out 
         vec2 uv0 = octahedral_mapping(dir0);
         vec2 uv1 = octahedral_mapping(dir1);
 
-        // mettre a l'échelle et décaler les UV dans la texture globale
-        uv0 = (uv0 * scale) + probeTextureUpperLeft;
-        uv1 = (uv1 * scale) + probeTextureUpperLeft;
+        float segmentTMin = t0;
+        float segmentTMax = t1;
+        vec2 hitTexCoord;
 
-        // ray marching en 2D le long de ce segment
-        int steps = 64; // 32 car c'est un compromis entre précision et perf
-        for (int i = 0; i <= steps; ++i) {
-            float s = float(i) / float(steps);
-            t       = mix(t0, t1, s);
+        int result = traceRaySegment(depthTex, centeredP0, rayDirection,
+            uv0, uv1, probeTextureUpperLeft, scale,
+            segmentTMin, segmentTMax, hitTexCoord);
 
-            // interpoler en 2D
-            texelCoords      = mix(uv0, uv1, s);
-            float depthRay   = mix(depth0, depth1, s);
-            float depthProbe = texture(depthTex, texelCoords).r * zFar;
-
-            float adaptiveBias = traceBias * (1.0 + depthRay * 0.001);
-            float diff         = depthRay - depthProbe;
-
-            // logique HIT / MISS / UNKNOWN
-            if (diff > adaptiveBias) {
-                return UNKNOWN;
-            } else if (diff >= -adaptiveBias) {
-                return HIT;
-            }
+        if (result == HIT) {
+            t           = segmentTMax;
+            texelCoords = hitTexCoord;
+            return HIT;
+        }
+        if (result == UNKNOWN) {
+            t = segmentTMin;
+            return UNKNOWN;
         }
     }
 
@@ -226,7 +311,7 @@ int getNextProbeIdx(int probeIdx, int iterator)
         return probeIdx + probeFieldGridDim.x * probeFieldGridDim.y + probeFieldGridDim.x + 1;
 }
 
-vec3 getColorFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeIrradianceField, sampler2D probeDepthField, int probeTexSingleSize)
+vec3 getColorFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeIrradianceField, sampler2D probeNormalField, sampler2D probeDepthField, int probeTexSingleSize)
 {
     float t               = 0.0;
     int ite               = 0;
@@ -284,13 +369,11 @@ vec3 getColorFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeIrradianc
         }
 
         vec4 probeTexRect = getProbeTexRect(currentProbeIdx, probeIrradianceField, probeTexSingleSize);
-        float tBackup     = t;
         int result        = traceRayInProbe(p3d, rayEnd, probePosition, probeDepthField, t, probeTexRect.zw, probeTexRect.xy, finalTexelCoords);
 
         if (result == HIT) {
             return texture(probeIrradianceField, finalTexelCoords).rgb;
         } else if (result == MISS) {
-            t = tBackup;
             ite++;
         } else if (result == UNKNOWN) {
             // t a été mis à jour, on change probablement de cellule
@@ -346,7 +429,7 @@ void main()
 
     color.rgb = getColorFromProbeField(
         rayStart, rayEnd,
-        probeIrradianceField, probeDepthField,
+        probeIrradianceField, probeNormalField, probeDepthField,
         probeTextureSingleSize);
 
     // color.rgb = texture(probeIrradianceField, vec2(1) - TexCoords).rgb;

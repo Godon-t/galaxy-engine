@@ -94,8 +94,8 @@ void Renderer::shadowPass()
 void Renderer::applyPostProcessing()
 {
     m_frontend.beginCanva(m_currentView, m_currentProj, m_postProcessingBufferID, FramebufferTextureFormat::RGBA8);
-    // m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING);
-    m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING_SSGI);
+    m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING);
+    // m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING_SSGI);
 
     m_frontend.initPostProcessing(m_sceneFrameBufferID);
     m_frontend.submit(m_postProcessingQuadID);

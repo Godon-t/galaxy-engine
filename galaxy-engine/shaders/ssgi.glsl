@@ -44,7 +44,7 @@ uniform float rayStep = 0.1;
 uniform int maxSteps = 32;
 uniform float giIntensity = 1.0;
 uniform float radius = 0.5;
-uniform float bias = 0.02;
+uniform float bias = 0.2;
 
 const float PI = 3.14159265359;
 
@@ -75,43 +75,52 @@ float rand(vec2 co)
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-// Générer une direction aléatoire dans l'hémisphère
-vec3 cosineWeightedHemisphere(vec3 normal, vec2 seed)
+
+
+//thanks to https://gamehacker1999.github.io/posts/SSGI/
+
+// Interleaved Gradient Noise for better temporal sampling
+float IGN(vec2 pixelCoord, int frameCount)
 {
-    float r1 = rand(seed);
-    float r2 = rand(seed + vec2(1.0, 0.0));
+    vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
+    return fract(magic.z * fract(dot(pixelCoord.xy + float(frameCount) * vec2(47.0, 17.0) * 0.695, magic.xy)));
+}
+
+// Get a perpendicular vector to the input vector
+vec3 getPerpendicularVector(vec3 v)
+{
+    vec3 perpendicular = abs(v.x) > abs(v.z) ? vec3(-v.y, v.x, 0.0) : vec3(0.0, -v.z, v.y);
+    return normalize(perpendicular);
+}
+
+// Get a cosine-weighted random vector centered around a specified normal direction
+vec3 getCosHemisphereSample(float rand1, float rand2, vec3 hitNorm)
+{
+    // Cosine weighted hemisphere sample from RNG
+    vec3 bitangent = getPerpendicularVector(hitNorm);
+    vec3 tangent = cross(bitangent, hitNorm);
     
-    float phi = 2.0 * PI * r1;
-    float cosTheta = sqrt(r2);
-    float sinTheta = sqrt(1.0 - r2);
+    float r = sqrt(rand1);
+    float phi = 2.0 * PI * rand2;
     
-    vec3 tangent;
-    if (abs(normal.y) < 0.999) {
-        tangent = normalize(cross(normal, vec3(0.0, 1.0, 0.0)));
-    } else {
-        tangent = normalize(cross(normal, vec3(1.0, 0.0, 0.0)));
-    }
-    vec3 bitangent = cross(normal, tangent);
-    
-    vec3 direction = tangent * cos(phi) * sinTheta +
-                     bitangent * sin(phi) * sinTheta +
-                     normal * cosTheta;
-    
-    return normalize(direction);
+    // Get our cosine-weighted hemisphere lobe sample direction
+    return tangent * (r * cos(phi)) + bitangent * (r * sin(phi)) + hitNorm * sqrt(max(0.0, 1.0 - rand1));
 }
 
 // ray marching en screen space
 vec4 screenSpaceRayMarch(vec3 startPos, vec3 direction, vec3 normal)
 {
-    vec3 rayPos = startPos + normal * bias;
+    float distanceFromCamera = length(startPos - cameraPos);
+    float adaptiveBias = bias * (distanceFromCamera * 0.01 + 0.1);
+    vec3 rayPos = startPos + normal * adaptiveBias;
     vec3 rayEnd = rayPos + direction * radius;
     
     vec3 screenStart = worldToScreen(rayPos);
     vec3 screenEnd = worldToScreen(rayEnd);
     
-    // si le rayon sort de l'ecran, retourner violer pour debug
+    // si le rayon sort de l'ecran, retourner noire car sinon dnas une texture ca peut donner des resultats bizarres
     if (screenStart.z <= 0.0 || screenEnd.z <= 0.0) {
-        return vec4(1.0, 0.0, 1.0, 1.0);
+        return vec4(0.0, 0.0, 0.0, 1.0);
     }
     
     vec3 screenDir = screenEnd - screenStart;
@@ -130,10 +139,16 @@ vec4 screenSpaceRayMarch(vec3 startPos, vec3 direction, vec3 normal)
         
         // Echantillonner la profondeur a cette position
         float sampledDepth = texture(depthBuffer, currentScreen.xy).r;
+        
+        // Skip skybox
+        if (sampledDepth >= 0.9999) {
+            continue;
+        }
+        
         float depthDiff = currentScreen.z - sampledDepth;
         
-        // si on a touche
-        if (depthDiff > 0.0 && depthDiff < 0.01) {
+        // si on a touche (le rayon est passé derrière une surface)
+        if (depthDiff > 0.0 && depthDiff < 0.1) {
             // prendre la couleur
             vec3 hitColor = texture(sceneBuffer, currentScreen.xy).rgb;
             
@@ -159,7 +174,8 @@ void main()
         return;
     }
     
-    vec3 normal = normalize(texture(normalBuffer, TexCoords).rgb * 2.0 - 1.0);
+    vec2 normalEncoded = texture(normalBuffer, TexCoords).rg;
+    vec3 normal = normalize(octahedral_unmapping(normalEncoded));
     vec3 worldPos = reconstructWorldPosFromDepth(TexCoords, depth);
     vec3 baseColor = texture(sceneBuffer, TexCoords).rgb;
     
@@ -167,10 +183,17 @@ void main()
     vec3 indirectLight = vec3(0.0);
     float totalWeight = 0.0;
     
+    // Get pixel position for noise generation
+    vec2 pixelCoord = TexCoords * textureSize(sceneBuffer, 0).xy;
+    
     // Echantillonnage Monte Carlo dans l'hemisphere
     for (int i = 0; i < numSamples; ++i) {
-        vec2 seed = TexCoords + vec2(float(i) * 0.1, float(i) * 0.05);
-        vec3 sampleDir = cosineWeightedHemisphere(normal, seed);
+        // Use IGN for better temporal distribution
+        float noise1 = IGN(pixelCoord, i);
+        float noise2 = IGN(pixelCoord + vec2(1.0, 1.0), i);
+        
+        // Get cosine-weighted hemisphere sample
+        vec3 sampleDir = getCosHemisphereSample(noise1, noise2, normal);
         
         // Ray march dans cette direction
         vec4 hitResult = screenSpaceRayMarch(worldPos, sampleDir, normal);

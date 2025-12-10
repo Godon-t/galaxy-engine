@@ -244,6 +244,6 @@ void main()
     colorPBR = pow(colorPBR, vec3(1.0 / 2.2));
 
     color     = vec4(colorPBR, transparency);
-    outNormal = vec4(normal, 1.0);
+    outNormal = vec4((normal+vec3(1.0))*0.5, 1.0);
     outDepth  = vec4(length(v_camPos - v_worldPos) / zFar, 0, 0, 1);
 }

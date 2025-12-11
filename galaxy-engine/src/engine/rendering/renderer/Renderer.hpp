@@ -98,6 +98,11 @@ public:
     inline void setUniform(std::string uniformName, ivec3 value) { m_frontend.setUniform(uniformName, value); }
     inline void setUniform(std::string uniformName, vec2 value) { m_frontend.setUniform(uniformName, value); }
 
+    inline renderID instantiateUBO(unsigned int dataSize) { return m_backend.instantiateUBO(dataSize); }
+    inline void bindUBO(renderID id, unsigned int idx) { m_frontend.bindUBO(id, idx); }
+    template <typename T>
+    inline void updateUniform(renderID id, const T& payload) { m_frontend.updateUniform(id, payload); }
+
     inline void setCullMode(renderID visualInstanceID, CullMode mode) { m_backend.setCullMode(visualInstanceID, mode); }
     inline void setViewport(vec2 position, vec2 size) { m_frontend.setViewport(position, size); }
 

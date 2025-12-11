@@ -20,6 +20,7 @@ LightManager::LightManager()
     , m_textureWidth(2048)
     , m_textureHeight(1024)
     , m_probeResolution(512)
+    , m_lightsUBO(0)
 {
 }
 
@@ -68,6 +69,9 @@ void LightManager::init()
 
     resizeProbeFieldGrid(2, 2, 2, 100.f);
 
+    m_lightsUBO = ri.instantiateUBO(sizeof(m_lightUniformData));
+    ri.bindUBO(m_lightsUBO, 0);
+
     ri.endCanva();
 }
 
@@ -85,6 +89,7 @@ int LightManager::registerLight(LightData desc)
 
     renderID shadowMapID     = Renderer::getInstance().instantiateTexture();
     m_lights[id].shadowMapID = shadowMapID;
+
     return id;
 }
 
@@ -140,21 +145,22 @@ void LightManager::shadowPass(Node* sceneRoot)
 
     ri.beginCanvaNoBuffer();
     ri.changeUsedProgram(PBR);
+    bool updateUniform = false;
     for (auto& light : m_lights) {
         if (!light.second.needUpdate)
             continue;
 
+        updateUniform           = true;
         light.second.needUpdate = false;
 
-        auto uniformName = "lightPositions[" + std::to_string(light.second.idx) + "]";
-        ri.setUniform(uniformName, vec3(light.second.transformationMatrix[3]));
-        uniformName = "lightColors[" + std::to_string(light.second.idx) + "]";
-        ri.setUniform(uniformName, light.second.color);
+        m_lightUniformData.colors[light.second.idx]    = vec4(light.second.color, 1.0);
+        m_lightUniformData.positions[light.second.idx] = light.second.transformationMatrix[3];
 
         // ri.setUniform("lights[" + std::to_string(id) + "].lightMatrix", lightSpaceMatrix);
         // ri.setUniform("lights[" + std::to_string(id) + "].position", vec3(lightSpaceMatrix[3]));
         // ri.setUniform("lights[" + std::to_string(id) + "].color", lightData.color);
     }
+    ri.updateUniform(m_lightsUBO, m_lightUniformData);
     ri.endCanva();
 
     // math::mat4 projMat  = CameraManager::processProjectionMatrix(vec2(1024, 1024));

@@ -61,6 +61,8 @@ private:
     unsigned int albedoTexLocation, metallicTexLocation, roughnessTexLocation, ambientTexLocation, normalTexLocation;
     unsigned int useAlbedoMapLocation, useNormalMapLocation, useMetallicMapLocation, useRoughnessMapLocation, useAmbientMapLocation;
     unsigned int lightSpaceMatrixLocation;
+
+    unsigned int lightBlockidx;
 };
 
 class ProgramTexture : public Program {

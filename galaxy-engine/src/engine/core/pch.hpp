@@ -8,6 +8,7 @@
 #include <stack>
 #include <string>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 // #define STB_IMAGE_IMPLEMENTATION

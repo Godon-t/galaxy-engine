@@ -26,6 +26,7 @@ enum RenderCommandType {
     updateCubemap,
     saveFrameBuffer,
     setFramebufferAsTextureUniformCommand,
+    updateUBO,
 
     debugMsg,
     drawDebugLine,
@@ -92,6 +93,7 @@ struct SetActiveProgramCommand {
 struct BindFrameBufferCommand {
     renderID frameBufferID;
     int cubemapFaceIdx = -1;
+    bool bind;
 };
 
 struct InitPostProcessCommand {
@@ -111,6 +113,26 @@ struct SetFramebufferAsTextureUniformCommand {
     renderID framebufferID;
     char* uniformName;
     int textureIdx;
+};
+
+struct UpdateUBOCommand {
+    renderID uboID;
+    std::vector<std::byte> data;
+
+    template <typename T>
+    static UpdateUBOCommand make(renderID id, const T& payload)
+    {
+        UpdateUBOCommand cmd;
+        cmd.uboID = id;
+        cmd.data.resize(sizeof(T));
+        std::memcpy(cmd.data.data(), &payload, sizeof(T));
+        return cmd;
+    }
+};
+
+struct BindUBOCommand {
+    renderID uboID;
+    unsigned int idx;
 };
 
 struct SetUniformCommand {
@@ -166,40 +188,30 @@ struct SaveFrameBufferCommand {
     renderID frameBufferID;
 };
 
-struct RenderCommand {
-    ~RenderCommand() = default;
+using RenderCommand = std::variant<
+    SetActiveProgramCommand,
+    SetViewCommand,
+    SetProjectionCommand,
+    ClearCommand,
+    DepthMaskCommand,
+    DrawCommand,
+    RawDrawCommand,
+    UseTextureCommand,
+    UseCubemapCommand,
+    AttachTextureToFramebufferCommand,
+    AttachCubemapToFramebufferCommand,
+    BindMaterialCommand,
+    BindFrameBufferCommand,
+    InitPostProcessCommand,
+    SetUniformCommand,
+    SetViewportCommand,
+    UpdateTextureCommand,
+    UpdateCubemapCommand,
+    SetFramebufferAsTextureUniformCommand,
+    UpdateUBOCommand,
+    BindUBOCommand,
 
-    RenderCommand()
-        : type(RenderCommandType::draw)
-    {
-        new (&draw) DrawCommand();
-    }
-
-    RenderCommandType type;
-    union {
-        SetActiveProgramCommand setActiveProgram;
-        SetViewCommand setView;
-        SetProjectionCommand setProjection;
-        ClearCommand clear;
-        DepthMaskCommand depthMask;
-        DrawCommand draw;
-        RawDrawCommand rawDraw;
-        UseTextureCommand useTexture;
-        UseCubemapCommand useCubemap;
-        AttachTextureToFramebufferCommand attachTextureToFramebuffer;
-        AttachCubemapToFramebufferCommand attachCubemapToFramebuffer;
-        BindMaterialCommand bindMaterial;
-        BindFrameBufferCommand bindFrameBuffer;
-        InitPostProcessCommand initPostProcess;
-        SetUniformCommand setUniform;
-        SetViewportCommand setViewport;
-        UpdateTextureCommand updateTexture;
-        UpdateCubemapCommand updateCubemap;
-        SetFramebufferAsTextureUniformCommand setFramebufferAsTextureUniform;
-
-        DebugMsgCommand debugMsg;
-        DrawDebugLineCommand drawDebugLine;
-        SaveFrameBufferCommand saveFrameBuffer;
-    };
-};
+    DebugMsgCommand,
+    DrawDebugLineCommand,
+    SaveFrameBufferCommand>;
 } // namespace Galaxy

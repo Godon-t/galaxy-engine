@@ -5,6 +5,7 @@
 #include "rendering/GPUInstances/DebugLines.hpp"
 #include "rendering/GPUInstances/FrameBuffer.hpp"
 #include "rendering/GPUInstances/Texture.hpp"
+#include "rendering/GPUInstances/UBOInstance.hpp"
 #include "rendering/GPUInstances/VisualInstance.hpp"
 #include "rendering/Program.hpp"
 #include "resource/Image.hpp"
@@ -84,6 +85,8 @@ class Backend {
 public:
     Backend(size_t maxSize = 512);
 
+    renderID instantiateUBO(unsigned int dataSize);
+
     renderID instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx);
     renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices, std::function<void()> destroyCallback = nullptr);
     void clearMesh(renderID meshID);
@@ -126,30 +129,31 @@ public:
     void destroy();
 
 private:
-    void processCommand(RenderCommand& command);
-    void processCommand(ClearCommand& command);
-    void processCommand(DepthMaskCommand& command);
-    void processCommand(SetViewCommand& command);
-    void processCommand(SetProjectionCommand& command);
-    void processCommand(SetActiveProgramCommand& command);
-    void processCommand(DrawCommand& command);
-    void processCommand(RawDrawCommand& command);
-    void processCommand(UseTextureCommand& command);
-    void processCommand(UseCubemapCommand& command);
-    void processCommand(AttachTextureToFramebufferCommand& command);
-    void processCommand(AttachCubemapToFramebufferCommand& command);
-    void processCommand(BindMaterialCommand& command);
-    void processCommand(BindFrameBufferCommand& command, bool bind);
-    void processCommand(InitPostProcessCommand& command);
-    void processCommand(SetUniformCommand& command);
-    void processCommand(SetViewportCommand& command);
-    void processCommand(UpdateTextureCommand& command);
-    void processCommand(UpdateCubemapCommand& command);
-    void processCommand(SetFramebufferAsTextureUniformCommand& command);
+    void processCommand(const ClearCommand& command);
+    void processCommand(const DepthMaskCommand& command);
+    void processCommand(const SetViewCommand& command);
+    void processCommand(const SetProjectionCommand& command);
+    void processCommand(const SetActiveProgramCommand& command);
+    void processCommand(const DrawCommand& command);
+    void processCommand(const RawDrawCommand& command);
+    void processCommand(const UseTextureCommand& command);
+    void processCommand(const UseCubemapCommand& command);
+    void processCommand(const AttachTextureToFramebufferCommand& command);
+    void processCommand(const AttachCubemapToFramebufferCommand& command);
+    void processCommand(const BindMaterialCommand& command);
+    void processCommand(const BindFrameBufferCommand& command);
+    void processCommand(const InitPostProcessCommand& command);
+    void processCommand(const SetUniformCommand& command);
+    void processCommand(const SetViewportCommand& command);
+    void processCommand(const UpdateTextureCommand& command);
+    void processCommand(const UpdateCubemapCommand& command);
+    void processCommand(const SetFramebufferAsTextureUniformCommand& command);
+    void processCommand(const UpdateUBOCommand& command);
+    void processCommand(const BindUBOCommand& command);
 
-    void processCommand(DebugMsgCommand& command);
-    void processCommand(DrawDebugLineCommand& command);
-    void processCommand(SaveFrameBufferCommand& command);
+    void processCommand(const DebugMsgCommand& command);
+    void processCommand(const DrawDebugLineCommand& command);
+    void processCommand(const SaveFrameBufferCommand& command);
     void debugDraw();
 
     RenderGpuResourceTable<VisualInstance> m_visualInstances;
@@ -158,6 +162,7 @@ private:
     RenderGpuResourceTable<Cubemap> m_cubemapInstances;
     RenderGpuResourceTable<FrameBuffer> m_frameBufferInstances;
     RenderGpuResourceTable<CubemapFrameBuffer> m_cubemapFrameBufferInstances;
+    RenderGpuResourceTable<UBOInstance> m_uboInstances;
 
     // Will invalidate renderID for things outside of Node that store a renderID
     std::unordered_map<renderID, std::function<void()>> m_gpuDestroyNotifications;

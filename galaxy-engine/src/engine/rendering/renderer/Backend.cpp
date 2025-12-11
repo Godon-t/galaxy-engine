@@ -13,6 +13,7 @@ Backend::Backend(size_t maxSize)
     , m_materialInstances(maxSize)
     , m_frameBufferInstances(maxSize)
     , m_cubemapFrameBufferInstances(maxSize)
+    , m_uboInstances(maxSize)
 {
     GLenum error = glGetError();
 
@@ -51,6 +52,19 @@ Backend::Backend(size_t maxSize)
     m_debugLines.init();
 
     checkOpenGLErrors("Renderer constructor");
+}
+
+renderID Backend::instantiateUBO(unsigned int dataSize)
+{
+    renderID uboID = m_uboInstances.createResourceInstance();
+
+    m_uboInstances.get(uboID)->init(dataSize);
+
+    m_gpuDestroyNotifications[uboID] = [this, uboID] {
+        m_uboInstances.get(uboID)->destroy();
+    };
+
+    return uboID;
 }
 
 void Backend::destroy()
@@ -224,8 +238,12 @@ void Backend::clearMaterial(renderID materialID)
 
 void Backend::processCommands(std::vector<RenderCommand>& commands)
 {
-    for (auto& command : commands) {
-        processCommand(command);
+    for (const auto& command : commands) {
+        std::visit([this](auto&& cmd) {
+            processCommand(cmd);
+        },
+            command);
+        checkOpenGLErrors("Process command");
     }
 
     Texture::resetActivationInts();
@@ -524,14 +542,14 @@ renderID Backend::instanciateCubemap(int resolution)
     return cubemapID;
 }
 
-void Backend::processCommand(ClearCommand& clearCommand)
+void Backend::processCommand(const ClearCommand& clearCommand)
 {
     auto& clearColor = clearCommand.color;
     glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void Backend::processCommand(DepthMaskCommand& command)
+void Backend::processCommand(const DepthMaskCommand& command)
 {
     if (command.state)
         glDepthMask(GL_TRUE);
@@ -539,7 +557,7 @@ void Backend::processCommand(DepthMaskCommand& command)
         glDepthMask(GL_FALSE);
 }
 
-void Backend::processCommand(SetViewCommand& setViewCommand)
+void Backend::processCommand(const SetViewCommand& setViewCommand)
 {
     m_mainProgram.use();
     m_mainProgram.updateViewMatrix(setViewCommand.view);
@@ -600,12 +618,12 @@ void Backend::setProjectionMatrix(const mat4& projectionMatrix)
 
     m_activeProgram->use();
 }
-void Backend::processCommand(SetProjectionCommand& command)
+void Backend::processCommand(const SetProjectionCommand& command)
 {
     setProjectionMatrix(command.projection);
 }
 
-void Backend::processCommand(SetActiveProgramCommand& command)
+void Backend::processCommand(const SetActiveProgramCommand& command)
 {
     if (command.program == SKYBOX)
         m_activeProgram = &m_skyboxProgram;
@@ -631,26 +649,26 @@ void Backend::processCommand(SetActiveProgramCommand& command)
     m_activeProgram->use();
 }
 
-void Backend::processCommand(DrawCommand& command)
+void Backend::processCommand(const DrawCommand& command)
 {
     auto& modelMatrix = command.model;
     m_activeProgram->updateModelMatrix(modelMatrix);
     m_visualInstances.get(command.instanceId)->draw();
 }
 
-void Backend::processCommand(RawDrawCommand& command)
+void Backend::processCommand(const RawDrawCommand& command)
 {
     m_visualInstances.get(command.instanceID)->draw();
 }
 
-void Backend::processCommand(UseTextureCommand& command)
+void Backend::processCommand(const UseTextureCommand& command)
 {
     auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
     m_textureInstances.get(command.instanceID)->activate(uniLoc);
     checkOpenGLErrors("Bind texture");
 }
 
-void Backend::processCommand(UseCubemapCommand& command)
+void Backend::processCommand(const UseCubemapCommand& command)
 {
     auto uniLoc   = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
     auto& cubemap = *m_cubemapInstances.get(command.instanceID);
@@ -658,7 +676,7 @@ void Backend::processCommand(UseCubemapCommand& command)
     checkOpenGLErrors("Bind cubemap");
 }
 
-void Backend::processCommand(AttachTextureToFramebufferCommand& command)
+void Backend::processCommand(const AttachTextureToFramebufferCommand& command)
 {
     auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
     auto& texture     = *m_textureInstances.get(command.textureID);
@@ -670,7 +688,7 @@ void Backend::processCommand(AttachTextureToFramebufferCommand& command)
     checkOpenGLErrors("Attach texture to framebuffer");
 }
 
-void Backend::processCommand(AttachCubemapToFramebufferCommand& command)
+void Backend::processCommand(const AttachCubemapToFramebufferCommand& command)
 {
     // TODO: Beware of memory handling !!!
     if (command.colorIdx < 0)
@@ -679,7 +697,7 @@ void Backend::processCommand(AttachCubemapToFramebufferCommand& command)
         m_cubemapFrameBufferInstances.get(command.framebufferID)->attachColorCubemap(*m_cubemapInstances.get(command.cubemapID), command.colorIdx);
 }
 
-void Backend::processCommand(BindMaterialCommand& command)
+void Backend::processCommand(const BindMaterialCommand& command)
 {
     GLX_CORE_ASSERT(m_activeProgram->type() == ProgramType::PBR, "PBR Program not active!");
 
@@ -700,9 +718,9 @@ void Backend::processCommand(BindMaterialCommand& command)
     checkOpenGLErrors("Binding material");
 }
 
-void Backend::processCommand(BindFrameBufferCommand& command, bool bind)
+void Backend::processCommand(const BindFrameBufferCommand& command)
 {
-    if (bind)
+    if (command.bind)
         if (command.cubemapFaceIdx >= 0)
             m_cubemapFrameBufferInstances.get(command.frameBufferID)->bind(command.cubemapFaceIdx);
         else
@@ -718,7 +736,7 @@ void Backend::processCommand(BindFrameBufferCommand& command, bool bind)
 }
 
 // TODO: Rework post processing logic
-void Backend::processCommand(InitPostProcessCommand& command)
+void Backend::processCommand(const InitPostProcessCommand& command)
 {
     GLX_CORE_ASSERT(m_activeProgram->type() == ProgramType::POST_PROCESSING_PROBE || m_activeProgram->type() == ProgramType::POST_PROCESSING_SSGI, "Post processing Program not active!");
 
@@ -728,7 +746,7 @@ void Backend::processCommand(InitPostProcessCommand& command)
     checkOpenGLErrors("Init post process");
 }
 
-void Backend::processCommand(SetUniformCommand& command)
+void Backend::processCommand(const SetUniformCommand& command)
 {
     if (command.type == SetValueTypes::BOOL) {
         glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueBool ? GL_TRUE : GL_FALSE);
@@ -754,12 +772,12 @@ void Backend::processCommand(SetUniformCommand& command)
     checkOpenGLErrors("Set uniform");
 }
 
-void Backend::processCommand(SetViewportCommand& command)
+void Backend::processCommand(const SetViewportCommand& command)
 {
     glViewport((int)command.position.x, (int)command.position.y, (int)command.size.x, (int)command.size.y);
 }
 
-void Backend::processCommand(UpdateTextureCommand& command)
+void Backend::processCommand(const UpdateTextureCommand& command)
 {
     if (command.newFormat == TextureFormat::NONE)
         m_textureInstances.get(command.targetID)->resize(command.width, command.height);
@@ -769,13 +787,13 @@ void Backend::processCommand(UpdateTextureCommand& command)
     checkOpenGLErrors("Update texture");
 }
 
-void Backend::processCommand(UpdateCubemapCommand& command)
+void Backend::processCommand(const UpdateCubemapCommand& command)
 {
     m_cubemapInstances.get(command.targetID)->resize(command.resolution);
     checkOpenGLErrors("Update cubemap");
 }
 
-void Backend::processCommand(SetFramebufferAsTextureUniformCommand& command)
+void Backend::processCommand(const SetFramebufferAsTextureUniformCommand& command)
 {
     auto uniLoc       = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
     auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
@@ -784,18 +802,28 @@ void Backend::processCommand(SetFramebufferAsTextureUniformCommand& command)
     free(command.uniformName);
 }
 
-void Backend::processCommand(DebugMsgCommand& command)
+void Backend::processCommand(const UpdateUBOCommand& command)
+{
+    m_uboInstances.get(command.uboID)->update(command.data.data(), command.data.size());
+}
+
+void Backend::processCommand(const BindUBOCommand& command)
+{
+    m_uboInstances.get(command.uboID)->bind(command.idx);
+}
+
+void Backend::processCommand(const DebugMsgCommand& command)
 {
     GLX_CORE_TRACE(command.msg);
     free(command.msg);
 }
 
-void Backend::processCommand(DrawDebugLineCommand& command)
+void Backend::processCommand(const DrawDebugLineCommand& command)
 {
     m_debugLines.addLine(command.start, command.end, vec3(0, 1, 0));
 }
 
-void Backend::processCommand(SaveFrameBufferCommand& command)
+void Backend::processCommand(const SaveFrameBufferCommand& command)
 {
     m_frameBufferInstances.get(command.frameBufferID)->savePPM(command.path);
 
@@ -806,89 +834,6 @@ void Backend::debugDraw()
 {
     m_debugLinesProgram.use();
     m_debugLines.draw();
-}
-
-void Backend::processCommand(RenderCommand& command)
-{
-    switch (command.type) {
-    case RenderCommandType::setActiveProgram:
-        processCommand(command.setActiveProgram);
-        break;
-    case RenderCommandType::clear:
-        processCommand(command.clear);
-        break;
-    case RenderCommandType::depthMask:
-        processCommand(command.depthMask);
-        break;
-    case RenderCommandType::setView:
-        processCommand(command.setView);
-        break;
-    case RenderCommandType::setProjection:
-        processCommand(command.setProjection);
-        break;
-    case RenderCommandType::rawDraw:
-        processCommand(command.rawDraw);
-        break;
-    case RenderCommandType::draw:
-        processCommand(command.draw);
-        break;
-    case RenderCommandType::useTexture:
-        processCommand(command.useTexture);
-        break;
-    case RenderCommandType::useCubemap:
-        processCommand(command.useCubemap);
-        break;
-    case RenderCommandType::attachTextureToFramebuffer:
-        processCommand(command.attachTextureToFramebuffer);
-        break;
-    case RenderCommandType::attachCubemapToFramebuffer:
-        processCommand(command.attachCubemapToFramebuffer);
-        break;
-    case RenderCommandType::bindMaterial:
-        processCommand(command.bindMaterial);
-        break;
-    case RenderCommandType::bindFrameBuffer:
-        processCommand(command.bindFrameBuffer, true);
-        break;
-    case RenderCommandType::unbindFrameBuffer:
-        processCommand(command.bindFrameBuffer, false);
-        break;
-    case RenderCommandType::initPostProcess:
-        processCommand(command.initPostProcess);
-        break;
-    case RenderCommandType::setUniform:
-        processCommand(command.setUniform);
-        break;
-    case RenderCommandType::setViewport:
-        processCommand(command.setViewport);
-        break;
-    case RenderCommandType::updateCubemap:
-        processCommand(command.updateCubemap);
-        break;
-    case RenderCommandType::updateTexture:
-        processCommand(command.updateTexture);
-        break;
-    case RenderCommandType::setFramebufferAsTextureUniformCommand:
-        processCommand(command.setFramebufferAsTextureUniform);
-        break;
-    case RenderCommandType::debugMsg:
-        processCommand(command.debugMsg);
-        break;
-    case RenderCommandType::drawDebugLine:
-        processCommand(command.drawDebugLine);
-        break;
-    case RenderCommandType::executeDebugCommands:
-        debugDraw();
-        break;
-    case RenderCommandType::saveFrameBuffer:
-        processCommand(command.saveFrameBuffer);
-        break;
-    default:
-        GLX_CORE_ERROR("Unknown render command");
-        break;
-    }
-
-    checkOpenGLErrors("Process command");
 }
 
 } // namespace Galaxy

@@ -303,6 +303,9 @@ ProgramPBR::ProgramPBR(std::string path)
 
     lightSpaceMatrixLocation = glGetUniformLocation(programID, "lightSpaceMatrix");
 
+    lightBlockidx = glGetUniformBlockIndex(programID, "LightBlock");
+    glUniformBlockBinding(programID, lightBlockidx, 0);
+
     use();
     glUniform1i(glGetUniformLocation(programID, "useIrradianceMap"), GL_FALSE);
 }
@@ -357,10 +360,9 @@ void ProgramUnicolor::setColor(const vec3& color)
 ProgramPostProc::ProgramPostProc(std::string path)
     : Program(path)
 {
-    m_colorLocation = glGetUniformLocation(getProgramID(), "sceneBuffer");
-    m_depthLocation = glGetUniformLocation(getProgramID(), "depthBuffer");
+    m_colorLocation  = glGetUniformLocation(getProgramID(), "sceneBuffer");
+    m_depthLocation  = glGetUniformLocation(getProgramID(), "depthBuffer");
     m_normalLocation = glGetUniformLocation(getProgramID(), "normalBuffer");
-    
 
     m_inverseProjectionLocation = glGetUniformLocation(getProgramID(), "inverseProjection");
     m_inverseViewLocation       = glGetUniformLocation(getProgramID(), "inverseView");
@@ -394,10 +396,10 @@ void ProgramPostProc::setTextures(unsigned int colorTexture, unsigned int normal
     glUniform1i(m_normalLocation, actInt);
 }
 
-
 ProgramPostProcSSGI::ProgramPostProcSSGI(std::string path)
     : ProgramPostProc(path)
-{}
+{
+}
 
 ProgramShadow::ProgramShadow(std::string path)
     : Program(path)

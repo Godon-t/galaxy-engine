@@ -48,10 +48,10 @@ float linearDepth(float depth)
 
 void main()
 {
-    vec3 dir      = octahedral_unmapping(texCoords);
-    vec3 envColor = computeIrradiance(dir, radianceCubemap);
-    // vec3 envColor = texture(radianceCubemap, dir).rgb;
-    color = vec4(envColor, 1.0);
+    vec3 dir = octahedral_unmapping(texCoords);
+    // vec3 envColor = computeIrradiance(dir, radianceCubemap);
+    vec3 envColor = texture(radianceCubemap, dir).rgb;
+    color         = vec4(envColor, 1.0);
 
     //////////////////////////////////////////////////////////////////////:
     vec2 uv       = texCoords;

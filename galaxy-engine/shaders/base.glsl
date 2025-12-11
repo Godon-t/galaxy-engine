@@ -1,5 +1,5 @@
 #type vertex
-#version 330 core
+#version 420 core
 
 layout(location = 0) in vec3 vertices_position_modelspace;
 layout(location = 1) in vec2 texCoord;
@@ -30,7 +30,7 @@ void main()
 //////////////////////////////////////////////////////////////////////////////////////
 
 #type fragment
-#version 330 core
+#version 420 core
 
 uniform bool useIrradianceMap;
 uniform samplerCube irradianceMap;
@@ -57,12 +57,19 @@ uniform bool useRoughnessMap = false;
 uniform bool useAoMap        = false;
 
 // lights
-const int MAX_LIGHT                    = 20;
-uniform int lightCount                 = 3;
-uniform vec3 lightPositions[MAX_LIGHT] = vec3[MAX_LIGHT](
-    vec3(0.f, 2.f, 0.f), vec3(0, 5, 50), vec3(20, 5, 30), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0));
-uniform vec3 lightColors[MAX_LIGHT] = vec3[MAX_LIGHT](
-    vec3(1.f), vec3(1.f, 0.f, 0.2f), vec3(1.f), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0), vec3(0));
+const int MAX_LIGHT    = 20;
+uniform int lightCount = 3;
+
+layout(std140, binding = 0) uniform LightBlock
+{
+    vec4 positions[32];
+    vec4 colors[32];
+    int count;
+    int _pad1;
+    int _pad2;
+    int _pad3;
+}
+lightData;
 
 in vec2 v_texCoords;
 in vec3 v_worldPos;
@@ -201,11 +208,11 @@ void main()
 
     for (int i = 0; i < lightCount; ++i) {
         // calculate per-light radiance
-        vec3 L            = normalize(lightPositions[i] - v_worldPos);
+        vec3 L            = normalize(lightData.positions[i].xyz - v_worldPos);
         vec3 H            = normalize(V + L);
-        float distance    = length(lightPositions[i] - v_worldPos);
+        float distance    = length(lightData.positions[i].xyz - v_worldPos);
         float attenuation = 1.f / (distance * distance);
-        vec3 radiance     = lightColors[i] * attenuation;
+        vec3 radiance     = lightData.colors[i].xyz * attenuation;
 
         // cook-torrance brdf
         float NDF = DistributionGGX(N, H, roughness);

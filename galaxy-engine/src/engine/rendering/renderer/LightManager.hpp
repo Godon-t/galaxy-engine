@@ -8,6 +8,8 @@
 #include "engine/types/Render.hpp"
 
 namespace Galaxy {
+const unsigned int maxLightCount = 32;
+
 enum LightType {
     SPOTLIGHT = 0,
     POINTLIGHT,
@@ -34,6 +36,13 @@ struct LightData {
         , color(1)
     {
     }
+};
+
+struct GPULightData {
+    glm::vec4 positions[maxLightCount];
+    glm::vec4 colors[maxLightCount];
+    int count;
+    float pad[3];
 };
 
 class LightManager {
@@ -71,7 +80,6 @@ private:
     std::unordered_map<lightID, LightData> m_lights;
     lightID m_nextLightID   = 0;
     int m_currentLightCount = 0;
-    int m_maxLights         = 100;
 
     renderID m_shadowMapFrameBufferID;
 
@@ -87,6 +95,9 @@ private:
     renderID m_probeRadianceTexture;
     renderID m_probeNormalTexture;
     renderID m_probeDepthTexture;
+
+    renderID m_lightsUBO;
+    GPULightData m_lightUniformData;
 
     unsigned int m_probeResolution;
     unsigned int m_textureWidth;

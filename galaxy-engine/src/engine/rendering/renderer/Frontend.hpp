@@ -48,6 +48,13 @@ public:
     void setUniform(std::string uniformName, vec3 value);
     void setUniform(std::string uniformName, ivec3 value);
     void setUniform(std::string uniformName, vec2 value);
+    template <typename T>
+    void updateUniform(renderID id, const T& payload)
+    {
+        auto updateCommand = UpdateUBOCommand::make(id, payload);
+        pushCommand(updateCommand);
+    }
+    void bindUBO(renderID id, unsigned int idx);
 
     void setFramebufferAsTextureUniform(renderID framebufferID, std::string uniformName, int textureIdx);
 

@@ -61,6 +61,17 @@ public:
 
     Transform();
 
+    Transform(const Transform& other) noexcept
+    {
+        m_pos               = other.m_pos;
+        m_rotationQuat      = other.m_rotationQuat;
+        m_scale             = other.m_scale;
+        m_globalModelMatrix = other.m_globalModelMatrix;
+        dirty               = other.dirty;
+        m_rotationOrder     = other.m_rotationOrder;
+        m_rotationEuler     = other.m_rotationEuler;
+    }
+
     Transform(Transform&& other) noexcept;
 
     Transform& operator=(const Transform& other) noexcept

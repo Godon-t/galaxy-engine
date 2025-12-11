@@ -82,6 +82,7 @@ add_library(galaxy-engine
 	src/engine/nodes/rendering/MultiMeshInstance.cpp
 	src/engine/nodes/rendering/EnvironmentNode.cpp
 	src/engine/nodes/rendering/Sprite3D.cpp
+	src/engine/nodes/rendering/CornellBox.cpp
 	src/engine/nodes/rendering/Camera.cpp
 	src/engine/nodes/rendering/lighting/SpotLight.cpp
 	src/engine/nodes/rendering/lighting/PointLight.cpp

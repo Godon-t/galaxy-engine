@@ -92,7 +92,7 @@ public:
     }
 
     template <typename ResourceType>
-    ResourceHandle<ResourceType> registerNewResource(ResourceType& res, const std::string& path)
+    ResourceHandle<ResourceType> registerNewResource(ResourceType& res, const std::string& path, bool internal = false)
     {
         auto makerIt = m_makers.find(typeid(ResourceType).hash_code());
         GLX_CORE_ASSERT(makerIt != m_makers.end(), "No resource maker found");
@@ -102,6 +102,8 @@ public:
         uuid resourceID          = Project::registerNewPath(ProjectPathTypes::RESOURCE, path);
         resource->m_resourceID   = resourceID;
         resource->m_resourcePath = path;
+        if (internal)
+            resource->m_state = ResourceState::LOADED;
 
         return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(resource));
     }

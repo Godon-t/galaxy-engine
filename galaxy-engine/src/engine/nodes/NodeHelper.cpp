@@ -2,40 +2,36 @@
 
 #include "Node3D.hpp"
 #include "rendering/Camera.hpp"
+#include "rendering/CornellBox.hpp"
 #include "rendering/EnvironmentNode.hpp"
 #include "rendering/MeshInstance.hpp"
 #include "rendering/MultiMeshInstance.hpp"
 #include "rendering/Sprite3D.hpp"
 #include "rendering/lighting/GINode.hpp"
-#include "rendering/lighting/SpotLight.hpp"
 #include "rendering/lighting/PointLight.hpp"
+#include "rendering/lighting/SpotLight.hpp"
+
+#define NODE_CASE(nodeType) \
+    if (type == #nodeType)  \
+        return std::make_unique<nodeType>();
 
 namespace Galaxy {
+
 std::unique_ptr<Node> constructNode(std::string& type)
 {
-    if (type == "Node") {
-        return std::make_unique<Node>();
-    } else if (type == "Node3D") {
-        return std::make_unique<Node3D>();
-    } else if (type == "MeshInstance") {
-        return std::make_unique<MeshInstance>();
-    } else if (type == "MultiMeshInstance") {
-        return std::make_unique<MultiMeshInstance>();
-    } else if (type == "Camera") {
-        return std::make_unique<Camera>();
-    } else if (type == "Sprite3D") {
-        return std::make_unique<Sprite3D>();
-    } else if (type == "EnvironmentNode") {
-        return std::make_unique<EnvironmentNode>();
-    } else if (type == "SpotLight") {
-        return std::make_unique<SpotLight>();
-    } else if (type == "PointLight") {
-        return std::make_unique<PointLight>();
-    } else if (type == "GINode") {
-        return std::make_unique<GINode>();
-    } else {
-        GLX_CORE_ERROR("Unknown type '{0}'", type);
-        return nullptr;
-    }
+    NODE_CASE(Node)
+    NODE_CASE(Node3D)
+    NODE_CASE(MeshInstance)
+    NODE_CASE(CornellBox)
+    NODE_CASE(MultiMeshInstance)
+    NODE_CASE(Camera)
+    NODE_CASE(Sprite3D)
+    NODE_CASE(EnvironmentNode)
+    NODE_CASE(SpotLight)
+    NODE_CASE(PointLight)
+    NODE_CASE(GINode)
+
+    GLX_CORE_ERROR("Unknown type '{0}'", type);
+    return nullptr;
 }
 }

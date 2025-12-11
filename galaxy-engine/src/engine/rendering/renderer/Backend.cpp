@@ -87,6 +87,32 @@ void Backend::destroy()
     });
 }
 
+void Backend::setActiveProgram(ProgramType program)
+{
+    if (program == SKYBOX)
+        m_activeProgram = &m_skyboxProgram;
+    else if (program == PBR)
+        m_activeProgram = &m_mainProgram;
+    else if (program == TEXTURE)
+        m_activeProgram = &m_textureProgram;
+    else if (program == UNICOLOR)
+        m_activeProgram = &m_unicolorProgram;
+    else if (program == POST_PROCESSING_PROBE)
+        m_activeProgram = &m_postProcessingProbeProgram;
+    else if (program == FILTER_IRRADIANCE)
+        m_activeProgram = &m_irradianceProgram;
+    else if (program == SHADOW_DEPTH)
+        m_activeProgram = &m_shadowProgram;
+    else if (program == COMPUTE_OCTAHEDRAL)
+        m_activeProgram = &m_computeOctahedralProgram;
+    else if (program == POST_PROCESSING_SSGI)
+        m_activeProgram = &m_postProcessingSSGIProgram;
+    else
+        GLX_CORE_ASSERT(false, "unknown asked program!");
+
+    m_activeProgram->use();
+}
+
 renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices, std::function<void()> destroyCallback)
 {
     if (!m_visualInstances.canAddInstance())
@@ -625,28 +651,7 @@ void Backend::processCommand(const SetProjectionCommand& command)
 
 void Backend::processCommand(const SetActiveProgramCommand& command)
 {
-    if (command.program == SKYBOX)
-        m_activeProgram = &m_skyboxProgram;
-    else if (command.program == PBR)
-        m_activeProgram = &m_mainProgram;
-    else if (command.program == TEXTURE)
-        m_activeProgram = &m_textureProgram;
-    else if (command.program == UNICOLOR)
-        m_activeProgram = &m_unicolorProgram;
-    else if (command.program == POST_PROCESSING_PROBE)
-        m_activeProgram = &m_postProcessingProbeProgram;
-    else if (command.program == FILTER_IRRADIANCE)
-        m_activeProgram = &m_irradianceProgram;
-    else if (command.program == SHADOW_DEPTH)
-        m_activeProgram = &m_shadowProgram;
-    else if (command.program == COMPUTE_OCTAHEDRAL)
-        m_activeProgram = &m_computeOctahedralProgram;
-    else if (command.program == POST_PROCESSING_SSGI)
-        m_activeProgram = &m_postProcessingSSGIProgram;
-    else
-        GLX_CORE_ASSERT(false, "unknown asked program!");
-
-    m_activeProgram->use();
+    setActiveProgram(command.program);
 }
 
 void Backend::processCommand(const DrawCommand& command)
@@ -699,7 +704,10 @@ void Backend::processCommand(const AttachCubemapToFramebufferCommand& command)
 
 void Backend::processCommand(const BindMaterialCommand& command)
 {
-    GLX_CORE_ASSERT(m_activeProgram->type() == ProgramType::PBR, "PBR Program not active!");
+    if (!m_activeProgram->type() == ProgramType::PBR) {
+        GLX_CORE_ERROR("PBR Program not active, activating it");
+        setActiveProgram(ProgramType::PBR);
+    }
 
     MaterialInstance& material = *m_materialInstances.get(command.materialRenderID);
     std::array<Texture, TextureType::COUNT> materialTextures;

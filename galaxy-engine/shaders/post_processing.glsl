@@ -22,6 +22,7 @@ void main()
 #version 330 core
 
 #include octahedral.glsl
+#include utils.glsl
 
 layout(location = 0) out vec4 color;
 
@@ -55,12 +56,6 @@ uniform sampler2D probeDepthField;
 
 const float minThickness = 0.03; // meters
 const float maxThickness = 0.50;
-
-float linearDepth(float depth)
-{
-    float z = depth * 2.0 - 1.0;
-    return (2.0 * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
-}
 
 vec3 reconstructWorldPosFromProbe(vec2 uv, sampler2D depthTex, vec3 probePos,
     float zFar, vec2 scale, vec2 offset)
@@ -528,25 +523,15 @@ vec3 backgroundBlur(sampler2D colorTexture, sampler2D depthTexture, vec2 uv)
     return (col1 + col2 + col3 + col4) / 4.f;
 }
 
-vec3 reconstructWorldPos(vec2 uv, float depth)
-{
-    float z  = depth * 2.0 - 1.0; // NDC
-    vec4 ndc = vec4(uv * 2.0 - 1.0, z, 1.0);
-
-    vec4 viewPos = inverseProjection * ndc;
-    viewPos /= viewPos.w;
-
-    vec4 worldPos = inverseView * viewPos;
-    return worldPos.xyz;
-}
-
 void main()
 {
     color.a = 1.0;
 
     float depthN = texture(depthBuffer, TexCoords).r;
 
-    vec3 worldCoord = reconstructWorldPos(TexCoords, depthN);
+    vec3 worldCoord = reconstructWorldPos(TexCoords, depthN, inverseProjection, inverseView);
+    color.rgb       = normalize(worldCoord);
+    return;
 
     vec3 rayStart = cameraPos; // uniform
     vec3 rayEnd   = worldCoord;

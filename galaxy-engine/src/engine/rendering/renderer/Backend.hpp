@@ -127,6 +127,7 @@ public:
     void initDebugCallback();
 
     void destroy();
+    void setActiveProgram(ProgramType program);
 
 private:
     void processCommand(const ClearCommand& command);

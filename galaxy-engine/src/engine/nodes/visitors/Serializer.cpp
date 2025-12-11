@@ -6,13 +6,14 @@
 #include "nodes/Node.hpp"
 #include "nodes/Node3D.hpp"
 #include "nodes/rendering/Camera.hpp"
+#include "nodes/rendering/CornellBox.hpp"
 #include "nodes/rendering/EnvironmentNode.hpp"
 #include "nodes/rendering/MeshInstance.hpp"
 #include "nodes/rendering/MultiMeshInstance.hpp"
 #include "nodes/rendering/Sprite3D.hpp"
-#include "nodes/rendering/lighting/SpotLight.hpp"
-#include "nodes/rendering/lighting/PointLight.hpp"
 #include "nodes/rendering/lighting/GINode.hpp"
+#include "nodes/rendering/lighting/PointLight.hpp"
+#include "nodes/rendering/lighting/SpotLight.hpp"
 #include "types/Math.hpp"
 
 #include <fstream>
@@ -69,6 +70,11 @@ void SceneSerializer::visit(Camera& node)
     visit(static_cast<Node3D&>(node));
 }
 
+void SceneSerializer::visit(CornellBox& node)
+{
+    visit(static_cast<Node3D&>(node));
+}
+
 void SceneSerializer::visit(MeshInstance& node)
 {
     visit(static_cast<Node3D&>(node));
@@ -104,9 +110,9 @@ void SceneSerializer::visitLightCommon(Light& node)
 void SceneSerializer::visit(SpotLight& node)
 {
     visitLightCommon(static_cast<Light&>(node));
-    m_yaml << YAML::Key << "CutoffAngle" << YAML::Value << node.getCutoffAngle();
-    m_yaml << YAML::Key << "OuterCutoffAngle" << YAML::Value << node.getOuterCutoffAngle();
-    m_yaml << YAML::Key << "CastShadows" << YAML::Value << node.getCastShadows();
+    // m_yaml << YAML::Key << "CutoffAngle" << YAML::Value << node.getCutoffAngle();
+    // m_yaml << YAML::Key << "OuterCutoffAngle" << YAML::Value << node.getOuterCutoffAngle();
+    // m_yaml << YAML::Key << "CastShadows" << YAML::Value << node.getCastShadows();
 }
 
 void SceneSerializer::visit(PointLight& node)

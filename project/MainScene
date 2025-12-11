@@ -5860,9 +5860,6 @@ Root:
       Intensity: 1
       Color: [0.607843161, 0.87843138, 0.654901981]
       Range: 10
-      CutoffAngle: 45
-      OuterCutoffAngle: 55
-      CastShadows: true
     - Type: PointLight
       Childs:
         []

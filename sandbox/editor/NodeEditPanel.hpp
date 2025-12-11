@@ -25,6 +25,10 @@ public:
         visit(static_cast<Node&>(node));
         transformEdit(*node.getTransform());
     }
+    void visit(CornellBox& node)
+    {
+        visit(static_cast<Node3D&>(node));
+    }
     void visit(MeshInstance& node)
     {
         visit(static_cast<Node3D&>(node));

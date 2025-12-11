@@ -78,9 +78,12 @@ in vec3 v_normal;
 in vec3 v_camPos;
 in vec4 v_fragPosLightSpace;
 
-layout(location = 0) out vec4 color;
-layout(location = 1) out vec4 outNormal;
-layout(location = 2) out vec4 outDepth;
+layout(location = 0) out vec4 gAlbedo;
+layout(location = 1) out vec4 gNormal;
+layout(location = 2) out vec4 gDepth;
+
+layout(location = 3) out vec4 gDirectDiffuse;
+layout(location = 4) out vec4 gDirectSpecular;
 
 const float PI = 3.14159265359;
 /*--------------------------------------PBR--------------------------------------*/
@@ -205,7 +208,9 @@ void main()
     F0      = mix(F0, albedo, metallic);
 
     // reflectance equation
-    vec3 Lo = vec3(0.0);
+    vec3 Lo             = vec3(0.0);
+    vec3 directDiffuse  = vec3(0.0);
+    vec3 directSpecular = vec3(0.0);
 
     for (int i = 0; i < lightCount; ++i) {
         // calculate per-light radiance
@@ -236,7 +241,16 @@ void main()
         float NdotL = max(dot(N, L), 0.0);
 
         // Calculer l'ombre
-        float shadow = ShadowCalculation(v_fragPosLightSpace, N, L);
+        float shadow       = ShadowCalculation(v_fragPosLightSpace, N, L);
+        float shadowFactor = 1.0 - shadow;
+
+        vec3 diffuseTerm  = kD * albedo / PI;
+        vec3 specularTerm = specular;
+
+        vec3 lightContribution = radiance * NdotL * 50.0;
+
+        directDiffuse += shadowFactor * diffuseTerm * lightContribution;
+        directSpecular += shadowFactor * specularTerm * lightContribution;
 
         Lo += (1.0 - shadow) * (kD * albedo / PI + specular) * radiance * NdotL * 50.f;
     }
@@ -246,13 +260,13 @@ void main()
     vec3 kS = F;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
-    vec3 irradiance;
-    // if (useIrradianceMap)
-    //     irradiance = texture(irradianceMap, N).rgb;
-    // else
-    //     irradiance = vec3(0.5);
-    irradiance   = vec3(0.5);
-    vec3 diffuse = irradiance * albedo;
+    // vec3 irradiance;
+    // // if (useIrradianceMap)
+    // //     irradiance = texture(irradianceMap, N).rgb;
+    // // else
+    // //     irradiance = vec3(0.5);
+    // irradiance   = vec3(0.5);
+    // vec3 diffuse = irradiance * albedo;
 
     // // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
     // const float MAX_REFLECTION_LOD = 4.0;
@@ -263,13 +277,22 @@ void main()
     // vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
     // vec3 ambient = (kD * diffuse + specular) * ao;
-    vec3 ambient  = (kD * diffuse) * ao;
-    vec3 colorPBR = ambient + Lo;
+    // vec3 ambient = (kD * diffuse) * ao;
+    // vec3 pbr     = ambient + Lo;
 
-    colorPBR = colorPBR / (colorPBR + vec3(1.0));
-    colorPBR = pow(colorPBR, vec3(1.0 / 2.2));
+    // pbr = pbr / (pbr + vec3(1.0));
+    // pbr = pow(pbr, vec3(1.0 / 2.2));
 
-    color     = vec4(colorPBR, transparency);
-    outNormal = vec4((normal + vec3(1.0)) * 0.5, 1.0);
-    outDepth  = vec4(length(v_camPos - v_worldPos) / zFar, 0, 0, 1);
+    gDepth = vec4(length(v_camPos - v_worldPos) / zFar, ao, 0, 1);
+
+    gAlbedo.rgb = albedo;
+    gAlbedo.a   = transparency;
+
+    gNormal.rgb = (normal + vec3(1.0)) * 0.5;
+    gNormal.a   = roughness;
+
+    gDirectDiffuse.rgb  = directDiffuse;
+    gDirectDiffuse.a    = 1;
+    gDirectSpecular.rgb = directSpecular;
+    gDirectSpecular.a   = 1;
 }

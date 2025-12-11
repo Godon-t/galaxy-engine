@@ -101,7 +101,7 @@ public:
 
     void updateInverseViewMatrix(const mat4& invView);
     void updateInverseProjectionMatrix(const mat4& invProjection);
-    void setTextures(unsigned int colorTexture, unsigned int normalTexture, unsigned int depthTexture);
+    void setTextures(unsigned int colorTexture, unsigned int normalTexture, unsigned int depthTexture, unsigned int directDiffuseTexture, unsigned int direcAmbiantTexture);
 
 private:
     unsigned int m_inverseProjectionLocation;
@@ -110,6 +110,8 @@ private:
     unsigned int m_depthLocation;
     unsigned int m_colorLocation;
     unsigned int m_normalLocation;
+    unsigned int m_directDiffuseLocation;
+    unsigned int m_directAmbiantLocation;
 };
 
 class ProgramPostProcSSGI : public ProgramPostProc {

@@ -39,6 +39,8 @@ uniform vec3 cameraPos;
 uniform sampler2D sceneBuffer;
 uniform sampler2D normalBuffer;
 uniform sampler2D depthBuffer;
+uniform sampler2D directDiffuseBuffer;
+uniform sampler2D directAmbiantBuffer;
 uniform mat4 view;
 uniform float zNear     = 0.1;
 uniform float zFar      = 999.0;
@@ -425,87 +427,106 @@ int getNextProbeIdx(int probeIdx, int iterator)
         return probeIdx + probeFieldGridDim.x * probeFieldGridDim.y + probeFieldGridDim.x + 1;
 }
 
+// Retourne l'irradiance stockée dans l'atlas pour une sonde et des texcoords dans [0,1]
+vec3 sampleProbeIrradiance(int probeIdx, vec2 texCoords, sampler2D probeIrradianceField, int probeTexSingleSize)
+{
+    // texCoords est en UV global sur l'atlas (comme finalTexelCoords dans ton code)
+    return texture(probeIrradianceField, texCoords).rgb;
+}
+
+// Trilinear interpolation of the 8 probes around world position 'P'.
+vec3 trilinearIrradianceAtPosition(vec3 P, sampler2D probeIrradianceField, int probeTexSingleSize)
+{
+    // convert position to grid coords
+    vec3 local = (P - probeFieldOrigin) / probeFieldCellSize;
+    vec3 base  = floor(local);
+    vec3 frac  = local - base;
+
+    // Clamp to grid
+    ivec3 b0 = ivec3(clamp(base, vec3(0), vec3(probeFieldGridDim) - vec3(1)));
+    ivec3 b1 = ivec3(clamp(base + vec3(1), vec3(0), vec3(probeFieldGridDim) - vec3(1)));
+
+    vec3 accum = vec3(0.0);
+    for (int z = 0; z <= 1; ++z) {
+        for (int y = 0; y <= 1; ++y) {
+
+            for (int x = 0; x <= 1; ++x) {
+                ivec3 idx = ivec3(b0.x + x, b0.y + y, b0.z + z);
+                int pIdx  = getCellCoord(idx.x, idx.y, idx.z); // reuse ta fonction
+                // lire le texRect pour la sonde pIdx
+                vec4 rect = getProbeTexRect(pIdx, probeIrradianceField, probeTexSingleSize);
+                // on sample au centre de la sonde pour l'irradiance (ou à une coord calculée)
+                vec2 sampleUV = rect.xy + rect.zw * 0.5;
+                vec3 val      = texture(probeIrradianceField, sampleUV).rgb;
+                float wx      = (x == 0) ? (1.0 - frac.x) : frac.x;
+                float wy      = (y == 0) ? (1.0 - frac.y) : frac.y;
+                float wz      = (z == 0) ? (1.0 - frac.z) : frac.z;
+                accum += val * wx * wy * wz;
+            }
+        }
+    }
+    return accum;
+}
+
 vec3 getColorFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeIrradianceField, sampler2D probeNormalField, sampler2D probeDepthField, int probeTexSingleSize)
 {
-    float t               = 0.0;
-    int ite               = 0;
-    vec2 finalTexelCoords = vec2(0);
+    vec3 localStart = (rayStart - probeFieldOrigin) / probeFieldCellSize;
+    vec3 baseCell   = floor(localStart);
+    vec3 alpha      = fract(localStart);
 
-    int baseCellIdx; // Index de la probe au coin (0,0,0) de la cellule
-    bool changeCell = true;
+    ivec3 baseGridCoord = ivec3(clamp(baseCell, vec3(0), vec3(probeFieldGridDim - 1)));
 
-    int loopLimit   = 32;
-    int currentLoop = 0;
+    vec3 sumIrradiance = vec3(0.0);
+    float sumWeight    = 0.0;
 
-    while (t <= 1.0 && currentLoop < loopLimit) {
-        currentLoop += 1;
+    for (int i = 0; i < 8; i++) {
+        // TODO: check
+        // Better than getNextProbeIdx according to AI
+        ivec3 offset         = ivec3(i & 1, (i >> 1) & 1, (i >> 2) & 1);
+        ivec3 probeGridCoord = clamp(baseGridCoord + offset, ivec3(0), ivec3(probeFieldGridDim - 1));
 
-        if (changeCell) {
-            changeCell = false;
+        vec3 trilinear = mix(1.0 - alpha, alpha, vec3(offset));
+        float weight   = trilinear.x * trilinear.y * trilinear.z;
 
-            // Trouver la cellule contenant le point actuel
-            vec3 currentPos  = mix(rayStart, rayEnd, t);
-            vec3 cellGridPos = getClosestCornerCellProbePosition(currentPos);
+        int probeIdx       = getProbeIdx(vec3(probeGridCoord));
+        vec3 probePosition = vec3(probeGridCoord) * probeFieldCellSize + probeFieldOrigin;
 
-            // Vérifier qu'on est dans la grille
-            if (any(lessThan(cellGridPos, vec3(0))) || any(greaterThanEqual(cellGridPos, vec3(probeFieldGridDim)))) {
-                return vec3(0, 0, 1); // Hors grille
-            }
+        vec4 probeTexRect     = getProbeTexRect(probeIdx, probeIrradianceField, probeTexSingleSize);
+        float t               = 0.0;
+        vec2 finalTexelCoords = vec2(0);
 
-            baseCellIdx = getProbeIdx(cellGridPos);
-            ite         = 0;
-        }
+        int result = traceRayInProbeUnprecise(
+            rayStart,
+            rayEnd,
+            probePosition,
+            probeDepthField,
+            t,
+            probeTexRect.zw,
+            probeTexRect.xy,
+            finalTexelCoords);
 
-        if (ite >= 8) {
-            t += 0.01;
-            changeCell = true;
-            continue;
-        }
-
-        int currentProbeIdx    = getNextProbeIdx(baseCellIdx, ite);
-        vec3 probeGridPosition = fromProbeIdxToCoords(currentProbeIdx);
-
-        if (any(greaterThanEqual(probeGridPosition, vec3(probeFieldGridDim))) || any(lessThan(probeGridPosition, vec3(0)))) {
-            ite++;
-            continue;
-        }
-
-        vec3 probePosition = probeGridPosition * probeFieldCellSize + probeFieldOrigin;
-
-        vec3 p3d = mix(rayStart, rayEnd, t);
-
-        vec3 currentCellGridPos = getClosestCornerCellProbePosition(p3d);
-        vec3 baseCellGridPos    = fromProbeIdxToCoords(baseCellIdx);
-
-        // if (any(notEqual(currentCellGridPos, baseCellGridPos))) {
-        //     changeCell = true;
-        //     continue;
-        // }
-
-        currentProbeIdx = getProbeIdx(getClosestProbePosition(p3d));
-
-        vec4 probeTexRect = getProbeTexRect(currentProbeIdx, probeIrradianceField, probeTexSingleSize);
-        // int result        = traceRayInProbe(p3d, rayEnd, probePosition, probeDepthField, probeNormalField, t, probeTexRect.zw, probeTexRect.xy, finalTexelCoords);
-        int result = traceRayInProbeUnprecise(p3d, rayEnd, probePosition, probeDepthField, t, probeTexRect.zw, probeTexRect.xy, finalTexelCoords);
-
+        // Weights according to probe proximity
         if (result == HIT) {
-            return texture(probeIrradianceField, finalTexelCoords).rgb;
+            vec3 probeIrradiance = texture(probeIrradianceField, finalTexelCoords).rgb;
+
+            vec3 probeToStart = rayStart - probePosition;
+            float distWeight  = 1.0 / (1.0 + length(probeToStart));
+            weight *= distWeight;
+
+            sumIrradiance += weight * probeIrradiance;
+            sumWeight += weight;
         } else if (result == MISS) {
-            return vec3(1, 0, 0);
-            ite++;
-        } else if (result == UNKNOWN) {
-            return vec3(0, 0, 1);
-            // t a été mis à jour, on change probablement de cellule
-            // changeCell = true;
-            ite++;
+            // weight *= 0.05;
+            // sumWeight += weight;
         }
     }
 
-    // Couleurs de debug selon la raison de sortie
-    if (t >= 1.0)
-        return vec3(1, 0, 0); // Rayon complet sans hit
-    else
-        return vec3(0, 0, 1); // Limite d'itérations
+    if (sumWeight > 0.0001) {
+        return sumIrradiance / sumWeight;
+    }
+
+    // Fallback : si aucune probe n'a donné de résultat valide
+    return trilinearIrradianceAtPosition(rayEnd, probeIrradianceField, probeTexSingleSize);
 }
 
 vec3 backgroundBlur(sampler2D colorTexture, sampler2D depthTexture, vec2 uv)
@@ -525,24 +546,45 @@ vec3 backgroundBlur(sampler2D colorTexture, sampler2D depthTexture, vec2 uv)
 
 void main()
 {
-    color.a = 1.0;
+    // 1. Récupérer les données du G-Buffer
+    vec3 albedo     = texture(sceneBuffer, TexCoords).rgb;
+    float metallic  = texture(sceneBuffer, TexCoords).a;
+    vec3 normal     = texture(normalBuffer, TexCoords).rgb * 2.0 - 1.0;
+    float roughness = texture(normalBuffer, TexCoords).a;
+    float depth     = texture(depthBuffer, TexCoords).r;
+    float ao        = texture(depthBuffer, TexCoords).g;
 
-    float depthN = texture(depthBuffer, TexCoords).r;
+    // 2. Lumière directe (déjà calculée dans un pass précédent)
+    vec3 directLight = texture(directDiffuseBuffer, TexCoords).rgb;
 
-    vec3 worldCoord = reconstructWorldPos(TexCoords, depthN, inverseProjection, inverseView);
-    color.rgb       = normalize(worldCoord);
-    return;
-
-    vec3 rayStart = cameraPos; // uniform
-    vec3 rayEnd   = worldCoord;
-
-    color.rgb = getColorFromProbeField(
-        rayStart, rayEnd,
+    // 3. Calculer l'illumination globale
+    vec3 worldPos   = reconstructWorldPos(TexCoords, depth, inverseProjection, inverseView);
+    vec3 irradiance = getColorFromProbeField(
+        cameraPos, worldPos,
         probeIrradianceField, probeNormalField, probeDepthField,
         probeTextureSingleSize);
 
-    // color.rgb = texture(probeIrradianceField, vec2(1) - TexCoords).rgb;
-    // gl_FragDepth    = 0.f;
+    color = vec4(irradiance, 1.0);
 
-    // color.rgb = backgroundBlur(sceneBuffer, depthBuffer, TexCoords);
+    // 4. Appliquer le modèle PBR pour la diffuse indirecte
+    // Les métaux n'ont pas de diffuse indirect (seulement specular, non géré ici)
+    float giStrength     = 10.0; // Intensité de la GI
+    vec3 indirectDiffuse = irradiance * albedo * ao * (1.0 - metallic) * giStrength;
+
+    // 5. Combiner direct + indirect
+    vec3 finalColor = directLight + indirectDiffuse;
+    color.rgb       = directLight;
+    return;
+
+    // 6. (Optionnel) Ajouter un ambient minimum pour éviter le noir total
+    vec3 minAmbient = vec3(0.01) * albedo; // Très faible
+    finalColor      = max(finalColor, minAmbient);
+
+    // 7. Tonemapping (Reinhard simple)
+    finalColor = finalColor / (finalColor + vec3(1.0));
+
+    // 8. Correction gamma
+    finalColor = pow(finalColor, vec3(1.0 / 2.2));
+
+    color = vec4(finalColor, 1.0);
 }

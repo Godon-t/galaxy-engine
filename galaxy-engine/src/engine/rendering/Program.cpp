@@ -360,9 +360,11 @@ void ProgramUnicolor::setColor(const vec3& color)
 ProgramPostProc::ProgramPostProc(std::string path)
     : Program(path)
 {
-    m_colorLocation  = glGetUniformLocation(getProgramID(), "sceneBuffer");
-    m_depthLocation  = glGetUniformLocation(getProgramID(), "depthBuffer");
-    m_normalLocation = glGetUniformLocation(getProgramID(), "normalBuffer");
+    m_colorLocation         = glGetUniformLocation(getProgramID(), "sceneBuffer");
+    m_depthLocation         = glGetUniformLocation(getProgramID(), "depthBuffer");
+    m_normalLocation        = glGetUniformLocation(getProgramID(), "normalBuffer");
+    m_directDiffuseLocation = glGetUniformLocation(getProgramID(), "directDiffuseBuffer");
+    m_directAmbiantLocation = glGetUniformLocation(getProgramID(), "directAmbiantBuffer");
 
     m_inverseProjectionLocation = glGetUniformLocation(getProgramID(), "inverseProjection");
     m_inverseViewLocation       = glGetUniformLocation(getProgramID(), "inverseView");
@@ -378,7 +380,7 @@ void ProgramPostProc::updateInverseProjectionMatrix(const mat4& invProjection)
 {
     glUniformMatrix4fv(m_inverseProjectionLocation, 1, GL_FALSE, &invProjection[0][0]);
 }
-void ProgramPostProc::setTextures(unsigned int colorTexture, unsigned int normalTexture, unsigned int depthTexture)
+void ProgramPostProc::setTextures(unsigned int colorTexture, unsigned int normalTexture, unsigned int depthTexture, unsigned int directDiffuseTexture, unsigned int direcAmbiantTexture)
 {
     int actInt = Texture::getAvailableActivationInt();
     glActiveTexture(GL_TEXTURE0 + actInt);
@@ -394,6 +396,16 @@ void ProgramPostProc::setTextures(unsigned int colorTexture, unsigned int normal
     glActiveTexture(GL_TEXTURE0 + actInt);
     glBindTexture(GL_TEXTURE_2D, normalTexture);
     glUniform1i(m_normalLocation, actInt);
+
+    actInt = Texture::getAvailableActivationInt();
+    glActiveTexture(GL_TEXTURE0 + actInt);
+    glBindTexture(GL_TEXTURE_2D, directDiffuseTexture);
+    glUniform1i(m_directDiffuseLocation, actInt);
+
+    actInt = Texture::getAvailableActivationInt();
+    glActiveTexture(GL_TEXTURE0 + actInt);
+    glBindTexture(GL_TEXTURE_2D, direcAmbiantTexture);
+    glUniform1i(m_directAmbiantLocation, actInt);
 }
 
 ProgramPostProcSSGI::ProgramPostProcSSGI(std::string path)

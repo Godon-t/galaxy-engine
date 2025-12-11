@@ -749,7 +749,7 @@ void Backend::processCommand(const InitPostProcessCommand& command)
     GLX_CORE_ASSERT(m_activeProgram->type() == ProgramType::POST_PROCESSING_PROBE || m_activeProgram->type() == ProgramType::POST_PROCESSING_SSGI, "Post processing Program not active!");
 
     auto& fb = *m_frameBufferInstances.get(command.frameBufferID);
-    ((ProgramPostProc*)m_activeProgram)->setTextures(fb.getColorTextureID(), fb.getColorTextureID(1), fb.getDepthTextureID());
+    ((ProgramPostProc*)m_activeProgram)->setTextures(fb.getColorTextureID(), fb.getColorTextureID(1), fb.getDepthTextureID(), fb.getColorTextureID(3), fb.getColorTextureID(4));
 
     checkOpenGLErrors("Init post process");
 }

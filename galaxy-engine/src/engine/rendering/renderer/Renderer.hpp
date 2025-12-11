@@ -114,6 +114,7 @@ public:
 
     inline int getDrawCallsCount() { return m_drawCount; }
 
+    inline void setPostProcessing(ProgramType algo) { m_activePostProcessing = algo; }
     // TODO: remove ASAP
     inline unsigned int getFrameBufferTextureID(renderID frameBufferID) { return m_backend.getFrameBufferTextureID(frameBufferID); }
     inline unsigned int getRawSceneTextureID() { return m_backend.getFrameBufferTextureID(m_sceneFrameBufferID); }
@@ -145,6 +146,8 @@ private:
     vec2 m_mainViewportSize;
 
     vec3 m_cubemap_orientations[6], m_cubemap_ups[6];
+
+    ProgramType m_activePostProcessing;
 
     int m_drawCount = 0;
 };

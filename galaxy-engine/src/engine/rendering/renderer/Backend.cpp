@@ -34,15 +34,15 @@ Backend::Backend(size_t maxSize)
     // glDisable(GL_CULL_FACE);
 
     // TODO: Change the way Program object are created
-    m_mainProgram              = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
-    m_skyboxProgram            = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
-    m_irradianceProgram        = std::move(ProgramSkybox(engineRes("shaders/filters/irradiance.glsl")));
-    m_textureProgram           = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
-    m_unicolorProgram          = std::move(ProgramUnicolor(engineRes("shaders/unicolor.glsl")));
-    m_postProcessingProgram    = std::move(ProgramPostProc(engineRes("shaders/post_processing.glsl")));
-    m_postProcessingSSGIProgram    = std::move(ProgramPostProcSSGI(engineRes("shaders/ssgi.glsl")));
-    m_shadowProgram            = std::move(ProgramShadow(engineRes("shaders/shadow_depth.glsl")));
-    m_computeOctahedralProgram = std::move(ProgramComputeOctahedral(engineRes("shaders/compute_octahedral.glsl")));
+    m_mainProgram                = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
+    m_skyboxProgram              = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
+    m_irradianceProgram          = std::move(ProgramSkybox(engineRes("shaders/filters/irradiance.glsl")));
+    m_textureProgram             = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
+    m_unicolorProgram            = std::move(ProgramUnicolor(engineRes("shaders/unicolor.glsl")));
+    m_postProcessingProbeProgram = std::move(ProgramPostProc(engineRes("shaders/post_processing.glsl")));
+    m_postProcessingSSGIProgram  = std::move(ProgramPostProcSSGI(engineRes("shaders/ssgi.glsl")));
+    m_shadowProgram              = std::move(ProgramShadow(engineRes("shaders/shadow_depth.glsl")));
+    m_computeOctahedralProgram   = std::move(ProgramComputeOctahedral(engineRes("shaders/compute_octahedral.glsl")));
 
     m_debugLinesProgram = std::move(ProgramDebugLines(engineRes("shaders/debug/line_draw.glsl")));
 
@@ -556,9 +556,9 @@ void Backend::processCommand(SetViewCommand& setViewCommand)
     m_irradianceProgram.use();
     m_irradianceProgram.updateViewMatrix(setViewCommand.view);
 
-    m_postProcessingProgram.use();
-    m_postProcessingProgram.updateViewMatrix(setViewCommand.view);
-    m_postProcessingProgram.updateInverseViewMatrix(inverse(setViewCommand.view));
+    m_postProcessingProbeProgram.use();
+    m_postProcessingProbeProgram.updateViewMatrix(setViewCommand.view);
+    m_postProcessingProbeProgram.updateInverseViewMatrix(inverse(setViewCommand.view));
 
     m_postProcessingSSGIProgram.use();
     m_postProcessingSSGIProgram.updateViewMatrix(setViewCommand.view);
@@ -587,9 +587,9 @@ void Backend::setProjectionMatrix(const mat4& projectionMatrix)
     m_irradianceProgram.use();
     m_irradianceProgram.updateProjectionMatrix(projectionMatrix);
 
-    m_postProcessingProgram.use();
-    m_postProcessingProgram.updateProjectionMatrix(projectionMatrix);
-    m_postProcessingProgram.updateInverseProjectionMatrix(inverse(projectionMatrix));
+    m_postProcessingProbeProgram.use();
+    m_postProcessingProbeProgram.updateProjectionMatrix(projectionMatrix);
+    m_postProcessingProbeProgram.updateInverseProjectionMatrix(inverse(projectionMatrix));
 
     m_postProcessingSSGIProgram.use();
     m_postProcessingSSGIProgram.updateProjectionMatrix(projectionMatrix);
@@ -615,8 +615,8 @@ void Backend::processCommand(SetActiveProgramCommand& command)
         m_activeProgram = &m_textureProgram;
     else if (command.program == UNICOLOR)
         m_activeProgram = &m_unicolorProgram;
-    else if (command.program == POST_PROCESSING)
-        m_activeProgram = &m_postProcessingProgram;
+    else if (command.program == POST_PROCESSING_PROBE)
+        m_activeProgram = &m_postProcessingProbeProgram;
     else if (command.program == FILTER_IRRADIANCE)
         m_activeProgram = &m_irradianceProgram;
     else if (command.program == SHADOW_DEPTH)
@@ -720,7 +720,7 @@ void Backend::processCommand(BindFrameBufferCommand& command, bool bind)
 // TODO: Rework post processing logic
 void Backend::processCommand(InitPostProcessCommand& command)
 {
-    GLX_CORE_ASSERT(m_activeProgram->type() == ProgramType::POST_PROCESSING || m_activeProgram->type() == ProgramType::POST_PROCESSING_SSGI, "Post processing Program not active!");
+    GLX_CORE_ASSERT(m_activeProgram->type() == ProgramType::POST_PROCESSING_PROBE || m_activeProgram->type() == ProgramType::POST_PROCESSING_SSGI, "Post processing Program not active!");
 
     auto& fb = *m_frameBufferInstances.get(command.frameBufferID);
     ((ProgramPostProc*)m_activeProgram)->setTextures(fb.getColorTextureID(), fb.getColorTextureID(1), fb.getDepthTextureID());

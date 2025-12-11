@@ -167,7 +167,7 @@ private:
     ProgramSkybox m_irradianceProgram;
     ProgramTexture m_textureProgram;
     ProgramUnicolor m_unicolorProgram;
-    ProgramPostProc m_postProcessingProgram;
+    ProgramPostProc m_postProcessingProbeProgram;
     ProgramPostProcSSGI m_postProcessingSSGIProgram;
     ProgramShadow m_shadowProgram;
     ProgramComputeOctahedral m_computeOctahedralProgram;

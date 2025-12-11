@@ -115,7 +115,7 @@ void LightManager::debugDraw()
     vec3 debugStart = m_debugStartTransform.getGlobalPosition();
     vec3 debugEnd   = m_debugEndTransform.getGlobalPosition();
 
-    ri.changeUsedProgram(POST_PROCESSING);
+    ri.changeUsedProgram(POST_PROCESSING_PROBE);
     ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeIrradianceField", 0);
     ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeNormalField", 1);
     ri.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeDepthField", 2);
@@ -229,7 +229,7 @@ void LightManager::updateProbeField()
 void LightManager::updateBias(float newValue)
 {
     Renderer::getInstance().beginCanvaNoBuffer();
-    Renderer::getInstance().changeUsedProgram(ProgramType::POST_PROCESSING);
+    Renderer::getInstance().changeUsedProgram(ProgramType::POST_PROCESSING_PROBE);
     Renderer::getInstance().setUniform("traceBias", newValue);
     Renderer::getInstance().endCanva();
 }
@@ -266,7 +266,7 @@ void LightManager::resizeProbeFieldGrid(unsigned int width, unsigned int height,
     }
 
     ri.beginCanvaNoBuffer();
-    ri.changeUsedProgram(ProgramType::POST_PROCESSING);
+    ri.changeUsedProgram(ProgramType::POST_PROCESSING_PROBE);
     ri.setUniform("probeFieldGridDim", ivec3(m_gridDimX, m_gridDimY, m_gridDimZ));
     ri.setUniform("probeFieldCellSize", m_probeDistance);
     ri.setUniform("probeTextureSingleSize", (int)m_probeResolution);

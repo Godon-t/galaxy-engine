@@ -267,7 +267,19 @@ void EditorLayer::applicationWidgetRender()
         GLX_INFO("Selected resource! '{0}'", m_resourceAccess.selectedResourcePath);
     }
 
-    ImGui::Checkbox("Disable post-processing", &m_disablePostProcessing);
+    if (ImGui::BeginMenu("GI method")) {
+        if (ImGui::MenuItem("None"))
+            m_disablePostProcessing = true;
+        if (ImGui::MenuItem("Probe")) {
+            Renderer::getInstance().setPostProcessing(ProgramType::POST_PROCESSING_PROBE);
+            m_disablePostProcessing = false;
+        }
+        if (ImGui::MenuItem("Screen space")) {
+            m_disablePostProcessing = false;
+            Renderer::getInstance().setPostProcessing(ProgramType::POST_PROCESSING_SSGI);
+        }
+        ImGui::EndMenu();
+    }
 
     ImGui::End();
 }

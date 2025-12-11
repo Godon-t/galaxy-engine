@@ -17,6 +17,7 @@ Renderer::Renderer()
     , m_backend()
     , m_lightManager()
     , m_mainViewportSize(1024)
+    , m_activePostProcessing(ProgramType::POST_PROCESSING_PROBE)
 {
     m_backend.initDebugCallback();
 
@@ -93,9 +94,11 @@ void Renderer::shadowPass()
 
 void Renderer::applyPostProcessing()
 {
+    if (m_activePostProcessing != ProgramType::POST_PROCESSING_PROBE && m_activePostProcessing != ProgramType::POST_PROCESSING_SSGI)
+        GLX_CORE_ASSERT(m_activePostProcessing == ProgramType::POST_PROCESSING_PROBE || m_activePostProcessing == ProgramType::POST_PROCESSING_SSGI, "Wrong porgram type for post processing");
+
     m_frontend.beginCanva(m_currentView, m_currentProj, m_postProcessingBufferID, FramebufferTextureFormat::RGBA8);
-    m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING);
-    // m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING_SSGI);
+    m_frontend.changeUsedProgram(m_activePostProcessing);
 
     m_frontend.initPostProcessing(m_sceneFrameBufferID);
     m_frontend.submit(m_postProcessingQuadID);

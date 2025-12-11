@@ -95,11 +95,11 @@ class ProgramPostProc : public Program {
 public:
     ProgramPostProc() = default;
     ProgramPostProc(std::string path);
-    virtual ProgramType type() const override { return ProgramType::POST_PROCESSING; }
+    virtual ProgramType type() const override { return ProgramType::POST_PROCESSING_PROBE; }
 
     void updateInverseViewMatrix(const mat4& invView);
     void updateInverseProjectionMatrix(const mat4& invProjection);
-    void setTextures(unsigned int colorTexture, unsigned int normalTexture ,unsigned int depthTexture);
+    void setTextures(unsigned int colorTexture, unsigned int normalTexture, unsigned int depthTexture);
 
 private:
     unsigned int m_inverseProjectionLocation;

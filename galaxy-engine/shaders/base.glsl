@@ -124,7 +124,21 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 
 vec3 getNormalFromNormalMap()
 {
-    return -normalize(texture2D(normalMap, v_texCoords).rgb * 2.0 - 1.0);
+    // Récupère la normale en espace tangent depuis la texture
+    vec3 tangentNormal = texture2D(normalMap, v_texCoords).rgb * 2.0 - 1.0;
+
+    // Calcule les dérivées pour construire la matrice TBN
+    vec3 Q1  = dFdx(v_worldPos);
+    vec3 Q2  = dFdy(v_worldPos);
+    vec2 st1 = dFdx(v_texCoords);
+    vec2 st2 = dFdy(v_texCoords);
+
+    vec3 N   = normalize(v_normal);
+    vec3 T   = normalize(Q1 * st2.t - Q2 * st1.t);
+    vec3 B   = -normalize(cross(N, T));
+    mat3 TBN = mat3(T, B, N);
+
+    return normalize(TBN * tangentNormal);
 }
 
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
@@ -244,6 +258,6 @@ void main()
     colorPBR = pow(colorPBR, vec3(1.0 / 2.2));
 
     color     = vec4(colorPBR, transparency);
-    outNormal = vec4((normal+vec3(1.0))*0.5, 1.0);
+    outNormal = vec4((normal + vec3(1.0)) * 0.5, 1.0);
     outDepth  = vec4(length(v_camPos - v_worldPos) / zFar, 0, 0, 1);
 }

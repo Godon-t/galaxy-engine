@@ -22,11 +22,14 @@ struct LightData {
     bool needUpdate = true;
     vec3 color;
     float intensity;
+    float range;
 
     LightData()
         : idx(-1)
         , shadowMapID(0)
         , color(1)
+        , intensity(0.5)
+        , range(1.0)
     {
     }
     LightData(int lightIdx, math::mat4& matrix)
@@ -34,6 +37,8 @@ struct LightData {
         , transformationMatrix(matrix)
         , shadowMapID(0)
         , color(1)
+        , intensity(0.5)
+        , range(1.0)
     {
     }
 };
@@ -41,6 +46,7 @@ struct LightData {
 struct GPULightData {
     glm::vec4 positions[maxLightCount];
     glm::vec4 colors[maxLightCount];
+    glm::vec4 params[maxLightCount];
     int count;
     float pad[3];
 };
@@ -55,6 +61,8 @@ public:
     int registerLight(LightData desc);
     void updateLightTransform(lightID id, math::mat4 transform);
     void updateLightColor(lightID id, math::vec3 color);
+    void updateLightIntensity(lightID id, float intensity);
+    void updateLightRange(lightID id, float range);
     void unregisterLight(int id);
     void shadowPass(Node* sceneRoot);
     renderID getShadowMapID(lightID light) { return m_lights[light].shadowMapID; }

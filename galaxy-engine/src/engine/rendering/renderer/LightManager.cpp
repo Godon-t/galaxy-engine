@@ -105,6 +105,18 @@ void LightManager::updateLightColor(lightID id, math::vec3 color)
     m_lights[id].needUpdate = true;
 }
 
+void LightManager::updateLightIntensity(lightID id, float intensity)
+{
+    m_lights[id].intensity  = intensity;
+    m_lights[id].needUpdate = true;
+}
+
+void LightManager::updateLightRange(lightID id, float range)
+{
+    m_lights[id].range      = range;
+    m_lights[id].needUpdate = true;
+}
+
 void LightManager::unregisterLight(int id)
 {
     m_lights.erase(id);
@@ -155,6 +167,8 @@ void LightManager::shadowPass(Node* sceneRoot)
 
         m_lightUniformData.colors[light.second.idx]    = vec4(light.second.color, 1.0);
         m_lightUniformData.positions[light.second.idx] = light.second.transformationMatrix[3];
+        m_lightUniformData.params[light.second.idx].y  = light.second.intensity;
+        m_lightUniformData.params[light.second.idx].z  = light.second.range;
 
         // ri.setUniform("lights[" + std::to_string(id) + "].lightMatrix", lightSpaceMatrix);
         // ri.setUniform("lights[" + std::to_string(id) + "].position", vec3(lightSpaceMatrix[3]));

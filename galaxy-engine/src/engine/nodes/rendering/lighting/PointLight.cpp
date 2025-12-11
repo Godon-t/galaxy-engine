@@ -46,9 +46,11 @@ void PointLight::draw()
 {
     // Draw visual cube
     auto& ri = Renderer::getInstance();
-    ri.changeUsedProgram(UNICOLOR);
-    ri.setUniform("objectColor", m_color);
-    ri.submit(m_visualCubeID, *getTransform());
+    if (m_visualCubeID && ri.canDrawDebug()) {
+        ri.changeUsedProgram(UNICOLOR);
+        ri.setUniform("objectColor", m_color);
+        ri.submit(m_visualCubeID, *getTransform());
+    }
 }
 
 void PointLight::updateLight()
@@ -56,6 +58,8 @@ void PointLight::updateLight()
     m_transform.computeModelMatrix();
     Renderer::getInstance().getLightManager().updateLightColor(m_lightID, m_color);
     Renderer::getInstance().getLightManager().updateLightTransform(m_lightID, getTransform()->getGlobalModelMatrix());
+    Renderer::getInstance().getLightManager().updateLightIntensity(m_lightID, m_intensity);
+    Renderer::getInstance().getLightManager().updateLightRange(m_lightID, m_range);
 }
 
 }

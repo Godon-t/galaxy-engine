@@ -56,9 +56,11 @@ void SpotLight::draw()
         // Renderer::getInstance().setUnicolorObjectColor(m_color);
 
         auto& ri = Renderer::getInstance();
-        ri.changeUsedProgram(UNICOLOR);
-        ri.setUniform("objectColor", m_color);
-        ri.submit(m_visualPyramidID, m_transform);
+        if (ri.canDrawDebug()) {
+            ri.changeUsedProgram(UNICOLOR);
+            ri.setUniform("objectColor", m_color);
+            ri.submit(m_visualPyramidID, m_transform);
+        }
 
         ri.changeUsedProgram(TEXTURE);
         ri.bindTexture(ri.getLightManager().getShadowMapID(m_lightID), "sampledTexture");

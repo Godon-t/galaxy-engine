@@ -57,13 +57,14 @@ uniform bool useRoughnessMap = false;
 uniform bool useAoMap        = false;
 
 // lights
-const int MAX_LIGHT    = 20;
+const int MAX_LIGHT    = 32;
 uniform int lightCount = 3;
 
 layout(std140, binding = 0) uniform LightBlock
 {
-    vec4 positions[32];
-    vec4 colors[32];
+    vec4 positions[MAX_LIGHT];
+    vec4 colors[MAX_LIGHT];
+    vec4 params[MAX_LIGHT]; // x = type; y = intensity; z = range
     int count;
     int _pad1;
     int _pad2;
@@ -208,11 +209,15 @@ void main()
 
     for (int i = 0; i < lightCount; ++i) {
         // calculate per-light radiance
+        float intensity = lightData.params[i].y;
+        float range     = lightData.params[i].z;
+
         vec3 L            = normalize(lightData.positions[i].xyz - v_worldPos);
         vec3 H            = normalize(V + L);
         float distance    = length(lightData.positions[i].xyz - v_worldPos);
-        float attenuation = 1.f / (distance * distance);
-        vec3 radiance     = lightData.colors[i].xyz * attenuation;
+        float smoothRange = clamp(1.0 - distance / range, 0.0, 1.0);
+        float attenuation = (1 / (distance * distance)) * smoothRange;
+        vec3 radiance     = lightData.colors[i].xyz * intensity * attenuation;
 
         // cook-torrance brdf
         float NDF = DistributionGGX(N, H, roughness);

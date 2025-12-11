@@ -260,36 +260,38 @@ void main()
     vec3 kS = F;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
-    // vec3 irradiance;
+    vec3 irradiance;
     // // if (useIrradianceMap)
     // //     irradiance = texture(irradianceMap, N).rgb;
     // // else
     // //     irradiance = vec3(0.5);
-    // irradiance   = vec3(0.5);
-    // vec3 diffuse = irradiance * albedo;
+    irradiance   = vec3(0.5);
+    vec3 diffuse = irradiance * albedo;
 
-    // // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
-    // const float MAX_REFLECTION_LOD = 4.0;
-    // // vec3 prefilteredColor          = textureLod(prefilterMap, R, roughness * MAX_REFLECTION_LOD).rgb;
-    // vec3 prefilteredColor = vec3(0.5);
-    // // vec2 brdf             = texture(brdfLUTMap, vec2(max(dot(N, V), 0.0), roughness)).rg;
-    // vec2 brdf     = vec2(0.2);
-    // vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+    // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
+    const float MAX_REFLECTION_LOD = 4.0;
+    // vec3 prefilteredColor          = textureLod(prefilterMap, R, roughness * MAX_REFLECTION_LOD).rgb;
+    vec3 prefilteredColor = vec3(0.5);
+    // vec2 brdf             = texture(brdfLUTMap, vec2(max(dot(N, V), 0.0), roughness)).rg;
+    vec2 brdf     = vec2(0.2);
+    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
     // vec3 ambient = (kD * diffuse + specular) * ao;
-    // vec3 ambient = (kD * diffuse) * ao;
-    // vec3 pbr     = ambient + Lo;
+    vec3 ambient = (kD * diffuse) * ao;
+    vec3 pbr     = ambient + Lo;
 
-    // pbr = pbr / (pbr + vec3(1.0));
-    // pbr = pow(pbr, vec3(1.0 / 2.2));
+    pbr = pbr / (pbr + vec3(1.0));
+    pbr = pow(pbr, vec3(1.0 / 2.2));
 
     gDepth = vec4(length(v_camPos - v_worldPos) / zFar, ao, 0, 1);
 
-    gAlbedo.rgb = albedo;
-    gAlbedo.a   = transparency;
+    gAlbedo.rgb = pbr;
+    gAlbedo.a   = 1.0;
+    // gAlbedo.a   = transparency;
 
     gNormal.rgb = (normal + vec3(1.0)) * 0.5;
-    gNormal.a   = roughness;
+    // gNormal.a   = roughness;
+    gNormal.a = 1.0;
 
     gDirectDiffuse.rgb  = directDiffuse;
     gDirectDiffuse.a    = 1;

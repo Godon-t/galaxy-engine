@@ -41,10 +41,9 @@ uniform float zNear = 0.1;
 uniform float zFar  = 9999.0;
 
 uniform int numSamples    = 16;
-uniform float rayStep     = 0.1;
 uniform int maxSteps      = 32;
 uniform float giIntensity = 1.0;
-uniform float radius      = 0.5;
+uniform float radius      = 15.0;
 uniform float bias        = 0.2;
 
 vec3 worldToScreen(vec3 worldPos)
@@ -141,7 +140,9 @@ vec4 screenSpaceRayMarch(vec3 startPos, vec3 direction, vec3 normal)
         }
     }
 
-    return vec4(0.0);
+    return texture(sceneBuffer, worldToScreen(startPos).xy);
+
+    return vec4(1);
 }
 
 void main()
@@ -149,12 +150,12 @@ void main()
     // recuperer les informations du Buffer
     float depth = texture(depthBuffer, TexCoords).r;
 
-    // Si on est sur le fond (skybox), pas de GI
-    if (depth >= 0.9999) {
-        color = texture(sceneBuffer, TexCoords);
-        color = vec4(1, 0, 0, 1);
-        return;
-    }
+    // // Si on est sur le fond (skybox), pas de GI
+    // if (depth >= 0.9999) {
+    //     color = texture(sceneBuffer, TexCoords);
+    //     color = vec4(1, 0, 0, 1);
+    //     return;
+    // }
 
     vec3 normalEncoded = texture(normalBuffer, TexCoords).xyz;
     vec3 normal        = normalize(normalEncoded * 2.0 - vec3(1));

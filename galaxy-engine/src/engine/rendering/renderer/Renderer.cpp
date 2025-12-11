@@ -18,6 +18,7 @@ Renderer::Renderer()
     , m_lightManager()
     , m_mainViewportSize(1024)
     , m_activePostProcessing(ProgramType::POST_PROCESSING_PROBE)
+    , m_showDebug(false)
 {
     m_backend.initDebugCallback();
 

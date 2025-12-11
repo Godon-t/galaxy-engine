@@ -82,6 +82,8 @@ public:
 
     inline void debugMessage(std::string message) { m_frontend.addDebugMsg(message); }
     inline void submitDebugLine(vec3 start, vec3 end) { m_frontend.submitDebugLine(start, end, vec3(0, 1, 0)); }
+    inline bool canDrawDebug() { return m_showDebug; }
+    inline void setShowDebug(bool state) { m_showDebug = state; }
 
     inline void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int colorIdx) { m_frontend.attachTextureToColorFramebuffer(textureID, framebufferID, colorIdx); }
     inline void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID) { m_frontend.attachTextureToDepthFramebuffer(textureID, framebufferID); }
@@ -148,6 +150,7 @@ private:
     vec3 m_cubemap_orientations[6], m_cubemap_ups[6];
 
     ProgramType m_activePostProcessing;
+    bool m_showDebug;
 
     int m_drawCount = 0;
 };

@@ -123,9 +123,11 @@ void EditorLayer::onUpdate()
         //     renderer.endShadowPass();
         // }
         renderer.shadowPass();
+        renderer.setShowDebug(true);
         renderer.beginSceneRender(cameraTransform);
         // TODO: should the application handle the render ?
         Application::getInstance().getRootNodePtr()->draw();
+        renderer.setShowDebug(false);
         // m_selectedScene->getNodePtr()->draw();
 
         renderer.endSceneRender();

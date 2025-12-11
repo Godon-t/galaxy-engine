@@ -21,7 +21,7 @@ void GINode::accept(Galaxy::NodeVisitor& visitor)
 }
 void GINode::draw()
 {
-    if (m_probeVisu != 0) {
+    if (m_probeVisu != 0 && Renderer::getInstance().canDrawDebug()) {
         Renderer::getInstance().changeUsedProgram(ProgramType::UNICOLOR);
         Renderer::getInstance().setUniform("objectColor", vec3(0, 1, 0));
         for (auto& transfo : m_probeTransforms) {

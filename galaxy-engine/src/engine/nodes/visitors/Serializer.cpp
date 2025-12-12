@@ -123,6 +123,10 @@ void SceneSerializer::visit(PointLight& node)
 void SceneSerializer::visit(GINode& node)
 {
     visit(static_cast<Node3D&>(node));
+
+    m_yaml << YAML::Key << "Grid" << YAML::Value << node.getGrid();
+    m_yaml << YAML::Key << "SpaceBetween" << YAML::Value << node.getSpaceBetween();
+    m_yaml << YAML::Key << "ProbeResolution" << YAML::Value << node.getProbeResolution();
 }
 
 }

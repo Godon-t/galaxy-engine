@@ -213,119 +213,126 @@ int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, sampler
     return MISS;
 }
 
-int traceRayInProbeUnprecise(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, float t, vec2 scale, vec2 probeTextureUpperLeft, out vec2 texelCoords)
+int traceRayInProbeUnprecise(vec3 rayOrigin, vec3 rayDir, vec3 probePos, sampler2D depthTex, out float tHit, vec2 scale, vec2 probeTextureUpperLeft, out vec2 texelCoords)
 {
-    vec3 centeredP0 = p0 - probePos;
-    vec3 centeredP1 = p1 - probePos;
-    vec3 rayDir     = normalize(centeredP1 - centeredP0); // Normaliser ici
+    // 1. Rayon dans l'espace de la probe
+    vec3 centeredOrigin = rayOrigin - probePos;
+    rayDir              = normalize(rayDir);
 
-    // 1. Obtenir la taille de la texture
-    ivec2 texSize   = textureSize(depthTex, 0);
-    vec2 invTexSize = 1.0 / vec2(texSize);
+    // 2. Créer un point d'arrivée virtuel pour computeOctahedralIntersections
+    vec3 centeredEnd = centeredOrigin + rayDir * 100;
 
-    // 2. Calculer les intersections octaédrales
+    // 3. Obtenir la taille de la texture
+    ivec2 texSize = textureSize(depthTex, 0);
+
+    // 4. Calculer les intersections octaédrales
     float ts[8];
-    int numSegments = computeOctahedralIntersections(centeredP0, centeredP1, ts);
-    numSegments     = numSegments - 1;
+    int numSegments = computeOctahedralIntersections(centeredOrigin, centeredEnd, ts);
 
-    vec3 probeSpaceRayDirection   = normalize(centeredP1 - centeredP0);
-    vec3 directionFromProbeBefore = normalize(centeredP0);
+    if (numSegments <= 0) {
+        return MISS;
+    }
 
-    // 3. Corriger la transformation UV
+    numSegments = numSegments - 1;
+
+    vec3 probeSpaceRayDirection = rayDir; // Déjà normalisé
+
+    // 5. Parcourir les segments d'intersection
     for (int segIdx = 0; segIdx < numSegments; segIdx += 2) {
-        float distanceFromProbeToRayBefore = max(0.0, distanceToIntersection(centeredP0, probeSpaceRayDirection, directionFromProbeBefore));
-
         float t0 = ts[segIdx];
         float t1 = ts[segIdx + 1];
 
-        vec3 p3d0 = mix(centeredP0, centeredP1, t0);
-        vec3 p3d1 = mix(centeredP0, centeredP1, t1);
-
-        float depth0 = length(p3d0);
-        float depth1 = length(p3d1);
+        // Points 3D aux extrémités du segment
+        vec3 p3d0 = mix(centeredOrigin, centeredEnd, t0);
+        vec3 p3d1 = mix(centeredOrigin, centeredEnd, t1);
 
         vec3 dir0 = normalize(p3d0);
         vec3 dir1 = normalize(p3d1);
 
-        // 4. Projection octaédrique CORRECTE
+        // 6. Projection octaédrique
         vec2 uv0_oct = octahedral_mapping(dir0);
         vec2 uv1_oct = octahedral_mapping(dir1);
 
-        // 5. Appliquer scale et offset POUR L'ATLAS
+        // 7. UVs dans l'atlas
         vec2 uv0 = uv0_oct * scale + probeTextureUpperLeft;
         vec2 uv1 = uv1_oct * scale + probeTextureUpperLeft;
 
-        // 6. Ray marching
+        // 8. Ray marching adaptatif
         vec2 uvDir     = uv1 - uv0;
         float uvLength = length(uvDir);
-        int steps      = int(ceil(uvLength * float(texSize.x))); // Adaptatif
+        int steps      = max(8, int(ceil(uvLength * float(texSize.x))));
 
-        // vec2 uvDirection = uv1 - uv0;
-        // float uvStepLength = length(uvDirection) / 32.0;
-        // uvDirection = normalize(uvDirection);
-        // vec2 texelCoords = uv0;
-        // float d=0.0;
+        // Distance initiale du rayon à la probe
+        vec3 directionFromProbeBefore      = dir0;
+        float distanceFromProbeToRayBefore = max(0.0, distanceToIntersection(centeredOrigin, probeSpaceRayDirection, directionFromProbeBefore));
 
-        float depthProbeBefore = texture(depthTex, uv0).r * zFar;
+        // 9. Marcher le long du segment
         for (int i = 1; i <= steps; ++i) {
-            // vec2 texelCoordsBefore = texelCoords + uvDirection * uvStepLength * 0.5;
-            // vec3 directionFromProbe = octahedral_unmapping((texelCoordsBefore - probeTextureUpperLeft) / scale);
+            float s = float(i) / float(steps);
 
-            float sBefore  = float(i - 1) / float(steps);
-            float s        = float(i) / float(steps);
-            vec2 uvCurrent = mix(uv0, uv1, s);
+            // Position courante en UV et 3D
+            vec2 uvCurrent  = mix(uv0, uv1, s);
+            vec3 currentPos = mix(p3d0, p3d1, s);
 
-            // 7. Lire la profondeur CORRECTEMENT
+            // Direction depuis la probe vers la position courante
+            vec3 currentDir = normalize(currentPos);
+
+            // Lire la profondeur de la probe dans cette direction
             float depthProbe = texture(depthTex, uvCurrent).r * zFar;
 
-            //  float s = float(i) / float(steps);
-            // float depthRay   = mix(depth0, depth1, s);
-            // // TexelFetch ?
-            // float depthProbe = texture(depthTex, texelCoords).r * zFar;
-            // // float distanceFromProbeToSurface = texelFetch(depthField, ivec2(textureSize2d * (texCoord * scale + probeTextureUpperLeft)), 0).r * zFar;
+            // **LOGIQUE CLEF : Calculer la distance min/max du rayon à la probe**
+            vec3 directionFromProbeAfter      = octahedral_unmapping(mix(uv0_oct, uv1_oct, s));
+            float distanceFromProbeToRayAfter = max(0.0, distanceToIntersection(centeredOrigin, probeSpaceRayDirection, directionFromProbeAfter));
 
-            // 8. Calculer la position 3D courante
-            float currentT  = mix(t0, t1, s);
-            vec3 currentPos = mix(centeredP0, centeredP1, currentT);
-            float depthRay  = length(currentPos);
+            float minDistanceFromProbeToRay = min(distanceFromProbeToRayAfter, distanceFromProbeToRayBefore);
+            float maxDistanceFromProbeToRay = max(distanceFromProbeToRayAfter, distanceFromProbeToRayBefore);
 
-            // 9. Vérifier l'intersection
-            vec3 currentDir    = normalize(currentPos);
-            vec2 currentUV_oct = octahedral_mapping(currentDir) * 0.5 + 0.5;
-
-            // Distance entre le rayon et la sonde
-            float rayProbeDist = dot(currentPos, currentDir);
-
-            // // Second half of ray marching
-            // vec2 texelCoordsAfter = texelCoords + uvDirection * uvStepLength;
-            // texelCoords = texelCoordsAfter;
-            // vec3 directionFromProbeAfter      = octahedral_unmapping((texelCoordsAfter - probeTextureUpperLeft) / scale);
-
-            float distanceFromProbeToRayAfter = max(0.0, distanceToIntersection(centeredP0, probeSpaceRayDirection, octahedral_unmapping(mix(uv0_oct, uv1_oct, s))));
-            float maxDistanceFromProbeToRay   = max(distanceFromProbeToRayAfter, distanceFromProbeToRayBefore);
-            if (maxDistanceFromProbeToRay >= depthProbe) {
+            // **TEST D'INTERSECTION EFFICACE**
+            // Si le rayon passe à une distance >= depthProbe, c'est un hit
+            vec3 rawNormal = texture(probeNormalField, mix(uv0, uv1, s)).rgb;
+            if (dot(directionFromProbeAfter, (rawNormal - vec3(0.5)) * 2.0) > 0.0) {
+                return UNKNOWN;
+            } else if (maxDistanceFromProbeToRay >= depthProbe) {
                 texelCoords = uvCurrent;
+
+                // Calculer tHit : distance réelle sur le rayon
+                float currentT = mix(t0, t1, s);
+                tHit           = currentT * zFar; // Convertir de [0,1] à distance réelle
+
                 return HIT;
             }
 
-            // // 10. Condition de hit
-            // if (rayProbeDist >= depthProbe - 0.01 && rayProbeDist <= depthProbe + 0.01) {
-            //     texelCoords = uvCurrent;
-            //     return HIT;
-            // }
+            // Mettre à jour pour la prochaine itération
+            distanceFromProbeToRayBefore = distanceFromProbeToRayAfter;
+            directionFromProbeBefore     = directionFromProbeAfter;
         }
     }
 
     return MISS;
+}
 
-    // // logique HIT / MISS / UNKNOWN
-    // if (diff > adaptiveBias) {
-    //     return UNKNOWN;
-    // } else if (diff >= -adaptiveBias) {
-    //     return HIT;
-    // }
+// Helper : intersection rayon-octaèdre
+bool rayOctahedronIntersection(vec3 origin, vec3 dir, float radius, out float tEnter, out float tExit)
+{
+    // L'octaèdre est défini par |x| + |y| + |z| <= radius
+    // Pour simplifier, on utilise une sphère englobante
+    // (Une vraie intersection octaèdre est plus complexe)
 
-    return MISS;
+    // Intersection rayon-sphère
+    float a            = dot(dir, dir);
+    float b            = 2.0 * dot(origin, dir);
+    float c            = dot(origin, origin) - radius * radius;
+    float discriminant = b * b - 4.0 * a * c;
+
+    if (discriminant < 0.0) {
+        return false;
+    }
+
+    float sqrtDisc = sqrt(discriminant);
+    tEnter         = (-b - sqrtDisc) / (2.0 * a);
+    tExit          = (-b + sqrtDisc) / (2.0 * a);
+
+    return tExit > 0.0;
 }
 
 int getCellCoord(int x, int y, int z)
@@ -434,41 +441,42 @@ vec3 sampleProbeIrradiance(int probeIdx, vec2 texCoords, sampler2D probeIrradian
     return texture(probeIrradianceField, texCoords).rgb;
 }
 
-// Trilinear interpolation of the 8 probes around world position 'P'.
 vec3 trilinearIrradianceAtPosition(vec3 P, sampler2D probeIrradianceField, int probeTexSingleSize)
 {
-    // convert position to grid coords
     vec3 local = (P - probeFieldOrigin) / probeFieldCellSize;
     vec3 base  = floor(local);
-    vec3 frac  = local - base;
+    vec3 alpha = fract(local);
 
-    // Clamp to grid
-    ivec3 b0 = ivec3(clamp(base, vec3(0), vec3(probeFieldGridDim) - vec3(1)));
-    ivec3 b1 = ivec3(clamp(base + vec3(1), vec3(0), vec3(probeFieldGridDim) - vec3(1)));
+    ivec3 baseGridCoord = ivec3(clamp(base, vec3(0), vec3(probeFieldGridDim - 1)));
 
     vec3 accum = vec3(0.0);
-    for (int z = 0; z <= 1; ++z) {
-        for (int y = 0; y <= 1; ++y) {
 
-            for (int x = 0; x <= 1; ++x) {
-                ivec3 idx = ivec3(b0.x + x, b0.y + y, b0.z + z);
-                int pIdx  = getCellCoord(idx.x, idx.y, idx.z); // reuse ta fonction
-                // lire le texRect pour la sonde pIdx
-                vec4 rect = getProbeTexRect(pIdx, probeIrradianceField, probeTexSingleSize);
-                // on sample au centre de la sonde pour l'irradiance (ou à une coord calculée)
-                vec2 sampleUV = rect.xy + rect.zw * 0.5;
-                vec3 val      = texture(probeIrradianceField, sampleUV).rgb;
-                float wx      = (x == 0) ? (1.0 - frac.x) : frac.x;
-                float wy      = (y == 0) ? (1.0 - frac.y) : frac.y;
-                float wz      = (z == 0) ? (1.0 - frac.z) : frac.z;
-                accum += val * wx * wy * wz;
-            }
-        }
+    for (int i = 0; i < 8; i++) {
+        ivec3 offset         = ivec3(i & 1, (i >> 1) & 1, (i >> 2) & 1);
+        ivec3 probeGridCoord = clamp(baseGridCoord + offset, ivec3(0), ivec3(probeFieldGridDim - 1));
+
+        vec3 probeWorldPos = vec3(probeGridCoord) * probeFieldCellSize + probeFieldOrigin;
+
+        vec3 direction = normalize(P - probeWorldPos);
+
+        vec2 octCoord = octahedral_mapping(direction);
+
+        int probeIdx = getCellCoord(probeGridCoord.x, probeGridCoord.y, probeGridCoord.z);
+        vec4 rect    = getProbeTexRect(probeIdx, probeIrradianceField, probeTexSingleSize);
+
+        vec2 sampleUV        = rect.xy + octCoord * rect.zw;
+        vec3 probeIrradiance = texture(probeIrradianceField, sampleUV).rgb;
+
+        vec3 trilinear = mix(1.0 - alpha, alpha, vec3(offset));
+        float weight   = trilinear.x * trilinear.y * trilinear.z;
+
+        accum += probeIrradiance * weight;
     }
+
     return accum;
 }
 
-vec3 getColorFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeIrradianceField, sampler2D probeNormalField, sampler2D probeDepthField, int probeTexSingleSize)
+vec3 getColorFromProbeField(vec3 rayStart, vec3 rayDir, sampler2D probeIrradianceField, sampler2D probeNormalField, sampler2D probeDepthField, int probeTexSingleSize)
 {
     vec3 localStart = (rayStart - probeFieldOrigin) / probeFieldCellSize;
     vec3 baseCell   = floor(localStart);
@@ -497,7 +505,7 @@ vec3 getColorFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeIrradianc
 
         int result = traceRayInProbeUnprecise(
             rayStart,
-            rayEnd,
+            rayDir,
             probePosition,
             probeDepthField,
             t,
@@ -516,8 +524,8 @@ vec3 getColorFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeIrradianc
             sumIrradiance += weight * probeIrradiance;
             sumWeight += weight;
         } else if (result == MISS) {
-            // weight *= 0.05;
-            // sumWeight += weight;
+            weight *= 0.05;
+            sumWeight += weight;
         }
     }
 
@@ -525,8 +533,8 @@ vec3 getColorFromProbeField(vec3 rayStart, vec3 rayEnd, sampler2D probeIrradianc
         return sumIrradiance / sumWeight;
     }
 
-    // Fallback : si aucune probe n'a donné de résultat valide
-    return trilinearIrradianceAtPosition(rayEnd, probeIrradianceField, probeTexSingleSize);
+    // Fallback
+    return trilinearIrradianceAtPosition(rayStart, probeIrradianceField, probeTexSingleSize);
 }
 
 vec3 backgroundBlur(sampler2D colorTexture, sampler2D depthTexture, vec2 uv)
@@ -544,47 +552,83 @@ vec3 backgroundBlur(sampler2D colorTexture, sampler2D depthTexture, vec2 uv)
     return (col1 + col2 + col3 + col4) / 4.f;
 }
 
+vec3 getPerpendicularVector(vec3 v)
+{
+    vec3 perpendicular = abs(v.x) > abs(v.z) ? vec3(-v.y, v.x, 0.0) : vec3(0.0, -v.z, v.y);
+    return normalize(perpendicular);
+}
+
+vec3 getCosHemisphereSample(float rand1, float rand2, vec3 hitNorm)
+{
+    // Cosine weighted hemisphere sample from RNG
+    vec3 bitangent = getPerpendicularVector(hitNorm);
+    vec3 tangent   = cross(bitangent, hitNorm);
+
+    float r   = sqrt(rand1);
+    float phi = 2.0 * PI * rand2;
+
+    return tangent * (r * cos(phi)) + bitangent * (r * sin(phi)) + hitNorm * sqrt(max(0.0, 1.0 - rand1));
+}
+
+float IGN(vec2 pixelCoord, int frameCount)
+{
+    vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
+    return fract(magic.z * fract(dot(pixelCoord.xy + float(frameCount) * vec2(47.0, 17.0) * 0.695, magic.xy)));
+}
+
 void main()
 {
     // 1. Récupérer les données du G-Buffer
     vec3 albedo     = texture(sceneBuffer, TexCoords).rgb;
     float metallic  = texture(sceneBuffer, TexCoords).a;
-    vec3 normal     = texture(normalBuffer, TexCoords).rgb * 2.0 - 1.0;
+    vec3 normal     = normalize(texture(normalBuffer, TexCoords).rgb * 2.0 - 1.0);
     float roughness = texture(normalBuffer, TexCoords).a;
     float depth     = texture(depthBuffer, TexCoords).r;
     float ao        = texture(depthBuffer, TexCoords).g;
 
-    // 2. Lumière directe (déjà calculée dans un pass précédent)
+    // 2. Lumière directe (déjà calculée)
     vec3 directLight = texture(directDiffuseBuffer, TexCoords).rgb;
 
-    // 3. Calculer l'illumination globale
-    vec3 worldPos   = reconstructWorldPos(TexCoords, depth, inverseProjection, inverseView);
-    vec3 irradiance = getColorFromProbeField(
-        cameraPos, worldPos,
-        probeIrradianceField, probeNormalField, probeDepthField,
-        probeTextureSingleSize);
+    // 3. Position monde
+    vec3 worldPos = reconstructWorldPos(TexCoords, depth, inverseProjection, inverseView);
 
-    color = vec4(irradiance, 1.0);
+    // 4. Monte Carlo sampling pour l'illumination indirecte
+    vec3 indirectIrradiance = vec3(0.0);
+    vec2 pixelCoord         = TexCoords * vec2(textureSize(sceneBuffer, 0));
 
-    // 4. Appliquer le modèle PBR pour la diffuse indirecte
-    // Les métaux n'ont pas de diffuse indirect (seulement specular, non géré ici)
-    float giStrength     = 10.0; // Intensité de la GI
-    vec3 indirectDiffuse = irradiance * albedo * ao * (1.0 - metallic) * giStrength;
+    const int numSamples      = 8; // Ajustable (8, 16, 32, 64)
+    const float invNumSamples = 1.0 / float(numSamples);
 
-    // 5. Combiner direct + indirect
+    // for (int i = 0; i < numSamples; ++i) {
+    //     float noise1 = IGN(pixelCoord, i);
+    //     float noise2 = IGN(pixelCoord + vec2(1.0, 1.0), i);
+
+    //     vec3 sampleDir = getCosHemisphereSample(noise1, noise2, normal);
+
+    //     vec3 sampleIrradiance = getColorFromProbeField(
+    //         worldPos,
+    //         sampleDir,
+    //         probeIrradianceField,
+    //         probeNormalField,
+    //         probeDepthField,
+    //         probeTextureSingleSize);
+
+    //     indirectIrradiance += sampleIrradiance;
+    // }
+
+    indirectIrradiance *= invNumSamples;
+
+    color.a = 1.0;
+
+    vec3 indirectDiffuse = indirectIrradiance * albedo * ao; // * (1.0 - metallic);
+
     vec3 finalColor = directLight + indirectDiffuse;
-    color.rgb       = directLight;
-    return;
 
-    // 6. (Optionnel) Ajouter un ambient minimum pour éviter le noir total
-    vec3 minAmbient = vec3(0.01) * albedo; // Très faible
+    vec3 minAmbient = vec3(0.01) * albedo;
     finalColor      = max(finalColor, minAmbient);
 
-    // 7. Tonemapping (Reinhard simple)
-    finalColor = finalColor / (finalColor + vec3(1.0));
-
-    // 8. Correction gamma
     finalColor = pow(finalColor, vec3(1.0 / 2.2));
 
     color = vec4(finalColor, 1.0);
+    color = vec4(trilinearIrradianceAtPosition(worldPos, probeIrradianceField, probeTextureSingleSize), 1.0);
 }

@@ -293,7 +293,9 @@ void main()
     // gNormal.a   = roughness;
     gNormal.a = 1.0;
 
-    gDirectDiffuse.rgb  = directDiffuse;
+    // vec3 ambient = kD * albedo * ao * 0.03;
+
+    gDirectDiffuse.rgb  = directDiffuse + ambient;
     gDirectDiffuse.a    = 1;
     gDirectSpecular.rgb = directSpecular;
     gDirectSpecular.a   = 1;

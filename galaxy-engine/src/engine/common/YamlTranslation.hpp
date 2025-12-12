@@ -33,7 +33,28 @@ inline Node convert<vec3>::encode(const vec3& vec)
     node.push_back(vec.z);
     return node;
 }
-}
 
-namespace YAML {
+template <>
+struct convert<ivec3> {
+    static Node encode(const ivec3& vec);
+    static bool decode(const Node& node, ivec3& rhs)
+    {
+        if (!node.IsSequence() || node.size() != 3) {
+            return false;
+        }
+
+        rhs.x = node[0].as<int>();
+        rhs.y = node[1].as<int>();
+        rhs.z = node[2].as<int>();
+        return true;
+    }
+};
+inline Node convert<ivec3>::encode(const ivec3& vec)
+{
+    Node node;
+    node.push_back(vec.x);
+    node.push_back(vec.y);
+    node.push_back(vec.z);
+    return node;
+}
 }

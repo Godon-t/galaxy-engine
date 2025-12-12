@@ -150,22 +150,23 @@ public:
     void visit(GINode& node)
     {
         visit(static_cast<Node3D&>(node));
-        static int dimmensions[3] = { 2, 2, 2 };
-        static float spaceBetween = 50.f;
-        static int res            = 128;
-        static float bias         = 0.05f;
+        ivec3 dimmensions  = node.getGrid();
+        float spaceBetween = node.getSpaceBetween();
+        int res            = node.getProbeResolution();
 
         ImGui::SeparatorText("Global Illumination");
         if (ImGui::Button("Update probes")) {
-            Renderer::getInstance().getLightManager().resizeProbeFieldGrid(dimmensions[0], dimmensions[1], dimmensions[2], spaceBetween, res, node.getTransform()->getGlobalPosition());
             node.updateProbes();
         }
 
-        ImGui::InputInt3("Probe grid dimmensions", dimmensions);
-        ImGui::InputFloat("Space between probes", &spaceBetween);
-        ImGui::InputInt("Probe texture resolution", &res);
-        if (ImGui::InputFloat("Probe bias", &bias))
-            Renderer::getInstance().getLightManager().updateBias(bias);
+        if (ImGui::InputInt3("Probe grid dimmensions", &dimmensions.x))
+            node.setGrid(dimmensions);
+        if (ImGui::InputFloat("Space between probes", &spaceBetween))
+            node.setSpaceBetween(spaceBetween);
+        if (ImGui::InputInt("Probe texture resolution", &res))
+            node.setProbeResolution(res);
+        // if (ImGui::InputFloat("Probe bias", &bias))
+        //     Renderer::getInstance().getLightManager().updateBias(bias);
     }
 
     void transformEdit(Transform& transform)

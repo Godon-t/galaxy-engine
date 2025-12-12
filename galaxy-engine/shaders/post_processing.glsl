@@ -21,7 +21,10 @@ void main()
 #type fragment
 #version 330 core
 
+// Octahedral mapping and unmapping
 #include octahedral.glsl
+
+// Utility functions
 #include utils.glsl
 
 layout(location = 0) out vec4 color;
@@ -71,6 +74,7 @@ vec3 reconstructWorldPosFromProbe(vec2 uv, sampler2D depthTex, vec3 probePos,
     return probePos + direction * distance;
 }
 
+// Dist from probe to ray when looking at sample t on the ray
 float distanceToIntersection(vec3 rayStart, vec3 rayDirection, vec3 v)
 {
     float numer;
@@ -87,6 +91,7 @@ float distanceToIntersection(vec3 rayStart, vec3 rayDirection, vec3 v)
     return numer / denom;
 }
 
+// Paper ray tracing implementation for hight resolution testing (near start and finish)
 int traceRaySegmentHighRes(in sampler2D depthField, in sampler2D normalField, in vec3 probeSpaceRayStart, in vec3 probeSpaceRayDirection,
     in vec2 startTexCoord, in vec2 endTexCoord, in vec2 upperLeft, in vec2 scale,
     inout float tMin, inout float tMax, out vec2 hitProbeTexCoord)
@@ -163,21 +168,19 @@ int traceRaySegmentHighRes(in sampler2D depthField, in sampler2D normalField, in
     return MISS;
 }
 
+// First iteration of trace
 int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, sampler2D normalTex, in out float t, vec2 scale, vec2 probeTextureUpperLeft, out vec2 texelCoords)
 {
 
-    // centrer les positions par rapport à la probe
     vec3 centeredP0 = p0 - probePos;
     vec3 centeredP1 = p1 - probePos;
 
     vec3 rayDirection = normalize(centeredP1 - centeredP0);
 
-    // calculer les t ou le rayon change de triangle octahédral
     float ts[8];
     int numSegments = computeOctahedralIntersections(centeredP0, centeredP1, ts);
     numSegments     = numSegments - 1;
 
-    // parcourir chaque segment entre les changements de triangle
     for (int segIdx = 0; segIdx < numSegments; segIdx += 2) {
         float t0 = ts[segIdx];
         float t1 = ts[segIdx + 1];
@@ -215,18 +218,15 @@ int traceRayInProbe(vec3 p0, vec3 p1, vec3 probePos, sampler2D depthTex, sampler
 
 int traceRayInProbeUnprecise(vec3 rayOrigin, vec3 rayDir, vec3 probePos, sampler2D depthTex, out float tHit, vec2 scale, vec2 probeTextureUpperLeft, out vec2 texelCoords)
 {
-    // 1. Rayon dans l'espace de la probe
     vec3 centeredOrigin = rayOrigin - probePos;
     rayDir              = normalize(rayDir);
 
-    // 2. Créer un point d'arrivée virtuel pour computeOctahedralIntersections
     vec3 centeredEnd = centeredOrigin + rayDir * 100;
 
-    // 3. Obtenir la taille de la texture
     ivec2 texSize = textureSize(depthTex, 0);
 
-    // 4. Calculer les intersections octaédrales
     float ts[8];
+    // dists where ray change direction in octahedral projection
     int numSegments = computeOctahedralIntersections(centeredOrigin, centeredEnd, ts);
 
     if (numSegments <= 0) {
@@ -235,74 +235,64 @@ int traceRayInProbeUnprecise(vec3 rayOrigin, vec3 rayDir, vec3 probePos, sampler
 
     numSegments = numSegments - 1;
 
-    vec3 probeSpaceRayDirection = rayDir; // Déjà normalisé
+    vec3 probeSpaceRayDirection = rayDir;
 
-    // 5. Parcourir les segments d'intersection
     for (int segIdx = 0; segIdx < numSegments; segIdx += 2) {
         float t0 = ts[segIdx];
         float t1 = ts[segIdx + 1];
 
-        // Points 3D aux extrémités du segment
         vec3 p3d0 = mix(centeredOrigin, centeredEnd, t0);
         vec3 p3d1 = mix(centeredOrigin, centeredEnd, t1);
 
         vec3 dir0 = normalize(p3d0);
         vec3 dir1 = normalize(p3d1);
 
-        // 6. Projection octaédrique
         vec2 uv0_oct = octahedral_mapping(dir0);
         vec2 uv1_oct = octahedral_mapping(dir1);
 
-        // 7. UVs dans l'atlas
         vec2 uv0 = uv0_oct * scale + probeTextureUpperLeft;
         vec2 uv1 = uv1_oct * scale + probeTextureUpperLeft;
 
-        // 8. Ray marching adaptatif
         vec2 uvDir     = uv1 - uv0;
         float uvLength = length(uvDir);
         int steps      = max(8, int(ceil(uvLength * float(texSize.x))));
 
-        // Distance initiale du rayon à la probe
         vec3 directionFromProbeBefore      = dir0;
         float distanceFromProbeToRayBefore = max(0.0, distanceToIntersection(centeredOrigin, probeSpaceRayDirection, directionFromProbeBefore));
 
-        // 9. Marcher le long du segment
+        // Ray marching for single ray segment
         for (int i = 1; i <= steps; ++i) {
             float s = float(i) / float(steps);
 
-            // Position courante en UV et 3D
             vec2 uvCurrent  = mix(uv0, uv1, s);
             vec3 currentPos = mix(p3d0, p3d1, s);
 
-            // Direction depuis la probe vers la position courante
             vec3 currentDir = normalize(currentPos);
 
-            // Lire la profondeur de la probe dans cette direction
             float depthProbe = texture(depthTex, uvCurrent).r * zFar;
 
-            // **LOGIQUE CLEF : Calculer la distance min/max du rayon à la probe**
             vec3 directionFromProbeAfter      = octahedral_unmapping(mix(uv0_oct, uv1_oct, s));
             float distanceFromProbeToRayAfter = max(0.0, distanceToIntersection(centeredOrigin, probeSpaceRayDirection, directionFromProbeAfter));
 
             float minDistanceFromProbeToRay = min(distanceFromProbeToRayAfter, distanceFromProbeToRayBefore);
             float maxDistanceFromProbeToRay = max(distanceFromProbeToRayAfter, distanceFromProbeToRayBefore);
 
-            // **TEST D'INTERSECTION EFFICACE**
-            // Si le rayon passe à une distance >= depthProbe, c'est un hit
-            vec3 rawNormal = texture(probeNormalField, mix(uv0, uv1, s)).rgb;
-            if (dot(directionFromProbeAfter, (rawNormal - vec3(0.5)) * 2.0) > 0.0) {
-                return UNKNOWN;
-            } else if (maxDistanceFromProbeToRay >= depthProbe) {
+            // We might have a ray intersection with scene
+            if (maxDistanceFromProbeToRay >= depthProbe) {
+                vec3 rawNormal = texture(probeNormalField, mix(uv0, uv1, s)).rgb;
+                // To avoid light leak
+                if (dot(directionFromProbeAfter, (rawNormal - vec3(0.5)) * 2.0) > 0.0) {
+                    return UNKNOWN;
+                }
                 texelCoords = uvCurrent;
 
-                // Calculer tHit : distance réelle sur le rayon
+                // Dist along ray
                 float currentT = mix(t0, t1, s);
-                tHit           = currentT * zFar; // Convertir de [0,1] à distance réelle
+                tHit           = currentT * zFar;
 
                 return HIT;
             }
 
-            // Mettre à jour pour la prochaine itération
             distanceFromProbeToRayBefore = distanceFromProbeToRayAfter;
             directionFromProbeBefore     = directionFromProbeAfter;
         }
@@ -373,6 +363,7 @@ int getProbeIdx(vec3 preciseProbePosition)
     return getCellCoord(pbX, pbY, pbZ);
 }
 
+// Texture coords in probefield
 vec4 getProbeTexRect(int probeGridIdx, sampler2D probeTex, int probeTextureSingleSize)
 {
     ivec2 texSizeI = textureSize(probeTex, 0);
@@ -432,13 +423,6 @@ int getNextProbeIdx(int probeIdx, int iterator)
         return probeIdx + probeFieldGridDim.x * probeFieldGridDim.y + probeFieldGridDim.x;
     else if (nextIdx == 7)
         return probeIdx + probeFieldGridDim.x * probeFieldGridDim.y + probeFieldGridDim.x + 1;
-}
-
-// Retourne l'irradiance stockée dans l'atlas pour une sonde et des texcoords dans [0,1]
-vec3 sampleProbeIrradiance(int probeIdx, vec2 texCoords, sampler2D probeIrradianceField, int probeTexSingleSize)
-{
-    // texCoords est en UV global sur l'atlas (comme finalTexelCoords dans ton code)
-    return texture(probeIrradianceField, texCoords).rgb;
 }
 
 vec3 trilinearIrradianceAtPosition(vec3 P, sampler2D probeIrradianceField, int probeTexSingleSize)
@@ -578,26 +562,23 @@ float IGN(vec2 pixelCoord, int frameCount)
 
 void main()
 {
-    // 1. Récupérer les données du G-Buffer
-    vec3 albedo     = texture(sceneBuffer, TexCoords).rgb;
-    float metallic  = texture(sceneBuffer, TexCoords).a;
-    vec3 normal     = normalize(texture(normalBuffer, TexCoords).rgb * 2.0 - 1.0);
-    float roughness = texture(normalBuffer, TexCoords).a;
-    float depth     = texture(depthBuffer, TexCoords).r;
-    float ao        = texture(depthBuffer, TexCoords).g;
-
-    // 2. Lumière directe (déjà calculée)
-    vec3 directLight = texture(directDiffuseBuffer, TexCoords).rgb;
-
-    // 3. Position monde
+    float depth   = texture(depthBuffer, TexCoords).r;
     vec3 worldPos = reconstructWorldPos(TexCoords, depth, inverseProjection, inverseView);
 
-    // 4. Monte Carlo sampling pour l'illumination indirecte
-    vec3 indirectIrradiance = vec3(0.0);
-    vec2 pixelCoord         = TexCoords * vec2(textureSize(sceneBuffer, 0));
+    //////////////////////////////////// Integrate ray tracing into irradiance calculation
+    // vec3 albedo     = texture(sceneBuffer, TexCoords).rgb;
+    // float metallic  = texture(sceneBuffer, TexCoords).a;
+    // vec3 normal     = normalize(texture(normalBuffer, TexCoords).rgb * 2.0 - 1.0);
+    // float roughness = texture(normalBuffer, TexCoords).a;
+    // float ao        = texture(depthBuffer, TexCoords).g;
 
-    const int numSamples      = 8; // Ajustable (8, 16, 32, 64)
-    const float invNumSamples = 1.0 / float(numSamples);
+    // vec3 directLight = texture(directDiffuseBuffer, TexCoords).rgb;
+
+    // vec3 indirectIrradiance = vec3(0.0);
+    // vec2 pixelCoord         = TexCoords * vec2(textureSize(sceneBuffer, 0));
+
+    // const int numSamples      = 8; // Ajustable (8, 16, 32, 64)
+    // const float invNumSamples = 1.0 / float(numSamples);
 
     // for (int i = 0; i < numSamples; ++i) {
     //     float noise1 = IGN(pixelCoord, i);
@@ -616,19 +597,23 @@ void main()
     //     indirectIrradiance += sampleIrradiance;
     // }
 
-    indirectIrradiance *= invNumSamples;
+    // indirectIrradiance *= invNumSamples;
 
-    color.a = 1.0;
+    // color.a = 1.0;
 
-    vec3 indirectDiffuse = indirectIrradiance * albedo * ao; // * (1.0 - metallic);
+    // vec3 indirectDiffuse = indirectIrradiance * albedo * ao; // * (1.0 - metallic);
 
-    vec3 finalColor = directLight + indirectDiffuse;
+    // vec3 finalColor = directLight + indirectDiffuse;
 
-    vec3 minAmbient = vec3(0.01) * albedo;
-    finalColor      = max(finalColor, minAmbient);
+    // vec3 minAmbient = vec3(0.01) * albedo;
+    // finalColor      = max(finalColor, minAmbient);
 
-    finalColor = pow(finalColor, vec3(1.0 / 2.2));
+    // finalColor = pow(finalColor, vec3(1.0 / 2.2));
 
-    color = vec4(finalColor, 1.0);
+    // color = vec4(indirectIrradiance, 1.0);
+    //////////////////////// End
+
+    // Trilinear interpolation of pixel at final position. No ray tracing
+    // No ray reconstruction with this
     color = vec4(trilinearIrradianceAtPosition(worldPos, probeIrradianceField, probeTextureSingleSize), 1.0);
 }

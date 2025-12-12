@@ -441,37 +441,38 @@ vec3 sampleProbeIrradiance(int probeIdx, vec2 texCoords, sampler2D probeIrradian
     return texture(probeIrradianceField, texCoords).rgb;
 }
 
-// Trilinear interpolation of the 8 probes around world position 'P'.
 vec3 trilinearIrradianceAtPosition(vec3 P, sampler2D probeIrradianceField, int probeTexSingleSize)
 {
-    // convert position to grid coords
     vec3 local = (P - probeFieldOrigin) / probeFieldCellSize;
     vec3 base  = floor(local);
-    vec3 frac  = local - base;
+    vec3 alpha = fract(local);
 
-    // Clamp to grid
-    ivec3 b0 = ivec3(clamp(base, vec3(0), vec3(probeFieldGridDim) - vec3(1)));
-    ivec3 b1 = ivec3(clamp(base + vec3(1), vec3(0), vec3(probeFieldGridDim) - vec3(1)));
+    ivec3 baseGridCoord = ivec3(clamp(base, vec3(0), vec3(probeFieldGridDim - 1)));
 
     vec3 accum = vec3(0.0);
-    for (int z = 0; z <= 1; ++z) {
-        for (int y = 0; y <= 1; ++y) {
 
-            for (int x = 0; x <= 1; ++x) {
-                ivec3 idx = ivec3(b0.x + x, b0.y + y, b0.z + z);
-                int pIdx  = getCellCoord(idx.x, idx.y, idx.z); // reuse ta fonction
-                // lire le texRect pour la sonde pIdx
-                vec4 rect = getProbeTexRect(pIdx, probeIrradianceField, probeTexSingleSize);
-                // on sample au centre de la sonde pour l'irradiance (ou à une coord calculée)
-                vec2 sampleUV = rect.xy + rect.zw * 0.5;
-                vec3 val      = texture(probeIrradianceField, sampleUV).rgb;
-                float wx      = (x == 0) ? (1.0 - frac.x) : frac.x;
-                float wy      = (y == 0) ? (1.0 - frac.y) : frac.y;
-                float wz      = (z == 0) ? (1.0 - frac.z) : frac.z;
-                accum += val * wx * wy * wz;
-            }
-        }
+    for (int i = 0; i < 8; i++) {
+        ivec3 offset         = ivec3(i & 1, (i >> 1) & 1, (i >> 2) & 1);
+        ivec3 probeGridCoord = clamp(baseGridCoord + offset, ivec3(0), ivec3(probeFieldGridDim - 1));
+
+        vec3 probeWorldPos = vec3(probeGridCoord) * probeFieldCellSize + probeFieldOrigin;
+
+        vec3 direction = normalize(P - probeWorldPos);
+
+        vec2 octCoord = octahedral_mapping(direction);
+
+        int probeIdx = getCellCoord(probeGridCoord.x, probeGridCoord.y, probeGridCoord.z);
+        vec4 rect    = getProbeTexRect(probeIdx, probeIrradianceField, probeTexSingleSize);
+
+        vec2 sampleUV        = rect.xy + octCoord * rect.zw;
+        vec3 probeIrradiance = texture(probeIrradianceField, sampleUV).rgb;
+
+        vec3 trilinear = mix(1.0 - alpha, alpha, vec3(offset));
+        float weight   = trilinear.x * trilinear.y * trilinear.z;
+
+        accum += probeIrradiance * weight;
     }
+
     return accum;
 }
 
@@ -566,7 +567,6 @@ vec3 getCosHemisphereSample(float rand1, float rand2, vec3 hitNorm)
     float r   = sqrt(rand1);
     float phi = 2.0 * PI * rand2;
 
-    // Get our cosine-weighted hemisphere lobe sample direction
     return tangent * (r * cos(phi)) + bitangent * (r * sin(phi)) + hitNorm * sqrt(max(0.0, 1.0 - rand1));
 }
 
@@ -599,22 +599,22 @@ void main()
     const int numSamples      = 8; // Ajustable (8, 16, 32, 64)
     const float invNumSamples = 1.0 / float(numSamples);
 
-    for (int i = 0; i < numSamples; ++i) {
-        float noise1 = IGN(pixelCoord, i);
-        float noise2 = IGN(pixelCoord + vec2(1.0, 1.0), i);
+    // for (int i = 0; i < numSamples; ++i) {
+    //     float noise1 = IGN(pixelCoord, i);
+    //     float noise2 = IGN(pixelCoord + vec2(1.0, 1.0), i);
 
-        vec3 sampleDir = getCosHemisphereSample(noise1, noise2, normal);
+    //     vec3 sampleDir = getCosHemisphereSample(noise1, noise2, normal);
 
-        vec3 sampleIrradiance = getColorFromProbeField(
-            worldPos,
-            sampleDir,
-            probeIrradianceField,
-            probeNormalField,
-            probeDepthField,
-            probeTextureSingleSize);
+    //     vec3 sampleIrradiance = getColorFromProbeField(
+    //         worldPos,
+    //         sampleDir,
+    //         probeIrradianceField,
+    //         probeNormalField,
+    //         probeDepthField,
+    //         probeTextureSingleSize);
 
-        indirectIrradiance += sampleIrradiance;
-    }
+    //     indirectIrradiance += sampleIrradiance;
+    // }
 
     indirectIrradiance *= invNumSamples;
 
@@ -630,5 +630,5 @@ void main()
     finalColor = pow(finalColor, vec3(1.0 / 2.2));
 
     color = vec4(finalColor, 1.0);
-    color = vec4(indirectIrradiance, 1.0);
+    color = vec4(trilinearIrradianceAtPosition(worldPos, probeIrradianceField, probeTextureSingleSize), 1.0);
 }

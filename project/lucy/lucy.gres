@@ -1,0 +1,5 @@
+Type: Mesh
+ExternalFile: lucy/lucy.obj
+SubMeshes:
+  - HasMaterial: true
+    MaterialID: 3040816024360026979

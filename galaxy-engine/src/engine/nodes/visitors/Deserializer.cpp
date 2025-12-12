@@ -174,6 +174,16 @@ void SceneDeSerializer::visit(PointLight& node)
 void SceneDeSerializer::visit(GINode& node)
 {
     visit(static_cast<Node3D&>(node));
+
+    if (m_currentYAMLNode["Grid"]) {
+        node.setGrid(m_currentYAMLNode["Grid"].as<ivec3>());
+    }
+    if (m_currentYAMLNode["SpaceBetween"]) {
+        node.setSpaceBetween(m_currentYAMLNode["SpaceBetween"].as<float>());
+    }
+    if (m_currentYAMLNode["ProbeResolution"]) {
+        node.setProbeResolution(m_currentYAMLNode["ProbeResolution"].as<unsigned int>());
+    }
 }
 
 } // namespace Galaxy

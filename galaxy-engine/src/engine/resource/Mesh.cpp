@@ -103,7 +103,8 @@ void Mesh::extractSubMesh(const aiScene* scene, int surface)
     }
 
     // Add texture coords
-    if (mesh->HasTextureCoords(0)) {
+    bool hasTexCoords = mesh->HasTextureCoords(0);
+    if (hasTexCoords) {
         for (unsigned int j = 0; j < mesh->mNumVertices; ++j) {
             aiVector3D tex_coord = mesh->mTextureCoords[0][j];
             tex_coords.push_back(vec2(tex_coord.x, tex_coord.y));
@@ -116,6 +117,34 @@ void Mesh::extractSubMesh(const aiScene* scene, int surface)
             aiVector3D normal = mesh->mNormals[j];
             normals.push_back(vec3(normal.x, normal.y, normal.z));
         }
+    } else {
+        normals.resize(mesh->mNumVertices, vec3(0.0f, 0.0f, 0.0f));
+
+        for (unsigned int faceIdx = 0; faceIdx < mesh->mNumFaces; ++faceIdx) {
+            aiFace& face = mesh->mFaces[faceIdx];
+
+            if (face.mNumIndices == 3) {
+                unsigned int idx0 = face.mIndices[0];
+                unsigned int idx1 = face.mIndices[1];
+                unsigned int idx2 = face.mIndices[2];
+
+                vec3 v0 = indexed_vertices[idx0];
+                vec3 v1 = indexed_vertices[idx1];
+                vec3 v2 = indexed_vertices[idx2];
+
+                vec3 edge1       = v1 - v0;
+                vec3 edge2       = v2 - v0;
+                vec3 face_normal = cross(edge1, edge2);
+
+                normals[idx0] += face_normal;
+                normals[idx1] += face_normal;
+                normals[idx2] += face_normal;
+            }
+        }
+
+        for (unsigned int j = 0; j < normals.size(); ++j) {
+            normals[j] = normalize(normals[j]);
+        }
     }
 
     currentSubMesh.vertices.resize(indexed_vertices.size());
@@ -123,7 +152,7 @@ void Mesh::extractSubMesh(const aiScene* scene, int surface)
     for (int i = 0; i < indexed_vertices.size(); ++i) {
         Vertex v;
         v.position = indexed_vertices[i];
-        v.texCoord = tex_coords[i];
+        v.texCoord = hasTexCoords ? tex_coords[i] : vec2(0);
         v.normal   = normals[i];
 
         currentSubMesh.vertices[i] = v;

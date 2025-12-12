@@ -5839,9 +5839,9 @@ Root:
             Rotation: [0, -0, 0]
             Scale: [1, 1, 1]
       Transform:
-        Position: [0, 0, 0]
+        Position: [0, 0, 33]
         Rotation: [0, 0, 0]
-        Scale: [0.5, 0.5, 0.5]
+        Scale: [0.300000012, 0.300000012, 0.300000012]
     - Type: Sprite3D
       Childs:
         []
@@ -5850,30 +5850,50 @@ Root:
         Rotation: [0, 1.67377079, 0]
         Scale: [33, 39, 35]
       ImageID: 9191191296558105831
-    - Type: SpotLight
+    - Type: MultiMeshInstance
       Childs:
-        []
+        - Type: Node3D
+          Childs:
+            - Type: Node3D
+              Childs:
+                - Type: MeshInstance
+                  Childs:
+                    []
+                  Transform:
+                    Position: [0, 0, 0]
+                    Rotation: [0, 0, 0]
+                    Scale: [1, 1, 1]
+                  MeshResourceID: 3494823739782118184
+                  SurfaceIndex: 0
+              Transform:
+                Position: [0, 0, 0]
+                Rotation: [0, -0, 0]
+                Scale: [1, 1, 1]
+          Transform:
+            Position: [0, 0, 0]
+            Rotation: [0, -0, 0]
+            Scale: [1, 1, 1]
       Transform:
-        Position: [30, 3, 0]
-        Rotation: [0, 0, 0]
-        Scale: [24, 23, 1]
-      Intensity: 1
-      Color: [0.607843161, 0.87843138, 0.654901981]
-      Range: 10
-    - Type: PointLight
-      Childs:
-        []
-      Transform:
-        Position: [-11, 0, 0]
-        Rotation: [0, 0, 0]
-        Scale: [1, 1, 1]
-      Intensity: 1
-      Color: [1, 0.678431392, 1]
-      Range: 10
+        Position: [70, 58, 92]
+        Rotation: [-1.57079637, 0, 1.57079637]
+        Scale: [0.100000001, 0.100000001, 0.100000001]
     - Type: GINode
       Childs:
         []
       Transform:
-        Position: [0, 0, 0]
+        Position: [0, 97, 0]
         Rotation: [0, 0, 0]
         Scale: [1, 1, 1]
+      Grid: [12, 4, 4]
+      SpaceBetween: 50
+      ProbeResolution: 128
+    - Type: PointLight
+      Childs:
+        []
+      Transform:
+        Position: [6, 74, -27]
+        Rotation: [0, 0, 0]
+        Scale: [1, 1, 1]
+      Intensity: 500
+      Color: [1, 0.474509805, 1]
+      Range: 500

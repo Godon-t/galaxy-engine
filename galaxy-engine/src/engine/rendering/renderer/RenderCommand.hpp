@@ -2,6 +2,7 @@
 
 #include "types/Math.hpp"
 #include "types/Render.hpp"
+#include "pch.hpp"
 
 namespace Galaxy {
 enum RenderCommandType {

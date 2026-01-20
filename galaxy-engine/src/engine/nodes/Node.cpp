@@ -92,7 +92,6 @@ void Node::update(double delta)
 {
     if (m_paused)
         return;
-    process(delta);
     for (auto&& child : m_children) {
         child->update(delta);
     }

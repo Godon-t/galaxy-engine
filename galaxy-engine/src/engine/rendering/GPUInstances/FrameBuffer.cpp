@@ -288,7 +288,7 @@ void CubemapFrameBuffer::bind(int idx)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     // TODO: Depend on cubemap mode: color, depth or both
-    GLenum attachments[m_colorCubemaps.size()];
+    std::vector<GLenum> attachments(m_colorCubemaps.size());
     for (int i = 0; i < m_colorCubemaps.size(); i++) {
         attachments[i] = GL_COLOR_ATTACHMENT0 + i;
         glFramebufferTexture2D(GL_FRAMEBUFFER, attachments[i], GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_colorCubemaps[i].cubemapID, 0);
@@ -300,7 +300,7 @@ void CubemapFrameBuffer::bind(int idx)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_depthCubemap.cubemapID, 0);
     }
 
-    glDrawBuffers(m_colorCubemaps.size(), attachments);
+    glDrawBuffers(m_colorCubemaps.size(), attachments.data());
 
     checkOpenGLErrors("Bind framebuffer face idx");
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;

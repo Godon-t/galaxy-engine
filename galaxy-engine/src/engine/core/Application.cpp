@@ -4,7 +4,8 @@
 
 #include "pch.hpp"
 
-#include <bits/this_thread_sleep.h>
+#include <thread>
+#include <chrono>
 
 #include "Log.hpp"
 #include "TimeLogger.hpp"

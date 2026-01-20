@@ -7,14 +7,10 @@
 
 using namespace math;
 
-class Root;
-
 namespace Galaxy {
 class Node {
 private:
     friend class NodeVisitor;
-    friend class Root;
-    void update(double delta);
     std::string m_name;
     bool m_inRoot = false;
 
@@ -63,7 +59,7 @@ public:
 
     void enterRoot();
 
-    virtual void process(double delta) { }
+    void update(double delta);
     virtual void draw();
     virtual void lightPassDraw();
 

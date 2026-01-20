@@ -145,7 +145,7 @@ renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
             meshRes.getIndices(surfaceIdx));
     });
 
-    m_gpuDestroyNotifications[visualID] = [surfaceIdx, mesh] mutable { mesh.getResource().notifyGpuInstanceDestroyed(surfaceIdx); };
+    m_gpuDestroyNotifications[visualID] = [surfaceIdx, mesh] { mesh.getResource().notifyGpuInstanceDestroyed(surfaceIdx); };
 
     return visualID;
 }
@@ -179,7 +179,7 @@ renderID Backend::instantiateTexture(ResourceHandle<Image> image)
         imgRes.freeCpuData();
     });
 
-    m_gpuDestroyNotifications[textureID] = [image] mutable { image.getResource().notifyGpuInstanceDestroyed(); };
+    m_gpuDestroyNotifications[textureID] = [image] { image.getResource().notifyGpuInstanceDestroyed(); };
 
     return textureID;
 }
@@ -529,9 +529,7 @@ void Backend::initDebugCallback()
         }
         GLX_CORE_WARN("GL DEBUG (severity={0}): {1}", severityChr, message);
 
-        if (severity == GL_DEBUG_SEVERITY_HIGH) {
-            raise(SIGTRAP);
-        }
+        GLX_CORE_ASSERT(severity != GL_DEBUG_SEVERITY_HIGH, "GL DEBUG SEVERITY HIGH encountered");
     },
         nullptr);
 }

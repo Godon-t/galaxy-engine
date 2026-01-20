@@ -4,6 +4,9 @@
 #include "Layer.hpp"
 #include "Log.hpp"
 
+#include "common/Util.hpp"
+
+
 #include "types/Math.hpp"
 #include "types/Render.hpp"
 

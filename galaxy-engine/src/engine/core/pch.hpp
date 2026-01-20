@@ -7,6 +7,7 @@
 #include <mutex>
 #include <stack>
 #include <string>
+#include <cstddef>
 #include <unordered_map>
 #include <variant>
 #include <vector>

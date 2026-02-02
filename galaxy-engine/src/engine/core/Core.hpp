@@ -17,9 +17,6 @@
 #endif
 
 // They are defined in log.hpp
-#define GLX_CORE_ERROR
-#define GLX_ERROR
-#define GALAXY_ENABLE_ASSERTS
 
 #ifdef GALAXY_ENABLE_ASSERTS
 #ifdef _WIN32

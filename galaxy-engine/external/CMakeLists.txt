@@ -94,7 +94,7 @@ FetchContent_MakeAvailable(spdlog)
 FetchContent_Declare(
   yaml-cpp
   GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-  GIT_TAG 0.8.0
+  GIT_TAG master
 )
 set(YAML_CPP_BUILD_SHARED_LIBS OFF CACHE BOOL "Build yaml-cpp statically" FORCE)
 FetchContent_MakeAvailable(yaml-cpp)

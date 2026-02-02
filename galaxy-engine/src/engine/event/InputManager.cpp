@@ -3,6 +3,8 @@
 #include "Application.hpp"
 #include "InputManager.hpp"
 #include "KeyEvent.hpp"
+#include "core/Log.hpp"
+
 #include <GLFW/glfw3.h>
 
 namespace Galaxy {

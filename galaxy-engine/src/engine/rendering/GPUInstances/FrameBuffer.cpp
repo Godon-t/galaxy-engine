@@ -3,6 +3,7 @@
 #include "Core.hpp"
 #include "gl_headers.hpp"
 #include "rendering/OpenglHelper.hpp"
+#include "core/Log.hpp"
 
 #include <fstream>
 

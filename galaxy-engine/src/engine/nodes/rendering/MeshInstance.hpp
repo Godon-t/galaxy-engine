@@ -21,6 +21,7 @@ public:
     virtual void lightPassDraw() override;
 
     void accept(NodeVisitor& visitor) override;
+    void loadMesh(std::string path);
     void loadMesh(ResourceHandle<Mesh> mesh, int surfaceIdx);
 
     inline int getSurfaceIdx() const { return m_meshSurfaceIdx; }

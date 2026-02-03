@@ -7,7 +7,7 @@ Root:
       Childs:
         []
       EnvID: 1097610545970168729
-    - Type: MultiMeshInstance
+    - Type: Node3D
       Childs:
         - Type: Node3D
           Childs:
@@ -5850,7 +5850,7 @@ Root:
         Rotation: [0, 1.67377079, 0]
         Scale: [33, 39, 35]
       ImageID: 9191191296558105831
-    - Type: MultiMeshInstance
+    - Type: Node3D
       Childs:
         - Type: Node3D
           Childs:

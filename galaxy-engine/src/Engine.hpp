@@ -17,7 +17,6 @@
 #include "nodes/rendering/CornellBox.hpp"
 #include "nodes/rendering/EnvironmentNode.hpp"
 #include "nodes/rendering/MeshInstance.hpp"
-#include "nodes/rendering/MultiMeshInstance.hpp"
 #include "nodes/rendering/Sprite3D.hpp"
 #include "nodes/rendering/lighting/GINode.hpp"
 #include "nodes/rendering/lighting/PointLight.hpp"

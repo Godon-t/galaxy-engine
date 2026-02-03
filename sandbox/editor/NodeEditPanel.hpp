@@ -37,15 +37,8 @@ public:
 
         if (ImGui::Button("Load mesh"))
             m_resourceAccess.show();
-        if (m_resourceAccess.display()) {
-            auto meshRes = ResourceManager::getInstance().load<Mesh>(m_resourceAccess.selectedResourcePath);
-            node.loadMesh(meshRes, 0);
-        }
-
-        int surfaceIdx = node.getSurfaceIdx();
-        if (ImGui::InputInt("Surface idx", &surfaceIdx)) {
-            node.loadMesh(node.getMeshResource(), surfaceIdx);
-        }
+        if (m_resourceAccess.display())
+            node.loadMesh(m_resourceAccess.selectedResourcePath);
 
         auto mathandle = node.getMaterial();
         if (mathandle && materialEdit(mathandle.getResource())) {
@@ -54,15 +47,7 @@ public:
         if (ImGui::Button("Save resource"))
             mathandle.getResource().save();
     }
-    void visit(MultiMeshInstance& node)
-    {
-        visit(static_cast<Node3D&>(node));
 
-        if (ImGui::Button("Load mesh"))
-            m_resourceAccess.show();
-        if (m_resourceAccess.display())
-            node.loadMesh(m_resourceAccess.selectedResourcePath);
-    }
     void visit(Sprite3D& node)
     {
         visit(static_cast<Node3D&>(node));

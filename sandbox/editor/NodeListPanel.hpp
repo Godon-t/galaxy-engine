@@ -49,10 +49,6 @@ public:
     {
         visit(static_cast<Node3D&>(node));
     }
-    void visit(MultiMeshInstance& node) override
-    {
-        visit(static_cast<Node3D&>(node));
-    }
     void visit(Sprite3D& node) override
     {
         visit(static_cast<Node3D&>(node));

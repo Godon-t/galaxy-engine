@@ -5,7 +5,6 @@
 #include "rendering/CornellBox.hpp"
 #include "rendering/EnvironmentNode.hpp"
 #include "rendering/MeshInstance.hpp"
-#include "rendering/MultiMeshInstance.hpp"
 #include "rendering/Sprite3D.hpp"
 #include "rendering/lighting/GINode.hpp"
 #include "rendering/lighting/PointLight.hpp"
@@ -23,7 +22,6 @@ std::unique_ptr<Node> constructNode(std::string& type)
     NODE_CASE(Node3D)
     NODE_CASE(MeshInstance)
     NODE_CASE(CornellBox)
-    NODE_CASE(MultiMeshInstance)
     NODE_CASE(Camera)
     NODE_CASE(Sprite3D)
     NODE_CASE(EnvironmentNode)

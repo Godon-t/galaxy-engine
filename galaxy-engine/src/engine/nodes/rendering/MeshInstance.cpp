@@ -11,23 +11,24 @@ namespace Galaxy {
 MeshInstance::~MeshInstance()
 {
     if (m_renderId)
-        Renderer::getInstance().clearMesh(m_renderId);
+        Renderer::getInstance().getBackend().clearMesh(m_renderId);
     if (m_materialId)
-        Renderer::getInstance().clearMaterial(m_materialId);
+        Renderer::getInstance().getBackend().clearMaterial(m_materialId);
 }
 
 void MeshInstance::draw()
 {
     if (m_materialId && m_renderId)
-        Renderer::getInstance().submitPBR(m_renderId, m_materialId, *getTransform());
+        Renderer::getInstance().getFrontend().submitPBR(m_renderId, m_materialId, *getTransform());
+    // TODO: integrate in sceneContext
     else if (m_renderId)
-        Renderer::getInstance().submit(m_renderId, *getTransform());
+        Renderer::getInstance().getFrontend().submit(m_renderId, *getTransform());
 }
 
 void MeshInstance::lightPassDraw()
 {
     if (m_renderId)
-        Renderer::getInstance().submit(m_renderId, *getTransform());
+        Renderer::getInstance().getFrontend().submit(m_renderId, *getTransform());
 }
 
 void MeshInstance::accept(NodeVisitor& visitor)
@@ -75,16 +76,16 @@ void MeshInstance::loadMesh(std::string path)
 void MeshInstance::loadMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 {
     if (m_renderId != 0) {
-        Renderer::getInstance().clearMesh(m_renderId);
+        Renderer::getInstance().getBackend().clearMesh(m_renderId);
     }
 
     mesh.getResource().onLoaded([this, mesh, surfaceIdx] {
-        m_renderId = Renderer::getInstance().instanciateMesh(mesh, surfaceIdx);
+        m_renderId = Renderer::getInstance().getBackend().instanciateMesh(mesh, surfaceIdx);
 
         ResourceHandle<Material> mat = mesh.getResource().getMaterial(surfaceIdx);
         m_materialResource           = mat;
         mat.getResource().onLoaded([this, mat] {
-            m_materialId = Renderer::getInstance().instanciateMaterial(mat);
+            m_materialId = Renderer::getInstance().getBackend().instanciateMaterial(mat);
         });
     });
 

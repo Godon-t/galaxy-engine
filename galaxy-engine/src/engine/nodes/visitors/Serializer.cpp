@@ -6,7 +6,6 @@
 #include "nodes/Node.hpp"
 #include "nodes/Node3D.hpp"
 #include "nodes/rendering/Camera.hpp"
-#include "nodes/rendering/CornellBox.hpp"
 #include "nodes/rendering/EnvironmentNode.hpp"
 #include "nodes/rendering/MeshInstance.hpp"
 #include "nodes/rendering/Sprite3D.hpp"
@@ -65,11 +64,6 @@ void SceneSerializer::visit(Node3D& node)
 }
 
 void SceneSerializer::visit(Camera& node)
-{
-    visit(static_cast<Node3D&>(node));
-}
-
-void SceneSerializer::visit(CornellBox& node)
 {
     visit(static_cast<Node3D&>(node));
 }

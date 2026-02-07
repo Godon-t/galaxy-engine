@@ -7,22 +7,22 @@ namespace Galaxy {
 Sprite3D::~Sprite3D()
 {
     if (m_initialized) {
-        Renderer::getInstance().clearTexture(m_textureID);
+        Renderer::getInstance().getBackend().clearTexture(m_textureID);
     }
 }
 void Sprite3D::draw()
 {
     if (m_initialized) {
-        Renderer::getInstance().changeUsedProgram(TEXTURE);
-        Renderer::getInstance().bindTexture(m_textureID, "sampledTexture");
-        Renderer::getInstance().submit(m_rectID, m_transform);
-        Renderer::getInstance().changeUsedProgram(PBR);
+        // TODO: integrate in sceneContext
+        Renderer::getInstance().getFrontend().changeUsedProgram(TEXTURE);
+        Renderer::getInstance().getFrontend().bindTexture(m_textureID, "sampledTexture");
+        Renderer::getInstance().getFrontend().submit(m_rectID, m_transform);
     }
 }
 void Sprite3D::lightPassDraw()
 {
     if (m_initialized)
-        Renderer::getInstance().submit(m_rectID, m_transform);
+        Renderer::getInstance().getFrontend().submit(m_rectID, m_transform);
 }
 void Sprite3D::accept(Galaxy::NodeVisitor& visitor)
 {
@@ -31,12 +31,12 @@ void Sprite3D::accept(Galaxy::NodeVisitor& visitor)
 void Sprite3D::loadTexture(std::string path)
 {
     if (m_initialized) {
-        Renderer::getInstance().clearTexture(m_textureID);
+        Renderer::getInstance().getBackend().clearTexture(m_textureID);
     }
 
     auto resource = ResourceManager::getInstance().load<Image>(path);
     m_imageID     = resource.getResource().getResourceID();
-    m_textureID   = Renderer::getInstance().instanciateTexture(resource);
+    m_textureID   = Renderer::getInstance().getBackend().instantiateTexture(resource);
 
     resource.getResource().onLoaded([this, path] {
         auto res      = ResourceManager::getInstance().load<Image>(path);
@@ -51,6 +51,6 @@ void Sprite3D::enteredRoot()
 }
 renderID Sprite3D::generateRect(vec2 dimmensions)
 {
-    return Renderer::getInstance().generateQuad(dimmensions, [] {});
+    return Renderer::getInstance().getBackend().generateQuad(dimmensions, [] {});
 }
 } // namespace Galaxy

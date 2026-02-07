@@ -100,9 +100,6 @@ private:
     renderID m_depthRenderingCubemap;
 
     renderID m_probesFrameBuffer;
-    renderID m_probeRadianceTexture;
-    renderID m_probeNormalTexture;
-    renderID m_probeDepthTexture;
 
     renderID m_lightsUBO;
     GPULightData m_lightUniformData;

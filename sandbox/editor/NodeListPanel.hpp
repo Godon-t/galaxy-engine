@@ -41,10 +41,6 @@ public:
     {
         visit(static_cast<Node3D&>(node));
     }
-    void visit(CornellBox& node) override
-    {
-        visit(static_cast<Node3D&>(node));
-    }
     void visit(MeshInstance& node) override
     {
         visit(static_cast<Node3D&>(node));

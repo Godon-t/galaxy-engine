@@ -4,7 +4,6 @@ namespace Galaxy {
 class Node;
 class Node3D;
 class Camera;
-class CornellBox;
 class MeshInstance;
 class Sprite3D;
 class EnvironmentNode;
@@ -18,7 +17,6 @@ public:
     virtual void visit(Node& node) {};
     virtual void visit(Node3D& node) {};
     virtual void visit(Camera& node) {};
-    virtual void visit(CornellBox& node) {};
     virtual void visit(MeshInstance& node) {};
     virtual void visit(Sprite3D& node) {};
     virtual void visit(EnvironmentNode& node) {};

@@ -12,6 +12,7 @@
 #include "resource/Mesh.hpp"
 #include "resource/ResourceHandle.hpp"
 #include "types/Render.hpp"
+#include <functional>
 
 namespace Galaxy {
 class Renderer;
@@ -91,13 +92,16 @@ public:
     renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices, std::function<void()> destroyCallback = nullptr);
     void clearMesh(renderID meshID);
 
-    renderID instantiateTexture();
+    renderID instantiateTexture(TextureFormat format, vec2 size);
     renderID instantiateTexture(ResourceHandle<Image> image);
     void clearTexture(renderID textureID);
 
     renderID instanciateMaterial(ResourceHandle<Material> material);
     void updateMaterial(renderID materialID, ResourceHandle<Material> material);
     void clearMaterial(renderID materialID);
+
+    using MaterialUpdateCallback = std::function<void(renderID materialID, bool isTransparent)>;
+    void onMaterialUpdated(MaterialUpdateCallback callback) { m_materialUpdateCallback = callback; }
 
     void processCommands(std::vector<RenderCommand>& commands);
 
@@ -167,6 +171,8 @@ private:
 
     // Will invalidate renderID for things outside of Node that store a renderID
     std::unordered_map<renderID, std::function<void()>> m_gpuDestroyNotifications;
+
+    MaterialUpdateCallback m_materialUpdateCallback;
 
     ProgramPBR m_mainProgram;
     ProgramSkybox m_skyboxProgram;

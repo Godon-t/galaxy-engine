@@ -122,15 +122,12 @@ void EditorLayer::onUpdate()
         //     Application::getInstance().getRootNodePtr()->draw();
         //     renderer.endShadowPass();
         // }
-        renderer.shadowPass();
-        renderer.setShowDebug(true);
-        renderer.beginSceneRender(cameraTransform);
-        // TODO: should the application handle the render ?
-        Application::getInstance().getRootNodePtr()->draw();
-        renderer.setShowDebug(false);
-        // m_selectedScene->getNodePtr()->draw();
 
-        renderer.endSceneRender();
+        Application::getInstance().getRootNodePtr()->draw();
+
+        renderer.renderFromCamera(cameraTransform);
+        // TODO: should the application handle the render ?
+        // m_selectedScene->getNodePtr()->draw();
 
         renderer.renderFrame();
     }
@@ -228,7 +225,7 @@ void EditorLayer::displayViewport(bool validScene)
             m_viewportSize = { pannelSize.x, pannelSize.y };
 
             Renderer::getInstance().resize(m_viewportSize.x, m_viewportSize.y);
-            Renderer::getInstance().resizeFrameBuffer(m_viewportFrameID, m_viewportSize.x, m_viewportSize.y);
+            Renderer::getInstance().getBackend().resizeFrameBuffer(m_viewportFrameID, m_viewportSize.x, m_viewportSize.y);
         }
         ImGui::PopStyleVar();
         // TODO: bad design if I have to use textureID outside of Renderer. Will cause problem when multithreading renderer.
@@ -269,19 +266,19 @@ void EditorLayer::applicationWidgetRender()
         GLX_INFO("Selected resource! '{0}'", m_resourceAccess.selectedResourcePath);
     }
 
-    if (ImGui::BeginMenu("GI method")) {
-        if (ImGui::MenuItem("None"))
-            m_disablePostProcessing = true;
-        if (ImGui::MenuItem("Probe")) {
-            Renderer::getInstance().setPostProcessing(ProgramType::POST_PROCESSING_PROBE);
-            m_disablePostProcessing = false;
-        }
-        if (ImGui::MenuItem("Screen space")) {
-            m_disablePostProcessing = false;
-            Renderer::getInstance().setPostProcessing(ProgramType::POST_PROCESSING_SSGI);
-        }
-        ImGui::EndMenu();
-    }
+    // if (ImGui::BeginMenu("GI method")) {
+    //     if (ImGui::MenuItem("None"))
+    //         m_disablePostProcessing = true;
+    //     if (ImGui::MenuItem("Probe")) {
+    //         Renderer::getInstance().getFrontend().setPostProcessing(ProgramType::POST_PROCESSING_PROBE);
+    //         m_disablePostProcessing = false;
+    //     }
+    //     if (ImGui::MenuItem("Screen space")) {
+    //         m_disablePostProcessing = false;
+    //         Renderer::getInstance().setPostProcessing(ProgramType::POST_PROCESSING_SSGI);
+    //     }
+    //     ImGui::EndMenu();
+    // }
 
     ImGui::End();
 }

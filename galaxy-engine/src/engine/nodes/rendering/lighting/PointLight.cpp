@@ -18,7 +18,7 @@ PointLight::~PointLight()
         Renderer::getInstance().getLightManager().unregisterLight(m_lightID);
     }
     if (m_visualCubeID != 0) {
-        Renderer::getInstance().clearMesh(m_visualCubeID);
+        Renderer::getInstance().getBackend().clearMesh(m_visualCubeID);
     }
 }
 
@@ -34,7 +34,7 @@ void PointLight::enteredRoot()
     updateLight();
 
     // Create visual cube
-    m_visualCubeID = Renderer::getInstance().generateCube(1.f, false, []() {});
+    m_visualCubeID = Renderer::getInstance().getBackend().generateCube(1.f, false, []() {});
 }
 
 void PointLight::accept(Galaxy::NodeVisitor& visitor)
@@ -45,12 +45,13 @@ void PointLight::accept(Galaxy::NodeVisitor& visitor)
 void PointLight::draw()
 {
     // Draw visual cube
-    auto& ri = Renderer::getInstance();
-    if (m_visualCubeID && ri.canDrawDebug()) {
-        ri.changeUsedProgram(UNICOLOR);
-        ri.setUniform("objectColor", m_color);
-        ri.submit(m_visualCubeID, *getTransform());
-    }
+    // TODO: debug no working
+    // auto& ri = Renderer::getInstance();
+    // if (m_visualCubeID && ri.canDrawDebug()) {
+    //     ri.changeUsedProgram(UNICOLOR);
+    //     ri.setUniform("objectColor", m_color);
+    //     ri.submit(m_visualCubeID, *getTransform());
+    // }
 }
 
 void PointLight::updateLight()

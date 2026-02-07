@@ -184,13 +184,14 @@ renderID Backend::instantiateTexture(ResourceHandle<Image> image)
     return textureID;
 }
 
-renderID Backend::instantiateTexture()
+renderID Backend::instantiateTexture(TextureFormat format, vec2 size)
 {
     if (!m_textureInstances.canAddInstance())
         return 0;
 
     renderID textureID = m_textureInstances.createResourceInstance();
-    m_textureInstances.get(textureID)->resize(1024, 1024);
+    m_textureInstances.get(textureID)->resize(size.x, size.y);
+    m_textureInstances.get(textureID)->setFormat(format);
     checkOpenGLErrors("Instantiate texture");
     return textureID;
 }
@@ -240,6 +241,8 @@ renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
         matInstance->ambient      = matResource.getAmbient();
         matInstance->roughness    = matResource.getRoughness();
         matInstance->transparency = matResource.getTransparency();
+
+        updateMaterial(materialID, material);
     });
 
     return materialID;
@@ -247,7 +250,12 @@ renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
 
 void Backend::updateMaterial(renderID materialID, ResourceHandle<Material> material)
 {
-    m_materialInstances.get(materialID)->transparency = material.getResource().getTransparency();
+    auto& matResource = material.getResource();
+    m_materialInstances.get(materialID)->transparency = matResource.getTransparency();
+    
+    if (m_materialUpdateCallback) {
+        m_materialUpdateCallback(materialID, matResource.isUsingTransparency());
+    }
 }
 
 void Backend::clearMaterial(renderID materialID)

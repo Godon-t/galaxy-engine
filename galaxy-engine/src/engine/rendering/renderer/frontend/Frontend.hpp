@@ -2,32 +2,28 @@
 
 #include "pch.hpp"
 
-#include "RenderCanva.hpp"
-#include "RenderCommand.hpp"
+#include "SceneContext.hpp"
+#include "rendering/renderer/RenderCommand.hpp"
 #include "data/Transform.hpp"
 #include "types/Render.hpp"
+#include "RenderDevice.hpp"
 
 #include "queue"
 
 namespace Galaxy {
 class Frontend {
 public:
+    void addRenderDevice(RenderDevice& renderDevice){m_frameDevices.push_back(renderDevice);}
+    void processDevices(); 
+
+
     Frontend(std::vector<RenderCommand>* commandBuffer);
 
-    void beginCanvaNoBuffer();
-    void beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx = -1);
-    void endCanva();
-    void processCanvas();
-    void linkCanvaColorToTexture(renderID textureID);
-    void linkCanvaDepthToTexture(renderID textureID);
-    void storeCanvaResult(std::string& path);
-    void avoidCanvaBufferClear();
+    // void storeCanvaResult(std::string& path);
 
     void submit(renderID meshID);
     void submit(renderID meshID, const Transform& transform);
-    void clear(math::vec4& color);
-
-    mat4 getProjectionMatrix();
+    void clear(vec4& color);
 
     void bindTexture(renderID textureInstanceID, char* uniformName);
     void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int attachmentIdx);
@@ -67,38 +63,32 @@ public:
     void submitDebugLine(vec3 start, vec3 end, vec3 color);
     void drawDebug();
 
+
+
     void submitPBR(renderID meshID, renderID materialID, const Transform& transform);
 
     void setCommandBuffer(std::vector<RenderCommand>* newBuffer);
 
-    inline void setTransparency(renderID matID, bool state) { m_materialsTransparency[matID] = state; }
-    inline void removeMaterialID(renderID matID)
-    {
-        m_materialsTransparency.erase(matID);
-        // m_materialToSubmitCommand.erase(matID);
-    }
 
+    inline void removeMaterialID(renderID matID) { m_frameContext.removeMaterialID(matID); }
+    void notifyMaterialUpdated(renderID materialID, bool isTransparent);
+    inline void clearContext(){m_frameContext.clear();}
+    
 private:
-    struct DistCompare {
-        static vec3 camPosition;
-        bool operator()(const std::pair<renderID, RenderCommand>& a, const std::pair<renderID, RenderCommand>& b) const;
-    };
-
-    void dumpCommandsToBuffer(RenderCanva& canva);
+    // TODO: Create cameraFrustum object
+    void dumpCommandsToBuffer(vec3& cameraPosition);
+    
     void setViewMatrix(const math::mat4& view);
     void setProjectionMatrix(const math::mat4& projection);
     void pushCommand(RenderCommand command);
     void saveFrameBuffer(renderID framebufferID, std::string& path);
 
-    std::unordered_map<renderID, bool> m_materialsTransparency;
 
-    std::vector<RenderCanva> m_canvas;
-    size_t m_currentCanvaIdx;
+    SceneContext m_frameContext;
+    std::vector<RenderDevice> m_frameDevices;
 
     std::vector<RenderCommand>* m_frontBuffer;
 
-    mat4 m_projMat;
-    mat4 m_viewMat;
     FramebufferTextureFormat m_currentFramebufferFormat = FramebufferTextureFormat::None;
 };
 } // namespace Galaxy

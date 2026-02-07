@@ -25,10 +25,6 @@ public:
         visit(static_cast<Node&>(node));
         transformEdit(*node.getTransform());
     }
-    void visit(CornellBox& node)
-    {
-        visit(static_cast<Node3D&>(node));
-    }
     void visit(MeshInstance& node)
     {
         visit(static_cast<Node3D&>(node));
@@ -42,7 +38,7 @@ public:
 
         auto mathandle = node.getMaterial();
         if (mathandle && materialEdit(mathandle.getResource())) {
-            Renderer::getInstance().updateMaterial(node.getMaterialId(), mathandle);
+            Renderer::getInstance().getBackend().updateMaterial(node.getMaterialId(), mathandle);
         }
         if (ImGui::Button("Save resource"))
             mathandle.getResource().save();

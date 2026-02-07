@@ -122,10 +122,10 @@ void EditorLayer::onUpdate()
         //     Application::getInstance().getRootNodePtr()->draw();
         //     renderer.endShadowPass();
         // }
+        renderer.addMainCameraDevice(cameraTransform);
 
         Application::getInstance().getRootNodePtr()->draw();
 
-        renderer.renderFromCamera(cameraTransform);
         // TODO: should the application handle the render ?
         // m_selectedScene->getNodePtr()->draw();
 
@@ -220,7 +220,7 @@ void EditorLayer::displayViewport(bool validScene)
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2 { 100, 1000 });
         }
         ImVec2 pannelSize = ImGui::GetContentRegionAvail();
-        if (m_viewportSize != *(vec2*)&pannelSize) {
+        if (m_viewportSize.x != pannelSize.x || m_viewportSize.y != pannelSize.y) {
             // TODO: resize here and on resize event ?
             m_viewportSize = { pannelSize.x, pannelSize.y };
 

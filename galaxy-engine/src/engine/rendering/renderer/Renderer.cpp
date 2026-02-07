@@ -25,7 +25,7 @@ Renderer::Renderer()
     });
 
     // m_cubemapFramebufferID   = m_backend.instantiateCubemapFrameBuffer(1024);
-    m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8, 5);
+    m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8, 1);
     // m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
     // m_postProcessingQuadID   = m_backend.generateQuad(vec2(2, 2), [] {});
 }
@@ -57,19 +57,17 @@ void Renderer::passShadow()
     m_lightManager.shadowPass(Application::getInstance().getRootNodePtr().get());
 }
 
-void Renderer::renderFromCamera(const mat4& camTransform)
+void Renderer::addMainCameraDevice(const mat4& camTransform)
 {
-    RenderCamera mainCamera;
+    auto mainCamera = std::make_unique<RenderCamera>();
 
     auto view = CameraManager::processViewMatrix(camTransform);
-    auto projection = CameraManager::processProjectionMatrix(Renderer::getInstance().getRenderingWindowSize());
 
-    mainCamera.transform = camTransform;
-    mainCamera.view = view;
-    mainCamera.projection = projection;
-    mainCamera.targetFramebuffer = m_sceneFrameBufferID;
-    mainCamera.renderScene = true;
-    m_frontend.addRenderDevice(mainCamera);
+    mainCamera->transform = camTransform;
+    mainCamera->viewportDimmmensions = Renderer::getInstance().getRenderingWindowSize();
+    mainCamera->targetFramebuffer = m_sceneFrameBufferID;
+    mainCamera->renderScene = true;
+    m_frontend.addRenderDevice(std::move(mainCamera));
 }
 
 void Renderer::passPostProcessing()

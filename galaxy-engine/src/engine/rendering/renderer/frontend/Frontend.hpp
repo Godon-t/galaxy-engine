@@ -9,11 +9,12 @@
 #include "RenderDevice.hpp"
 
 #include "queue"
+#include <memory>
 
 namespace Galaxy {
 class Frontend {
 public:
-    void addRenderDevice(RenderDevice& renderDevice){m_frameDevices.push_back(renderDevice);}
+    void addRenderDevice(std::unique_ptr<RenderDevice> renderDevice){ m_frameDevices.push_back(std::move(renderDevice)); }
     void processDevices(); 
 
 
@@ -83,9 +84,11 @@ private:
     void pushCommand(RenderCommand command);
     void saveFrameBuffer(renderID framebufferID, std::string& path);
 
+    bool m_addCommandsToDevice = false;
+
 
     SceneContext m_frameContext;
-    std::vector<RenderDevice> m_frameDevices;
+    std::vector<std::unique_ptr<RenderDevice>> m_frameDevices;
 
     std::vector<RenderCommand>* m_frontBuffer;
 

@@ -17,32 +17,41 @@ Frontend::Frontend(std::vector<RenderCommand>* commandBuffer)
 
 void Frontend::processDevices()
 {
+    m_addCommandsToDevice = false;
+
     auto clearColor = vec4(0.2, 0.2, 0.25, 1.0);
     for (auto& device : m_frameDevices) {
-        if (device.useBuffer()) {
-            auto views = device.getViews();
-            auto projection = device.getProjection();
-            auto position = vec3(device.transform[3]);
+        if (device->useBuffer()) {
+            auto views = device->getViews();
+            auto projection = device->getProjection();
+            auto position = vec3(device->transform[3]);
 
             // Cubemap
             if(views.size() == 6){
                 for(int i=0; i < views.size(); i++){
-                    bindFrameBuffer(device.targetFramebuffer, i);
+                    bindFrameBuffer(device->targetFramebuffer, i);
                     clear(clearColor);
                     
+                    setViewport(vec2(0,0), device->viewportDimmmensions);
                     setViewMatrix(views[i]);
                     setProjectionMatrix(projection);
                     changeUsedProgram(ProgramType::PBR);
                     dumpCommandsToBuffer(position);
                 }
+                m_frontBuffer->insert(m_frontBuffer->end(), device->customPostCommands.begin(), device->customPostCommands.end());
+                unbindFrameBuffer(device->targetFramebuffer, true);
             } else {
-                bindFrameBuffer(device.targetFramebuffer);
+                bindFrameBuffer(device->targetFramebuffer);
                 clear(clearColor);
                 
+                setViewport(vec2(0,0), device->viewportDimmmensions);
                 setViewMatrix(views[0]);
                 setProjectionMatrix(projection);
                 changeUsedProgram(ProgramType::PBR);
                 dumpCommandsToBuffer(position);
+                
+                m_frontBuffer->insert(m_frontBuffer->end(), device->customPostCommands.begin(), device->customPostCommands.end());
+                unbindFrameBuffer(device->targetFramebuffer, false);
             }
         }
 
@@ -54,6 +63,7 @@ void Frontend::processDevices()
     }
 
     m_frameDevices.clear();
+    m_addCommandsToDevice = true;
 }
 
 // void Frontend::storeCanvaResult(std::string& path)
@@ -100,7 +110,11 @@ void Frontend::setProjectionMatrix(const math::mat4& projection)
 
 void Frontend::pushCommand(RenderCommand command)
 {
-    m_frontBuffer->push_back(command);
+    if(m_addCommandsToDevice && m_frameDevices.size() > 0){
+        m_frameDevices.back()->customPostCommands.push_back(command);
+    } else {
+        m_frontBuffer->push_back(command);
+    }
 }
 
 void Frontend::saveFrameBuffer(renderID framebufferID, std::string& path)

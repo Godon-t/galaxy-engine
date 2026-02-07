@@ -19,7 +19,7 @@ public:
     void init();
     
     void passShadow();
-    void renderFromCamera(const mat4& camTransform);
+    void addMainCameraDevice(const mat4& camTransform);
     void passPostProcessing();
     void updateGI();
     void renderFrame();

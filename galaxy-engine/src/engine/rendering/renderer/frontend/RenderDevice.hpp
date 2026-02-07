@@ -14,6 +14,8 @@ namespace Galaxy
         bool renderScene = false;
         renderID targetFramebuffer = -1;
         mat4 transform;
+        vec2 viewportDimmmensions = vec2(512);
+
 
         std::vector<RenderCommand> customPostCommands;
 
@@ -21,7 +23,7 @@ namespace Galaxy
 
         virtual std::vector<mat4> getViews(){
             vec3 pos = vec3(0,0,0);
-            vec3 target = vec3(0,0,-1);
+            vec3 target = vec3(0,0,1);
             vec3 up = vec3(0,1,0);
             static mat4 view = lookAt(pos, target, up);
             std::vector<mat4> res = {view};
@@ -42,16 +44,13 @@ namespace Galaxy
         // }
     };
     struct RenderCamera: public RenderDevice {
-        mat4 view;
-        mat4 projection;
-
         std::vector<mat4> getViews() override {
-            std::vector<mat4> res{view};
+            std::vector<mat4> res{CameraManager::processViewMatrix(transform)};
             return res;
         }
 
         mat4 getProjection() override{
-            return projection;
+            return CameraManager::processProjectionMatrix(viewportDimmmensions);
         }
     };
 

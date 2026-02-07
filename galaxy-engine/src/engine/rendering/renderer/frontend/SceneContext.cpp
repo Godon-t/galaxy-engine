@@ -53,10 +53,10 @@ namespace Galaxy
             }
         }
 
-        DepthMaskCommand depthMask;
-        depthMask.state = false;
+        // DepthMaskCommand depthMask;
+        // depthMask.state = false;
 
-        res.push_back(depthMask);
+        // res.push_back(depthMask);
 
         while (!transparentPQ.empty()) {
             BindMaterialCommand bindMaterialCommand;
@@ -68,8 +68,8 @@ namespace Galaxy
             transparentPQ.pop();
         }
 
-        depthMask.state = true;
-        res.push_back(depthMask);
+        // depthMask.state = true;
+        // res.push_back(depthMask);
 
         return res;
     }

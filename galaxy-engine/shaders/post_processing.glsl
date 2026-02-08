@@ -616,4 +616,6 @@ void main()
     // Trilinear interpolation of pixel at final position. No ray tracing
     // No ray reconstruction with this
     color = vec4(trilinearIrradianceAtPosition(worldPos, probeIrradianceField, probeTextureSingleSize), 1.0);
+
+    color = vec4(texture(normalBuffer, TexCoords).rgb, 1.0);
 }

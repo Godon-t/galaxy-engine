@@ -25,9 +25,9 @@ Renderer::Renderer()
     });
 
     // m_cubemapFramebufferID   = m_backend.instantiateCubemapFrameBuffer(1024);
-    m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8, 1);
-    // m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
-    // m_postProcessingQuadID   = m_backend.generateQuad(vec2(2, 2), [] {});
+    m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8, 3);
+    m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
+    m_postProcessingQuadID   = m_backend.generateQuad(vec2(2, 2), [] {});
 }
 
 Renderer::~Renderer()
@@ -72,16 +72,22 @@ void Renderer::addMainCameraDevice(const mat4& camTransform)
 
 void Renderer::passPostProcessing()
 {
-    // if (m_activePostProcessing != ProgramType::POST_PROCESSING_PROBE && m_activePostProcessing != ProgramType::POST_PROCESSING_SSGI)
-    //     GLX_CORE_ASSERT(m_activePostProcessing == ProgramType::POST_PROCESSING_PROBE || m_activePostProcessing == ProgramType::POST_PROCESSING_SSGI, "Wrong porgram type for post processing");
+    auto postProcess = std::make_unique<RenderDevice>();
+    postProcess->viewportDimmmensions = Renderer::getInstance().getRenderingWindowSize();
+    postProcess->renderScene = false;
+    postProcess->targetFramebuffer = m_postProcessingBufferID;
+    m_frontend.addRenderDevice(std::move(postProcess));
+    m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING_PROBE);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID, "normalBuffer", 1);
+    m_frontend.submit(m_postProcessingQuadID);
+}
 
-    // m_frontend.beginCanva(m_currentView, m_currentProj, m_postProcessingBufferID, FramebufferTextureFormat::RGBA8);
-    // m_frontend.changeUsedProgram(m_activePostProcessing);
-
-    // m_frontend.initPostProcessing(m_sceneFrameBufferID);
-    // m_frontend.submit(m_postProcessingQuadID);
-    // m_frontend.changeUsedProgram(ProgramType::PBR);
-    // m_frontend.endCanva();
+void Renderer::resize(unsigned int width, unsigned int height)
+{
+    m_backend.resizeFrameBuffer(m_sceneFrameBufferID, width, height);
+    m_backend.resizeFrameBuffer(m_postProcessingBufferID, width, height);
+    m_mainViewportSize.x = width;
+    m_mainViewportSize.y = height;
 }
 
 void Renderer::renderFrame()

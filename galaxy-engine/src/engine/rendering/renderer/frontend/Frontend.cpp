@@ -196,15 +196,6 @@ void Frontend::changeUsedProgram(ProgramType program)
     pushCommand(setActiveProgramCommand);
 }
 
-void Frontend::initPostProcessing(renderID frameBufferID)
-{
-    InitPostProcessCommand postProcComm;
-    postProcComm.frameBufferID = frameBufferID;
-
-    // TODO: make it work with canvaRender
-    pushCommand(postProcComm);
-}
-
 void Frontend::setUniform(std::string uniformName, bool value)
 {
     SetUniformCommand uniformCommand;

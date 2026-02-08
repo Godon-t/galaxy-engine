@@ -36,7 +36,6 @@ public:
     void bindMaterial(renderID materialRenderID);
     // TODO: rename to match setActiveProgram command
     void changeUsedProgram(ProgramType program);
-    void initPostProcessing(renderID frameBufferID);
 
     void setUniform(std::string uniformName, bool value);
     void setUniform(std::string uniformName, float value);

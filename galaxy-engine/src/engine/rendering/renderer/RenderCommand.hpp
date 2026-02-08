@@ -20,7 +20,6 @@ enum RenderCommandType {
     bindMaterial,
     bindFrameBuffer,
     unbindFrameBuffer,
-    initPostProcess,
     setUniform,
     setViewport,
     updateTexture,
@@ -95,10 +94,6 @@ struct BindFrameBufferCommand {
     renderID frameBufferID;
     int cubemapFaceIdx = -1;
     bool bind;
-};
-
-struct InitPostProcessCommand {
-    renderID frameBufferID;
 };
 
 enum SetValueTypes {
@@ -203,7 +198,6 @@ using RenderCommand = std::variant<
     AttachCubemapToFramebufferCommand,
     BindMaterialCommand,
     BindFrameBufferCommand,
-    InitPostProcessCommand,
     SetUniformCommand,
     SetViewportCommand,
     UpdateTextureCommand,

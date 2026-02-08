@@ -124,8 +124,10 @@ void EditorLayer::onUpdate()
         // }
         renderer.addMainCameraDevice(cameraTransform);
 
-        renderer.passShadow();
         Application::getInstance().getRootNodePtr()->draw();
+
+        renderer.passShadow();
+        renderer.passPostProcessing();
 
         // TODO: should the application handle the render ?
         // m_selectedScene->getNodePtr()->draw();
@@ -266,6 +268,9 @@ void EditorLayer::applicationWidgetRender()
     if (m_resourceAccess.display()) {
         GLX_INFO("Selected resource! '{0}'", m_resourceAccess.selectedResourcePath);
     }
+
+    if(ImGui::Button("change post processing"))
+        m_disablePostProcessing = !m_disablePostProcessing;
 
     // if (ImGui::BeginMenu("GI method")) {
     //     if (ImGui::MenuItem("None"))

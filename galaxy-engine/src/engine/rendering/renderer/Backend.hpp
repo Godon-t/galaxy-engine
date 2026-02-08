@@ -147,7 +147,6 @@ private:
     void processCommand(const AttachCubemapToFramebufferCommand& command);
     void processCommand(const BindMaterialCommand& command);
     void processCommand(const BindFrameBufferCommand& command);
-    void processCommand(const InitPostProcessCommand& command);
     void processCommand(const SetUniformCommand& command);
     void processCommand(const SetViewportCommand& command);
     void processCommand(const UpdateTextureCommand& command);

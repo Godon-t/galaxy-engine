@@ -36,16 +36,10 @@ public:
     // TODO: shouldn't be able to retrieve GPU id outside of backend
     inline unsigned int getFrameBufferTextureID(renderID frameBufferID) { return m_backend.getFrameBufferTextureID(frameBufferID); }
     inline unsigned int getRawSceneTextureID() { return m_backend.getFrameBufferTextureID(m_sceneFrameBufferID); }
-    inline unsigned int getPostProcSceneTextureID() { return getRawSceneTextureID(); }// { return m_backend.getFrameBufferTextureID(m_postProcessingBufferID); }
+    inline unsigned int getPostProcSceneTextureID() { return m_backend.getFrameBufferTextureID(m_postProcessingBufferID); }
 
     // TODO: Resizing unbind framebuffer
-    void resize(unsigned int width, unsigned int height)
-    {
-        m_backend.resizeFrameBuffer(m_sceneFrameBufferID, width, height);
-        // m_backend.resizeFrameBuffer(m_postProcessingBufferID, width, height);
-        m_mainViewportSize.x = width;
-        m_mainViewportSize.y = height;
-    }
+    void resize(unsigned int width, unsigned int height);
 
 private:
     Renderer();
@@ -63,6 +57,8 @@ private:
     LightManager m_lightManager;
 
     renderID m_sceneFrameBufferID;
+    renderID m_postProcessingBufferID;
+    renderID m_postProcessingQuadID;
     vec2 m_mainViewportSize;
 
     int m_drawCount = 0;

@@ -194,7 +194,7 @@ void main()
     float metallic, roughness, ao;
 
     float transparency = useAlbedoMap ? texture(albedoMap, v_texCoords).a : transparencyVal;
-    albedo             = useAlbedoMap ? pow(texture(albedoMap, v_texCoords).rgb, vec3(2.2)) : pow(albedoVal, vec3(2.2));
+    albedo             = useAlbedoMap ? texture(albedoMap, v_texCoords).rgb : albedoVal;
     normal             = useNormalMap ? getNormalFromNormalMap() : v_normal;
     metallic           = useMetallicMap ? texture(metallicMap, v_texCoords).r : metallicVal;
     roughness          = useRoughnessMap ? texture(roughnessMap, v_texCoords).r : roughnessVal;
@@ -253,6 +253,24 @@ void main()
         directSpecular += shadowFactor * specularTerm * lightContribution;
 
         Lo += (1.0 - shadow) * (kD * albedo / PI + specular) * radiance * NdotL * 50.f;
+    }
+
+    if (lightCount == 0) {
+        vec3 defaultDir        = normalize(vec3(0.5, 0.7, 0.2));
+        float NdotL_default    = max(dot(N, defaultDir), 0.0);
+        vec3 defaultRadiance   = vec3(1.0) * 0.18; // tweak as needed
+
+        // Approximate Fresnel for default light using F0
+        vec3 kS_def            = fresnelSchlick(max(dot(N, V), 0.0), F0);
+        vec3 kD_def            = vec3(1.0) - kS_def;
+        kD_def                 *= 1.0 - metallic;
+
+        vec3 diffuseTerm_def   = kD_def * albedo / PI;
+        vec3 specularTerm_def  = vec3(0.0); // keep specular minimal for default
+
+        directDiffuse  += diffuseTerm_def * defaultRadiance * NdotL_default;
+        directSpecular += specularTerm_def * defaultRadiance * NdotL_default;
+        Lo += (diffuseTerm_def + specularTerm_def) * defaultRadiance * NdotL_default;
     }
 
     // ambient lighting (we now use IBL as the ambient term)

@@ -12,8 +12,10 @@ MeshInstance::~MeshInstance()
 {
     if (m_renderId)
         Renderer::getInstance().getBackend().clearMesh(m_renderId);
-    if (m_materialId)
+    if (m_materialId){
+        Renderer::getInstance().getFrontend().removeMaterialID(m_materialId);
         Renderer::getInstance().getBackend().clearMaterial(m_materialId);
+    }
 }
 
 void MeshInstance::draw()

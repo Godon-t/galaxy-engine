@@ -453,10 +453,16 @@ renderID Backend::instanciateFrameBuffer(unsigned int width, unsigned int height
     return frameBufferID;
 }
 
-renderID Backend::instantiateCubemapFrameBuffer(unsigned int size)
+renderID Backend::instantiateCubemapFrameBuffer(unsigned int resolution, unsigned int colorCount)
 {
     renderID frameBufferID = m_cubemapFrameBufferInstances.createResourceInstance();
-    m_cubemapFrameBufferInstances.get(frameBufferID)->resize(size);
+
+    for(int i=0; i<colorCount; i++){
+        Cubemap cubemap;
+        m_cubemapFrameBufferInstances.get(frameBufferID)->attachColorCubemap(cubemap, i);    
+    }
+
+    m_cubemapFrameBufferInstances.get(frameBufferID)->resize(resolution);
     m_cubemapFrameBufferInstances.get(frameBufferID)->unbind();
     checkOpenGLErrors("Instantiate frameBuffer");
     return frameBufferID;
@@ -799,8 +805,13 @@ void Backend::processCommand(const UpdateCubemapCommand& command)
 void Backend::processCommand(const SetFramebufferAsTextureUniformCommand& command)
 {
     auto uniLoc       = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
-    auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
-    framebuffer.setAsTextureUniform(uniLoc, command.textureIdx);
+    if(!command.aboutCubemap){
+        auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
+        framebuffer.setAsTextureUniform(uniLoc, command.textureIdx);
+    } else {
+        auto& cubemapFB = *m_cubemapFrameBufferInstances.get(command.framebufferID);
+        cubemapFB.setAsCubemapUniform(uniLoc, command.textureIdx);
+    }
     checkOpenGLErrors("Bind framebuffer texture as uniform");
     free(command.uniformName);
 }

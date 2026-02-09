@@ -15,6 +15,8 @@ namespace Galaxy
         renderID targetFramebuffer = -1;
         mat4 transform;
         vec2 viewportDimmmensions = vec2(512);
+        vec2 viewportPosition = vec2(0);
+        bool noClear = false;
 
 
         std::vector<RenderCommand> customPostCommands;

@@ -24,7 +24,6 @@ Renderer::Renderer()
         m_frontend.notifyMaterialUpdated(materialID, isTransparent);
     });
 
-    // m_cubemapFramebufferID   = m_backend.instantiateCubemapFrameBuffer(1024);
     m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8, 3);
     m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
     m_postProcessingQuadID   = m_backend.generateQuad(vec2(2, 2), [] {});
@@ -61,8 +60,6 @@ void Renderer::addMainCameraDevice(const mat4& camTransform)
 {
     auto mainCamera = std::make_unique<RenderCamera>();
 
-    auto view = CameraManager::processViewMatrix(camTransform);
-
     mainCamera->transform = camTransform;
     mainCamera->viewportDimmmensions = Renderer::getInstance().getRenderingWindowSize();
     mainCamera->targetFramebuffer = m_sceneFrameBufferID;
@@ -70,15 +67,18 @@ void Renderer::addMainCameraDevice(const mat4& camTransform)
     m_frontend.addRenderDevice(std::move(mainCamera));
 }
 
-void Renderer::passPostProcessing()
+void Renderer::passPostProcessing(const mat4& camTransform)
 {
-    auto postProcess = std::make_unique<RenderDevice>();
+    m_lightManager.debugDraw();
+
+    auto postProcess = std::make_unique<RenderCamera>();
     postProcess->viewportDimmmensions = Renderer::getInstance().getRenderingWindowSize();
     postProcess->renderScene = false;
     postProcess->targetFramebuffer = m_postProcessingBufferID;
+    postProcess->transform = camTransform;
     m_frontend.addRenderDevice(std::move(postProcess));
     m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING_PROBE);
-    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID, "normalBuffer", 1);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"depthBuffer",-1);
     m_frontend.submit(m_postProcessingQuadID);
 }
 
@@ -92,10 +92,7 @@ void Renderer::resize(unsigned int width, unsigned int height)
 
 void Renderer::renderFrame()
 {
-    // m_lightManager.debugDraw();
     // m_frontend.drawDebug();
-    // applyPostProcessing();
-
 
 
     m_frontend.processDevices();

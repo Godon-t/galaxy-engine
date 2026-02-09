@@ -68,6 +68,9 @@ public:
     void attachDepthCubemap(Cubemap cubemap);
     void attachColorCubemap(Cubemap cubemap, int idx);
 
+    void setAsCubemapUniform(unsigned int uniLocation, int textureIdx);
+
+
     void bind(int idx);
     void unbind();
 

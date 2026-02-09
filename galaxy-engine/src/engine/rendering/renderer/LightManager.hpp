@@ -95,10 +95,7 @@ private:
     vec2 getProbeTexCoord(unsigned int probeGridIdx);
 
     renderID m_fullQuad;
-    renderID m_colorRenderingCubemap;
-    renderID m_normalRenderingCubemap;
-    renderID m_depthRenderingCubemap;
-
+    renderID m_cubemapFramebufferID;
     renderID m_probesFrameBuffer;
 
     renderID m_lightsUBO;

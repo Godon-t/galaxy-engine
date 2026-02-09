@@ -7,9 +7,6 @@ namespace Galaxy {
 LightManager::LightManager()
     : m_shadowMapFrameBufferID(0)
     , m_probesFrameBuffer(0)
-    , m_colorRenderingCubemap(0)
-    , m_normalRenderingCubemap(0)
-    , m_depthRenderingCubemap(0)
     , m_fullQuad(0)
     , m_gridDimX(0)
     , m_gridDimY(0)
@@ -36,14 +33,11 @@ void LightManager::init()
     
     m_fullQuad = backend.generateQuad(vec2(2, 2), []() {});
     
-    m_colorRenderingCubemap  = backend.instanciateCubemap();
-    m_depthRenderingCubemap  = backend.instanciateCubemap();
-    m_normalRenderingCubemap = backend.instanciateCubemap();
     // frontend.resizeCubemap(m_colorRenderingCubemap, m_probeResolution);
     
     // TODO: pass to a format for normals in addition to colors and depths
     m_probesFrameBuffer = backend.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8, 3);
-    
+    m_cubemapFramebufferID   = backend.instantiateCubemapFrameBuffer(1024, 3);
 
     m_debugStartVisu = backend.generateCube(1.f, false, []() {});
     m_debugEndVisu   = backend.generateCube(1.f, false, []() {});
@@ -194,29 +188,51 @@ void LightManager::shadowPass(Node* sceneRoot)
 
 void LightManager::updateProbeField()
 {
-    // auto& frontend = Renderer::getInstance();
-    // mat4 identity(1);
+    auto& frontend = Renderer::getInstance().getFrontend();
+    mat4 identity(1);
 
-    // vec3 debugStart = m_debugStartTransform.getGlobalPosition();
-    // vec3 debugEnd   = m_debugEndTransform.getGlobalPosition();
+    vec3 debugStart = m_debugStartTransform.getGlobalPosition();
+    vec3 debugEnd   = m_debugEndTransform.getGlobalPosition();
 
-    // for (auto& probe : m_probeGrid) {
-    //     frontend.renderFromPoint(probe.position, *Application::getInstance().getRootNodePtr().get(), m_colorRenderingCubemap, m_normalRenderingCubemap, m_depthRenderingCubemap);
+    auto initDevice = std::make_unique<RenderDevice>();
+    initDevice->renderScene = false;
+    initDevice->noClear = false;
+    initDevice->targetFramebuffer = m_probesFrameBuffer;
+    frontend.addRenderDevice(std::move(initDevice));
+    frontend.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
+    frontend.setFramebufferAsCubemapUniform(m_cubemapFramebufferID, "radianceCubemap", 0);
+    frontend.setFramebufferAsCubemapUniform(m_cubemapFramebufferID, "normalCubemap", 1);
+    frontend.setFramebufferAsCubemapUniform(m_cubemapFramebufferID, "depthCubemap", -1);
 
-    //     frontend.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
-    //     frontend.avoidCanvaClear();
-    //     frontend.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
-    //     // frontend.setUniform("scale", vec2(m_textureWidth / (float)m_probeResolution, m_textureHeight / (float)m_probeResolution));
-    //     frontend.useCubemap(m_colorRenderingCubemap, "radianceCubemap");
-    //     frontend.useCubemap(m_normalRenderingCubemap, "normalCubemap");
-    //     frontend.useCubemap(m_depthRenderingCubemap, "depthCubemap");
+    
+    for (auto& probe : m_probeGrid) {
+        auto renderPoint = std::make_unique<RenderPoint>();
+        renderPoint->targetFramebuffer = m_cubemapFramebufferID;
+        
+        Transform renderTransform;
+        renderTransform.setLocalPosition(probe.position);
+        renderTransform.computeModelMatrix();
+        renderPoint->transform = renderTransform.getGlobalModelMatrix();
+        renderPoint->renderScene = true;
+        
+        renderPoint->viewportDimmmensions = vec2(1024);
+        
+        frontend.addRenderDevice(std::move(renderPoint));
+        
+        // frontend.setUniform("scale", vec2(m_textureWidth / (float)m_probeResolution, m_textureHeight / (float)m_probeResolution));
 
-    //     vec2 viewportCoords = getProbeTexCoord(probe.probeCoord);
-    //     frontend.setViewport(viewportCoords, vec2(m_probeResolution));
-    //     frontend.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
-    //     frontend.submit(m_fullQuad);
-    //     frontend.endCanva();
-    // }
+
+        auto octahedralProjectionDevice = std::make_unique<RenderDevice>();
+        octahedralProjectionDevice->targetFramebuffer = m_probesFrameBuffer;
+        octahedralProjectionDevice->noClear = true;
+        octahedralProjectionDevice->renderScene = false;
+        octahedralProjectionDevice->viewportDimmmensions = vec2(m_probeResolution);
+        octahedralProjectionDevice->viewportPosition = getProbeTexCoord(probe.probeCoord);
+        frontend.addRenderDevice(std::move(octahedralProjectionDevice));
+        
+        frontend.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
+        frontend.submit(m_fullQuad);
+    }
 
     // frontend.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
     // frontend.avoidCanvaClear();

@@ -30,26 +30,32 @@ void Frontend::processDevices()
             if(views.size() == 6){
                 for(int i=0; i < views.size(); i++){
                     bindFrameBuffer(device->targetFramebuffer, i);
-                    clear(clearColor);
+                    if(!device->noClear)
+                        clear(clearColor);
                     
-                    setViewport(vec2(0,0), device->viewportDimmmensions);
+                    setViewport(device->viewportPosition, device->viewportDimmmensions);
                     setViewMatrix(views[i]);
                     setProjectionMatrix(projection);
-                    changeUsedProgram(ProgramType::PBR);
-                    dumpCommandsToBuffer(position);
+                    if(device->renderScene){
+                        changeUsedProgram(ProgramType::PBR);
+                        dumpCommandsToBuffer(position);
+                    }
                 }
                 m_frontBuffer->insert(m_frontBuffer->end(), device->customPostCommands.begin(), device->customPostCommands.end());
                 unbindFrameBuffer(device->targetFramebuffer, true);
             } else {
                 bindFrameBuffer(device->targetFramebuffer);
-                clear(clearColor);
                 
-                setViewport(vec2(0,0), device->viewportDimmmensions);
+                if(!device->noClear)
+                    clear(clearColor);
+                
+                setViewport(device->viewportPosition, device->viewportDimmmensions);
                 setViewMatrix(views[0]);
                 setProjectionMatrix(projection);
-                changeUsedProgram(ProgramType::PBR);
-                dumpCommandsToBuffer(position);
-                
+                if(device->renderScene){
+                    changeUsedProgram(ProgramType::PBR);
+                    dumpCommandsToBuffer(position);
+                }
                 m_frontBuffer->insert(m_frontBuffer->end(), device->customPostCommands.begin(), device->customPostCommands.end());
                 unbindFrameBuffer(device->targetFramebuffer, false);
             }
@@ -280,6 +286,16 @@ void Frontend::setFramebufferAsTextureUniform(renderID framebufferID, std::strin
     setTextureCommand.framebufferID = framebufferID;
     setTextureCommand.uniformName   = copyString(uniformName);
     setTextureCommand.textureIdx    = textureIdx;
+    pushCommand(setTextureCommand);
+}
+
+void Frontend::setFramebufferAsCubemapUniform(renderID framebufferID, std::string uniformName, int colorIdx)
+{
+    SetFramebufferAsTextureUniformCommand setTextureCommand;
+    setTextureCommand.framebufferID = framebufferID;
+    setTextureCommand.uniformName   = copyString(uniformName);
+    setTextureCommand.textureIdx    = colorIdx;
+    setTextureCommand.aboutCubemap  = true;
     pushCommand(setTextureCommand);
 }
 

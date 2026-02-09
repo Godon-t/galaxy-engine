@@ -109,6 +109,7 @@ struct SetFramebufferAsTextureUniformCommand {
     renderID framebufferID;
     char* uniformName;
     int textureIdx;
+    bool aboutCubemap = false;
 };
 
 struct UpdateUBOCommand {

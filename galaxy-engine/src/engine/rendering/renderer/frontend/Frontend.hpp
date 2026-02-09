@@ -53,6 +53,7 @@ public:
     void bindUBO(renderID id, unsigned int idx);
 
     void setFramebufferAsTextureUniform(renderID framebufferID, std::string uniformName, int textureIdx);
+    void setFramebufferAsCubemapUniform(renderID framebufferID, std::string uniformName, int colorIdx);
 
     void setViewport(vec2 position, vec2 dimmension);
     void resizeTexture(renderID textureID, unsigned int width, unsigned int height);

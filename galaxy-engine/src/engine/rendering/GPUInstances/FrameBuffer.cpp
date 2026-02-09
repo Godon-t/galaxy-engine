@@ -285,6 +285,14 @@ void CubemapFrameBuffer::attachColorCubemap(Cubemap cubemap, int idx)
     m_colorCubemaps[idx].resize(m_size);
 }
 
+void CubemapFrameBuffer::setAsCubemapUniform(unsigned int uniLocation, int textureIdx)
+{
+    if (textureIdx >= 0)
+        m_colorCubemaps[textureIdx].activate(uniLocation);
+    else
+        m_depthCubemap.activate(uniLocation);
+}
+
 void CubemapFrameBuffer::bind(int idx)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -325,6 +333,9 @@ void CubemapFrameBuffer::resize(unsigned int newSize)
     m_size = newSize;
     if (m_depthCubemap.cubemapID != 0)
         m_depthCubemap.resize(newSize);
+    for(auto& cubemap : m_colorCubemaps){
+        cubemap.resize(newSize);
+    }
     invalidate();
 }
 

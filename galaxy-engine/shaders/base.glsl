@@ -84,7 +84,7 @@ layout(location = 1) out vec4 gNormal;
 layout(location = 2) out vec4 gDepth;
 
 layout(location = 3) out vec4 gRoughness;
-layout(location = 4) out vec4 gSpecular;
+layout(location = 4) out vec4 gDirect;
 
 const float PI = 3.14159265359;
 /*--------------------------------------PBR--------------------------------------*/
@@ -276,18 +276,19 @@ void main()
     // pbr = pbr / (pbr + vec3(1.0));
     // pbr = pow(pbr, vec3(1.0 / 2.2));
 
-    gDepth = vec4(length(v_camPos - v_worldPos) / zFar, ao, 0, 1);
 
-    gAlbedo.rgb = albedo;
-    gAlbedo.a   = transparency;
+    if(transparency > 0.1){
+        gDepth = vec4(length(v_camPos - v_worldPos) / zFar, ao, 0, 1);
 
-    gNormal.rgb = (normal + vec3(1.0)) * 0.5;
-    gNormal.a = 1.0;
+        gAlbedo.rgb = albedo;
+        gAlbedo.a   = transparency;
 
-    // vec3 ambient = kD * albedo * ao * 0.03;
+        gNormal.rgb = (normal + vec3(1.0)) * 0.5;
+        gNormal.a = 1.0;
 
-    gRoughness.rgb  = kS;
-    gRoughness.a    = ao;
-    // gSpecular.rgb = R;
-    // gSpecular.a   = 1;
+        gRoughness = vec4(kS, ao);
+        gDirect = vec4(Lo, 1.0);
+    } else {
+        discard;
+    }
 }

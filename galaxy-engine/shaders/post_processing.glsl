@@ -46,7 +46,7 @@ uniform sampler2D sceneBuffer;
 uniform sampler2D normalBuffer;
 uniform sampler2D depthBuffer;
 uniform sampler2D roughnessBuffer;
-uniform sampler2D directAmbiantBuffer;
+uniform sampler2D directBuffer;
 uniform mat4 view;
 uniform float zNear     = 0.1;
 uniform float zFar      = 999.0;
@@ -650,11 +650,11 @@ void main()
 
 
 
-
+    vec3 directLight = texture(directBuffer, TexCoords).rgb;
     vec3 diffuse = irradiance * albedo.rgb;
     vec3 ambient = (kD * diffuse) * ao;
     // vec3 ambient = (kD * diffuse + specular) * ao;
-    color = vec4(ambient, 1.0);
+    color = vec4(ambient + directLight, 1.0);
     // vec3 ambient = (kD * diffuse) * ao;
     // vec3 pbr     = ambient + Lo;
 

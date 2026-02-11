@@ -81,6 +81,7 @@ void Renderer::passPostProcessing(const mat4& camTransform)
     m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"sceneBuffer",     0);
     m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"normalBuffer",    1);
     m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"roughnessBuffer", 3);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"directBuffer",    4);
     m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"depthBuffer",    -1);
     m_frontend.submit(m_postProcessingQuadID);
 }

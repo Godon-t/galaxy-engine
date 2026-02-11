@@ -63,6 +63,7 @@ struct DepthMaskCommand {
 struct UseTextureCommand {
     renderID instanceID;
     char* uniformName;
+    bool important = false;
 };
 
 struct UseCubemapCommand {

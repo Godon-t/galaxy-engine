@@ -122,11 +122,11 @@ void EditorLayer::onUpdate()
         //     Application::getInstance().getRootNodePtr()->draw();
         //     renderer.endShadowPass();
         // }
+        renderer.passShadow();
         renderer.addMainCameraDevice(cameraTransform);
 
         Application::getInstance().getRootNodePtr()->draw();
 
-        renderer.passShadow();
         renderer.passPostProcessing(cameraTransform);
 
         // TODO: should the application handle the render ?

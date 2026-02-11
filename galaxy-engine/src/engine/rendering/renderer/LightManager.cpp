@@ -66,8 +66,8 @@ int LightManager::registerLight(LightData desc)
     frontend.changeUsedProgram(ProgramType::PBR);
     frontend.setUniform("lightCount", m_currentLightCount);
 
-    // renderID shadowMapID     = Renderer::getInstance().instantiateTexture();
-    // m_lights[id].shadowMapID = shadowMapID;
+    renderID shadowMapID     = Renderer::getInstance().getBackend().instantiateTexture(TextureFormat::DEPTH, vec2(1024, 1024));
+    m_lights[id].shadowMapID = shadowMapID;
 
     return id;
 }
@@ -155,30 +155,29 @@ void LightManager::shadowPass(Node* sceneRoot)
     }
     frontend.updateUniform(m_lightsUBO, m_lightUniformData);
 
-    // math::mat4 projMat  = CameraManager::processProjectionMatrix(vec2(1024, 1024));
-    // int currentLightIdx = 0;
-    // for (auto& [id, lightData] : m_lights) {
-    //     if (currentLightIdx >= m_maxLights)
-    //         break;
+    vec2 viewportDimmension = vec2(1024, 1024);
+    mat4 projMat  = CameraManager::processProjectionMatrix(viewportDimmension);
+    for (auto& [id, lightData] : m_lights) {
 
-    //     math::mat4 view             = CameraManager::processViewMatrix(lightData.transformationMatrix);
-    //     math::mat4 lightSpaceMatrix = projMat * view;
+        mat4 view             = CameraManager::processViewMatrix(lightData.transformationMatrix);
+        mat4 lightSpaceMatrix = projMat * view;
 
-    //     frontend.beginCanva(view, projMat, m_shadowMapFrameBufferID, FramebufferTextureFormat::DEPTH);
-    //     frontend.linkCanvaDepthToTexture(lightData.shadowMapID);
+        auto renderCamera = std::make_unique<RenderCamera>();
+        renderCamera->transform = lightData.transformationMatrix;
+        renderCamera->viewportDimmmensions = viewportDimmension;
+        renderCamera->targetFramebuffer = m_shadowMapFrameBufferID;
+        renderCamera->renderScene = true;
 
-    //     frontend.changeUsedProgram(SHADOW_DEPTH);
-    //     frontend.setUniform("lightSpaceMatrix", lightSpaceMatrix);
-    //     sceneRoot->lightPassDraw();
-    //     frontend.endCanva();
+        frontend.addRenderDevice(std::move(renderCamera));
 
-    //     frontend.changeUsedProgram(PBR);
-    //     frontend.bindTexture(lightData.shadowMapID, "shadowMap");
-    //     frontend.setUniform("lightSpaceMatrix", lightSpaceMatrix);
-    //     currentLightIdx++;
-    // }
+        frontend.attachTextureToDepthFramebuffer(lightData.shadowMapID, m_shadowMapFrameBufferID);
 
-    //     beginCanva(transform.getGlobalModelMatrix(), dim, m_shadowMapFrameBufferID, FramebufferTextureFormat::DEPTH24);
+        frontend.changeUsedProgram(PBR);
+        frontend.bindTexture(lightData.shadowMapID, "shadowMap", true);
+        frontend.setUniform("lightSpaceMatrix", lightSpaceMatrix);
+    }
+
+    // beginCanva(transform.getGlobalModelMatrix(), dim, m_shadowMapFrameBufferID, FramebufferTextureFormat::DEPTH24);
     // attachTextureToDepthFramebuffer(lightTextureID, m_shadowMapFrameBufferID);
     // Application::getInstance().getRootNodePtr()->lightPassDraw();
     // m_frontend.changeUsedProgram(ProgramType::TEXTURE);

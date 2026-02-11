@@ -7,7 +7,7 @@
 
 namespace Galaxy {
 int Texture::s_currentFreeActivationInt = 0;
-int Texture::s_maxActivationInt         = 64;
+std::array<bool, Texture::s_maxActivationInt> Texture::s_reservedActivationInt = std::array<bool, Texture::s_maxActivationInt>();
 
 Texture::Texture(unsigned char* data, int width, int height, int nbChannels)
 {
@@ -100,12 +100,30 @@ void Texture::init(unsigned char* data, int width, int height, int nbChannels)
     checkOpenGLErrors("Texture load");
 }
 
+void Texture::resetActivationInt()
+{
+    m_activationInt = -1;
+}
+
+void Texture::reserveActivationInt()
+{
+    s_reservedActivationInt[m_activationInt] = true;
+}
+
+void Texture::clearReservedActivationInts()
+{
+    for(int i=0; i<s_maxActivationInt; i++){
+        s_reservedActivationInt[i] = false;
+    }
+}
+
 void Texture::activate(int textureLocation)
 {
-    int actInt = getAvailableActivationInt();
-    glActiveTexture(GL_TEXTURE0 + actInt);
+    if(m_activationInt == -1)
+        m_activationInt = getAvailableActivationInt();
+    glActiveTexture(GL_TEXTURE0 + m_activationInt);
     glBindTexture(GL_TEXTURE_2D, m_id);
-    glUniform1i(textureLocation, actInt);
+    glUniform1i(textureLocation, m_activationInt);
     checkOpenGLErrors("Texture activation");
 }
 

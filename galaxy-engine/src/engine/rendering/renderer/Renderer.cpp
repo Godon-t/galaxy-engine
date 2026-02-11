@@ -101,6 +101,7 @@ void Renderer::renderFrame()
 
     m_frontend.processDevices();
     m_drawCount = m_commandBuffers[m_frontCommandBufferIdx].size();
+    m_backend.frameReset();
     m_backend.processCommands(m_commandBuffers[m_frontCommandBufferIdx]);
     m_commandBuffers[m_frontCommandBufferIdx].clear();
     m_frontend.clearContext();

@@ -67,6 +67,16 @@ public:
         return &m_renderIdToInstance[id].first;
     }
 
+    std::vector<T*> getAll(){
+        std::vector<T*> res;
+        res.reserve(m_renderIdToInstance.size());
+        
+        for(auto& [id, value] : m_renderIdToInstance){
+            res.push_back(&value.first);
+        }
+        return res;
+    }
+
     bool canAddInstance() { return m_freeIds.size() > 0; }
     void removeAll(std::function<void(T&)> deletionCallback)
     {
@@ -95,6 +105,7 @@ public:
     renderID instantiateTexture(TextureFormat format, vec2 size);
     renderID instantiateTexture(ResourceHandle<Image> image);
     void clearTexture(renderID textureID);
+    void frameReset();
 
     renderID instanciateMaterial(ResourceHandle<Material> material);
     void updateMaterial(renderID materialID, ResourceHandle<Material> material);

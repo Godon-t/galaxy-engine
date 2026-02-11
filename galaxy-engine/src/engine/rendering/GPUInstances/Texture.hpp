@@ -1,6 +1,8 @@
 #pragma once
 
 #include "types/Render.hpp"
+#include "pch.hpp"
+#include "Log.hpp"
 
 namespace Galaxy {
 class Texture {
@@ -17,14 +19,21 @@ public:
     void setFormat(TextureFormat format);
 
     void init(unsigned char* data, int width, int height, int nbChannels);
+    void resetActivationInt();
+    void reserveActivationInt();
 
     inline unsigned int getId() const { return m_id; }
-    inline static void resetActivationInts() { s_currentFreeActivationInt = 0; }
+    inline static void resetStaticActivationInt() { s_currentFreeActivationInt = 0; }
+    static void clearReservedActivationInts();
     inline static int getAvailableActivationInt()
     {
-        if (s_currentFreeActivationInt >= s_maxActivationInt)
-            s_currentFreeActivationInt = 0;
-        return s_currentFreeActivationInt++;
+        int idx = s_currentFreeActivationInt;
+        s_currentFreeActivationInt = (s_currentFreeActivationInt + 1) % s_maxActivationInt;
+
+        if (!s_reservedActivationInt[idx])
+            return idx;
+        
+        return getAvailableActivationInt();
     }
 
     void activate(int textureLocation);
@@ -42,8 +51,11 @@ private:
     unsigned int m_width;
     unsigned int m_height;
 
+    int m_activationInt = -1;
+
     static int s_currentFreeActivationInt;
-    static int s_maxActivationInt;
+    static const int s_maxActivationInt = 64;
+    static std::array<bool, s_maxActivationInt>s_reservedActivationInt;
 };
 
 struct Cubemap {

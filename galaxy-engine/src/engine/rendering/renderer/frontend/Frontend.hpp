@@ -26,7 +26,7 @@ public:
     void submit(renderID meshID, const Transform& transform);
     void clear(vec4& color);
 
-    void bindTexture(renderID textureInstanceID, char* uniformName);
+    void bindTexture(renderID textureInstanceID, char* uniformName, bool important = false);
     void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int attachmentIdx);
     void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID);
     void attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID, int colorIdx = 0);

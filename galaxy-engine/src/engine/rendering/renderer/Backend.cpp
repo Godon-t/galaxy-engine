@@ -208,6 +208,17 @@ void Backend::clearTexture(renderID textureID)
     }
 }
 
+void Backend::frameReset()
+{
+    Texture::resetStaticActivationInt();
+    Texture::clearReservedActivationInts();
+    
+    auto texturesPtrs = m_textureInstances.getAll();
+    for(auto texture : texturesPtrs){
+        texture->resetActivationInt();
+    }
+}
+
 renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
 {
 
@@ -279,8 +290,6 @@ void Backend::processCommands(std::vector<RenderCommand>& commands)
             command);
         checkOpenGLErrors("Process command");
     }
-
-    Texture::resetActivationInts();
 }
 
 renderID Backend::generateCube(float dimmension, bool inward, std::function<void()> destroyCallback)
@@ -681,7 +690,10 @@ void Backend::processCommand(const RawDrawCommand& command)
 void Backend::processCommand(const UseTextureCommand& command)
 {
     auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
-    m_textureInstances.get(command.instanceID)->activate(uniLoc);
+    Texture* texture = m_textureInstances.get(command.instanceID);
+    texture->activate(uniLoc);
+    if(command.important)
+        texture->reserveActivationInt();
     checkOpenGLErrors("Bind texture");
 }
 

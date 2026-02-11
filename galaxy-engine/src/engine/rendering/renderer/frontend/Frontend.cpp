@@ -133,11 +133,12 @@ void Frontend::saveFrameBuffer(renderID framebufferID, std::string& path)
     pushCommand(saveFramebufferC);
 }
 
-void Frontend::bindTexture(renderID textureInstanceID, char* uniformName)
+void Frontend::bindTexture(renderID textureInstanceID, char* uniformName, bool important)
 {
     UseTextureCommand useTextureCommand;
     useTextureCommand.instanceID  = textureInstanceID;
     useTextureCommand.uniformName = uniformName;
+    useTextureCommand.important = important;
     pushCommand(useTextureCommand);
 }
 

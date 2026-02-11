@@ -24,7 +24,7 @@ Renderer::Renderer()
         m_frontend.notifyMaterialUpdated(materialID, isTransparent);
     });
 
-    m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8, 3);
+    m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8, 5);
     m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
     m_postProcessingQuadID   = m_backend.generateQuad(vec2(2, 2), [] {});
 }
@@ -78,7 +78,10 @@ void Renderer::passPostProcessing(const mat4& camTransform)
     postProcess->transform = camTransform;
     m_frontend.addRenderDevice(std::move(postProcess));
     m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING_PROBE);
-    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"depthBuffer",-1);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"sceneBuffer",     0);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"normalBuffer",    1);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"roughnessBuffer", 3);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"depthBuffer",    -1);
     m_frontend.submit(m_postProcessingQuadID);
 }
 

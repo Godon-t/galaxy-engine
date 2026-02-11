@@ -36,7 +36,7 @@ void LightManager::init()
     // frontend.resizeCubemap(m_colorRenderingCubemap, m_probeResolution);
     
     // TODO: pass to a format for normals in addition to colors and depths
-    m_probesFrameBuffer = backend.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8, 3);
+    m_probesFrameBuffer = backend.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8, 4);
     m_cubemapFramebufferID   = backend.instantiateCubemapFrameBuffer(1024, 3);
 
     m_debugStartVisu = backend.generateCube(1.f, false, []() {});
@@ -113,8 +113,9 @@ void LightManager::debugDraw()
 
     frontend.changeUsedProgram(POST_PROCESSING_PROBE);
     frontend.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeIrradianceField", 0);
-    frontend.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeNormalField", 1);
-    frontend.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeDepthField", 2);
+    frontend.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeColorField", 1);
+    frontend.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeNormalField", 2);
+    frontend.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeDepthField", 3);
     // frontend.bindTexture(m_probeRadianceTexture, "probeIrradianceField");
     // frontend.bindTexture(m_probeDepthTexture, "probeDepthField");
 
@@ -203,7 +204,9 @@ void LightManager::updateProbeField()
     frontend.setFramebufferAsCubemapUniform(m_cubemapFramebufferID, "radianceCubemap", 0);
     frontend.setFramebufferAsCubemapUniform(m_cubemapFramebufferID, "normalCubemap", 1);
     frontend.setFramebufferAsCubemapUniform(m_cubemapFramebufferID, "depthCubemap", -1);
-
+    frontend.changeUsedProgram(ProgramType::PBR);
+    frontend.setUniform("includeLightComputation", false);
+    
     
     for (auto& probe : m_probeGrid) {
         auto renderPoint = std::make_unique<RenderPoint>();
@@ -220,8 +223,8 @@ void LightManager::updateProbeField()
         frontend.addRenderDevice(std::move(renderPoint));
         
         // frontend.setUniform("scale", vec2(m_textureWidth / (float)m_probeResolution, m_textureHeight / (float)m_probeResolution));
-
-
+        
+        
         auto octahedralProjectionDevice = std::make_unique<RenderDevice>();
         octahedralProjectionDevice->targetFramebuffer = m_probesFrameBuffer;
         octahedralProjectionDevice->noClear = true;
@@ -233,6 +236,9 @@ void LightManager::updateProbeField()
         frontend.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
         frontend.submit(m_fullQuad);
     }
+    
+    frontend.changeUsedProgram(ProgramType::PBR);
+    frontend.setUniform("includeLightComputation", true);
 
     // frontend.beginCanva(identity, identity, m_probesFrameBuffer, FramebufferTextureFormat::DEPTH24RGBA8);
     // frontend.avoidCanvaClear();

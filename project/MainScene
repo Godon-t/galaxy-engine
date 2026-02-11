@@ -5839,15 +5839,15 @@ Root:
             Rotation: [0, -0, 0]
             Scale: [1, 1, 1]
       Transform:
-        Position: [0, 0, 33]
+        Position: [0, 0, 12]
         Rotation: [0, 0, 0]
-        Scale: [0.300000012, 0.300000012, 0.300000012]
+        Scale: [0.3, 0.3, 0.3]
     - Type: Sprite3D
       Childs:
         []
       Transform:
         Position: [-26, 13, 1]
-        Rotation: [0, 1.67377079, 0]
+        Rotation: [0, 1.6737708, 0]
         Scale: [33, 39, 35]
       ImageID: 9191191296558105831
     - Type: Node3D
@@ -5874,26 +5874,26 @@ Root:
             Rotation: [0, -0, 0]
             Scale: [1, 1, 1]
       Transform:
-        Position: [70, 58, 92]
-        Rotation: [-1.57079637, 0, 1.57079637]
-        Scale: [0.100000001, 0.100000001, 0.100000001]
+        Position: [52, 58, 70]
+        Rotation: [-1.5707964, 0, 1.5707964]
+        Scale: [0.1, 0.1, 0.1]
     - Type: GINode
       Childs:
         []
       Transform:
-        Position: [0, 97, 0]
+        Position: [0, 150, 0]
         Rotation: [0, 0, 0]
         Scale: [1, 1, 1]
-      Grid: [12, 4, 4]
-      SpaceBetween: 50
-      ProbeResolution: 128
+      Grid: [28, 16, 20]
+      SpaceBetween: 42
+      ProbeResolution: 64
     - Type: PointLight
       Childs:
         []
       Transform:
-        Position: [6, 74, -27]
+        Position: [63, 74, -27]
         Rotation: [0, 0, 0]
         Scale: [1, 1, 1]
       Intensity: 500
-      Color: [1, 0.474509805, 1]
+      Color: [1, 0.4745098, 1]
       Range: 500

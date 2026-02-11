@@ -1,61 +1,69 @@
 Name: UI
 Resources:
-  - Id: 2847845718039847283
-    Path: sponza/textures/spnza_bricks_a_diff.gres
-  - Id: 107279995900684053
-    Path: sponza/sponza_material_3.gres
-  - Id: 1591827038535620869
-    Path: sponza/sponza_material_14.gres
-  - Id: 12970217799757184933
-    Path: internal://cornell_back
-  - Id: 2044262210834871915
-    Path: sponza/sponza.gres
-  - Id: 9191191296558105831
-    Path: sponza/textures/sponza_curtain_blue_diff.gres
-  - Id: 2188540146888508743
-    Path: sponza/textures/vase_plant.gres
-  - Id: 204476243022672643
-    Path: sponza/sponza_material_8.gres
+  - Id: 1081944340832172914
+    Path: internal://cornell_floor
+  - Id: 16395404793738613127
+    Path: sponza/sponza_material_6.gres
   - Id: 1913999298050395962
     Path: sponza/sponza_material_12.gres
-  - Id: 9859272189864598093
-    Path: sponza/sponza_material_20.gres
-  - Id: 3494823739782118184
-    Path: lucy/lucy.gres
-  - Id: 4058237563366968480
-    Path: internal://cornell_front
-  - Id: 6427595578390582013
-    Path: sponza/textures/spnza_bricks_a_spec.gres
   - Id: 5248253481962024936
     Path: sponza/sponza_material_21.gres
   - Id: 10761741252048044689
     Path: sponza/sponza_material_17.gres
   - Id: 9973010134724864162
     Path: sponza/textures/vase_round.gres
-  - Id: 8248098557589857308
-    Path: sponza/textures/background.gres
-  - Id: 15840224054029888677
-    Path: sponza/textures/sponza_column_a_diff.gres
-  - Id: 1205475052319988562
-    Path: sponza/textures/sponza_column_c_diff.gres
-  - Id: 18358908920567927372
-    Path: sponza/textures/lion.gres
-  - Id: 4141195365545807217
-    Path: sponza/sponza_material_2.gres
+  - Id: 204476243022672643
+    Path: sponza/sponza_material_8.gres
+  - Id: 9191191296558105831
+    Path: sponza/textures/sponza_curtain_blue_diff.gres
+  - Id: 2188540146888508743
+    Path: sponza/textures/vase_plant.gres
+  - Id: 9859272189864598093
+    Path: sponza/sponza_material_20.gres
+  - Id: 1591827038535620869
+    Path: sponza/sponza_material_14.gres
+  - Id: 12970217799757184933
+    Path: internal://cornell_back
+  - Id: 2044262210834871915
+    Path: sponza/sponza.gres
+  - Id: 2847845718039847283
+    Path: sponza/textures/spnza_bricks_a_diff.gres
+  - Id: 107279995900684053
+    Path: sponza/sponza_material_3.gres
+  - Id: 866533353429722957
+    Path: sponza/textures/chain_texture.gres
+  - Id: 3494823739782118184
+    Path: lucy/lucy.gres
+  - Id: 920216281820911546
+    Path: sponza/textures/vase_dif.gres
   - Id: 12022925688087868335
     Path: sponza/sponza_material_24.gres
   - Id: 18123480829777353121
     Path: internal://cornell_left
-  - Id: 13062769230811284464
-    Path: sponza/textures/sponza_ceiling_a_diff.gres
   - Id: 8472703128743682711
     Path: sponza/sponza_material_5.gres
   - Id: 8266292047429895562
     Path: sponza/sponza_material_22.gres
-  - Id: 2703860147395942723
-    Path: internal://cornell_right
+  - Id: 13062769230811284464
+    Path: sponza/textures/sponza_ceiling_a_diff.gres
   - Id: 6298843016394584296
     Path: sponza/textures/sponza_roof_diff.gres
+  - Id: 4141195365545807217
+    Path: sponza/sponza_material_2.gres
+  - Id: 18358908920567927372
+    Path: sponza/textures/lion.gres
+  - Id: 2703860147395942723
+    Path: internal://cornell_right
+  - Id: 1205475052319988562
+    Path: sponza/textures/sponza_column_c_diff.gres
+  - Id: 8248098557589857308
+    Path: sponza/textures/background.gres
+  - Id: 15840224054029888677
+    Path: sponza/textures/sponza_column_a_diff.gres
+  - Id: 4058237563366968480
+    Path: internal://cornell_front
+  - Id: 6427595578390582013
+    Path: sponza/textures/spnza_bricks_a_spec.gres
   - Id: 2443619676918727450
     Path: sponza/sponza_material_19.gres
   - Id: 10585035000240150844
@@ -114,14 +122,6 @@ Resources:
     Path: sponza/sponza_material_11.gres
   - Id: 2245600370368257916
     Path: sponza/sponza_material_25.gres
-  - Id: 16395404793738613127
-    Path: sponza/sponza_material_6.gres
-  - Id: 1081944340832172914
-    Path: internal://cornell_floor
-  - Id: 920216281820911546
-    Path: sponza/textures/vase_dif.gres
-  - Id: 866533353429722957
-    Path: sponza/textures/chain_texture.gres
 Scenes:
   - Id: 7857652255564026288
     Path: MainScene

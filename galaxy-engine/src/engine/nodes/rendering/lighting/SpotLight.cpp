@@ -55,19 +55,16 @@ void SpotLight::draw()
         // Renderer::getInstance().changeUsedProgram(UNICOLOR);
         // Renderer::getInstance().setUnicolorObjectColor(m_color);
 
-        auto& ri = Renderer::getInstance();
+        // auto& ri = Renderer::getInstance();
 
-        // TODO: no debug
-        // if (ri.canDrawDebug()) {
-        //     ri.changeUsedProgram(UNICOLOR);
-        //     ri.setUniform("objectColor", m_color);
-        //     ri.submit(m_visualPyramidID, m_transform);
-        // }
+        // ri.getFrontend().changeUsedProgram(UNICOLOR);
+        // ri.getFrontend().setUniform("objectColor", m_color);
+        // ri.getFrontend().submit(m_visualPyramidID, m_transform);
 
         // TODO: integrate in sceneContext
-        ri.getFrontend().changeUsedProgram(TEXTURE);
-        ri.getFrontend().bindTexture(ri.getLightManager().getShadowMapID(m_lightID), "sampledTexture");
-        ri.getFrontend().submit(m_debugShadowMapID, m_transform);
+        // ri.getFrontend().changeUsedProgram(TEXTURE);
+        // ri.getFrontend().bindTexture(ri.getLightManager().getShadowMapID(m_lightID), "sampledTexture");
+        // ri.getFrontend().submit(m_debugShadowMapID, m_transform);
     }
 
     // Appeler le draw de la classe parente pour dessiner les enfants

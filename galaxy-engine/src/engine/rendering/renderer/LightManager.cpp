@@ -29,7 +29,7 @@ renderID endVisu(0);
 void LightManager::init()
 {
     auto& backend = Renderer::getInstance().getBackend();
-    m_shadowMapFrameBufferID = backend.instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH);
+    m_shadowMapFrameBufferID = backend.instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH, 0, maxLightCount);
     
     m_fullQuad = backend.generateQuad(vec2(2, 2), []() {});
     
@@ -66,8 +66,7 @@ int LightManager::registerLight(LightData desc)
     frontend.changeUsedProgram(ProgramType::PBR);
     frontend.setUniform("lightCount", m_currentLightCount);
 
-    renderID shadowMapID     = Renderer::getInstance().getBackend().instantiateTexture(TextureFormat::DEPTH, vec2(1024, 1024));
-    m_lights[id].shadowMapID = shadowMapID;
+    m_lights[id].shadowMapLayer = id;
 
     return id;
 }
@@ -136,45 +135,48 @@ void LightManager::shadowPass(Node* sceneRoot)
     auto& frontend = Renderer::getInstance().getFrontend();
 
     frontend.changeUsedProgram(PBR);
+    frontend.setFramebufferAsTextureUniform(m_shadowMapFrameBufferID, "shadowMaps", -1);
+    
     bool updateUniform = false;
+    vec2 viewportDimmension = vec2(1024, 1024);
+    mat4 projMat  = CameraManager::processProjectionMatrix(viewportDimmension);
     for (auto& light : m_lights) {
         if (!light.second.needUpdate)
             continue;
 
+        auto& lightData = light.second;
+
         updateUniform           = true;
         light.second.needUpdate = false;
 
-        m_lightUniformData.colors[light.second.idx]    = vec4(light.second.color, 1.0);
-        m_lightUniformData.positions[light.second.idx] = light.second.transformationMatrix[3];
-        m_lightUniformData.params[light.second.idx].y  = light.second.intensity;
-        m_lightUniformData.params[light.second.idx].z  = light.second.range;
+        m_lightUniformData.colors[lightData.idx]    = vec4(lightData.color, 1.0);
+        m_lightUniformData.positions[lightData.idx] = lightData.transformationMatrix[3];
+        m_lightUniformData.params[lightData.idx].y  = lightData.intensity;
+        m_lightUniformData.params[lightData.idx].z  = lightData.range;
+        m_lightUniformData.shadowMapLayers[lightData.idx].layer = lightData.shadowMapLayer;
+
+
+        mat4 view             = CameraManager::processViewMatrix(lightData.transformationMatrix);
+        mat4 lightSpaceMatrix = projMat * view;
+        m_lightUniformData.lightMatrices[lightData.idx] = lightSpaceMatrix;
 
         // frontend.setUniform("lights[" + std::to_string(id) + "].lightMatrix", lightSpaceMatrix);
         // frontend.setUniform("lights[" + std::to_string(id) + "].position", vec3(lightSpaceMatrix[3]));
         // frontend.setUniform("lights[" + std::to_string(id) + "].color", lightData.color);
     }
-    frontend.updateUniform(m_lightsUBO, m_lightUniformData);
+    
+    // if(updateUniform)
+        frontend.updateUniform(m_lightsUBO, m_lightUniformData);
 
-    vec2 viewportDimmension = vec2(1024, 1024);
-    mat4 projMat  = CameraManager::processProjectionMatrix(viewportDimmension);
     for (auto& [id, lightData] : m_lights) {
-
-        mat4 view             = CameraManager::processViewMatrix(lightData.transformationMatrix);
-        mat4 lightSpaceMatrix = projMat * view;
-
         auto renderCamera = std::make_unique<RenderCamera>();
+        renderCamera->targetFramebuffer = m_shadowMapFrameBufferID;
+        renderCamera->targetDepthLayer = lightData.shadowMapLayer;
         renderCamera->transform = lightData.transformationMatrix;
         renderCamera->viewportDimmmensions = viewportDimmension;
-        renderCamera->targetFramebuffer = m_shadowMapFrameBufferID;
         renderCamera->renderScene = true;
 
         frontend.addRenderDevice(std::move(renderCamera));
-
-        frontend.attachTextureToDepthFramebuffer(lightData.shadowMapID, m_shadowMapFrameBufferID);
-
-        frontend.changeUsedProgram(PBR);
-        frontend.bindTexture(lightData.shadowMapID, "shadowMap", true);
-        frontend.setUniform("lightSpaceMatrix", lightSpaceMatrix);
     }
 
     // beginCanva(transform.getGlobalModelMatrix(), dim, m_shadowMapFrameBufferID, FramebufferTextureFormat::DEPTH24);

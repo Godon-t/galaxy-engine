@@ -13,12 +13,12 @@ public:
     {
     }
 
-    Texture(unsigned char* data, int width, int height, int nbChannels);
+    Texture(unsigned char* data, int width, int height, int nbChannels, int depthLayerCount = 0);
 
     void resize(int width, int height);
     void setFormat(TextureFormat format);
 
-    void init(unsigned char* data, int width, int height, int nbChannels);
+    void init(unsigned char* data, int width, int height, int nbChannels, int depthLayerCount = 0);
     void resetActivationInt();
     void reserveActivationInt();
 
@@ -37,6 +37,7 @@ public:
     }
 
     void activate(int textureLocation);
+    static void activate(unsigned int id, int layerCount, int textureLocation);
 
     void destroy();
     unsigned int m_id;
@@ -52,6 +53,7 @@ private:
     unsigned int m_height;
 
     int m_activationInt = -1;
+    unsigned int m_layerCount = 0;
 
     static int s_currentFreeActivationInt;
     static const int s_maxActivationInt = 64;

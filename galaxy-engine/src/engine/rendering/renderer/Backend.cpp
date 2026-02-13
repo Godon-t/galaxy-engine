@@ -451,12 +451,12 @@ void Backend::clearCubemap(renderID cubemapID)
     }
 }
 
-renderID Backend::instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount)
+renderID Backend::instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount, unsigned int depthLayerCount)
 {
     renderID frameBufferID = m_frameBufferInstances.createResourceInstance();
     m_frameBufferInstances.get(frameBufferID)->setFormat(format);
     m_frameBufferInstances.get(frameBufferID)->setColorsCount(colorCount);
-    m_frameBufferInstances.get(frameBufferID)->resize(width, height);
+    m_frameBufferInstances.get(frameBufferID)->resize(width, height, depthLayerCount);
     m_frameBufferInstances.get(frameBufferID)->unbind();
     checkOpenGLErrors("Instantiate frameBuffer");
     return frameBufferID;
@@ -490,9 +490,9 @@ void Backend::clearFrameBuffer(renderID frameBufferID)
     checkOpenGLErrors("Clear frameBuffer");
 }
 
-void Backend::resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height)
+void Backend::resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height, unsigned int depthLayerCount)
 {
-    m_frameBufferInstances.get(frameBufferID)->resize(width, height);
+    m_frameBufferInstances.get(frameBufferID)->resize(width, height, depthLayerCount);
 }
 
 void Backend::resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size)
@@ -756,7 +756,7 @@ void Backend::processCommand(const BindFrameBufferCommand& command)
         if (command.cubemapFaceIdx >= 0)
             m_cubemapFrameBufferInstances.get(command.frameBufferID)->bind(command.cubemapFaceIdx);
         else
-            m_frameBufferInstances.get(command.frameBufferID)->bind();
+            m_frameBufferInstances.get(command.frameBufferID)->bind(command.depthLayerIdx);
     else {
         if (command.cubemapFaceIdx >= 0)
             m_cubemapFrameBufferInstances.get(command.frameBufferID)->unbind();

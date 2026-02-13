@@ -31,7 +31,7 @@ public:
     void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID);
     void attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID, int colorIdx = 0);
     void useCubemap(renderID cubemapInstanceID, char* uniformName);
-    void bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx = -1);
+    void bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx = -1, int depthLayerIdx = -1);
     void unbindFrameBuffer(renderID frameBufferInstanceID, bool cubemap = false);
     void bindMaterial(renderID materialRenderID);
     // TODO: rename to match setActiveProgram command

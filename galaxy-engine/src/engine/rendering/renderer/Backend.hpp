@@ -124,11 +124,11 @@ public:
     renderID instanciateCubemap(int resolution = 1024);
     void clearCubemap(renderID cubemapID);
 
-    renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1);
+    renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1, unsigned int depthLayerCount = 0);
     renderID instantiateCubemapFrameBuffer(unsigned int resolution, unsigned int colorCount = 1);
 
     void clearFrameBuffer(renderID frameBufferID);
-    void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height);
+    void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height, unsigned int depthLayerCount = 0);
     void resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size);
     // TODO: Wrong way ?
     FramebufferTextureFormat getFramebufferFormat(renderID id);

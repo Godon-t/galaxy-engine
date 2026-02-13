@@ -8,13 +8,11 @@ layout(location = 2) in vec3 normal;
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
-uniform mat4 lightSpaceMatrix;
 
 out vec2 v_texCoords;
 out vec3 v_worldPos;
 out vec3 v_normal;
 out vec3 v_camPos;
-out vec4 v_fragPosLightSpace;
 
 void main()
 {
@@ -24,7 +22,6 @@ void main()
     v_normal            = normalize(mat3(transpose(inverse(model))) * normal);
     v_worldPos          = vec3(model * vec4(vertices_position_modelspace, 1.0));
     v_camPos            = vec3(inverse(view)[3]);
-    v_fragPosLightSpace = lightSpaceMatrix * vec4(v_worldPos, 1.0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -48,7 +45,6 @@ uniform sampler2D normalMap;
 uniform sampler2D metallicMap;
 uniform sampler2D roughnessMap;
 uniform sampler2D aoMap;
-uniform sampler2D shadowMap;
 
 uniform bool useAlbedoMap    = false;
 uniform bool useNormalMap    = false;
@@ -60,18 +56,23 @@ uniform bool useAoMap        = false;
 const int MAX_LIGHT    = 32;
 uniform int lightCount = 3;
 uniform bool includeLightComputation = true;
+uniform sampler2DArray shadowMaps;
 
 layout(std140, binding = 0) uniform LightBlock
 {
     vec4 positions[MAX_LIGHT];
     vec4 colors[MAX_LIGHT];
-    vec4 params[MAX_LIGHT]; // x = type; y = intensity; z = range
+    vec4 params[MAX_LIGHT];
+
+    ivec4 shadowMapLayers[MAX_LIGHT];
+
+    mat4 lightMatrices[MAX_LIGHT];
+
     int count;
     int _pad1;
     int _pad2;
     int _pad3;
-}
-lightData;
+} lightData;
 
 in vec2 v_texCoords;
 in vec3 v_worldPos;
@@ -153,39 +154,31 @@ vec3 getNormalFromNormalMap()
     return normalize(TBN * tangentNormal);
 }
 
-float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir, int layerIndex)
 {
-    // Perspective division
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-
-    // Transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
 
-    // Get closest depth value from light's perspective
-    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    if(projCoords.z > 1.0)
+        return 0.0;
 
-    // Get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
 
-    // Bias pour éviter le shadow acne
-    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    float bias = 0.0001;
 
     // PCF (Percentage Closer Filtering) pour adoucir les ombres
     float shadow   = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    vec2 texelSize = 1.0 / textureSize(shadowMaps, 0).xy;
+
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            vec2 offset = vec2(x, y) * texelSize;
+            vec2 uv = projCoords.xy + offset;
+            float pcfDepth = texture(shadowMaps, vec3(uv, float(layerIndex + 0.5))).r;
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
         }
     }
-    shadow /= 9.0;
-
-    // Keep shadow at 0.0 when outside far plane
-    if (projCoords.z > 1.0)
-        shadow = 0.0;
-
-    return shadow;
+    return shadow / 9.0;
 }
 /*--------------------------------------PBR--------------------------------------*/
 
@@ -243,7 +236,8 @@ void main()
             float NdotL = max(dot(N, L), 0.0);
 
             // Calculer l'ombre
-            float shadow       = ShadowCalculation(v_fragPosLightSpace, N, L);
+            vec4 lightSpacePos = lightData.lightMatrices[i] * vec4(v_worldPos, 1.0);
+            float shadow       = ShadowCalculation(lightSpacePos, N, L, lightData.shadowMapLayers[i].x);
             float shadowFactor = 1.0 - shadow;
 
             vec3 diffuseTerm  = kD * albedo / PI;

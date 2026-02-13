@@ -44,7 +44,7 @@ void Frontend::processDevices()
                 m_frontBuffer->insert(m_frontBuffer->end(), device->customPostCommands.begin(), device->customPostCommands.end());
                 unbindFrameBuffer(device->targetFramebuffer, true);
             } else {
-                bindFrameBuffer(device->targetFramebuffer);
+                bindFrameBuffer(device->targetFramebuffer, -1, device->targetDepthLayer);
                 
                 if(!device->noClear)
                     clear(clearColor);
@@ -177,11 +177,12 @@ void Frontend::useCubemap(renderID cubemapInstanceID, char* uniformName)
     pushCommand(useCubemapCommand);
 }
 
-void Frontend::bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx)
+void Frontend::bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx, int depthLayerIdx)
 {
     BindFrameBufferCommand typeCommand;
     typeCommand.frameBufferID  = frameBufferInstanceID;
     typeCommand.cubemapFaceIdx = cubemapFaceIdx;
+    typeCommand.depthLayerIdx  = depthLayerIdx;
     typeCommand.bind           = true;
     m_frontBuffer->push_back(typeCommand);
 }

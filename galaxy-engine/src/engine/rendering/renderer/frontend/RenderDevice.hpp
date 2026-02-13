@@ -13,6 +13,7 @@ namespace Galaxy
     struct RenderDevice {
         bool renderScene = false;
         renderID targetFramebuffer = -1;
+        int targetDepthLayer = -1;
         mat4 transform;
         vec2 viewportDimmmensions = vec2(512);
         vec2 viewportPosition = vec2(0);

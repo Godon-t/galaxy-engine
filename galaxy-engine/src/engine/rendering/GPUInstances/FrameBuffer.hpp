@@ -16,7 +16,7 @@ public:
     FrameBuffer(int width, int height, FramebufferTextureFormat format);
     ~FrameBuffer() { }
 
-    void bind();
+    void bind(int depthLayer = 0);
     void unbind();
 
     void destroy();
@@ -26,7 +26,7 @@ public:
 
     void setAsTextureUniform(unsigned int uniLocation, int textureIdx = -1);
 
-    void resize(unsigned int newWidth, unsigned int newHeight);
+    void resize(unsigned int newWidth, unsigned int newHeight, unsigned int depthLayerCount);
 
     inline void setColorsCount(unsigned int count)
     {
@@ -47,6 +47,7 @@ public:
 private:
     FramebufferTextureFormat m_format;
     unsigned int m_colorsCount;
+    unsigned int m_depthLayerCount;
     unsigned int m_fbo;
     int m_width, m_height;
 

@@ -93,6 +93,7 @@ struct SetActiveProgramCommand {
 
 struct BindFrameBufferCommand {
     renderID frameBufferID;
+    int depthLayerIdx = 0;
     int cubemapFaceIdx = -1;
     bool bind;
 };
@@ -123,6 +124,7 @@ struct UpdateUBOCommand {
         UpdateUBOCommand cmd;
         cmd.uboID = id;
         cmd.data.resize(sizeof(T));
+        std::memset(cmd.data.data(), 0, sizeof(T)); 
         std::memcpy(cmd.data.data(), &payload, sizeof(T));
         return cmd;
     }

@@ -1,0 +1,10 @@
+Type: Material
+HasTransparency: false
+Images:
+  {}
+Constants:
+  Albedo: [0.953, 0.357, 0.212]
+  Ambient: 1
+  Roughness: 0.5
+  Metallic: 0.5
+  Transparency: 1

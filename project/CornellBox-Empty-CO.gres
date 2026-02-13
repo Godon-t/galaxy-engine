@@ -1,0 +1,15 @@
+Type: Mesh
+ExternalFile: cornellBox\CornellBox-Empty-CO.obj
+SubMeshes:
+  - HasMaterial: true
+    MaterialID: 17669785454536081552
+  - HasMaterial: true
+    MaterialID: 15638692510010030195
+  - HasMaterial: true
+    MaterialID: 16952615689662302581
+  - HasMaterial: true
+    MaterialID: 9000419999324237936
+  - HasMaterial: true
+    MaterialID: 13919236538709322386
+  - HasMaterial: true
+    MaterialID: 18213570666836121

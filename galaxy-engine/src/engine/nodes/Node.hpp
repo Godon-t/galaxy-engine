@@ -66,7 +66,7 @@ public:
     virtual void updateTransformAndChilds(const mat4& matrix = mat4(1));
     virtual void forceUpdateTransformAndChilds(const mat4& matrix);
 
-    void handleInput(const Event& event);
+    virtual void handleInput(const Event& event);
     virtual void handleInputFromTop(const Event& event) { }
     virtual void handleInputFromBot(const Event& event) { }
 

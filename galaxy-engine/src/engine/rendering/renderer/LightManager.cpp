@@ -169,11 +169,11 @@ void LightManager::shadowPass(Node* sceneRoot)
         frontend.updateUniform(m_lightsUBO, m_lightUniformData);
 
     for (auto& [id, lightData] : m_lights) {
-        auto renderCamera = std::make_unique<RenderCamera>();
+        auto renderCamera = std::make_unique<RenderCameraTransform>();
         renderCamera->targetFramebuffer = m_shadowMapFrameBufferID;
         renderCamera->targetDepthLayer = lightData.shadowMapLayer;
         renderCamera->transform = lightData.transformationMatrix;
-        renderCamera->viewportDimmmensions = viewportDimmension;
+        renderCamera->dimmensions = viewportDimmension;
         renderCamera->renderScene = true;
 
         frontend.addRenderDevice(std::move(renderCamera));
@@ -216,10 +216,13 @@ void LightManager::updateProbeField()
         Transform renderTransform;
         renderTransform.setLocalPosition(probe.position);
         renderTransform.computeModelMatrix();
-        renderPoint->transform = renderTransform.getGlobalModelMatrix();
+
+        std::shared_ptr<Camera> pointCam = std::make_shared<Camera>();
+        pointCam->dimmensions = vec2(1024);
+        pointCam->position = renderTransform.getGlobalPosition();
+        renderPoint->camera = pointCam;
+
         renderPoint->renderScene = true;
-        
-        renderPoint->viewportDimmmensions = vec2(1024);
         
         frontend.addRenderDevice(std::move(renderPoint));
         
@@ -230,7 +233,11 @@ void LightManager::updateProbeField()
         octahedralProjectionDevice->targetFramebuffer = m_probesFrameBuffer;
         octahedralProjectionDevice->noClear = true;
         octahedralProjectionDevice->renderScene = false;
-        octahedralProjectionDevice->viewportDimmmensions = vec2(m_probeResolution);
+        
+        std::shared_ptr<Camera> octaCam = std::make_shared<Camera>();
+        octaCam->dimmensions = vec2(m_probeResolution);
+        octahedralProjectionDevice->camera = octaCam;
+
         octahedralProjectionDevice->viewportPosition = getProbeTexCoord(probe.probeCoord);
         frontend.addRenderDevice(std::move(octahedralProjectionDevice));
         

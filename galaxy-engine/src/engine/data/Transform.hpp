@@ -35,7 +35,7 @@ public:
 
     void setLocalScale(const vec3& s);
     vec3 getLocalScale() const;
-    vec3 getGlobalScale(vec3 value) const;
+    vec3 getGlobalScale() const;
 
     void setLocalRotation(const vec3& rotationAngles);
     void setLocalRotation(const quat& q);

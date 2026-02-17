@@ -21,7 +21,7 @@ MeshInstance::~MeshInstance()
 void MeshInstance::draw()
 {
     if (m_materialId && m_renderId)
-        Renderer::getInstance().getFrontend().submitPBR(m_renderId, m_materialId, *getTransform());
+        Renderer::getInstance().addObjectToScene(m_renderId, m_materialId, *getTransform());
     // TODO: integrate in sceneContext
     else if (m_renderId)
         Renderer::getInstance().getFrontend().submit(m_renderId, *getTransform());

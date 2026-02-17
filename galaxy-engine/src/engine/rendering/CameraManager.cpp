@@ -16,12 +16,12 @@ CameraManager::CameraManager()
     }
 }
 
-camID CameraManager::registerCam(Transform* transformRef)
+camID CameraManager::registerCam(const std::shared_ptr<Camera> cameraData)
 {
     camID id = m_freeIds.top();
     m_freeIds.pop();
 
-    m_registeredCams[id] = transformRef;
+    m_registeredCams[id] = cameraData;
     return id;
 }
 
@@ -41,20 +41,24 @@ void CameraManager::updateCurrent(camID id, bool state)
     }
 }
 
-mat4 CameraManager::getCurrentCamTransform()
+bool CameraManager::hasCamera()
 {
-    if (m_activeCamsHistory.size() == 0)
-        return mat4(1);
+    m_activeCamsHistory.size() > 0;
+}
+
+const std::shared_ptr<Camera> CameraManager::getCurrentCamera()
+{
     camID topId = m_activeCamsHistory.back();
     if (m_registeredCams.find(topId) != m_registeredCams.end()) {
         if (m_registeredCams[topId])
-            return m_registeredCams[topId]->getGlobalModelMatrix();
+            return m_registeredCams[topId];
         else {
             m_activeCamsHistory.pop_back();
-            return getCurrentCamTransform();
+            return getCurrentCamera();
         }
+    } else {
+        return std::make_shared<Camera>();
     }
-    return mat4(1);
 }
 
 mat4 CameraManager::processProjectionMatrix(vec2 viewPortDimmensions)
@@ -68,6 +72,11 @@ mat4 CameraManager::processViewMatrix(const mat4& transform)
     vec3 forward  = vec3(transform[2][0], transform[2][1], transform[2][2]);
     vec3 target   = position + forward;
     return lookAt(position, target, vec3(0, 1, 0));
+}
+
+mat4 CameraManager::processViewMatrix(std::shared_ptr<Camera> camera)
+{
+    return lookAt(camera->position, camera->position + camera->forward, camera->up);
 }
 
 mat4 CameraManager::processViewMatrix(mat4& transform)

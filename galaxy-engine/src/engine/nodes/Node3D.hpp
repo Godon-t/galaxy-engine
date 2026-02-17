@@ -18,10 +18,10 @@ public:
     }
     Transform* getTransform() { return &m_transform; }
     const Transform* getTransform() const { return &m_transform; }
-    void setTransform(Transform& transform) { m_transform = transform; }
-    void updateTransformAndChilds(const mat4& matrix) override;
-
-    void forceUpdateTransformAndChilds(const mat4& matrix) override;
+    void setTransform(Transform& transform);
+    
+    virtual void updateTransformAndChilds(const mat4& matrix) override;
+    virtual void forceUpdateTransformAndChilds(const mat4& matrix) override;
 
     void translate(vec3 translation);
     void rotate(vec3 rotation);

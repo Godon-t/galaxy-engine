@@ -10,7 +10,7 @@
 #include "Log.hpp"
 #include "TimeLogger.hpp"
 #include "event/WindowEvent.hpp"
-#include "nodes/rendering/Camera.hpp"
+#include "nodes/rendering/CameraNode.hpp"
 #include "nodes/rendering/MeshInstance.hpp"
 #include "rendering/renderer/Renderer.hpp"
 #include "resource/ResourceManager.hpp"

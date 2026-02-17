@@ -128,6 +128,11 @@ renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<sho
     return meshID;
 }
 
+Sphere& Backend::getMeshBoundingVolume(renderID meshID)
+{
+    return m_visualInstances.get(meshID)->getBoundingVolume();
+}
+
 renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 {
     renderID subMeshID = mesh.getResource().getVisualID(surfaceIdx);

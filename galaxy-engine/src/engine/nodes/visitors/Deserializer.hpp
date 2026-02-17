@@ -16,7 +16,7 @@ public:
 
     void visit(Node& node) override;
     void visit(Node3D& node) override;
-    void visit(Camera& node) override;
+    void visit(CameraNode& node) override;
     void visit(MeshInstance& node) override;
     void visit(Sprite3D& node) override;
     void visit(EnvironmentNode& node) override;

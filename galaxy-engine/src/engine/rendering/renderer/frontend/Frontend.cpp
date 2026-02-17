@@ -24,7 +24,7 @@ void Frontend::processDevices()
         if (device->useBuffer()) {
             auto views = device->getViews();
             auto projection = device->getProjection();
-            auto position = vec3(device->transform[3]);
+            auto position = vec3(device->camera->position);
 
             // Cubemap
             if(views.size() == 6){
@@ -33,12 +33,12 @@ void Frontend::processDevices()
                     if(!device->noClear)
                         clear(clearColor);
                     
-                    setViewport(device->viewportPosition, device->viewportDimmmensions);
+                    setViewport(device->viewportPosition, device->camera->dimmensions);
                     setViewMatrix(views[i]);
                     setProjectionMatrix(projection);
                     if(device->renderScene){
                         changeUsedProgram(ProgramType::PBR);
-                        dumpCommandsToBuffer(position);
+                        dumpCommandsToBuffer(device->camera, device->frustumCulling);
                     }
                 }
                 m_frontBuffer->insert(m_frontBuffer->end(), device->customPostCommands.begin(), device->customPostCommands.end());
@@ -49,12 +49,12 @@ void Frontend::processDevices()
                 if(!device->noClear)
                     clear(clearColor);
                 
-                setViewport(device->viewportPosition, device->viewportDimmmensions);
+                setViewport(device->viewportPosition, device->camera->dimmensions);
                 setViewMatrix(views[0]);
                 setProjectionMatrix(projection);
                 if(device->renderScene){
                     changeUsedProgram(ProgramType::PBR);
-                    dumpCommandsToBuffer(position);
+                    dumpCommandsToBuffer(device->camera, device->frustumCulling);
                 }
                 m_frontBuffer->insert(m_frontBuffer->end(), device->customPostCommands.begin(), device->customPostCommands.end());
                 unbindFrameBuffer(device->targetFramebuffer, false);
@@ -363,19 +363,24 @@ void Frontend::drawDebug()
     // TODO : COMPLETE
 }
 
-void Frontend::submitPBR(renderID meshID, renderID materialID, const Transform& transform)
+void Frontend::addObjectToScene(renderID meshID, const Sphere& boundingVolume, renderID materialID, const Transform& transform)
 {
-    DrawCommand drawCommand;
-    drawCommand.instanceId = meshID;
-    drawCommand.model      = transform.getGlobalModelMatrix();
-
-    m_frameContext.pushCommand(materialID, drawCommand);
+    m_frameContext.pushNewObject(materialID, meshID, boundingVolume, transform);
 }
 
-void Frontend::dumpCommandsToBuffer(vec3& cameraPosition)
+void Frontend::dumpCommandsToBuffer(std::shared_ptr<Camera> camera, bool frustumCulling)
 {
-    std::vector<RenderCommand> opaques = m_frameContext.retrieveOpaqueRenders();
-    std::vector<RenderCommand> transparents = m_frameContext.retrieveTransparentRenders(cameraPosition);
+    Frustum cameraFrustum(camera.get());
+
+    std::vector<RenderCommand> opaques, transparents;
+    if(frustumCulling){
+        opaques = m_frameContext.retrieveOpaqueRenders(cameraFrustum);
+        transparents = m_frameContext.retrieveTransparentRenders(cameraFrustum);    
+    } else{
+        opaques = m_frameContext.retrieveOpaqueRenders();
+        transparents = m_frameContext.retrieveTransparentRenders(camera->position);
+    }
+    
 
 
     m_frontBuffer->insert(m_frontBuffer->end(), opaques.begin(), opaques.end());

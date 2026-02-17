@@ -56,26 +56,24 @@ void Renderer::passShadow()
     m_lightManager.shadowPass(Application::getInstance().getRootNodePtr().get());
 }
 
-void Renderer::addMainCameraDevice(const mat4& camTransform)
+void Renderer::addMainCameraDevice(std::shared_ptr<Camera> camera)
 {
     auto mainCamera = std::make_unique<RenderCamera>();
 
-    mainCamera->transform = camTransform;
-    mainCamera->viewportDimmmensions = Renderer::getInstance().getRenderingWindowSize();
+    mainCamera->camera = camera;
     mainCamera->targetFramebuffer = m_sceneFrameBufferID;
     mainCamera->renderScene = true;
     m_frontend.addRenderDevice(std::move(mainCamera));
 }
 
-void Renderer::passPostProcessing(const mat4& camTransform)
+void Renderer::passPostProcessing(std::shared_ptr<Camera> camera)
 {
     m_lightManager.debugDraw();
 
     auto postProcess = std::make_unique<RenderCamera>();
-    postProcess->viewportDimmmensions = Renderer::getInstance().getRenderingWindowSize();
+    postProcess->camera = camera;
     postProcess->renderScene = false;
     postProcess->targetFramebuffer = m_postProcessingBufferID;
-    postProcess->transform = camTransform;
     m_frontend.addRenderDevice(std::move(postProcess));
     m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING_PROBE);
     m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"sceneBuffer",     0);
@@ -106,6 +104,11 @@ void Renderer::renderFrame()
     m_commandBuffers[m_frontCommandBufferIdx].clear();
     m_frontend.clearContext();
     switchCommandBuffer();
+}
+
+void Renderer::addObjectToScene(renderID meshID, renderID materialID, const Transform& transform)
+{
+    m_frontend.addObjectToScene(meshID, m_backend.getMeshBoundingVolume(meshID), materialID, transform);
 }
 
 // void Renderer::applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter)

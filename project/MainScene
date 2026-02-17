@@ -158,3 +158,10 @@ Root:
         Position: [0, -4, 0]
         Rotation: [0, -0, 0]
         Scale: [100, 100, 100]
+    - Type: CameraNode
+      Childs:
+        []
+      Transform:
+        Position: [-103, 147, 1]
+        Rotation: [0, 1.2601277, 0]
+        Scale: [1, 1, 1]

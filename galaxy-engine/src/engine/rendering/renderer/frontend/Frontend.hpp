@@ -7,6 +7,7 @@
 #include "data/Transform.hpp"
 #include "types/Render.hpp"
 #include "RenderDevice.hpp"
+#include "common/geometry/Shapes.hpp"
 
 #include "queue"
 #include <memory>
@@ -66,7 +67,7 @@ public:
 
 
 
-    void submitPBR(renderID meshID, renderID materialID, const Transform& transform);
+    void addObjectToScene(renderID meshID, const Sphere& boundingVolume, renderID materialID, const Transform& transform);
 
     void setCommandBuffer(std::vector<RenderCommand>* newBuffer);
 
@@ -77,7 +78,7 @@ public:
     
 private:
     // TODO: Create cameraFrustum object
-    void dumpCommandsToBuffer(vec3& cameraPosition);
+    void dumpCommandsToBuffer(std::shared_ptr<Camera> camera, bool frustumCulling);
     
     void setViewMatrix(const math::mat4& view);
     void setProjectionMatrix(const math::mat4& projection);

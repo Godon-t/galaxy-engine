@@ -51,7 +51,7 @@ EditorLayer::~EditorLayer()
 void EditorLayer::onAttach()
 {
     m_rootEditorNode = std::make_shared<Node>("Editor");
-    m_editorCamera   = std::make_shared<Camera>();
+    m_editorCamera   = std::make_shared<CameraNode>();
     m_editorCamera->setCurrent(false);
     m_rootEditorNode->addChild(m_editorCamera);
     m_rootEditorNode->activate();
@@ -100,11 +100,11 @@ void EditorLayer::onUpdate()
 
     if (m_selectedScene->getNodePtr()) {
         auto& renderer = Renderer::getInstance();
-        mat4 cameraTransform;
+        std::shared_ptr<Camera> camera;
         if (m_mode == EditorMode::Run) {
-            cameraTransform = CameraManager::getInstance().getCurrentCamTransform();
+            camera = CameraManager::getInstance().getCurrentCamera();
         } else {
-            cameraTransform = m_editorCamera->getTransform()->getGlobalModelMatrix();
+            camera = m_editorCamera->getCamera();
             updateCamera();
         }
 
@@ -123,11 +123,11 @@ void EditorLayer::onUpdate()
         //     renderer.endShadowPass();
         // }
         renderer.passShadow();
-        renderer.addMainCameraDevice(cameraTransform);
+        renderer.addMainCameraDevice(camera);
 
         Application::getInstance().getRootNodePtr()->draw();
 
-        renderer.passPostProcessing(cameraTransform);
+        renderer.passPostProcessing(camera);
 
         // TODO: should the application handle the render ?
         // m_selectedScene->getNodePtr()->draw();

@@ -45,7 +45,7 @@ private:
 
     // Ref to nodes in Root
     std::shared_ptr<Node> m_rootEditorNode;
-    std::shared_ptr<Camera> m_editorCamera;
+    std::shared_ptr<CameraNode> m_editorCamera;
     std::shared_ptr<Node> m_rootSceneNode;
 
     float m_cameraSpeed   = 0.15f;

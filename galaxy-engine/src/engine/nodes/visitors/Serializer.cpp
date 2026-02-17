@@ -5,7 +5,7 @@
 #include "common/YamlTranslation.hpp"
 #include "nodes/Node.hpp"
 #include "nodes/Node3D.hpp"
-#include "nodes/rendering/Camera.hpp"
+#include "nodes/rendering/CameraNode.hpp"
 #include "nodes/rendering/EnvironmentNode.hpp"
 #include "nodes/rendering/MeshInstance.hpp"
 #include "nodes/rendering/Sprite3D.hpp"
@@ -63,7 +63,7 @@ void SceneSerializer::visit(Node3D& node)
     m_yaml << YAML::EndMap;
 }
 
-void SceneSerializer::visit(Camera& node)
+void SceneSerializer::visit(CameraNode& node)
 {
     visit(static_cast<Node3D&>(node));
 }

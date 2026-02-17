@@ -37,7 +37,7 @@ public:
     {
         visit(static_cast<Node&>(node));
     }
-    void visit(Camera& node) override
+    void visit(CameraNode& node) override
     {
         visit(static_cast<Node3D&>(node));
     }

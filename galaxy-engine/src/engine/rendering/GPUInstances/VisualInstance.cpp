@@ -7,6 +7,11 @@
 namespace Galaxy {
 CullMode VisualInstance::s_cullMode = FRONT_CULLING;
 
+Sphere& VisualInstance::getBoundingVolume()
+{
+    return m_boundingVolume;
+}
+
 VisualInstance::VisualInstance()
     : m_VAO(0)
     , m_VBO(0)
@@ -30,10 +35,11 @@ VisualInstance::~VisualInstance()
 
 VisualInstance::VisualInstance(VisualInstance&& other)
 {
-    m_VAO         = other.m_VAO;
-    m_VBO         = other.m_VBO;
-    m_EBO         = other.m_EBO;
-    m_nbOfIndices = other.m_nbOfIndices;
+    m_VAO            = other.m_VAO;
+    m_VBO            = other.m_VBO;
+    m_EBO            = other.m_EBO;
+    m_nbOfIndices    = other.m_nbOfIndices;
+    m_boundingVolume = other.m_boundingVolume;
 
     other.m_VAO = 0;
     other.m_VBO = 0;
@@ -42,10 +48,11 @@ VisualInstance::VisualInstance(VisualInstance&& other)
 
 VisualInstance& VisualInstance::operator=(VisualInstance&& other)
 {
-    m_VAO         = other.m_VAO;
-    m_VBO         = other.m_VBO;
-    m_EBO         = other.m_EBO;
-    m_nbOfIndices = other.m_nbOfIndices;
+    m_VAO            = other.m_VAO;
+    m_VBO            = other.m_VBO;
+    m_EBO            = other.m_EBO;
+    m_nbOfIndices    = other.m_nbOfIndices;
+    m_boundingVolume = other.m_boundingVolume;
 
     other.m_VAO = 0;
     other.m_VBO = 0;
@@ -83,6 +90,19 @@ void VisualInstance::init(const std::vector<Vertex>& vertices, const std::vector
     glBindVertexArray(0);
 
     checkOpenGLErrors("Visual instance init");
+
+
+
+    vec3 min{99999 , 99999, 99999};
+    vec3 max{-99999,-99999,-99999};
+    for(auto& vertex : vertices){
+        for(int i=0; i<3; i++){
+            if(vertex.position[i] < min[i]) min[i] = vertex.position[i];
+            if(vertex.position[i] > max[i]) max[i] = vertex.position[i];
+        }
+    }
+    m_boundingVolume.center = (min + max) * 0.5f;
+    m_boundingVolume.radius = length(min - max) * 0.5f;
 }
 
 void VisualInstance::draw()

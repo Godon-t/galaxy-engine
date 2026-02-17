@@ -27,8 +27,11 @@ namespace Galaxy
 
                 res.push_back(bindMaterialCommand);
 
-                for (auto& meshCommand : queue.second) {
-                    res.push_back(meshCommand);
+                for (auto& meshVisual : queue.second) {
+                    DrawCommand draw;
+                    draw.instanceId = meshVisual.meshID;
+                    draw.model = meshVisual.transform.getGlobalModelMatrix();
+                    res.push_back(draw);
                 }
             }
         }
@@ -46,8 +49,12 @@ namespace Galaxy
         for (auto& queue : renderCommandsByMaterial) {
             auto matID = queue.first;
             if (materialsTransparency[matID]) {
-                for (auto& meshCommand : queue.second) {
-                    auto elem = std::make_pair(matID, meshCommand);
+                for (auto& meshVisual : queue.second) {
+                    DrawCommand draw;
+                    draw.instanceId = meshVisual.meshID;
+                    draw.model = meshVisual.transform.getGlobalModelMatrix();
+                
+                    auto elem = std::make_pair(matID, draw);
                     transparentPQ.push(elem);
                 }
             }
@@ -74,9 +81,87 @@ namespace Galaxy
         return res;
     }
 
-    void SceneContext::pushCommand(renderID materialID, DrawCommand drawCommand)
+    std::vector<RenderCommand> SceneContext::retrieveOpaqueRenders(const Frustum& frustum)
     {
-        renderCommandsByMaterial[materialID].push_back(drawCommand);
+        std::vector<RenderCommand> res;
+        for (auto& queue : renderCommandsByMaterial) {
+            auto matID = queue.first;
+            if (!materialsTransparency[matID]) {
+                BindMaterialCommand bindMaterialCommand;
+                bindMaterialCommand.materialRenderID = matID;
+
+                res.push_back(bindMaterialCommand);
+
+                for (auto& meshVisual : queue.second) {
+                    if(frustum.isSphereInFrustum(meshVisual.volume, frustum, meshVisual.transform)){
+                        DrawCommand draw;
+    
+                        
+                        draw.model = meshVisual.transform.getGlobalModelMatrix();
+                        draw.instanceId = meshVisual.meshID;
+                        res.push_back(draw);
+                    }
+
+                    
+                }
+            }
+        }
+
+        return res;
+    }
+
+    std::vector<RenderCommand> SceneContext::retrieveTransparentRenders(const Frustum& frustum)
+    {
+        DistCompare::camPosition = frustum.nearFace.position;
+
+        std::priority_queue<std::pair<renderID, RenderCommand>, std::vector<std::pair<renderID, RenderCommand>>, DistCompare> transparentPQ;
+
+        std::vector<RenderCommand> res;
+        for (auto& queue : renderCommandsByMaterial) {
+            auto matID = queue.first;
+            if (materialsTransparency[matID]) {
+                for (auto& meshVisual : queue.second) {
+                    if(Frustum::isSphereInFrustum(meshVisual.volume, frustum, meshVisual.transform)){
+                        DrawCommand draw;
+                        draw.instanceId = meshVisual.meshID;
+                        draw.model = meshVisual.transform.getGlobalModelMatrix();
+                    
+                        auto elem = std::make_pair(matID, draw);
+                        transparentPQ.push(elem);
+                    }
+                    
+                }
+            }
+        }
+
+        // DepthMaskCommand depthMask;
+        // depthMask.state = false;
+
+        // res.push_back(depthMask);
+
+        while (!transparentPQ.empty()) {
+            BindMaterialCommand bindMaterialCommand;
+            bindMaterialCommand.materialRenderID = transparentPQ.top().first;
+
+            res.push_back(bindMaterialCommand);
+            res.push_back(transparentPQ.top().second);
+
+            transparentPQ.pop();
+        }
+
+        // depthMask.state = true;
+        // res.push_back(depthMask);
+
+        return res;
+    }
+
+    void SceneContext::pushNewObject(renderID materialID, renderID meshID, const Sphere& volume, const Transform& transform)
+    {
+        Visual vis;
+        vis.meshID = meshID;
+        vis.transform = transform;
+        vis.volume = volume;
+        renderCommandsByMaterial[materialID].push_back(vis);
     }
 
     void SceneContext::removeMaterialID(renderID materialID)

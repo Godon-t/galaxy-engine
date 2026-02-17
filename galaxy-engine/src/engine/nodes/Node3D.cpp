@@ -3,6 +3,12 @@
 #include "Node3D.hpp"
 
 namespace Galaxy {
+void Node3D::setTransform(Transform& transform)
+{
+    m_transform = transform;
+    m_transform.dirty = true;
+}
+
 void Node3D::updateTransformAndChilds(const mat4& matrix)
 {
     mat4 mat = m_parent == nullptr ? mat4(1) : matrix;

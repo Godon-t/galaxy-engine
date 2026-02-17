@@ -14,10 +14,11 @@ namespace Galaxy
         bool renderScene = false;
         renderID targetFramebuffer = -1;
         int targetDepthLayer = -1;
-        mat4 transform;
-        vec2 viewportDimmmensions = vec2(512);
+        std::shared_ptr<Camera> camera = std::make_shared<Camera>();
         vec2 viewportPosition = vec2(0);
+
         bool noClear = false;
+        bool frustumCulling = true;
 
 
         std::vector<RenderCommand> customPostCommands;
@@ -46,14 +47,29 @@ namespace Galaxy
         //     buffer.insert(buffer.end(), customPostCommands.begin(), customPostCommands.end());
         // }
     };
-    struct RenderCamera: public RenderDevice {
+
+    struct RenderCameraTransform : public RenderDevice {
+        mat4 transform;
+        vec2 dimmensions;
+
         std::vector<mat4> getViews() override {
             std::vector<mat4> res{CameraManager::processViewMatrix(transform)};
             return res;
         }
 
         mat4 getProjection() override{
-            return CameraManager::processProjectionMatrix(viewportDimmmensions);
+            return CameraManager::processProjectionMatrix(dimmensions);
+        }
+    };
+
+    struct RenderCamera: public RenderDevice {
+        std::vector<mat4> getViews() override {
+            std::vector<mat4> res{CameraManager::processViewMatrix(camera)};
+            return res;
+        }
+
+        mat4 getProjection() override{
+            return CameraManager::processProjectionMatrix(camera->dimmensions);
         }
     };
 
@@ -64,7 +80,7 @@ namespace Galaxy
 
             std::vector<mat4> res;
 
-            vec3 position = vec3(transform[3]);
+            vec3 position = vec3(camera->position);
             for(int i=0; i<6; i++){
                 auto viewMatrix = lookAt(position, position + s_cubemap_orientations[i], s_cubemap_ups[i]);
                 res.push_back(viewMatrix);

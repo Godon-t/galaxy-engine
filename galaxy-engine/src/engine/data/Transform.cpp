@@ -77,7 +77,7 @@ vec3 Transform::getLocalScale() const
     return m_scale;
 }
 
-vec3 Transform::getGlobalScale(vec3 value) const
+vec3 Transform::getGlobalScale() const
 {
     vec3 res;
     res.x = length(vec3(m_globalModelMatrix[0])); // Basis vector X

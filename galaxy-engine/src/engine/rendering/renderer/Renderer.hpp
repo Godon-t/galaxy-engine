@@ -19,12 +19,14 @@ public:
     void init();
     
     void passShadow();
-    void addMainCameraDevice(const mat4& camTransform);
-    void passPostProcessing(const mat4& camTransform);
+    void addMainCameraDevice(std::shared_ptr<Camera> camera);
+    void passPostProcessing(std::shared_ptr<Camera> camera);
     void updateGI();
     void renderFrame();
 
     inline int getDrawCallsCount() { return m_drawCount; }
+
+    void addObjectToScene(renderID meshID, renderID materialID, const Transform& transform);
 
 
     Backend& getBackend(){return m_backend;}

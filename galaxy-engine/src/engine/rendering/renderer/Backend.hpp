@@ -100,6 +100,7 @@ public:
 
     renderID instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx);
     renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices, std::function<void()> destroyCallback = nullptr);
+    Sphere& getMeshBoundingVolume(renderID meshID);
     void clearMesh(renderID meshID);
 
     renderID instantiateTexture(TextureFormat format, vec2 size);

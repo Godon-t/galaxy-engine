@@ -1,7 +1,7 @@
 #include "NodeHelper.hpp"
 
 #include "Node3D.hpp"
-#include "rendering/Camera.hpp"
+#include "rendering/CameraNode.hpp"
 #include "rendering/EnvironmentNode.hpp"
 #include "rendering/MeshInstance.hpp"
 #include "rendering/Sprite3D.hpp"
@@ -20,7 +20,7 @@ std::unique_ptr<Node> constructNode(std::string& type)
     NODE_CASE(Node)
     NODE_CASE(Node3D)
     NODE_CASE(MeshInstance)
-    NODE_CASE(Camera)
+    NODE_CASE(CameraNode)
     NODE_CASE(Sprite3D)
     NODE_CASE(EnvironmentNode)
     NODE_CASE(SpotLight)

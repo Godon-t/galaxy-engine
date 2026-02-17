@@ -8,7 +8,7 @@
 #include "nodes/Node.hpp"
 #include "nodes/Node3D.hpp"
 #include "nodes/NodeHelper.hpp"
-#include "nodes/rendering/Camera.hpp"
+#include "nodes/rendering/CameraNode.hpp"
 #include "nodes/rendering/EnvironmentNode.hpp"
 #include "nodes/rendering/MeshInstance.hpp"
 #include "nodes/rendering/Sprite3D.hpp"
@@ -87,7 +87,7 @@ void SceneDeSerializer::visit(Node3D& node)
     node.setTransform(nodeTransform);
     visit(static_cast<Node&>(node));
 }
-void SceneDeSerializer::visit(Camera& node)
+void SceneDeSerializer::visit(CameraNode& node)
 {
     visit(static_cast<Node3D&>(node));
 }

@@ -76,10 +76,8 @@ add_library(galaxy-engine
 	src/engine/nodes/visitors/Serializer.cpp
 	src/engine/nodes/visitors/Deserializer.cpp
 	src/engine/nodes/rendering/MeshInstance.cpp
-	src/engine/nodes/rendering/MultiMeshInstance.cpp
 	src/engine/nodes/rendering/EnvironmentNode.cpp
 	src/engine/nodes/rendering/Sprite3D.cpp
-	src/engine/nodes/rendering/CornellBox.cpp
 	src/engine/nodes/rendering/Camera.cpp
 	src/engine/nodes/rendering/lighting/SpotLight.cpp
 	src/engine/nodes/rendering/lighting/PointLight.cpp
@@ -89,8 +87,9 @@ add_library(galaxy-engine
 	src/engine/rendering/Program.cpp
 	src/engine/rendering/renderer/Renderer.cpp
 	src/engine/rendering/renderer/Backend.cpp
-	src/engine/rendering/renderer/Frontend.cpp
 	src/engine/rendering/renderer/LightManager.cpp
+	src/engine/rendering/renderer/frontend/Frontend.cpp
+	src/engine/rendering/renderer/frontend/SceneContext.cpp
 	src/engine/rendering/CameraManager.cpp
 	src/engine/rendering/GPUInstances/VisualInstance.cpp
 	src/engine/rendering/GPUInstances/Texture.cpp

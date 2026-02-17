@@ -12,6 +12,7 @@
 #include "resource/Mesh.hpp"
 #include "resource/ResourceHandle.hpp"
 #include "types/Render.hpp"
+#include <functional>
 
 namespace Galaxy {
 class Renderer;
@@ -66,6 +67,16 @@ public:
         return &m_renderIdToInstance[id].first;
     }
 
+    std::vector<T*> getAll(){
+        std::vector<T*> res;
+        res.reserve(m_renderIdToInstance.size());
+        
+        for(auto& [id, value] : m_renderIdToInstance){
+            res.push_back(&value.first);
+        }
+        return res;
+    }
+
     bool canAddInstance() { return m_freeIds.size() > 0; }
     void removeAll(std::function<void(T&)> deletionCallback)
     {
@@ -91,13 +102,17 @@ public:
     renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices, std::function<void()> destroyCallback = nullptr);
     void clearMesh(renderID meshID);
 
-    renderID instantiateTexture();
+    renderID instantiateTexture(TextureFormat format, vec2 size);
     renderID instantiateTexture(ResourceHandle<Image> image);
     void clearTexture(renderID textureID);
+    void frameReset();
 
     renderID instanciateMaterial(ResourceHandle<Material> material);
     void updateMaterial(renderID materialID, ResourceHandle<Material> material);
     void clearMaterial(renderID materialID);
+
+    using MaterialUpdateCallback = std::function<void(renderID materialID, bool isTransparent)>;
+    void onMaterialUpdated(MaterialUpdateCallback callback) { m_materialUpdateCallback = callback; }
 
     void processCommands(std::vector<RenderCommand>& commands);
 
@@ -109,11 +124,11 @@ public:
     renderID instanciateCubemap(int resolution = 1024);
     void clearCubemap(renderID cubemapID);
 
-    renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1);
-    renderID instantiateCubemapFrameBuffer(unsigned int size);
+    renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1, unsigned int depthLayerCount = 0);
+    renderID instantiateCubemapFrameBuffer(unsigned int resolution, unsigned int colorCount = 1);
 
     void clearFrameBuffer(renderID frameBufferID);
-    void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height);
+    void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height, unsigned int depthLayerCount = 0);
     void resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size);
     // TODO: Wrong way ?
     FramebufferTextureFormat getFramebufferFormat(renderID id);
@@ -143,7 +158,6 @@ private:
     void processCommand(const AttachCubemapToFramebufferCommand& command);
     void processCommand(const BindMaterialCommand& command);
     void processCommand(const BindFrameBufferCommand& command);
-    void processCommand(const InitPostProcessCommand& command);
     void processCommand(const SetUniformCommand& command);
     void processCommand(const SetViewportCommand& command);
     void processCommand(const UpdateTextureCommand& command);
@@ -167,6 +181,8 @@ private:
 
     // Will invalidate renderID for things outside of Node that store a renderID
     std::unordered_map<renderID, std::function<void()>> m_gpuDestroyNotifications;
+
+    MaterialUpdateCallback m_materialUpdateCallback;
 
     ProgramPBR m_mainProgram;
     ProgramSkybox m_skyboxProgram;

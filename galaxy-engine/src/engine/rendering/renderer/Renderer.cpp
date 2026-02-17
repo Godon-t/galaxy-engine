@@ -17,30 +17,16 @@ Renderer::Renderer()
     , m_backend()
     , m_lightManager()
     , m_mainViewportSize(1024)
-    , m_activePostProcessing(ProgramType::POST_PROCESSING_PROBE)
-    , m_showDebug(false)
 {
     m_backend.initDebugCallback();
 
-    m_cubemapFramebufferID   = m_backend.instantiateCubemapFrameBuffer(1024);
+    m_backend.onMaterialUpdated([this](renderID materialID, bool isTransparent) {
+        m_frontend.notifyMaterialUpdated(materialID, isTransparent);
+    });
+
     m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8, 5);
     m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
     m_postProcessingQuadID   = m_backend.generateQuad(vec2(2, 2), [] {});
-
-    m_cubemap_orientations[0] = { 1, 0, 0 };
-    m_cubemap_orientations[1] = { -1, 0, 0 };
-    m_cubemap_ups[0] = m_cubemap_ups[1] = { 0, -1, 0 };
-
-    m_cubemap_orientations[2] = { 0, 1, 0 };
-    m_cubemap_orientations[3] = { 0, -1, 0 };
-    m_cubemap_ups[2]          = { 0, 0, 1 };
-    m_cubemap_ups[3]          = { 0, 0, -1 };
-
-    m_cubemap_orientations[4] = { 0, 0, 1 };
-    m_cubemap_orientations[5] = { 0, 0, -1 };
-    m_cubemap_ups[4] = m_cubemap_ups[5] = { 0, -1, 0 };
-
-    // m_frontend.attachTextureToDepthFramebuffer(m_testRectText, m_testRectFB);
 }
 
 Renderer::~Renderer()
@@ -65,146 +51,136 @@ void Renderer::init()
     m_lightManager.init();
 }
 
-void Renderer::beginSceneRender(const mat4& camTransform)
-{
-    beginCanva(camTransform, m_mainViewportSize, m_sceneFrameBufferID, FramebufferTextureFormat::DEPTH24RGBA8);
-    m_frontend.setViewport(vec2(0), m_mainViewportSize);
-}
-
-void Renderer::beginCanva(const mat4& camTransform, const vec2& dimmensions, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx)
-{
-    m_currentView = CameraManager::processViewMatrix(camTransform);
-    m_currentProj = CameraManager::processProjectionMatrix(dimmensions);
-
-    m_frontend.beginCanva(m_currentView, m_currentProj, framebufferID, framebufferFormat);
-}
-
-void Renderer::endSceneRender()
-{
-    m_lightManager.debugDraw();
-    m_frontend.drawDebug();
-    m_frontend.endCanva();
-    applyPostProcessing();
-    m_frontend.processCanvas();
-}
-
-void Renderer::shadowPass()
+void Renderer::passShadow()
 {
     m_lightManager.shadowPass(Application::getInstance().getRootNodePtr().get());
 }
 
-void Renderer::applyPostProcessing()
+void Renderer::addMainCameraDevice(const mat4& camTransform)
 {
-    if (m_activePostProcessing != ProgramType::POST_PROCESSING_PROBE && m_activePostProcessing != ProgramType::POST_PROCESSING_SSGI)
-        GLX_CORE_ASSERT(m_activePostProcessing == ProgramType::POST_PROCESSING_PROBE || m_activePostProcessing == ProgramType::POST_PROCESSING_SSGI, "Wrong porgram type for post processing");
+    auto mainCamera = std::make_unique<RenderCamera>();
 
-    m_frontend.beginCanva(m_currentView, m_currentProj, m_postProcessingBufferID, FramebufferTextureFormat::RGBA8);
-    m_frontend.changeUsedProgram(m_activePostProcessing);
+    mainCamera->transform = camTransform;
+    mainCamera->viewportDimmmensions = Renderer::getInstance().getRenderingWindowSize();
+    mainCamera->targetFramebuffer = m_sceneFrameBufferID;
+    mainCamera->renderScene = true;
+    m_frontend.addRenderDevice(std::move(mainCamera));
+}
 
-    m_frontend.initPostProcessing(m_sceneFrameBufferID);
+void Renderer::passPostProcessing(const mat4& camTransform)
+{
+    m_lightManager.debugDraw();
+
+    auto postProcess = std::make_unique<RenderCamera>();
+    postProcess->viewportDimmmensions = Renderer::getInstance().getRenderingWindowSize();
+    postProcess->renderScene = false;
+    postProcess->targetFramebuffer = m_postProcessingBufferID;
+    postProcess->transform = camTransform;
+    m_frontend.addRenderDevice(std::move(postProcess));
+    m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING_PROBE);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"sceneBuffer",     0);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"normalBuffer",    1);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"roughnessBuffer", 3);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"directBuffer",    4);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"depthBuffer",    -1);
     m_frontend.submit(m_postProcessingQuadID);
-    m_frontend.changeUsedProgram(ProgramType::PBR);
-    m_frontend.endCanva();
+}
+
+void Renderer::resize(unsigned int width, unsigned int height)
+{
+    m_backend.resizeFrameBuffer(m_sceneFrameBufferID, width, height);
+    m_backend.resizeFrameBuffer(m_postProcessingBufferID, width, height);
+    m_mainViewportSize.x = width;
+    m_mainViewportSize.y = height;
 }
 
 void Renderer::renderFrame()
 {
+    // m_frontend.drawDebug();
+
+
+    m_frontend.processDevices();
     m_drawCount = m_commandBuffers[m_frontCommandBufferIdx].size();
+    m_backend.frameReset();
     m_backend.processCommands(m_commandBuffers[m_frontCommandBufferIdx]);
     m_commandBuffers[m_frontCommandBufferIdx].clear();
+    m_frontend.clearContext();
     switchCommandBuffer();
 }
 
-renderID Renderer::instanciateMaterial(ResourceHandle<Material> material)
-{
-    renderID matID = m_backend.instanciateMaterial(material);
+// void Renderer::applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter)
+// {
+//     // switchCommandBuffer();
+//     // m_commandBuffers[m_frontCommandBufferIdx].clear();
 
-    auto& matResource = material.getResource();
-    matResource.onLoaded([this, matID, &matResource] {
-        m_frontend.setTransparency(matID, matResource.isUsingTransparency());
-    });
+//     // std::function<void()> prgToUse;
+//     // switch (filter) {
+//     // case FilterEnum::IRRADIANCE:
+//     //     prgToUse = [this]() {
+//     //         m_frontend.changeUsedProgram(ProgramType::FILTER_IRRADIANCE);
+//     //     };
+//     //     break;
+//     // default:
+//     //     GLX_CORE_ERROR("Unknown filter applied!");
+//     //     return;
+//     // }
 
-    return matID;
-}
+//     // Cubemap& targetCubemap = *m_backend.m_cubemapInstances.get(targetID);
+//     // targetCubemap.useFloat = true;
+//     // targetCubemap.resize(2048);
+//     // CubemapFrameBuffer cubemapBuffer(targetCubemap);
 
-void Renderer::updateMaterial(renderID materialID, ResourceHandle<Material> material)
-{
-    m_frontend.setTransparency(materialID, material.getResource().isUsingTransparency());
-}
+//     // GLint viewport[4];
+//     // glGetIntegerv(GL_VIEWPORT, viewport);
+//     // glViewport(0, 0, targetCubemap.resolution, targetCubemap.resolution);
 
-void Renderer::applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter)
-{
-    // switchCommandBuffer();
-    // m_commandBuffers[m_frontCommandBufferIdx].clear();
+//     // vec2 dimmensions      = vec2(targetCubemap.resolution);
+//     // auto projectionMatrix = CameraManager::processProjectionMatrix(vec2(dimmensions));
 
-    // std::function<void()> prgToUse;
-    // switch (filter) {
-    // case FilterEnum::IRRADIANCE:
-    //     prgToUse = [this]() {
-    //         m_frontend.changeUsedProgram(ProgramType::FILTER_IRRADIANCE);
-    //     };
-    //     break;
-    // default:
-    //     GLX_CORE_ERROR("Unknown filter applied!");
-    //     return;
-    // }
+//     // mat4 baseProjection = m_frontend.getProjectionMatrix();
+//     // mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 999.f);
+//     // m_frontend.setProjectionMatrix(projection);
 
-    // Cubemap& targetCubemap = *m_backend.m_cubemapInstances.get(targetID);
-    // targetCubemap.useFloat = true;
-    // targetCubemap.resize(2048);
-    // CubemapFrameBuffer cubemapBuffer(targetCubemap);
+//     // vec3 position = vec3(0, 0, 0);
+//     // Transform transformTemp;
+//     // for (int i = 0; i < 6; i++) {
+//     //     auto viewMatrix = lookAt(camPosition, camPosition + camDirection, camUp);
+//     //     m_frontend.beginCanva(viewMatrix, projectionMatrix, targetID, FramebufferTextureFormat::DEPTH24RGBA8, i);
 
-    // GLint viewport[4];
-    // glGetIntegerv(GL_VIEWPORT, viewport);
-    // glViewport(0, 0, targetCubemap.resolution, targetCubemap.resolution);
+//     //     beginSceneRender(position, m_cubemap_orientations[i], m_cubemap_ups[i], dimmensions);
+//     //     prgToUse();
+//     //     m_frontend.bindCubemap(sourceID, "skybox");
+//     //     m_frontend.submit(skyboxMesh, transformTemp);
+//     //     endSceneRender();
+//     //     renderFrame();
+//     // }
 
-    // vec2 dimmensions      = vec2(targetCubemap.resolution);
-    // auto projectionMatrix = CameraManager::processProjectionMatrix(vec2(dimmensions));
+//     // m_frontend.setProjectionMatrix(baseProjection);
+//     // glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+// }
 
-    // mat4 baseProjection = m_frontend.getProjectionMatrix();
-    // mat4 projection     = perspective(radians(90.0f), 1.f, 0.001f, 999.f);
-    // m_frontend.setProjectionMatrix(projection);
+// void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetColorCubemapID, renderID targetNormalCubemapID, renderID targetDepthCubemapID)
+// {
+//     vec2 size(1024);
+//     vec2 pos(0);
 
-    // vec3 position = vec3(0, 0, 0);
-    // Transform transformTemp;
-    // for (int i = 0; i < 6; i++) {
-    //     auto viewMatrix = lookAt(camPosition, camPosition + camDirection, camUp);
-    //     m_frontend.beginCanva(viewMatrix, projectionMatrix, targetID, FramebufferTextureFormat::DEPTH24RGBA8, i);
+//     m_frontend.beginCanvaNoBuffer();
+//     m_frontend.attachCubemapToFramebuffer(targetColorCubemapID, m_cubemapFramebufferID, 0);
+//     m_frontend.attachCubemapToFramebuffer(targetNormalCubemapID, m_cubemapFramebufferID, 1);
+//     m_frontend.attachCubemapToFramebuffer(targetDepthCubemapID, m_cubemapFramebufferID, 2);
+//     m_frontend.endCanva();
 
-    //     beginSceneRender(position, m_cubemap_orientations[i], m_cubemap_ups[i], dimmensions);
-    //     prgToUse();
-    //     m_frontend.bindCubemap(sourceID, "skybox");
-    //     m_frontend.submit(skyboxMesh, transformTemp);
-    //     endSceneRender();
-    //     renderFrame();
-    // }
+//     mat4 projection = perspective(radians(90.0f), 1.f, 0.001f, 999.f);
+//     for (int i = 0; i < 6; i++) {
+//         auto viewMatrix = lookAt(position, position + m_cubemap_orientations[i], m_cubemap_ups[i]);
 
-    // m_frontend.setProjectionMatrix(baseProjection);
-    // glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-}
-
-void Renderer::renderFromPoint(vec3 position, Node& root, renderID targetColorCubemapID, renderID targetNormalCubemapID, renderID targetDepthCubemapID)
-{
-    vec2 size(1024);
-    vec2 pos(0);
-
-    m_frontend.beginCanvaNoBuffer();
-    m_frontend.attachCubemapToFramebuffer(targetColorCubemapID, m_cubemapFramebufferID, 0);
-    m_frontend.attachCubemapToFramebuffer(targetNormalCubemapID, m_cubemapFramebufferID, 1);
-    m_frontend.attachCubemapToFramebuffer(targetDepthCubemapID, m_cubemapFramebufferID, 2);
-    m_frontend.endCanva();
-
-    mat4 projection = perspective(radians(90.0f), 1.f, 0.001f, 999.f);
-    for (int i = 0; i < 6; i++) {
-        auto viewMatrix = lookAt(position, position + m_cubemap_orientations[i], m_cubemap_ups[i]);
-
-        m_frontend.beginCanva(viewMatrix, projection, m_cubemapFramebufferID, FramebufferTextureFormat::RGBA8, i);
-        m_frontend.setViewport(pos, size);
-        root.draw();
-        m_lightManager.debugDraw();
-        m_frontend.drawDebug();
-        m_frontend.endCanva();
-    }
-}
+//         m_frontend.beginCanva(viewMatrix, projection, m_cubemapFramebufferID, FramebufferTextureFormat::RGBA8, i);
+//         m_frontend.setViewport(pos, size);
+//         root.draw();
+//         m_lightManager.debugDraw();
+//         m_frontend.drawDebug();
+//         m_frontend.endCanva();
+//     }
+// }
 
 }

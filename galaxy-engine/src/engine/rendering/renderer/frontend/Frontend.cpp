@@ -15,88 +15,68 @@ Frontend::Frontend(std::vector<RenderCommand>* commandBuffer)
     m_frontBuffer = commandBuffer;
 }
 
-void Frontend::beginCanvaNoBuffer()
+void Frontend::processDevices()
 {
-    auto canva = RenderCanva();
+    m_addCommandsToDevice = false;
 
-    if (m_currentCanvaIdx == -1) {
-        m_canvas.push_back(canva);
-        m_currentCanvaIdx = 0;
-    } else {
-        m_canvas.insert(m_canvas.begin() + m_currentCanvaIdx, canva);
-    }
-}
+    auto clearColor = vec4(0.2, 0.2, 0.25, 1.0);
+    for (auto& device : m_frameDevices) {
+        if (device->useBuffer()) {
+            auto views = device->getViews();
+            auto projection = device->getProjection();
+            auto position = vec3(device->transform[3]);
 
-void Frontend::beginCanva(const mat4& viewMat, const mat4& projectionMat, renderID framebufferID, FramebufferTextureFormat framebufferFormat, int cubemapIdx)
-{
-    auto canva = RenderCanva(viewMat, projectionMat, framebufferID, framebufferFormat, cubemapIdx);
-
-    if (m_currentCanvaIdx == -1) {
-        m_canvas.push_back(canva);
-        m_currentCanvaIdx = 0;
-    } else {
-        m_canvas.insert(m_canvas.begin() + m_currentCanvaIdx, canva);
-    }
-}
-
-void Frontend::endCanva()
-{
-    m_currentCanvaIdx++;
-}
-
-void Frontend::processCanvas()
-{
-    auto clearColor = math::vec4(0.2, 0.2, 0.25, 1.0);
-    for (auto& canva : m_canvas) {
-        if (canva.useBuffer) {
-            bindFrameBuffer(canva.framebufferID, canva.cubemapIdx);
-            if (canva.colorTargetID != 0)
-                attachTextureToColorFramebuffer(canva.colorTargetID, canva.framebufferID, 0);
-            if (canva.depthTargetID != 0)
-                attachTextureToDepthFramebuffer(canva.depthTargetID, canva.framebufferID);
-            if (canva.clearBuffer)
-                clear(clearColor);
-            setViewMatrix(canva.viewMat);
-            setProjectionMatrix(canva.projectionMat);
-            changeUsedProgram(ProgramType::PBR);
+            // Cubemap
+            if(views.size() == 6){
+                for(int i=0; i < views.size(); i++){
+                    bindFrameBuffer(device->targetFramebuffer, i);
+                    if(!device->noClear)
+                        clear(clearColor);
+                    
+                    setViewport(device->viewportPosition, device->viewportDimmmensions);
+                    setViewMatrix(views[i]);
+                    setProjectionMatrix(projection);
+                    if(device->renderScene){
+                        changeUsedProgram(ProgramType::PBR);
+                        dumpCommandsToBuffer(position);
+                    }
+                }
+                m_frontBuffer->insert(m_frontBuffer->end(), device->customPostCommands.begin(), device->customPostCommands.end());
+                unbindFrameBuffer(device->targetFramebuffer, true);
+            } else {
+                bindFrameBuffer(device->targetFramebuffer, -1, device->targetDepthLayer);
+                
+                if(!device->noClear)
+                    clear(clearColor);
+                
+                setViewport(device->viewportPosition, device->viewportDimmmensions);
+                setViewMatrix(views[0]);
+                setProjectionMatrix(projection);
+                if(device->renderScene){
+                    changeUsedProgram(ProgramType::PBR);
+                    dumpCommandsToBuffer(position);
+                }
+                m_frontBuffer->insert(m_frontBuffer->end(), device->customPostCommands.begin(), device->customPostCommands.end());
+                unbindFrameBuffer(device->targetFramebuffer, false);
+            }
         }
 
-        dumpCommandsToBuffer(canva);
-
-        if (canva.useBuffer) {
-            if (canva.storeResult)
-                saveFrameBuffer(canva.framebufferID, canva.storagePath);
-            unbindFrameBuffer(canva.framebufferID, canva.cubemapIdx >= 0);
-        }
+        // if (canva.useBuffer) {
+        //     if (canva.storeResult)
+        //         saveFrameBuffer(canva.framebufferID, canva.storagePath);
+        //     unbindFrameBuffer(canva.framebufferID, canva.cubemapIdx >= 0);
+        // }
     }
 
-    m_canvas.clear();
-    m_currentCanvaIdx = 0;
+    m_frameDevices.clear();
+    m_addCommandsToDevice = true;
 }
 
-void Frontend::linkCanvaColorToTexture(renderID textureID)
-{
-    // if (idx >= m_canvas[m_currentCanvaIdx].colorTargetIDs.size())
-    //     m_canvas[m_currentCanvaIdx].colorTargetIDs.resize(idx + 1);
-    // m_canvas[m_currentCanvaIdx].colorTargetIDs[idx] = textureID;
-    m_canvas[m_currentCanvaIdx].colorTargetID = textureID;
-}
-
-void Frontend::linkCanvaDepthToTexture(renderID textureID)
-{
-    m_canvas[m_currentCanvaIdx].depthTargetID = textureID;
-}
-
-void Frontend::storeCanvaResult(std::string& path)
-{
-    m_canvas[m_currentCanvaIdx].storeResult = true;
-    m_canvas[m_currentCanvaIdx].storagePath = path;
-}
-
-void Frontend::avoidCanvaBufferClear()
-{
-    m_canvas[m_currentCanvaIdx].clearBuffer = false;
-}
+// void Frontend::storeCanvaResult(std::string& path)
+// {
+//     m_canvas[m_currentCanvaIdx].storeResult = true;
+//     m_canvas[m_currentCanvaIdx].storagePath = path;
+// }
 
 void Frontend::submit(renderID meshID)
 {
@@ -136,12 +116,11 @@ void Frontend::setProjectionMatrix(const math::mat4& projection)
 
 void Frontend::pushCommand(RenderCommand command)
 {
-    if (m_canvas.size() == 0 || m_currentCanvaIdx >= m_canvas.size())
+    if(m_addCommandsToDevice && m_frameDevices.size() > 0){
+        m_frameDevices.back()->customPostCommands.push_back(command);
+    } else {
         m_frontBuffer->push_back(command);
-    else if (!m_canvas[m_currentCanvaIdx].materialToSubmitCommand.empty())
-        m_canvas[m_currentCanvaIdx].endCommands.push_back(command);
-    else
-        m_canvas[m_currentCanvaIdx].commands.push_back(command);
+    }
 }
 
 void Frontend::saveFrameBuffer(renderID framebufferID, std::string& path)
@@ -154,16 +133,12 @@ void Frontend::saveFrameBuffer(renderID framebufferID, std::string& path)
     pushCommand(saveFramebufferC);
 }
 
-mat4 Frontend::getProjectionMatrix()
-{
-    return m_canvas[m_currentCanvaIdx].projectionMat;
-}
-
-void Frontend::bindTexture(renderID textureInstanceID, char* uniformName)
+void Frontend::bindTexture(renderID textureInstanceID, char* uniformName, bool important)
 {
     UseTextureCommand useTextureCommand;
     useTextureCommand.instanceID  = textureInstanceID;
     useTextureCommand.uniformName = uniformName;
+    useTextureCommand.important = important;
     pushCommand(useTextureCommand);
 }
 
@@ -202,11 +177,12 @@ void Frontend::useCubemap(renderID cubemapInstanceID, char* uniformName)
     pushCommand(useCubemapCommand);
 }
 
-void Frontend::bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx)
+void Frontend::bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx, int depthLayerIdx)
 {
     BindFrameBufferCommand typeCommand;
     typeCommand.frameBufferID  = frameBufferInstanceID;
     typeCommand.cubemapFaceIdx = cubemapFaceIdx;
+    typeCommand.depthLayerIdx  = depthLayerIdx;
     typeCommand.bind           = true;
     m_frontBuffer->push_back(typeCommand);
 }
@@ -226,15 +202,6 @@ void Frontend::changeUsedProgram(ProgramType program)
     setActiveProgramCommand.program = program;
 
     pushCommand(setActiveProgramCommand);
-}
-
-void Frontend::initPostProcessing(renderID frameBufferID)
-{
-    InitPostProcessCommand postProcComm;
-    postProcComm.frameBufferID = frameBufferID;
-
-    // TODO: make it work with canvaRender
-    pushCommand(postProcComm);
 }
 
 void Frontend::setUniform(std::string uniformName, bool value)
@@ -324,6 +291,16 @@ void Frontend::setFramebufferAsTextureUniform(renderID framebufferID, std::strin
     pushCommand(setTextureCommand);
 }
 
+void Frontend::setFramebufferAsCubemapUniform(renderID framebufferID, std::string uniformName, int colorIdx)
+{
+    SetFramebufferAsTextureUniformCommand setTextureCommand;
+    setTextureCommand.framebufferID = framebufferID;
+    setTextureCommand.uniformName   = copyString(uniformName);
+    setTextureCommand.textureIdx    = colorIdx;
+    setTextureCommand.aboutCubemap  = true;
+    pushCommand(setTextureCommand);
+}
+
 void Frontend::setViewport(vec2 position, vec2 dimmension)
 {
     SetViewportCommand setViewportCommand;
@@ -391,81 +368,28 @@ void Frontend::submitPBR(renderID meshID, renderID materialID, const Transform& 
     DrawCommand drawCommand;
     drawCommand.instanceId = meshID;
     drawCommand.model      = transform.getGlobalModelMatrix();
-    // TODO: Test if it works
-    if (m_currentFramebufferFormat == FramebufferTextureFormat::DEPTH24STENCIL8) {
-        if (!m_materialsTransparency[materialID]) {
-            pushCommand(drawCommand);
-        }
-    } else {
-        m_canvas[m_currentCanvaIdx].materialToSubmitCommand[materialID].push_back(drawCommand);
-    }
+
+    m_frameContext.pushCommand(materialID, drawCommand);
 }
 
-vec3 Frontend::DistCompare::camPosition = vec3(0);
-
-bool Frontend::DistCompare::operator()(const std::pair<renderID, RenderCommand>& a, const std::pair<renderID, RenderCommand>& b) const
+void Frontend::dumpCommandsToBuffer(vec3& cameraPosition)
 {
-    try {
-        return (camPosition - vec3(std::get<DrawCommand>(a.second).model[3])).length() < (camPosition - vec3(std::get<DrawCommand>(b.second).model[3])).length();
-    } catch (const std::bad_variant_access& ex) {
-        GLX_CORE_ERROR("Wrong command type when drawing according to distance");
-        return false;
-    }
-}
+    std::vector<RenderCommand> opaques = m_frameContext.retrieveOpaqueRenders();
+    std::vector<RenderCommand> transparents = m_frameContext.retrieveTransparentRenders(cameraPosition);
 
-void Frontend::dumpCommandsToBuffer(RenderCanva& canva)
-{
-    DistCompare::camPosition = vec3(canva.viewMat[3]);
 
-    std::priority_queue<std::pair<renderID, RenderCommand>, std::vector<std::pair<renderID, RenderCommand>>, DistCompare> transparentPQ;
-
-    for (auto& command : canva.commands)
-        m_frontBuffer->push_back(command);
-
-    for (auto& queue : canva.materialToSubmitCommand) {
-        auto matID = queue.first;
-        if (m_materialsTransparency[matID]) {
-            for (auto& meshCommand : queue.second) {
-                auto elem = std::make_pair(matID, meshCommand);
-                transparentPQ.push(elem);
-            }
-        } else {
-            BindMaterialCommand bindMaterialCommand;
-            bindMaterialCommand.materialRenderID = matID;
-
-            m_frontBuffer->push_back(bindMaterialCommand);
-
-            for (auto& meshCommand : queue.second) {
-                m_frontBuffer->push_back(meshCommand);
-            }
-        }
-    }
-
-    DepthMaskCommand depthMask;
-    depthMask.state = false;
-
-    m_frontBuffer->push_back(depthMask);
-
-    while (!transparentPQ.empty()) {
-        BindMaterialCommand bindMaterialCommand;
-        bindMaterialCommand.materialRenderID = transparentPQ.top().first;
-
-        m_frontBuffer->push_back(bindMaterialCommand);
-        m_frontBuffer->push_back(transparentPQ.top().second);
-
-        transparentPQ.pop();
-    }
-
-    depthMask.state = true;
-    m_frontBuffer->push_back(depthMask);
-
-    for (auto& command : canva.endCommands)
-        m_frontBuffer->push_back(command);
+    m_frontBuffer->insert(m_frontBuffer->end(), opaques.begin(), opaques.end());
+    m_frontBuffer->insert(m_frontBuffer->end(), transparents.begin(), transparents.end());
 }
 
 void Frontend::setCommandBuffer(std::vector<RenderCommand>* newBuffer)
 {
     m_frontBuffer = newBuffer;
+}
+
+void Frontend::notifyMaterialUpdated(renderID materialID, bool isTransparent)
+{
+    m_frameContext.onMaterialUpdated(materialID, isTransparent);
 }
 
 } // namespace Galaxy

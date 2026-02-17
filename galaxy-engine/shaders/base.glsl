@@ -8,13 +8,11 @@ layout(location = 2) in vec3 normal;
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
-uniform mat4 lightSpaceMatrix;
 
 out vec2 v_texCoords;
 out vec3 v_worldPos;
 out vec3 v_normal;
 out vec3 v_camPos;
-out vec4 v_fragPosLightSpace;
 
 void main()
 {
@@ -24,7 +22,6 @@ void main()
     v_normal            = normalize(mat3(transpose(inverse(model))) * normal);
     v_worldPos          = vec3(model * vec4(vertices_position_modelspace, 1.0));
     v_camPos            = vec3(inverse(view)[3]);
-    v_fragPosLightSpace = lightSpaceMatrix * vec4(v_worldPos, 1.0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -48,7 +45,6 @@ uniform sampler2D normalMap;
 uniform sampler2D metallicMap;
 uniform sampler2D roughnessMap;
 uniform sampler2D aoMap;
-uniform sampler2D shadowMap;
 
 uniform bool useAlbedoMap    = false;
 uniform bool useNormalMap    = false;
@@ -59,18 +55,24 @@ uniform bool useAoMap        = false;
 // lights
 const int MAX_LIGHT    = 32;
 uniform int lightCount = 3;
+uniform bool includeLightComputation = true;
+uniform sampler2DArray shadowMaps;
 
 layout(std140, binding = 0) uniform LightBlock
 {
     vec4 positions[MAX_LIGHT];
     vec4 colors[MAX_LIGHT];
-    vec4 params[MAX_LIGHT]; // x = type; y = intensity; z = range
+    vec4 params[MAX_LIGHT];
+
+    ivec4 shadowMapLayers[MAX_LIGHT];
+
+    mat4 lightMatrices[MAX_LIGHT];
+
     int count;
     int _pad1;
     int _pad2;
     int _pad3;
-}
-lightData;
+} lightData;
 
 in vec2 v_texCoords;
 in vec3 v_worldPos;
@@ -82,8 +84,8 @@ layout(location = 0) out vec4 gAlbedo;
 layout(location = 1) out vec4 gNormal;
 layout(location = 2) out vec4 gDepth;
 
-layout(location = 3) out vec4 gDirectDiffuse;
-layout(location = 4) out vec4 gDirectSpecular;
+layout(location = 3) out vec4 gRoughness;
+layout(location = 4) out vec4 gDirect;
 
 const float PI = 3.14159265359;
 /*--------------------------------------PBR--------------------------------------*/
@@ -152,39 +154,31 @@ vec3 getNormalFromNormalMap()
     return normalize(TBN * tangentNormal);
 }
 
-float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir, int layerIndex)
 {
-    // Perspective division
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-
-    // Transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
 
-    // Get closest depth value from light's perspective
-    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    if(projCoords.z > 1.0)
+        return 0.0;
 
-    // Get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
 
-    // Bias pour éviter le shadow acne
-    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    float bias = 0.0001;
 
     // PCF (Percentage Closer Filtering) pour adoucir les ombres
     float shadow   = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    vec2 texelSize = 1.0 / textureSize(shadowMaps, 0).xy;
+
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            vec2 offset = vec2(x, y) * texelSize;
+            vec2 uv = projCoords.xy + offset;
+            float pcfDepth = texture(shadowMaps, vec3(uv, float(layerIndex + 0.5))).r;
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
         }
     }
-    shadow /= 9.0;
-
-    // Keep shadow at 0.0 when outside far plane
-    if (projCoords.z > 1.0)
-        shadow = 0.0;
-
-    return shadow;
+    return shadow / 9.0;
 }
 /*--------------------------------------PBR--------------------------------------*/
 
@@ -194,7 +188,7 @@ void main()
     float metallic, roughness, ao;
 
     float transparency = useAlbedoMap ? texture(albedoMap, v_texCoords).a : transparencyVal;
-    albedo             = useAlbedoMap ? pow(texture(albedoMap, v_texCoords).rgb, vec3(2.2)) : pow(albedoVal, vec3(2.2));
+    albedo             = useAlbedoMap ? texture(albedoMap, v_texCoords).rgb : albedoVal;
     normal             = useNormalMap ? getNormalFromNormalMap() : v_normal;
     metallic           = useMetallicMap ? texture(metallicMap, v_texCoords).r : metallicVal;
     roughness          = useRoughnessMap ? texture(roughnessMap, v_texCoords).r : roughnessVal;
@@ -212,91 +206,83 @@ void main()
     vec3 directDiffuse  = vec3(0.0);
     vec3 directSpecular = vec3(0.0);
 
-    for (int i = 0; i < lightCount; ++i) {
-        // calculate per-light radiance
-        float intensity = lightData.params[i].y;
-        float range     = lightData.params[i].z;
+    if(includeLightComputation){
+        for (int i = 0; i < lightCount; ++i) {
+            // calculate per-light radiance
+            float intensity = lightData.params[i].y;
+            float range     = lightData.params[i].z;
 
-        vec3 L            = normalize(lightData.positions[i].xyz - v_worldPos);
-        vec3 H            = normalize(V + L);
-        float distance    = length(lightData.positions[i].xyz - v_worldPos);
-        float smoothRange = clamp(1.0 - distance / range, 0.0, 1.0);
-        float attenuation = (1 / (distance * distance)) * smoothRange;
-        vec3 radiance     = lightData.colors[i].xyz * intensity * attenuation;
+            vec3 L            = normalize(lightData.positions[i].xyz - v_worldPos);
+            vec3 H            = normalize(V + L);
+            float distance    = length(lightData.positions[i].xyz - v_worldPos);
+            float smoothRange = clamp(1.0 - distance / range, 0.0, 1.0);
+            float attenuation = (1 / (distance * distance)) * smoothRange;
+            vec3 radiance     = lightData.colors[i].xyz * intensity * attenuation;
 
-        // cook-torrance brdf
-        float NDF = DistributionGGX(N, H, roughness);
-        float G   = GeometrySmith(N, V, L, roughness);
-        vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
+            // cook-torrance brdf
+            float NDF = DistributionGGX(N, H, roughness);
+            float G   = GeometrySmith(N, V, L, roughness);
+            vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-        vec3 numerator    = NDF * G * F;
-        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
-        vec3 specular     = numerator / denominator;
+            vec3 numerator    = NDF * G * F;
+            float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
+            vec3 specular     = numerator / denominator;
 
-        vec3 kS = F;
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;
+            vec3 kS = F;
+            vec3 kD = vec3(1.0) - kS;
+            kD *= 1.0 - metallic;
 
-        // add to outgoing radiance Lo
-        float NdotL = max(dot(N, L), 0.0);
+            // add to outgoing radiance Lo
+            float NdotL = max(dot(N, L), 0.0);
 
-        // Calculer l'ombre
-        float shadow       = ShadowCalculation(v_fragPosLightSpace, N, L);
-        float shadowFactor = 1.0 - shadow;
+            // Calculer l'ombre
+            vec4 lightSpacePos = lightData.lightMatrices[i] * vec4(v_worldPos, 1.0);
+            float shadow       = ShadowCalculation(lightSpacePos, N, L, lightData.shadowMapLayers[i].x);
+            float shadowFactor = 1.0 - shadow;
 
-        vec3 diffuseTerm  = kD * albedo / PI;
-        vec3 specularTerm = specular;
+            vec3 diffuseTerm  = kD * albedo / PI;
+            vec3 specularTerm = specular;
 
-        vec3 lightContribution = radiance * NdotL * 50.0;
+            vec3 lightContribution = radiance * NdotL * 50.0;
 
-        directDiffuse += shadowFactor * diffuseTerm * lightContribution;
-        directSpecular += shadowFactor * specularTerm * lightContribution;
+            directDiffuse += shadowFactor * diffuseTerm * lightContribution;
+            directSpecular += shadowFactor * specularTerm * lightContribution;
 
-        Lo += (1.0 - shadow) * (kD * albedo / PI + specular) * radiance * NdotL * 50.f;
+            Lo += (1.0 - shadow) * (kD * albedo / PI + specular) * radiance * NdotL * 50.f;
+        }
     }
 
     // ambient lighting (we now use IBL as the ambient term)
-    vec3 F  = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
-    vec3 kS = F;
+    vec3 kS  = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
     vec3 kD = 1.0 - kS;
-    kD *= 1.0 - metallic;
-    vec3 irradiance;
-    // // if (useIrradianceMap)
-    // //     irradiance = texture(irradianceMap, N).rgb;
-    // // else
-    // //     irradiance = vec3(0.5);
-    irradiance   = vec3(0.5);
-    vec3 diffuse = irradiance * albedo;
+    // kD *= 1.0 - metallic;
 
-    // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
-    const float MAX_REFLECTION_LOD = 4.0;
-    // vec3 prefilteredColor          = textureLod(prefilterMap, R, roughness * MAX_REFLECTION_LOD).rgb;
-    vec3 prefilteredColor = vec3(0.5);
-    // vec2 brdf             = texture(brdfLUTMap, vec2(max(dot(N, V), 0.0), roughness)).rg;
-    vec2 brdf     = vec2(0.2);
-    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+    // vec2 brdf     = vec2(0.2);
+    // vec3 specular = prefilteredColor * (kS * brdf.x + brdf.y);
 
-    // vec3 ambient = (kD * diffuse + specular) * ao;
-    vec3 ambient = (kD * diffuse) * ao;
-    vec3 pbr     = ambient + Lo;
 
-    pbr = pbr / (pbr + vec3(1.0));
-    pbr = pow(pbr, vec3(1.0 / 2.2));
+    // vec3 irradiance = vec3(0.5);
+    // vec3 diffuse = irradiance * albedo;
+    // // vec3 ambient = (kD * diffuse + specular) * ao;
+    // vec3 ambient = (kD * diffuse) * ao;
+    // vec3 pbr     = ambient + Lo;
 
-    gDepth = vec4(length(v_camPos - v_worldPos) / zFar, ao, 0, 1);
+    // pbr = pbr / (pbr + vec3(1.0));
+    // pbr = pow(pbr, vec3(1.0 / 2.2));
 
-    gAlbedo.rgb = pbr;
-    gAlbedo.a   = 1.0;
-    // gAlbedo.a   = transparency;
 
-    gNormal.rgb = (normal + vec3(1.0)) * 0.5;
-    // gNormal.a   = roughness;
-    gNormal.a = 1.0;
+    if(transparency > 0.1){
+        gDepth = vec4(length(v_camPos - v_worldPos) / zFar, ao, 0, 1);
 
-    // vec3 ambient = kD * albedo * ao * 0.03;
+        gAlbedo.rgb = albedo;
+        gAlbedo.a   = transparency;
 
-    gDirectDiffuse.rgb  = directDiffuse + ambient;
-    gDirectDiffuse.a    = 1;
-    gDirectSpecular.rgb = directSpecular;
-    gDirectSpecular.a   = 1;
+        gNormal.rgb = (normal + vec3(1.0)) * 0.5;
+        gNormal.a = 1.0;
+
+        gRoughness = vec4(kS, ao);
+        gDirect = vec4(Lo, 1.0);
+    } else {
+        discard;
+    }
 }

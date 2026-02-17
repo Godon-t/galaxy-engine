@@ -20,8 +20,8 @@ SpotLight::SpotLight(std::string name)
 
 SpotLight::~SpotLight()
 {
-    Renderer::getInstance().clearMesh(m_visualPyramidID);
-    Renderer::getInstance().clearMesh(m_debugShadowMapID);
+    Renderer::getInstance().getBackend().clearMesh(m_visualPyramidID);
+    Renderer::getInstance().getBackend().clearMesh(m_debugShadowMapID);
 
     Renderer::getInstance().getLightManager().unregisterLight(m_lightID);
 }
@@ -36,9 +36,9 @@ void SpotLight::enteredRoot()
     // Créer la pyramide de visualisation
     // La base de la pyramide est orientée dans la direction de projection (vers -Z local)
     if (m_visualPyramidID == 0) {
-        m_visualPyramidID  = Renderer::getInstance().generatePyramid(0.3f, 0.5f, []() {});
-        m_debugShadowMapID = Renderer::getInstance().generateQuad(vec2(2, 2), [] {});
-        Renderer::getInstance().setCullMode(m_debugShadowMapID, CullMode::BOTH_CULLING);
+        m_visualPyramidID  = Renderer::getInstance().getBackend().generatePyramid(0.3f, 0.5f, []() {});
+        m_debugShadowMapID = Renderer::getInstance().getBackend().generateQuad(vec2(2, 2), [] {});
+        Renderer::getInstance().getBackend().setCullMode(m_debugShadowMapID, CullMode::BOTH_CULLING);
         m_initialized = true;
     }
 }
@@ -55,16 +55,16 @@ void SpotLight::draw()
         // Renderer::getInstance().changeUsedProgram(UNICOLOR);
         // Renderer::getInstance().setUnicolorObjectColor(m_color);
 
-        auto& ri = Renderer::getInstance();
-        if (ri.canDrawDebug()) {
-            ri.changeUsedProgram(UNICOLOR);
-            ri.setUniform("objectColor", m_color);
-            ri.submit(m_visualPyramidID, m_transform);
-        }
+        // auto& ri = Renderer::getInstance();
 
-        ri.changeUsedProgram(TEXTURE);
-        ri.bindTexture(ri.getLightManager().getShadowMapID(m_lightID), "sampledTexture");
-        ri.submit(m_debugShadowMapID, m_transform);
+        // ri.getFrontend().changeUsedProgram(UNICOLOR);
+        // ri.getFrontend().setUniform("objectColor", m_color);
+        // ri.getFrontend().submit(m_visualPyramidID, m_transform);
+
+        // TODO: integrate in sceneContext
+        // ri.getFrontend().changeUsedProgram(TEXTURE);
+        // ri.getFrontend().bindTexture(ri.getLightManager().getShadowMapID(m_lightID), "sampledTexture");
+        // ri.getFrontend().submit(m_debugShadowMapID, m_transform);
     }
 
     // Appeler le draw de la classe parente pour dessiner les enfants

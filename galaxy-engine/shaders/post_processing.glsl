@@ -9,11 +9,13 @@ uniform mat4 view;
 uniform mat4 model;
 
 out vec2 TexCoords;
+out vec3 v_camPos;
 
 void main()
 {
     TexCoords   = texCoord;
     gl_Position = vec4(vertices_position_modelspace.xy, 0.0, 1.0);
+    v_camPos            = vec3(inverse(view)[3]);
 }
 
 ///////////////////////////////////////////////////////////
@@ -34,6 +36,7 @@ const int MISS    = 1;
 const int UNKNOWN = 2;
 
 in vec2 TexCoords;
+in vec3 v_camPos;
 
 uniform mat4 inverseProjection;
 uniform mat4 inverseView;
@@ -42,8 +45,8 @@ uniform vec3 cameraPos;
 uniform sampler2D sceneBuffer;
 uniform sampler2D normalBuffer;
 uniform sampler2D depthBuffer;
-uniform sampler2D directDiffuseBuffer;
-uniform sampler2D directAmbiantBuffer;
+uniform sampler2D roughnessBuffer;
+uniform sampler2D directBuffer;
 uniform mat4 view;
 uniform float zNear     = 0.1;
 uniform float zFar      = 999.0;
@@ -56,6 +59,7 @@ uniform vec3 probeFieldOrigin      = vec3(0.f);
 uniform vec3[8] probePositions;
 
 uniform sampler2D probeIrradianceField;
+uniform sampler2D probeColorField;
 uniform sampler2D probeNormalField;
 uniform sampler2D probeDepthField;
 
@@ -436,7 +440,7 @@ vec3 trilinearIrradianceAtPosition(vec3 P, sampler2D probeIrradianceField, int p
     vec3 accum = vec3(0.0);
 
     for (int i = 0; i < 8; i++) {
-        ivec3 offset         = ivec3(i & 1, (i >> 1) & 1, (i >> 2) & 1);
+        ivec3 offset         = ivec3(i % 2, (i / 2) % 2, i / 4);
         ivec3 probeGridCoord = clamp(baseGridCoord + offset, ivec3(0), ivec3(probeFieldGridDim - 1));
 
         vec3 probeWorldPos = vec3(probeGridCoord) * probeFieldCellSize + probeFieldOrigin;
@@ -615,5 +619,45 @@ void main()
 
     // Trilinear interpolation of pixel at final position. No ray tracing
     // No ray reconstruction with this
-    color = vec4(trilinearIrradianceAtPosition(worldPos, probeIrradianceField, probeTextureSingleSize), 1.0);
+    vec3 irradiance = trilinearIrradianceAtPosition(worldPos, probeIrradianceField, probeTextureSingleSize);
+    vec4 albedo = texture(sceneBuffer, TexCoords);
+
+
+
+
+
+    vec4 roughness = texture(roughnessBuffer, TexCoords);
+    float ao = roughness.a;
+    vec3 kS = roughness.rgb;
+    vec3 kD = 1.0 - kS;
+    // kD *= 1.0 - metallic;
+
+
+
+    // TODO : implement correctly
+    // vec2 brdf     = vec2(0.2);
+    // vec3 closestProbe = getClosestProbePosition(worldPos);
+    // int probeIdx = getProbeIdx(closestProbe);
+    // vec4 probeRect = getProbeTexRect(probeIdx, probeColorField, probeTextureSingleSize);
+
+    // vec3 N = normalize(texture(normalBuffer, TexCoords).xyz);
+    // vec3 V = normalize(v_camPos - worldPos);
+    // vec3 R = reflect(-V, N);
+
+    // vec2 probeFieldPos = octahedral_mapping(R) * probeRect.za + probeRect.xy;
+    // vec3 prefilteredColor = texture(probeColorField, probeFieldPos).rgb;
+    // vec3 specular = prefilteredColor * (kS * brdf.x + brdf.y);
+
+
+
+    vec3 directLight = texture(directBuffer, TexCoords).rgb;
+    vec3 diffuse = irradiance * albedo.rgb;
+    vec3 ambient = (kD * diffuse) * ao;
+    // vec3 ambient = (kD * diffuse + specular) * ao;
+    color = vec4(ambient + directLight, 1.0);
+    // vec3 ambient = (kD * diffuse) * ao;
+    // vec3 pbr     = ambient + Lo;
+
+    // pbr = pbr / (pbr + vec3(1.0));
+    // pbr = pow(pbr, vec3(1.0 / 2.2));
 }

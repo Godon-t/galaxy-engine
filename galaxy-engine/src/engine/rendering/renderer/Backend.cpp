@@ -184,13 +184,14 @@ renderID Backend::instantiateTexture(ResourceHandle<Image> image)
     return textureID;
 }
 
-renderID Backend::instantiateTexture()
+renderID Backend::instantiateTexture(TextureFormat format, vec2 size)
 {
     if (!m_textureInstances.canAddInstance())
         return 0;
 
     renderID textureID = m_textureInstances.createResourceInstance();
-    m_textureInstances.get(textureID)->resize(1024, 1024);
+    m_textureInstances.get(textureID)->resize(size.x, size.y);
+    m_textureInstances.get(textureID)->setFormat(format);
     checkOpenGLErrors("Instantiate texture");
     return textureID;
 }
@@ -204,6 +205,17 @@ void Backend::clearTexture(renderID textureID)
     if (it != m_gpuDestroyNotifications.end()) {
         it->second();
         m_gpuDestroyNotifications.erase(textureID);
+    }
+}
+
+void Backend::frameReset()
+{
+    Texture::resetStaticActivationInt();
+    Texture::clearReservedActivationInts();
+    
+    auto texturesPtrs = m_textureInstances.getAll();
+    for(auto texture : texturesPtrs){
+        texture->resetActivationInt();
     }
 }
 
@@ -240,6 +252,8 @@ renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
         matInstance->ambient      = matResource.getAmbient();
         matInstance->roughness    = matResource.getRoughness();
         matInstance->transparency = matResource.getTransparency();
+
+        updateMaterial(materialID, material);
     });
 
     return materialID;
@@ -247,7 +261,12 @@ renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
 
 void Backend::updateMaterial(renderID materialID, ResourceHandle<Material> material)
 {
-    m_materialInstances.get(materialID)->transparency = material.getResource().getTransparency();
+    auto& matResource = material.getResource();
+    m_materialInstances.get(materialID)->transparency = matResource.getTransparency();
+    
+    if (m_materialUpdateCallback) {
+        m_materialUpdateCallback(materialID, matResource.isUsingTransparency());
+    }
 }
 
 void Backend::clearMaterial(renderID materialID)
@@ -271,8 +290,6 @@ void Backend::processCommands(std::vector<RenderCommand>& commands)
             command);
         checkOpenGLErrors("Process command");
     }
-
-    Texture::resetActivationInts();
 }
 
 renderID Backend::generateCube(float dimmension, bool inward, std::function<void()> destroyCallback)
@@ -434,21 +451,27 @@ void Backend::clearCubemap(renderID cubemapID)
     }
 }
 
-renderID Backend::instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount)
+renderID Backend::instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount, unsigned int depthLayerCount)
 {
     renderID frameBufferID = m_frameBufferInstances.createResourceInstance();
     m_frameBufferInstances.get(frameBufferID)->setFormat(format);
     m_frameBufferInstances.get(frameBufferID)->setColorsCount(colorCount);
-    m_frameBufferInstances.get(frameBufferID)->resize(width, height);
+    m_frameBufferInstances.get(frameBufferID)->resize(width, height, depthLayerCount);
     m_frameBufferInstances.get(frameBufferID)->unbind();
     checkOpenGLErrors("Instantiate frameBuffer");
     return frameBufferID;
 }
 
-renderID Backend::instantiateCubemapFrameBuffer(unsigned int size)
+renderID Backend::instantiateCubemapFrameBuffer(unsigned int resolution, unsigned int colorCount)
 {
     renderID frameBufferID = m_cubemapFrameBufferInstances.createResourceInstance();
-    m_cubemapFrameBufferInstances.get(frameBufferID)->resize(size);
+
+    for(int i=0; i<colorCount; i++){
+        Cubemap cubemap;
+        m_cubemapFrameBufferInstances.get(frameBufferID)->attachColorCubemap(cubemap, i);    
+    }
+
+    m_cubemapFrameBufferInstances.get(frameBufferID)->resize(resolution);
     m_cubemapFrameBufferInstances.get(frameBufferID)->unbind();
     checkOpenGLErrors("Instantiate frameBuffer");
     return frameBufferID;
@@ -467,9 +490,9 @@ void Backend::clearFrameBuffer(renderID frameBufferID)
     checkOpenGLErrors("Clear frameBuffer");
 }
 
-void Backend::resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height)
+void Backend::resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height, unsigned int depthLayerCount)
 {
-    m_frameBufferInstances.get(frameBufferID)->resize(width, height);
+    m_frameBufferInstances.get(frameBufferID)->resize(width, height, depthLayerCount);
 }
 
 void Backend::resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size)
@@ -667,7 +690,10 @@ void Backend::processCommand(const RawDrawCommand& command)
 void Backend::processCommand(const UseTextureCommand& command)
 {
     auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
-    m_textureInstances.get(command.instanceID)->activate(uniLoc);
+    Texture* texture = m_textureInstances.get(command.instanceID);
+    texture->activate(uniLoc);
+    if(command.important)
+        texture->reserveActivationInt();
     checkOpenGLErrors("Bind texture");
 }
 
@@ -730,7 +756,7 @@ void Backend::processCommand(const BindFrameBufferCommand& command)
         if (command.cubemapFaceIdx >= 0)
             m_cubemapFrameBufferInstances.get(command.frameBufferID)->bind(command.cubemapFaceIdx);
         else
-            m_frameBufferInstances.get(command.frameBufferID)->bind();
+            m_frameBufferInstances.get(command.frameBufferID)->bind(command.depthLayerIdx);
     else {
         if (command.cubemapFaceIdx >= 0)
             m_cubemapFrameBufferInstances.get(command.frameBufferID)->unbind();
@@ -739,17 +765,6 @@ void Backend::processCommand(const BindFrameBufferCommand& command)
     }
 
     checkOpenGLErrors("Binding framebuffer");
-}
-
-// TODO: Rework post processing logic
-void Backend::processCommand(const InitPostProcessCommand& command)
-{
-    GLX_CORE_ASSERT(m_activeProgram->type() == ProgramType::POST_PROCESSING_PROBE || m_activeProgram->type() == ProgramType::POST_PROCESSING_SSGI, "Post processing Program not active!");
-
-    auto& fb = *m_frameBufferInstances.get(command.frameBufferID);
-    ((ProgramPostProc*)m_activeProgram)->setTextures(fb.getColorTextureID(), fb.getColorTextureID(1), fb.getDepthTextureID(), fb.getColorTextureID(3), fb.getColorTextureID(4));
-
-    checkOpenGLErrors("Init post process");
 }
 
 void Backend::processCommand(const SetUniformCommand& command)
@@ -802,8 +817,13 @@ void Backend::processCommand(const UpdateCubemapCommand& command)
 void Backend::processCommand(const SetFramebufferAsTextureUniformCommand& command)
 {
     auto uniLoc       = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
-    auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
-    framebuffer.setAsTextureUniform(uniLoc, command.textureIdx);
+    if(!command.aboutCubemap){
+        auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
+        framebuffer.setAsTextureUniform(uniLoc, command.textureIdx);
+    } else {
+        auto& cubemapFB = *m_cubemapFrameBufferInstances.get(command.framebufferID);
+        cubemapFB.setAsCubemapUniform(uniLoc, command.textureIdx);
+    }
     checkOpenGLErrors("Bind framebuffer texture as uniform");
     free(command.uniformName);
 }

@@ -7,7 +7,7 @@
 namespace Galaxy {
 EnvironmentNode::~EnvironmentNode()
 {
-    Renderer::getInstance().clearCubemap(m_skyboxCubemapID);
+    Renderer::getInstance().getBackend().clearCubemap(m_skyboxCubemapID);
 }
 
 void EnvironmentNode::accept(Galaxy::NodeVisitor& visitor)
@@ -19,10 +19,10 @@ inline void EnvironmentNode::draw()
 {
     Node::draw();
     if (m_skyboxCubemapID != 0) {
-        auto& ri = Renderer::getInstance();
-        ri.changeUsedProgram(SKYBOX);
-        ri.submit(m_cubeMeshID, m_transform);
-        ri.changeUsedProgram(PBR);
+        auto& frontend = Renderer::getInstance().getFrontend();
+        frontend.changeUsedProgram(SKYBOX);
+        frontend.submit(m_cubeMeshID, m_transform);
+        frontend.changeUsedProgram(PBR);
     }
 }
 
@@ -31,10 +31,10 @@ void EnvironmentNode::loadEnv(ResourceHandle<Environment> env)
     m_env = env;
     m_env.getResource().onLoaded([this] {
         auto& rendererInstance = Renderer::getInstance();
-        m_skyboxCubemapID      = rendererInstance.instanciateCubemap(m_env.getResource().getSkybox());
+        m_skyboxCubemapID      = rendererInstance.getBackend().instanciateCubemap(m_env.getResource().getSkybox());
 
-        rendererInstance.changeUsedProgram(SKYBOX);
-        rendererInstance.useCubemap(m_skyboxCubemapID, "skybox");
+        rendererInstance.getFrontend().changeUsedProgram(SKYBOX);
+        rendererInstance.getFrontend().useCubemap(m_skyboxCubemapID, "skybox");
 
         // Renderer::getInstance().renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), provisoryCubemap);
         // rendererInstance.applyFilterOnCubemap(m_cubeMeshID, m_skyboxCubemapID, m_irradianceCubemapID, FilterEnum::IRRADIANCE);
@@ -47,11 +47,11 @@ void EnvironmentNode::loadEnv(ResourceHandle<Environment> env)
 
 void EnvironmentNode::enteredRoot()
 {
-    m_cubeMeshID          = Renderer::getInstance().generateCube(999.f, true, [] {});
-    m_irradianceCubemapID = Renderer::getInstance().instanciateCubemap();
-    m_renderingCubemap    = Renderer::getInstance().instanciateCubemap();
+    m_cubeMeshID          = Renderer::getInstance().getBackend().generateCube(999.f, true, [] {});
+    m_irradianceCubemapID = Renderer::getInstance().getBackend().instanciateCubemap();
+    m_renderingCubemap    = Renderer::getInstance().getBackend().instanciateCubemap();
 
-    Renderer::getInstance().resizeCubemap(m_renderingCubemap, 1024);
+    Renderer::getInstance().getFrontend().updateCubemap(m_renderingCubemap, 1024);
 }
 
 } // namespace Galaxy

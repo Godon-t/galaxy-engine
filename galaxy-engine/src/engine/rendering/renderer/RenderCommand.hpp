@@ -20,7 +20,6 @@ enum RenderCommandType {
     bindMaterial,
     bindFrameBuffer,
     unbindFrameBuffer,
-    initPostProcess,
     setUniform,
     setViewport,
     updateTexture,
@@ -64,6 +63,7 @@ struct DepthMaskCommand {
 struct UseTextureCommand {
     renderID instanceID;
     char* uniformName;
+    bool important = false;
 };
 
 struct UseCubemapCommand {
@@ -93,12 +93,9 @@ struct SetActiveProgramCommand {
 
 struct BindFrameBufferCommand {
     renderID frameBufferID;
+    int depthLayerIdx = 0;
     int cubemapFaceIdx = -1;
     bool bind;
-};
-
-struct InitPostProcessCommand {
-    renderID frameBufferID;
 };
 
 enum SetValueTypes {
@@ -114,6 +111,7 @@ struct SetFramebufferAsTextureUniformCommand {
     renderID framebufferID;
     char* uniformName;
     int textureIdx;
+    bool aboutCubemap = false;
 };
 
 struct UpdateUBOCommand {
@@ -126,6 +124,7 @@ struct UpdateUBOCommand {
         UpdateUBOCommand cmd;
         cmd.uboID = id;
         cmd.data.resize(sizeof(T));
+        std::memset(cmd.data.data(), 0, sizeof(T)); 
         std::memcpy(cmd.data.data(), &payload, sizeof(T));
         return cmd;
     }
@@ -203,7 +202,6 @@ using RenderCommand = std::variant<
     AttachCubemapToFramebufferCommand,
     BindMaterialCommand,
     BindFrameBufferCommand,
-    InitPostProcessCommand,
     SetUniformCommand,
     SetViewportCommand,
     UpdateTextureCommand,

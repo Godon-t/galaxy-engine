@@ -18,7 +18,7 @@ struct LightData {
     LightType type;
     int idx;
     math::mat4 transformationMatrix;
-    renderID shadowMapID;
+    int shadowMapLayer;
     bool needUpdate = true;
     vec3 color;
     float intensity;
@@ -26,7 +26,7 @@ struct LightData {
 
     LightData()
         : idx(-1)
-        , shadowMapID(0)
+        , shadowMapLayer(0)
         , color(1)
         , intensity(0.5)
         , range(1.0)
@@ -35,7 +35,7 @@ struct LightData {
     LightData(int lightIdx, math::mat4& matrix)
         : idx(lightIdx)
         , transformationMatrix(matrix)
-        , shadowMapID(0)
+        , shadowMapLayer(0)
         , color(1)
         , intensity(0.5)
         , range(1.0)
@@ -47,8 +47,16 @@ struct GPULightData {
     glm::vec4 positions[maxLightCount];
     glm::vec4 colors[maxLightCount];
     glm::vec4 params[maxLightCount];
+
+    struct alignas(16) ShadowLayer {
+        int layer;
+        int pad0, pad1, pad2;
+    };
+    ShadowLayer shadowMapLayers[maxLightCount];
+
+    mat4 lightMatrices[maxLightCount];
     int count;
-    float pad[3];
+    int pad0, pad1, pad2;
 };
 
 class LightManager {
@@ -65,7 +73,7 @@ public:
     void updateLightRange(lightID id, float range);
     void unregisterLight(int id);
     void shadowPass(Node* sceneRoot);
-    renderID getShadowMapID(lightID light) { return m_lights[light].shadowMapID; }
+    renderID getShadowMapLayer(lightID light) { return m_lights[light].shadowMapLayer; }
 
     renderID getProbesRadianceTexture();
 
@@ -95,14 +103,8 @@ private:
     vec2 getProbeTexCoord(unsigned int probeGridIdx);
 
     renderID m_fullQuad;
-    renderID m_colorRenderingCubemap;
-    renderID m_normalRenderingCubemap;
-    renderID m_depthRenderingCubemap;
-
+    renderID m_cubemapFramebufferID;
     renderID m_probesFrameBuffer;
-    renderID m_probeRadianceTexture;
-    renderID m_probeNormalTexture;
-    renderID m_probeDepthTexture;
 
     renderID m_lightsUBO;
     GPULightData m_lightUniformData;

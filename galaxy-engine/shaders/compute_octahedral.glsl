@@ -26,9 +26,10 @@ uniform vec3 debugEnd;
 uniform vec3 debugProbePos;
 
 in vec2 texCoords;
-layout(location = 0) out vec4 color;
-layout(location = 1) out vec4 outNormal;
-layout(location = 2) out vec4 outDepth;
+layout(location = 0) out vec4 irradiance;
+layout(location = 1) out vec4 color;
+layout(location = 2) out vec4 outNormal;
+layout(location = 3) out vec4 outDepth;
 
 uniform float zNear = 0.1;
 uniform float zFar  = 999.0;
@@ -49,9 +50,9 @@ float linearDepth(float depth)
 void main()
 {
     vec3 dir      = octahedral_unmapping(texCoords);
+    color = texture(radianceCubemap, dir);
     vec3 envColor = computeIrradiance(dir, radianceCubemap);
     // vec3 envColor = texture(radianceCubemap, dir).rgb;
-    color = vec4(envColor, 1.0);
 
     //////////////////////////////////////////////////////////////////////:
     vec2 uv       = texCoords;
@@ -68,7 +69,7 @@ void main()
     // // // superposer le rayon par-dessus la cubemap et les bords
     // outColor = mix(outColor, rayCol, clamp(rayAlpha, 0.0, 1.0));
 
-    color.rgb = outColor;
+    irradiance = vec4(outColor, 1.0);
     outNormal = vec4(texture(normalCubemap, dir).rgb, 1.0);
 
     float rawDepth        = texture(depthCubemap, dir).r;

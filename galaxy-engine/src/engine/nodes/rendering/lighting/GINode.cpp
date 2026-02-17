@@ -12,7 +12,7 @@ GINode::GINode(std::string name)
 GINode::~GINode()
 {
     if (m_probeVisu != 0)
-        Renderer::getInstance().clearMesh(m_probeVisu);
+        Renderer::getInstance().getBackend().clearMesh(m_probeVisu);
 }
 
 void GINode::accept(Galaxy::NodeVisitor& visitor)
@@ -21,11 +21,12 @@ void GINode::accept(Galaxy::NodeVisitor& visitor)
 }
 void GINode::draw()
 {
-    if (m_probeVisu != 0 && Renderer::getInstance().canDrawDebug()) {
-        Renderer::getInstance().changeUsedProgram(ProgramType::UNICOLOR);
-        Renderer::getInstance().setUniform("objectColor", vec3(0, 1, 0));
+    // TODO: integrate in sceneContext
+    if (m_probeVisu != 0) {
+        Renderer::getInstance().getFrontend().changeUsedProgram(ProgramType::UNICOLOR);
+        Renderer::getInstance().getFrontend().setUniform("objectColor", vec3(0, 1, 0));
         for (auto& transfo : m_probeTransforms) {
-            Renderer::getInstance().submit(m_probeVisu, transfo);
+            Renderer::getInstance().getFrontend().submit(m_probeVisu, transfo);
         }
     }
 }
@@ -44,6 +45,6 @@ void GINode::updateProbes()
 }
 void GINode::enteredRoot()
 {
-    m_probeVisu = Renderer::getInstance().generateCube(1.0, false, []() {});
+    m_probeVisu = Renderer::getInstance().getBackend().generateCube(1.0, false, []() {});
 }
 } // namespace Galaxy

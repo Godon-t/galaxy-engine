@@ -7,11 +7,11 @@
 
 namespace Galaxy {
 int Texture::s_currentFreeActivationInt = 0;
-int Texture::s_maxActivationInt         = 64;
+std::array<bool, Texture::s_maxActivationInt> Texture::s_reservedActivationInt = std::array<bool, Texture::s_maxActivationInt>();
 
-Texture::Texture(unsigned char* data, int width, int height, int nbChannels)
+Texture::Texture(unsigned char* data, int width, int height, int nbChannels, int depthLayerCount)
 {
-    init(data, width, height, nbChannels);
+    init(data, width, height, nbChannels, depthLayerCount);
 }
 
 void Texture::resize(int width, int height)
@@ -63,10 +63,11 @@ void Texture::setFormat(TextureFormat format)
     }
 }
 
-void Texture::init(unsigned char* data, int width, int height, int nbChannels)
+void Texture::init(unsigned char* data, int width, int height, int nbChannels, int depthLayerCount)
 {
     m_width  = width;
     m_height = height;
+    m_layerCount = depthLayerCount;
 
     switch (nbChannels) {
     case 1:
@@ -86,27 +87,68 @@ void Texture::init(unsigned char* data, int width, int height, int nbChannels)
     GLenum format         = getExternalFormat(m_format);
     unsigned int type     = getType(m_format);
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
+    if(depthLayerCount > 0)
+        glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_id);
+    else
+        glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
 
     glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTextureStorage2D(m_id, 1, internalFormat, width, height);
-    glTextureSubImage2D(m_id, 0, 0, 0, width, height, format, type, data);
+    if(depthLayerCount > 0){
+        glTextureStorage3D(m_id, 1, internalFormat, width, height, depthLayerCount);
+        glTextureSubImage3D(m_id, 0, 0, 0, 0, width, height, depthLayerCount, format, type, data);
+    }
+    else{
+        glTextureStorage2D(m_id, 1, internalFormat, width, height);
+        glTextureSubImage2D(m_id, 0, 0, 0, width, height, format, type, data);
+    }
     glGenerateTextureMipmap(m_id);
 
     checkOpenGLErrors("Texture load");
 }
 
+void Texture::resetActivationInt()
+{
+    m_activationInt = -1;
+}
+
+void Texture::reserveActivationInt()
+{
+    s_reservedActivationInt[m_activationInt] = true;
+}
+
+void Texture::clearReservedActivationInts()
+{
+    for(int i=0; i<s_maxActivationInt; i++){
+        s_reservedActivationInt[i] = false;
+    }
+}
+
 void Texture::activate(int textureLocation)
 {
-    int actInt = getAvailableActivationInt();
-    glActiveTexture(GL_TEXTURE0 + actInt);
-    glBindTexture(GL_TEXTURE_2D, m_id);
-    glUniform1i(textureLocation, actInt);
-    checkOpenGLErrors("Texture activation");
+    if(m_activationInt == -1)
+        m_activationInt = getAvailableActivationInt();
+    glActiveTexture(GL_TEXTURE0 + m_activationInt);
+    if(m_layerCount > 0)
+        glBindTexture(GL_TEXTURE_2D_ARRAY, m_id);
+    else
+        glBindTexture(GL_TEXTURE_2D, m_id);
+    glUniform1i(textureLocation, m_activationInt);
+    bool check = checkOpenGLErrors("Texture activation");
+    if(check)
+        GLX_CORE_ERROR("eror");
+}
+
+void Texture::activate(unsigned int id, int layerCount, int textureLocation)
+{
+    Texture tex;
+    tex.m_id = id;
+    tex.m_layerCount = layerCount;
+    tex.activate(textureLocation);
+    tex.reserveActivationInt();
 }
 
 void Texture::destroy()

@@ -24,10 +24,13 @@ void bindColorAttachmentTexture(GLuint* id, int width, int height, GLenum intern
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + idx, GL_TEXTURE_2D, *id, 0);
 }
 
-void bindDepthAttachment(GLuint* id, int width, int height, GLenum format)
+void bindDepthAttachment(GLuint* id, int width, int height, int depthLayerCount, GLenum format)
 {
     glGenTextures(1, id);
-    glBindTexture(GL_TEXTURE_2D, *id);
+    if(depthLayerCount > 0)
+        glBindTexture(GL_TEXTURE_2D_ARRAY, *id);
+    else
+        glBindTexture(GL_TEXTURE_2D, *id);
 
     // Decide pixel format and type based on requested internal format
     GLenum pixelFormat = GL_DEPTH_COMPONENT;
@@ -41,18 +44,32 @@ void bindDepthAttachment(GLuint* id, int width, int height, GLenum format)
         pixelType   = GL_UNSIGNED_INT;
     }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
-        pixelFormat, pixelType, nullptr);
+    if(depthLayerCount > 0){
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, format, width, height, depthLayerCount, 0,
+            pixelFormat, pixelType, nullptr);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-        GL_TEXTURE_2D, *id, 0);
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+            *id, 0, 0);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+        }
+    else{
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
+           pixelFormat, pixelType, nullptr);
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+            GL_TEXTURE_2D, *id, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 }
 
 FrameBuffer::FrameBuffer()
@@ -67,12 +84,14 @@ FrameBuffer::FrameBuffer(int width, int height, FramebufferTextureFormat format)
     m_height      = height;
     m_fbo         = 0;
     m_colorsCount = 1;
+    m_depthLayerCount = 0;
     invalidate();
 }
-void FrameBuffer::bind()
+void FrameBuffer::bind(int depthLayer)
 {
-
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    if(m_depthLayerCount > 0)
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_attachedDepth, 0, depthLayer);
 }
 
 void FrameBuffer::unbind()
@@ -80,10 +99,11 @@ void FrameBuffer::unbind()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void FrameBuffer::resize(unsigned int newWidth, unsigned int newHeight)
+void FrameBuffer::resize(unsigned int newWidth, unsigned int newHeight, unsigned int depthLayerCount)
 {
     m_width  = newWidth;
     m_height = newHeight;
+    m_depthLayerCount = depthLayerCount;
     invalidate();
 }
 
@@ -194,9 +214,7 @@ void FrameBuffer::setAsTextureUniform(unsigned int uniLocation, int textureIdx)
         tex.m_id = m_attachedColors[textureIdx];
         tex.activate(uniLocation);
     } else {
-        Texture tex;
-        tex.m_id = m_attachedDepth;
-        tex.activate(uniLocation);
+        Texture::activate(m_attachedDepth, m_depthLayerCount, uniLocation);
     }
 }
 
@@ -216,13 +234,13 @@ void FrameBuffer::invalidate()
         for (int i = 0; i < m_colorsCount; i++)
             bindColorAttachmentTexture(&m_attachedColors[i], m_width, m_height, GL_RGBA8, GL_RGBA, i);
     } else if (m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
-        bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH24_STENCIL8);
+        bindDepthAttachment(&m_attachedDepth, m_width, m_height, m_depthLayerCount, GL_DEPTH24_STENCIL8);
     } else if (m_format == FramebufferTextureFormat::DEPTH24RGBA8) {
         for (int i = 0; i < m_colorsCount; i++)
             bindColorAttachmentTexture(&m_attachedColors[i], m_width, m_height, GL_RGBA8, GL_RGBA, i);
-        bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH24_STENCIL8);
+        bindDepthAttachment(&m_attachedDepth, m_width, m_height, m_depthLayerCount, GL_DEPTH24_STENCIL8);
     } else if (m_format == FramebufferTextureFormat::DEPTH) {
-        bindDepthAttachment(&m_attachedDepth, m_width, m_height, GL_DEPTH_COMPONENT24);
+        bindDepthAttachment(&m_attachedDepth, m_width, m_height, m_depthLayerCount, GL_DEPTH_COMPONENT24);
     } else {
         GLX_CORE_ASSERT(false, "Framebuffer format not handled");
     }
@@ -249,10 +267,12 @@ void FrameBuffer::invalidate()
 
 void FrameBuffer::destroy()
 {
-    glDeleteTextures(1, &m_attachedColors[0]);
+    for(int i=0; i<m_attachedColors.size(); i++){
+        glDeleteTextures(1, &m_attachedColors[i]);
+        m_attachedColors[i] = 0;
+    }
     glDeleteTextures(1, &m_attachedDepth);
     glDeleteFramebuffers(1, &m_fbo);
-    m_attachedColors[0] = 0;
     m_attachedDepth     = 0;
     m_fbo               = 0;
 }
@@ -283,6 +303,14 @@ void CubemapFrameBuffer::attachColorCubemap(Cubemap cubemap, int idx)
     m_colorCubemaps[idx] = cubemap;
     m_colorCubemaps[idx].setFormat(TextureFormat::RGB);
     m_colorCubemaps[idx].resize(m_size);
+}
+
+void CubemapFrameBuffer::setAsCubemapUniform(unsigned int uniLocation, int textureIdx)
+{
+    if (textureIdx >= 0)
+        m_colorCubemaps[textureIdx].activate(uniLocation);
+    else
+        m_depthCubemap.activate(uniLocation);
 }
 
 void CubemapFrameBuffer::bind(int idx)
@@ -325,6 +353,9 @@ void CubemapFrameBuffer::resize(unsigned int newSize)
     m_size = newSize;
     if (m_depthCubemap.cubemapID != 0)
         m_depthCubemap.resize(newSize);
+    for(auto& cubemap : m_colorCubemaps){
+        cubemap.resize(newSize);
+    }
     invalidate();
 }
 

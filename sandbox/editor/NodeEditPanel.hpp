@@ -70,9 +70,10 @@ public:
         cam->renderScene = true;
         cam->targetFramebuffer = cameraFBID;
         Renderer::getInstance().getFrontend().addRenderDevice(std::move(cam));
-
+        
         
         auto textureID = Renderer::getInstance().getBackend().getFrameBufferTextureID(cameraFBID);
+        GLX_TRACE("textureID: {0}", textureID);
         ImVec2 pannelSize(512, 256);
         ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 1, 1 }, ImVec2 { 0, 0 });
     }

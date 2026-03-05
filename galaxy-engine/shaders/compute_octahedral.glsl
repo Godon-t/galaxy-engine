@@ -32,7 +32,7 @@ layout(location = 2) out vec4 outNormal;
 layout(location = 3) out vec4 outDepth;
 
 uniform float zNear = 0.1;
-uniform float zFar  = 999.0;
+uniform float zFar  = 9999.0;
 
 // ===================== MAIN =========================
 uniform bool showTriangleIndexOverlay = false;

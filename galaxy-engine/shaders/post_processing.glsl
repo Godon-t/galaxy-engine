@@ -49,7 +49,7 @@ uniform sampler2D roughnessBuffer;
 uniform sampler2D directBuffer;
 uniform mat4 view;
 uniform float zNear     = 0.1;
-uniform float zFar      = 999.0;
+uniform float zFar      = 9999.0;
 uniform float traceBias = 0.05;
 
 uniform ivec3 probeFieldGridDim    = ivec3(2, 2, 2);

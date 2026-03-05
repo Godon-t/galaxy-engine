@@ -35,6 +35,8 @@ void CameraNode::updateTransformAndChilds(const mat4& matrix)
 
     auto transfo = m_transform.getGlobalModelMatrix();
     m_cameraData->forward  = vec3(transfo[2][0], transfo[2][1], transfo[2][2]);
+    m_cameraData->right    = cross(vec3(0,1,0), m_cameraData->forward);
+    m_cameraData->up       = cross(m_cameraData->forward, m_cameraData->right);
     m_cameraData->position = m_transform.getGlobalPosition();
 }
 void CameraNode::forceUpdateTransformAndChilds(const mat4& matrix)
@@ -43,6 +45,8 @@ void CameraNode::forceUpdateTransformAndChilds(const mat4& matrix)
 
     auto transfo = m_transform.getGlobalModelMatrix();
     m_cameraData->forward  = vec3(transfo[2][0], transfo[2][1], transfo[2][2]);
+    m_cameraData->right    = cross(vec3(0,1,0), m_cameraData->forward);
+    m_cameraData->up       = cross(m_cameraData->forward, m_cameraData->right);
     m_cameraData->position = m_transform.getGlobalPosition();
 }
 void CameraNode::setCurrent(bool state)

@@ -32,7 +32,7 @@ void main()
 uniform bool useIrradianceMap;
 uniform samplerCube irradianceMap;
 
-uniform float zFar = 999.0;
+uniform float zFar = 9999.0;
 
 uniform vec3 albedoVal        = vec3(1.0, 0.f, 0.f);
 uniform float metallicVal     = 0.5f;

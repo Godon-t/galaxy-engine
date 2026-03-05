@@ -63,6 +63,7 @@ void Renderer::addMainCameraDevice(std::shared_ptr<Camera> camera)
     mainCamera->camera = camera;
     mainCamera->targetFramebuffer = m_sceneFrameBufferID;
     mainCamera->renderScene = true;
+    // mainCamera->frustumCulling = false;
     m_frontend.addRenderDevice(std::move(mainCamera));
 }
 

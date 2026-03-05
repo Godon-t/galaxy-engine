@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Log.hpp"
+
 #include "types/Math.hpp"
 #include "data/Transform.hpp"
 #include "data/Camera.hpp"
@@ -20,17 +22,19 @@ namespace Galaxy
         Plane nearFace;
 
         Frustum(const vec3& position, const vec3& direction, const vec3& right, const vec3& up, const vec2& dimmensions, float zNear, float zFar){
-            vec2 halfSize = zFar * dimmensions * 0.5f;
+            vec2 halfSize;
+            halfSize.y = zFar * tanf(radians(45.f) * 0.5f);
+            halfSize.x = halfSize.y * (dimmensions.x / dimmensions.y);
             const vec3 frontMultFar = zFar * direction;
 
             nearFace = {position + zNear * direction, direction};
             farFace = {position + frontMultFar, -direction};
             
-            rightFace = {position, cross(frontMultFar - right * halfSize.x, up)};
-            leftFace = {position, cross(up, frontMultFar + right * halfSize.x)};
+            rightFace  = {position, normalize(cross(frontMultFar + right * halfSize.x, up))};
+            leftFace   = {position, normalize(cross(up, frontMultFar - right * halfSize.x))};
 
-            topFace = {position, cross(right, frontMultFar - up * halfSize.y)};
-            topFace = {position, cross(frontMultFar + up * halfSize.y, right)};
+            topFace    = {position, normalize(cross(right, frontMultFar + up * halfSize.y))};
+            bottomFace = {position, normalize(cross(frontMultFar - up * halfSize.y, right))};
         }
 
         Frustum(Camera* camera): Frustum(camera->position, camera->forward, camera->right, camera->up, camera->dimmensions, camera->zNear, camera->zFar){}
@@ -40,12 +44,12 @@ namespace Galaxy
             const vec3 globalCenter{ transform.getGlobalModelMatrix() * vec4(sphere.center, 1.0f)};
             const float maxScale = std::max(std::max(globalScale.x, globalScale.y), globalScale.z);
 
-            return  sphere.isOnOrForwardPlane(frustum.leftFace) &&
-                    sphere.isOnOrForwardPlane(frustum.rightFace) &&
-                    sphere.isOnOrForwardPlane(frustum.nearFace) &&
-                    sphere.isOnOrForwardPlane(frustum.farFace) &&
-                    sphere.isOnOrForwardPlane(frustum.topFace) &&
-                    sphere.isOnOrForwardPlane(frustum.bottomFace);
+            return  sphere.isOnOrForwardPlane(frustum.leftFace, transform.getGlobalPosition(), maxScale) &&
+                    sphere.isOnOrForwardPlane(frustum.rightFace, transform.getGlobalPosition(), maxScale) &&
+                    sphere.isOnOrForwardPlane(frustum.nearFace, transform.getGlobalPosition(), maxScale) &&
+                    sphere.isOnOrForwardPlane(frustum.farFace, transform.getGlobalPosition(), maxScale) &&
+                    sphere.isOnOrForwardPlane(frustum.topFace, transform.getGlobalPosition(), maxScale) &&
+                    sphere.isOnOrForwardPlane(frustum.bottomFace, transform.getGlobalPosition(), maxScale);
         }
     };
 } // namespace Galaxy

@@ -3,9 +3,25 @@
 #include "pch.hpp"
 
 #include "Core.hpp"
+#include "types/Math.hpp"
+
 #include "spdlog/spdlog.h"
+#include "spdlog/fmt/ostr.h"
+
+
+namespace fmt {
+template<>
+struct formatter<math::vec3> : formatter<std::string>
+{
+    auto format(math::vec3 vector, fmt::format_context &ctx) const -> decltype(ctx.out())
+    {
+        return fmt::format_to(ctx.out(), "({0:.2f}, {1:.2f}, {2:.2f})", vector.x, vector.y, vector.z);
+    }
+};
+}
 
 namespace Galaxy {
+
 class API Log {
 private:
     static std::shared_ptr<spdlog::logger> s_CoreLogger;

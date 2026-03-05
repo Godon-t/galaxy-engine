@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types/Math.hpp"
+#include "Log.hpp"
 
 using namespace math;
 
@@ -18,7 +19,7 @@ namespace Galaxy
 
         float getSignedDistanceToPlane(const vec3& point) const
         {
-            return dot(normal, position - point);
+            return dot(point - position, normal);
         }
     };
 
@@ -26,8 +27,8 @@ namespace Galaxy
         float radius;
         vec3 center;
 
-        bool isOnOrForwardPlane(const Plane& plane) const{
-            return plane.getSignedDistanceToPlane(center) > -radius;
+        bool isOnOrForwardPlane(const Plane& plane, const vec3& offset, float scale) const{
+            return plane.getSignedDistanceToPlane(center * scale + offset) > -radius * scale * 2.f;
         }
     };
 } // namespace Galaxy

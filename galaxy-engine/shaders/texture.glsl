@@ -26,7 +26,7 @@ void main()
 #type fragment
 #version 330 core
 
-uniform float zFar = 999.0;
+uniform float zFar = 9999.0;
 
 layout(location = 0) out vec4 color;
 layout(location = 1) out vec4 outNormal;

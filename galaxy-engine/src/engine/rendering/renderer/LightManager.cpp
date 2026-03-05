@@ -221,6 +221,7 @@ void LightManager::updateProbeField()
         pointCam->dimmensions = vec2(1024);
         pointCam->position = renderTransform.getGlobalPosition();
         renderPoint->camera = pointCam;
+        renderPoint->frustumCulling = false;
 
         renderPoint->renderScene = true;
         

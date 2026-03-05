@@ -14,8 +14,8 @@ namespace Galaxy
         bool renderScene = false;
         renderID targetFramebuffer = -1;
         int targetDepthLayer = -1;
-        std::shared_ptr<Camera> camera = std::make_shared<Camera>();
         vec2 viewportPosition = vec2(0);
+        vec2 viewportDimmension = vec2(512);
 
         bool noClear = false;
         bool frustumCulling = true;
@@ -25,16 +25,15 @@ namespace Galaxy
 
         bool useBuffer() {return targetFramebuffer >= 0;}
 
-        virtual std::vector<mat4> getViews(){
+        virtual mat4 getView(){
             vec3 pos = vec3(0,0,0);
             vec3 target = vec3(0,0,1);
             vec3 up = vec3(0,1,0);
             static mat4 view = lookAt(pos, target, up);
-            std::vector<mat4> res = {view};
-            return res;
+            return view;
         }
         virtual mat4 getProjection(){
-            return CameraManager::processProjectionMatrix(vec2(256,256));
+            return CameraManager::processProjectionMatrix(viewportDimmension);
         }
         // virtual void fillCommandBuffer(std::vector<RenderCommand>& buffer, SceneContext& context){
         //     if(renderScene){
@@ -48,24 +47,11 @@ namespace Galaxy
         // }
     };
 
-    struct RenderCameraTransform : public RenderDevice {
-        mat4 transform;
-        vec2 dimmensions;
-
-        std::vector<mat4> getViews() override {
-            std::vector<mat4> res{CameraManager::processViewMatrix(transform)};
-            return res;
-        }
-
-        mat4 getProjection() override{
-            return CameraManager::processProjectionMatrix(dimmensions);
-        }
-    };
-
     struct RenderCamera: public RenderDevice {
-        std::vector<mat4> getViews() override {
-            std::vector<mat4> res{CameraManager::processViewMatrix(camera)};
-            return res;
+        std::shared_ptr<Camera> camera = std::make_shared<Camera>();
+
+        mat4 getView() override {
+            return CameraManager::processViewMatrix(camera);
         }
 
         mat4 getProjection() override{
@@ -73,8 +59,18 @@ namespace Galaxy
         }
     };
 
-    struct RenderPoint: public RenderDevice {        
-        std::vector<mat4> getViews() override {
+    struct RenderCameraTransform : public RenderCamera {
+        mat4 transform;
+
+        mat4 getView() override {
+            return CameraManager::processViewMatrix(transform);
+        }
+    };
+
+    struct RenderPoint: public RenderDevice {
+        std::shared_ptr<Camera> camera = std::make_shared<Camera>();
+
+        std::vector<mat4> getViews() {
             static vec3 s_cubemap_orientations[6] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
             static vec3 s_cubemap_ups[6] = {{0, -1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}, {0, -1, 0}, {0, -1, 0}};
 

@@ -173,7 +173,7 @@ void LightManager::shadowPass(Node* sceneRoot)
         renderCamera->targetFramebuffer = m_shadowMapFrameBufferID;
         renderCamera->targetDepthLayer = lightData.shadowMapLayer;
         renderCamera->transform = lightData.transformationMatrix;
-        renderCamera->dimmensions = viewportDimmension;
+        renderCamera->viewportDimmension = viewportDimmension;
         renderCamera->renderScene = true;
 
         frontend.addRenderDevice(std::move(renderCamera));
@@ -235,9 +235,7 @@ void LightManager::updateProbeField()
         octahedralProjectionDevice->noClear = true;
         octahedralProjectionDevice->renderScene = false;
         
-        std::shared_ptr<Camera> octaCam = std::make_shared<Camera>();
-        octaCam->dimmensions = vec2(m_probeResolution);
-        octahedralProjectionDevice->camera = octaCam;
+        octahedralProjectionDevice->viewportDimmension = vec2(m_probeResolution);
 
         octahedralProjectionDevice->viewportPosition = getProbeTexCoord(probe.probeCoord);
         frontend.addRenderDevice(std::move(octahedralProjectionDevice));

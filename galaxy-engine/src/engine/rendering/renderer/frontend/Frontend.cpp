@@ -22,39 +22,42 @@ void Frontend::processDevices()
     auto clearColor = vec4(0.2, 0.2, 0.25, 1.0);
     for (auto& device : m_frameDevices) {
         if (device->useBuffer()) {
-            auto views = device->getViews();
             auto projection = device->getProjection();
-            auto position = vec3(device->camera->position);
 
             // Cubemap
-            if(views.size() == 6){
+            if (auto* cubemap = dynamic_cast<RenderPoint*>(device.get())) {
+                auto views = cubemap->getViews();
+
                 for(int i=0; i < views.size(); i++){
                     bindFrameBuffer(device->targetFramebuffer, i);
                     if(!device->noClear)
                         clear(clearColor);
                     
-                    setViewport(device->viewportPosition, device->camera->dimmensions);
+                    setViewport(device->viewportPosition, cubemap->camera->dimmensions);
                     setViewMatrix(views[i]);
                     setProjectionMatrix(projection);
                     if(device->renderScene){
                         changeUsedProgram(ProgramType::PBR);
-                        dumpCommandsToBuffer(device->camera, device->frustumCulling);
+                        dumpCommandsToBuffer(cubemap->camera, device->frustumCulling);
                     }
                 }
                 m_frontBuffer->insert(m_frontBuffer->end(), device->customPostCommands.begin(), device->customPostCommands.end());
                 unbindFrameBuffer(device->targetFramebuffer, true);
             } else {
+                auto view = device->getView();
                 bindFrameBuffer(device->targetFramebuffer, -1, device->targetDepthLayer);
                 
                 if(!device->noClear)
                     clear(clearColor);
                 
-                setViewport(device->viewportPosition, device->camera->dimmensions);
-                setViewMatrix(views[0]);
+                setViewport(device->viewportPosition, device->viewportDimmension);
+                setViewMatrix(view);
                 setProjectionMatrix(projection);
                 if(device->renderScene){
-                    changeUsedProgram(ProgramType::PBR);
-                    dumpCommandsToBuffer(device->camera, device->frustumCulling);
+                    if(auto* cameraDevice = dynamic_cast<RenderCamera*>(device.get())){
+                        changeUsedProgram(ProgramType::PBR);
+                        dumpCommandsToBuffer(cameraDevice->camera, device->frustumCulling);
+                    }
                 }
                 m_frontBuffer->insert(m_frontBuffer->end(), device->customPostCommands.begin(), device->customPostCommands.end());
                 unbindFrameBuffer(device->targetFramebuffer, false);

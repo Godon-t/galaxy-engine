@@ -20,7 +20,7 @@ public:
     
     void passShadow();
     void addMainCameraDevice(std::shared_ptr<Camera> camera);
-    void passPostProcessing(std::shared_ptr<Camera> camera);
+    void passPostProcessing();
     void updateGI();
     void renderFrame();
 

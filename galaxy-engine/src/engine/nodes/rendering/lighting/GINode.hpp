@@ -23,6 +23,8 @@ public:
     inline void setProbeResolution(unsigned int newRes) { m_probeResolution = newRes; }
     inline unsigned int getProbeResolution() { return m_probeResolution; }
 
+    bool debugMode = false;
+
 protected:
     virtual void enteredRoot() override;
 

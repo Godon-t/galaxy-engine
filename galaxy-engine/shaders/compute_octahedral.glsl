@@ -77,5 +77,5 @@ void main()
     float normalizedDepth = linearD / zFar;
 
     gl_FragDepth = rawDepth;
-    outDepth     = vec4(rawDepth, 0, 0, 1);
+    outDepth     = vec4(normalizedDepth, 0, 0, 1);
 }

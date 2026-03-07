@@ -167,6 +167,7 @@ public:
             node.setProbeResolution(res);
         // if (ImGui::InputFloat("Probe bias", &bias))
         //     Renderer::getInstance().getLightManager().updateBias(bias);
+        ImGui::Checkbox("Debug", &node.debugMode);
     }
 
     void transformEdit(Transform& transform)

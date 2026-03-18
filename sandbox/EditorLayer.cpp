@@ -127,7 +127,7 @@ void EditorLayer::onUpdate()
 
         Application::getInstance().getRootNodePtr()->draw();
 
-        renderer.passPostProcessing();
+        renderer.passPostProcessing(camera);
 
         // TODO: should the application handle the render ?
         // m_selectedScene->getNodePtr()->draw();

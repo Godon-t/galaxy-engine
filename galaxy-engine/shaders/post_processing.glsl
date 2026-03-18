@@ -282,7 +282,7 @@ int traceRayInProbeUnprecise(vec3 rayOrigin, vec3 rayDir, vec3 probePos, sampler
             float maxDistanceFromProbeToRay = max(distanceFromProbeToRayAfter, distanceFromProbeToRayBefore);
 
             // We might have a ray intersection with scene
-            if (maxDistanceFromProbeToRay >= depthProbe) {
+            if (maxDistanceFromProbeToRay >= depthProbe && minDistanceFromProbeToRay <= depthProbe) {
                 vec3 rawNormal = texture(probeNormalField, mix(uv0, uv1, s)).rgb;
                 // To avoid light leak
                 if (dot(directionFromProbeAfter, (rawNormal - vec3(0.5)) * 2.0) > 0.0) {
@@ -429,25 +429,28 @@ int getNextProbeIdx(int probeIdx, int iterator)
         return probeIdx + probeFieldGridDim.x * probeFieldGridDim.y + probeFieldGridDim.x + 1;
 }
 
-vec3 trilinearIrradianceAtPosition(vec3 P, sampler2D probeIrradianceField, int probeTexSingleSize)
+vec3 trilinearIrradianceAtPosition(vec3 P, sampler2D probeIrradianceField, sampler2D probeNormalField, int probeTexSingleSize)
 {
     vec3 local = (P - probeFieldOrigin) / probeFieldCellSize;
     vec3 base  = floor(local);
-    vec3 alpha = fract(local);
+    vec3 alpha = clamp(fract(local), vec3(0), vec3(1));
 
     ivec3 baseGridCoord = ivec3(clamp(base, vec3(0), vec3(probeFieldGridDim - 1)));
 
     vec3 accum = vec3(0.0);
+    float sumWeight    = 0.0;
 
     for (int i = 0; i < 8; i++) {
-        ivec3 offset         = ivec3(i % 2, (i / 2) % 2, i / 4);
+        // 0/1 corner offsets using bit operations
+        ivec3 offset = ivec3(i & 1, (i >> 1) & 1, (i >> 2) & 1);
         ivec3 probeGridCoord = clamp(baseGridCoord + offset, ivec3(0), ivec3(probeFieldGridDim - 1));
 
         vec3 probeWorldPos = vec3(probeGridCoord) * probeFieldCellSize + probeFieldOrigin;
 
-        vec3 direction = normalize(P - probeWorldPos);
+        vec3 probeToPoint = P - probeWorldPos;
+        vec3 dir = normalize(-probeToPoint); // direction from surface point toward probe
 
-        vec2 octCoord = octahedral_mapping(direction);
+        vec2 octCoord = octahedral_mapping(dir);
 
         int probeIdx = getCellCoord(probeGridCoord.x, probeGridCoord.y, probeGridCoord.z);
         vec4 rect    = getProbeTexRect(probeIdx, probeIrradianceField, probeTexSingleSize);
@@ -455,13 +458,25 @@ vec3 trilinearIrradianceAtPosition(vec3 P, sampler2D probeIrradianceField, int p
         vec2 sampleUV        = rect.xy + octCoord * rect.zw;
         vec3 probeIrradiance = texture(probeIrradianceField, sampleUV).rgb;
 
-        vec3 trilinear = mix(1.0 - alpha, alpha, vec3(offset));
+        vec3 trilinear = mix(vec3(1.0) - alpha, alpha, vec3(offset));
         float weight   = trilinear.x * trilinear.y * trilinear.z;
 
+        vec3 surfaceNormal = texture(probeNormalField, sampleUV).rgb * 2.0 - 1.0;
+        weight *= max(0.05, dot(dir, surfaceNormal));
+
+        float dist = length(probeToPoint);
+        weight *= 1.0 / (1.0 + dist);               // simple distance attenuation
+        weight = max(weight, 0.0002);              // avoid zero weight
+
+        sumWeight += weight;
         accum += probeIrradiance * weight;
     }
 
-    return accum;
+    if (sumWeight <= 0.0) {
+        return vec3(0.0);
+    }
+
+    return accum / sumWeight; // consider *2.0*pi if converting hemisphere irradiance
 }
 
 vec3 getColorFromProbeField(vec3 rayStart, vec3 rayDir, sampler2D probeIrradianceField, sampler2D probeNormalField, sampler2D probeDepthField, int probeTexSingleSize)
@@ -503,26 +518,19 @@ vec3 getColorFromProbeField(vec3 rayStart, vec3 rayDir, sampler2D probeIrradianc
 
         // Weights according to probe proximity
         if (result == HIT) {
+
             vec3 probeIrradiance = texture(probeIrradianceField, finalTexelCoords).rgb;
 
             vec3 probeToStart = rayStart - probePosition;
             float distWeight  = 1.0 / (1.0 + length(probeToStart));
-            weight *= distWeight;
 
-            sumIrradiance += weight * probeIrradiance;
-            sumWeight += weight;
-        } else if (result == MISS) {
-            weight *= 0.05;
-            sumWeight += weight;
+            return probeIrradiance;
         }
     }
 
-    if (sumWeight > 0.0001) {
-        return sumIrradiance / sumWeight;
-    }
-
     // Fallback
-    return trilinearIrradianceAtPosition(rayStart, probeIrradianceField, probeTexSingleSize);
+    return vec3(1);
+    return trilinearIrradianceAtPosition(rayStart, probeIrradianceField, probeNormalField, probeTexSingleSize);
 }
 
 vec3 backgroundBlur(sampler2D colorTexture, sampler2D depthTexture, vec2 uv)
@@ -572,36 +580,36 @@ void main()
     //////////////////////////////////// Integrate ray tracing into irradiance calculation
     // vec3 albedo     = texture(sceneBuffer, TexCoords).rgb;
     // float metallic  = texture(sceneBuffer, TexCoords).a;
-    // vec3 normal     = normalize(texture(normalBuffer, TexCoords).rgb * 2.0 - 1.0);
+    vec3 normal     = normalize(texture(normalBuffer, TexCoords).rgb * 2.0 - 1.0);
     // float roughness = texture(normalBuffer, TexCoords).a;
     // float ao        = texture(depthBuffer, TexCoords).g;
 
     // vec3 directLight = texture(directDiffuseBuffer, TexCoords).rgb;
 
-    // vec3 indirectIrradiance = vec3(0.0);
-    // vec2 pixelCoord         = TexCoords * vec2(textureSize(sceneBuffer, 0));
+    vec3 indirectIrradiance = vec3(0.0);
+    vec2 pixelCoord         = TexCoords * vec2(textureSize(sceneBuffer, 0));
 
-    // const int numSamples      = 8; // Ajustable (8, 16, 32, 64)
-    // const float invNumSamples = 1.0 / float(numSamples);
+    const int numSamples      = 8; // Ajustable (8, 16, 32, 64)
+    const float invNumSamples = 1.0 / float(numSamples);
 
-    // for (int i = 0; i < numSamples; ++i) {
-    //     float noise1 = IGN(pixelCoord, i);
-    //     float noise2 = IGN(pixelCoord + vec2(1.0, 1.0), i);
+    for (int i = 0; i < numSamples; ++i) {
+        float noise1 = IGN(pixelCoord, i);
+        float noise2 = IGN(pixelCoord + vec2(1.0, 1.0), i);
 
-    //     vec3 sampleDir = getCosHemisphereSample(noise1, noise2, normal);
+        vec3 sampleDir = getCosHemisphereSample(noise1, noise2, normal);
 
-    //     vec3 sampleIrradiance = getColorFromProbeField(
-    //         worldPos,
-    //         sampleDir,
-    //         probeIrradianceField,
-    //         probeNormalField,
-    //         probeDepthField,
-    //         probeTextureSingleSize);
+        vec3 sampleIrradiance = getColorFromProbeField(
+            worldPos,
+            sampleDir,
+            probeIrradianceField,
+            probeNormalField,
+            probeDepthField,
+            probeTextureSingleSize);
 
-    //     indirectIrradiance += sampleIrradiance;
-    // }
+        indirectIrradiance += sampleIrradiance;
+    }
 
-    // indirectIrradiance *= invNumSamples;
+    indirectIrradiance *= invNumSamples;
 
     // color.a = 1.0;
 
@@ -619,7 +627,7 @@ void main()
 
     // Trilinear interpolation of pixel at final position. No ray tracing
     // No ray reconstruction with this
-    vec3 irradiance = trilinearIrradianceAtPosition(worldPos, probeIrradianceField, probeTextureSingleSize);
+    vec3 irradiance = trilinearIrradianceAtPosition(worldPos, probeIrradianceField, probeNormalField, probeTextureSingleSize);
     vec4 albedo = texture(sceneBuffer, TexCoords);
 
 
@@ -653,9 +661,9 @@ void main()
     vec3 directLight = texture(directBuffer, TexCoords).rgb;
     vec3 diffuse = irradiance * albedo.rgb;
     vec3 ambient = (kD * diffuse) * ao;
-    // vec3 ambient = (kD * diffuse + specular) * ao;
-    color = vec4(ambient + directLight, 1.0);
-    // vec3 ambient = (kD * diffuse) * ao;
+    vec3 indirectDiffuse = indirectIrradiance * albedo.rgb * ao;
+    color = vec4(indirectDiffuse + directLight, 1.0);
+    // color = vec4(ambient + directLight, 1.0);
     // vec3 pbr     = ambient + Lo;
 
     // pbr = pbr / (pbr + vec3(1.0));

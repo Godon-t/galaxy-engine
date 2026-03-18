@@ -68,11 +68,12 @@ void Renderer::addMainCameraDevice(std::shared_ptr<Camera> camera)
     m_frontend.addRenderDevice(std::move(mainCamera));
 }
 
-void Renderer::passPostProcessing()
+void Renderer::passPostProcessing(std::shared_ptr<Camera> camera)
 {
     m_lightManager.debugDraw();
 
-    auto postProcess = std::make_unique<RenderDevice>();
+    auto postProcess = std::make_unique<RenderCamera>();
+    postProcess->camera = camera;
     postProcess->renderScene = false;
     postProcess->targetFramebuffer = m_postProcessingBufferID;
     postProcess->viewportDimmension = m_mainViewportSize;

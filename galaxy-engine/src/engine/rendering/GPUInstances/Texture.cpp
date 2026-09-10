@@ -5,6 +5,8 @@
 
 #include "gl_headers.hpp"
 
+#include <utility>
+
 namespace Galaxy {
 int Texture::s_currentFreeActivationInt = 0;
 std::array<bool, Texture::s_maxActivationInt> Texture::s_reservedActivationInt = std::array<bool, Texture::s_maxActivationInt>();
@@ -14,60 +16,115 @@ Texture::Texture(unsigned char* data, int width, int height, int nbChannels, int
     init(data, width, height, nbChannels, depthLayerCount);
 }
 
+Texture::Texture(TextureFormat format, int width, int height, int depthLayerCount)
+    : m_format(format)
+    , m_layerCount(depthLayerCount)
+{
+    resize(width, height);
+}
+
+Texture::~Texture()
+{
+    destroy();
+}
+
+Texture::Texture(Texture&& other) noexcept
+    : m_id(std::exchange(other.m_id, 0))
+    , m_format(other.m_format)
+    , m_width(std::exchange(other.m_width, 0))
+    , m_height(std::exchange(other.m_height, 0))
+    , m_activationInt(std::exchange(other.m_activationInt, -1))
+    , m_layerCount(std::exchange(other.m_layerCount, 0))
+{
+}
+
+Texture& Texture::operator=(Texture&& other) noexcept
+{
+    if (this == &other)
+        return *this;
+
+    destroy();
+    m_id            = std::exchange(other.m_id, 0);
+    m_format        = other.m_format;
+    m_width         = std::exchange(other.m_width, 0);
+    m_height        = std::exchange(other.m_height, 0);
+    m_activationInt = std::exchange(other.m_activationInt, -1);
+    m_layerCount    = std::exchange(other.m_layerCount, 0);
+    return *this;
+}
+
 void Texture::resize(int width, int height)
 {
-    if (width == m_width && height == m_height)
+    if (width <= 0 || height <= 0) {
+        destroy();
+        return;
+    }
+
+    if (m_id != 0 && width == m_width && height == m_height)
         return;
 
     m_width  = width;
     m_height = height;
 
     unsigned int internalFormat = getInternalFormat(m_format);
-    unsigned int format         = getExternalFormat(m_format);
-    unsigned int type           = getType(m_format);
 
     if (m_id != 0)
         glDeleteTextures(1, &m_id);
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
+    const GLenum target = m_layerCount > 0 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
+    glCreateTextures(target, 1, &m_id);
     glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    if (m_layerCount > 0)
+        glTextureParameteri(m_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     if (m_format == TextureFormat::DEPTH24STENCIL8 || m_format == TextureFormat::DEPTH) {
         float borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+        glTextureParameterfv(m_id, GL_TEXTURE_BORDER_COLOR, borderColor);
     }
 
-    glTextureStorage2D(m_id, 1, internalFormat, width, height);
+    if (m_layerCount > 0)
+        glTextureStorage3D(m_id, 1, internalFormat, width, height, m_layerCount);
+    else
+        glTextureStorage2D(m_id, 1, internalFormat, width, height);
     checkOpenGLErrors("Texture resize");
+}
+
+void Texture::resize(int width, int height, int depthLayerCount)
+{
+    if (depthLayerCount == static_cast<int>(m_layerCount)) {
+        resize(width, height);
+        return;
+    }
+
+    const TextureFormat keepFormat = m_format;
+    destroy();
+    m_format     = keepFormat;
+    m_layerCount = depthLayerCount;
+    resize(width, height);
 }
 
 void Texture::setFormat(TextureFormat format)
 {
     if (format != m_format) {
+        const unsigned int keepWidth      = m_width;
+        const unsigned int keepHeight     = m_height;
+        const unsigned int keepLayerCount = m_layerCount;
+
+        destroy();
         m_format = format;
-
-        if (m_id != 0) {
-            glDeleteTextures(1, &m_id);
-            m_id = 0;
-        }
-
-        int keepWidth  = m_width;
-        int keepHeight = m_height;
-        m_width        = 0;
-        m_height       = 0;
-        resize(keepWidth, keepHeight);
+        m_layerCount = keepLayerCount;
+        if (keepWidth > 0 && keepHeight > 0)
+            resize(keepWidth, keepHeight);
         checkOpenGLErrors("Texture set format");
     }
 }
 
 void Texture::init(unsigned char* data, int width, int height, int nbChannels, int depthLayerCount)
 {
-    m_width  = width;
-    m_height = height;
-    m_layerCount = depthLayerCount;
+    destroy();
 
     switch (nbChannels) {
     case 1:
@@ -81,31 +138,23 @@ void Texture::init(unsigned char* data, int width, int height, int nbChannels, i
         break;
     default:
         GLX_CORE_ERROR("Warning: Unsupported texture format, defaulting to GL_RGB8\n");
+        m_format = TextureFormat::RGB;
     }
 
-    GLenum internalFormat = getInternalFormat(m_format);
     GLenum format         = getExternalFormat(m_format);
     unsigned int type     = getType(m_format);
 
-    if(depthLayerCount > 0)
-        glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_id);
-    else
-        glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
-
+    m_layerCount = depthLayerCount;
+    resize(width, height);
     glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    if(depthLayerCount > 0){
-        glTextureStorage3D(m_id, 1, internalFormat, width, height, depthLayerCount);
+    if(data != nullptr && depthLayerCount > 0){
         glTextureSubImage3D(m_id, 0, 0, 0, 0, width, height, depthLayerCount, format, type, data);
     }
-    else{
-        glTextureStorage2D(m_id, 1, internalFormat, width, height);
+    else if (data != nullptr) {
         glTextureSubImage2D(m_id, 0, 0, 0, width, height, format, type, data);
     }
-    glGenerateTextureMipmap(m_id);
 
     checkOpenGLErrors("Texture load");
 }
@@ -117,7 +166,8 @@ void Texture::resetActivationInt()
 
 void Texture::reserveActivationInt()
 {
-    s_reservedActivationInt[m_activationInt] = true;
+    if (m_activationInt >= 0)
+        s_reservedActivationInt[m_activationInt] = true;
 }
 
 void Texture::clearReservedActivationInts()
@@ -125,6 +175,20 @@ void Texture::clearReservedActivationInts()
     for(int i=0; i<s_maxActivationInt; i++){
         s_reservedActivationInt[i] = false;
     }
+}
+
+int Texture::getAvailableActivationInt()
+{
+    //TODO: brute force way of checking available int
+    for (int attempt = 0; attempt < s_maxActivationInt; ++attempt) {
+        const int idx = s_currentFreeActivationInt;
+        s_currentFreeActivationInt = (s_currentFreeActivationInt + 1) % s_maxActivationInt;
+        if (!s_reservedActivationInt[idx])
+            return idx;
+    }
+
+    GLX_CORE_ASSERT(false, "No texture unit available");
+    return 0;
 }
 
 void Texture::activate(int textureLocation)
@@ -144,17 +208,24 @@ void Texture::activate(int textureLocation)
 
 void Texture::activate(unsigned int id, int layerCount, int textureLocation)
 {
-    Texture tex;
-    tex.m_id = id;
-    tex.m_layerCount = layerCount;
-    tex.activate(textureLocation);
-    tex.reserveActivationInt();
+    const int activationInt = getAvailableActivationInt();
+    glActiveTexture(GL_TEXTURE0 + activationInt);
+    glBindTexture(layerCount > 0 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, id);
+    glUniform1i(textureLocation, activationInt);
+    s_reservedActivationInt[activationInt] = true;
 }
 
 void Texture::destroy()
 {
-    glDeleteTextures(1, &m_id);
+    if (m_activationInt >= 0 && m_activationInt < s_maxActivationInt)
+        s_reservedActivationInt[m_activationInt] = false;
+    if (m_id != 0)
+        glDeleteTextures(1, &m_id);
     m_id = 0;
+    m_width = 0;
+    m_height = 0;
+    m_layerCount = 0;
+    m_activationInt = -1;
 }
 
 unsigned int Texture::getInternalFormat(TextureFormat format)
@@ -198,50 +269,69 @@ unsigned int Texture::getType(TextureFormat format)
     return 0;
 }
 
-Cubemap::Cubemap()
-    : format(TextureFormat::RGBA)
+Cubemap::~Cubemap()
 {
-    glGenTextures(1, &cubemapID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
-    resize(16);
+    destroy();
+}
+
+Cubemap::Cubemap(Cubemap&& other) noexcept
+    : m_id(std::exchange(other.m_id, 0))
+    , m_resolution(std::exchange(other.m_resolution, 0))
+    , m_format(other.m_format)
+{
+}
+
+Cubemap& Cubemap::operator=(Cubemap&& other) noexcept
+{
+    if (this == &other)
+        return *this;
+
+    destroy();
+    m_id         = std::exchange(other.m_id, 0);
+    m_resolution = std::exchange(other.m_resolution, 0);
+    m_format     = other.m_format;
+    return *this;
 }
 
 void Cubemap::activate(unsigned int uniLoc)
 {
     int actInt = Texture::getAvailableActivationInt();
     glActiveTexture(GL_TEXTURE0 + actInt);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_id);
     glUniform1i(uniLoc, actInt);
     checkOpenGLErrors("activate cubemap");
 }
 
 void Cubemap::destroy()
 {
-    if (cubemapID) {
-        glDeleteTextures(1, &cubemapID);
-        cubemapID = 0;
+    if (m_id) {
+        glDeleteTextures(1, &m_id);
+        m_id = 0;
     }
+    m_resolution = 0;
 }
 
 void Cubemap::allocateFaces()
 {
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
+    if (m_id == 0)
+        glGenTextures(1, &m_id);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_id);
 
     for (int i = 0; i < 6; i++) {
-        if (format == TextureFormat::RGB) {
+        if (m_format == TextureFormat::RGB) {
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB8,
-                resolution, resolution, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+                m_resolution, m_resolution, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        } else if (m_format == TextureFormat::RGBA) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA8,
+                m_resolution, m_resolution, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
-        } else if (format == TextureFormat::DEPTH) {
+        } else if (m_format == TextureFormat::DEPTH) {
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT24,
-                resolution, resolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                m_resolution, m_resolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         }
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -254,17 +344,18 @@ void Cubemap::allocateFaces()
 
 void Cubemap::resize(unsigned int res)
 {
-    if (res != resolution) {
-        resolution = res;
+    if (res != m_resolution || m_id == 0) {
+        m_resolution = res;
         allocateFaces();
     }
 }
 
 void Cubemap::setFormat(TextureFormat newFormat)
 {
-    if (newFormat != format) {
-        format = newFormat;
-        allocateFaces();
+    if (newFormat != m_format) {
+        m_format = newFormat;
+        if (m_resolution > 0)
+            allocateFaces();
     }
 }
 

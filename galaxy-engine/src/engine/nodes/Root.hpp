@@ -11,6 +11,7 @@ public:
     Root() { }
     void process(double delta);
     void setRoot(std::shared_ptr<Node> node);
+    void clear() { m_rootNode.reset(); }
     void handleEvent(Event& event);
     std::shared_ptr<Node> getNodePtr() { return m_rootNode; }
 };

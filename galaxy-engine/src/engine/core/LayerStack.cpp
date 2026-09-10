@@ -8,9 +8,17 @@ LayerStack::LayerStack()
 
 LayerStack::~LayerStack()
 {
+    clear();
+}
+
+void LayerStack::clear()
+{
     for (Layer* layer : m_layers) {
+        layer->onDetach();
         delete layer;
     }
+    m_layers.clear();
+    m_layerInsert = m_layers.begin();
 }
 void LayerStack::pushLayer(Layer* layer)
 {

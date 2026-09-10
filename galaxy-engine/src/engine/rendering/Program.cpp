@@ -8,6 +8,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <utility>
 
 using namespace math;
 namespace Galaxy {
@@ -219,30 +220,37 @@ Program::Program(const std::string& shaderPath)
 }
 
 Program::Program(Program&& other) noexcept
+    : m_programID(std::exchange(other.m_programID, 0))
+    , m_modelLocation(std::exchange(other.m_modelLocation, -1))
+    , m_viewLocation(std::exchange(other.m_viewLocation, -1))
+    , m_projectionLocation(std::exchange(other.m_projectionLocation, -1))
 {
-    m_programID          = other.m_programID;
-    other.m_programID    = 0;
-    m_modelLocation      = other.m_modelLocation;
-    m_viewLocation       = other.m_viewLocation;
-    m_projectionLocation = other.m_projectionLocation;
 }
 
 Program& Program::operator=(Program&& other) noexcept
 {
-    m_programID          = other.m_programID;
-    other.m_programID    = 0;
-    m_modelLocation      = other.m_modelLocation;
-    m_viewLocation       = other.m_viewLocation;
-    m_projectionLocation = other.m_projectionLocation;
+    if (this == &other)
+        return *this;
+
+    destroy();
+    m_programID          = std::exchange(other.m_programID, 0);
+    m_modelLocation      = std::exchange(other.m_modelLocation, -1);
+    m_viewLocation       = std::exchange(other.m_viewLocation, -1);
+    m_projectionLocation = std::exchange(other.m_projectionLocation, -1);
     return *this;
 }
 
-Program::~Program()
+void Program::destroy()
 {
     if (m_programID != 0) {
         glDeleteProgram(m_programID);
         m_programID = 0;
     }
+}
+
+Program::~Program()
+{
+    destroy();
 }
 
 void Program::updateViewMatrix(const mat4& v)
@@ -310,7 +318,7 @@ ProgramPBR::ProgramPBR(std::string path)
     glUniform1i(glGetUniformLocation(programID, "useIrradianceMap"), GL_FALSE);
 }
 
-void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture, TextureType::COUNT>& materialTextures)
+void ProgramPBR::updateMaterial(const MaterialInstance& material, const std::array<Texture*, TextureType::COUNT>& materialTextures)
 {
     glUniform1f(metallicLocation, material.metallic);
     glUniform1f(roughnessLocation, material.roughness);
@@ -318,10 +326,10 @@ void ProgramPBR::updateMaterial(MaterialInstance& material, std::array<Texture, 
     glUniform3f(albedoLocation, material.albedo[0], material.albedo[1], material.albedo[2]);
     glUniform1f(transparencyLocation, material.transparency);
 
-    auto activateTexture = [&material, &materialTextures](TextureType type, GLuint useLocation, GLuint mapLocation) {
+    auto activateTexture = [&material, &materialTextures](TextureType type, int useLocation, int mapLocation) {
         glUniform1i(useLocation, material.useImage[type]);
-        if (material.useImage[type])
-            materialTextures[type].activate(mapLocation);
+        if (material.useImage[type] && materialTextures[type] != nullptr)
+            materialTextures[type]->activate(mapLocation);
     };
 
     activateTexture(ALBEDO, useAlbedoMapLocation, albedoTexLocation);

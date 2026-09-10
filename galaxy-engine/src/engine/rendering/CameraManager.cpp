@@ -43,7 +43,7 @@ void CameraManager::updateCurrent(camID id, bool state)
 
 bool CameraManager::hasCamera()
 {
-    m_activeCamsHistory.size() > 0;
+    return m_activeCamsHistory.size() > 0;
 }
 
 const std::shared_ptr<Camera> CameraManager::getCurrentCamera()

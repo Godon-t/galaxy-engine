@@ -6,6 +6,14 @@
 namespace Galaxy {
 class DebugLines {
 public:
+    DebugLines() = default;
+    ~DebugLines();
+
+    DebugLines(const DebugLines&)            = delete;
+    DebugLines& operator=(const DebugLines&) = delete;
+    DebugLines(DebugLines&& other) noexcept;
+    DebugLines& operator=(DebugLines&& other) noexcept;
+
     void init();
     void addLine(math::vec3 start, math::vec3 end, math::vec3 color = math::vec3(1, 0, 0));
 

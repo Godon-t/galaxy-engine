@@ -44,7 +44,12 @@ public:
 
     inline const renderID getVisualID(int surface = 0) const { return m_subMeshes[surface].visualID; }
 
-    inline void notifyGpuInstanceDestroyed(int surfaceIdx) { m_subMeshes[surfaceIdx].visualID = 0; }
+    inline void setVisualID(int surfaceIdx, renderID id) { m_subMeshes[surfaceIdx].visualID = id; }
+    inline void notifyGpuInstanceDestroyed(int surfaceIdx, renderID expectedID)
+    {
+        if (m_subMeshes[surfaceIdx].visualID == expectedID)
+            m_subMeshes[surfaceIdx].visualID = 0;
+    }
     inline int getSubMeshesCount() const { return m_subMeshes.size(); }
 
     inline std::string getExternalFilePath() { return m_gltfPath; }

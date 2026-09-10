@@ -4,6 +4,8 @@
 #include "gl_headers.hpp"
 #include "rendering/OpenglHelper.hpp"
 
+#include <utility>
+
 namespace Galaxy {
 CullMode VisualInstance::s_cullMode = FRONT_CULLING;
 
@@ -13,14 +15,15 @@ Sphere& VisualInstance::getBoundingVolume()
 }
 
 VisualInstance::VisualInstance()
-    : m_VAO(0)
-    , m_VBO(0)
-    , m_EBO(0)
-    , m_cullMode(FRONT_CULLING)
 {
 }
 
 VisualInstance::~VisualInstance()
+{
+    destroy();
+}
+
+void VisualInstance::destroy()
 {
     if (m_VAO != 0) {
         glDeleteVertexArrays(1, &m_VAO);
@@ -31,37 +34,41 @@ VisualInstance::~VisualInstance()
     if (m_EBO != 0) {
         glDeleteBuffers(1, &m_EBO);
     }
+
+    m_VAO         = 0;
+    m_VBO         = 0;
+    m_EBO         = 0;
+    m_nbOfIndices = 0;
 }
 
-VisualInstance::VisualInstance(VisualInstance&& other)
+VisualInstance::VisualInstance(VisualInstance&& other) noexcept
+    : m_nbOfIndices(std::exchange(other.m_nbOfIndices, 0))
+    , m_VAO(std::exchange(other.m_VAO, 0))
+    , m_VBO(std::exchange(other.m_VBO, 0))
+    , m_EBO(std::exchange(other.m_EBO, 0))
+    , m_cullMode(other.m_cullMode)
+    , m_boundingVolume(other.m_boundingVolume)
 {
-    m_VAO            = other.m_VAO;
-    m_VBO            = other.m_VBO;
-    m_EBO            = other.m_EBO;
-    m_nbOfIndices    = other.m_nbOfIndices;
-    m_boundingVolume = other.m_boundingVolume;
-
-    other.m_VAO = 0;
-    other.m_VBO = 0;
-    other.m_EBO = 0;
 }
 
-VisualInstance& VisualInstance::operator=(VisualInstance&& other)
+VisualInstance& VisualInstance::operator=(VisualInstance&& other) noexcept
 {
-    m_VAO            = other.m_VAO;
-    m_VBO            = other.m_VBO;
-    m_EBO            = other.m_EBO;
-    m_nbOfIndices    = other.m_nbOfIndices;
-    m_boundingVolume = other.m_boundingVolume;
+    if (this == &other)
+        return *this;
 
-    other.m_VAO = 0;
-    other.m_VBO = 0;
-    other.m_EBO = 0;
+    destroy();
+    m_VAO            = std::exchange(other.m_VAO, 0);
+    m_VBO            = std::exchange(other.m_VBO, 0);
+    m_EBO            = std::exchange(other.m_EBO, 0);
+    m_nbOfIndices    = std::exchange(other.m_nbOfIndices, 0);
+    m_cullMode       = other.m_cullMode;
+    m_boundingVolume = other.m_boundingVolume;
 
     return *this;
 }
 void VisualInstance::init(const std::vector<Vertex>& vertices, const std::vector<short unsigned int>& indices)
 {
+    destroy();
     m_nbOfIndices = indices.size();
 
     glGenVertexArrays(1, &m_VAO);
@@ -74,7 +81,7 @@ void VisualInstance::init(const std::vector<Vertex>& vertices, const std::vector
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), indices.data(), GL_STATIC_DRAW);
 
     int vertexSize = sizeof(Vertex);
 

@@ -19,7 +19,11 @@ struct Image : public ResourceBase {
     inline int getNbChannels() const { return m_nbChannels; }
     unsigned char* getData();
 
-    inline void notifyGpuInstanceDestroyed() { m_textureID = 0; }
+    inline void notifyGpuInstanceDestroyed(renderID expectedID)
+    {
+        if (m_textureID == expectedID)
+            m_textureID = 0;
+    }
     inline renderID getTextureID() const { return m_textureID; }
     inline void setTextureID(renderID id) { m_textureID = id; }
 

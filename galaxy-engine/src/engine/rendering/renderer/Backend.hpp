@@ -13,6 +13,9 @@
 #include "resource/ResourceHandle.hpp"
 #include "types/Render.hpp"
 #include <functional>
+#include <memory>
+#include <tuple>
+#include <utility>
 
 namespace Galaxy {
 class Renderer;
@@ -31,26 +34,48 @@ public:
 
     bool tryRemove(renderID idToRemove)
     {
-        m_renderIdToInstance[idToRemove].second--;
-        if (m_renderIdToInstance[idToRemove].second > 0)
+        return tryRemove(idToRemove, [](T&) {});
+    }
+
+    template <typename BeforeRemove>
+    bool tryRemove(renderID idToRemove, BeforeRemove&& beforeRemove)
+    {
+        auto instance = m_renderIdToInstance.find(idToRemove);
+        if (instance == m_renderIdToInstance.end()) {
+            GLX_CORE_ERROR("Trying to remove an unknown GPU resource: {0}", idToRemove);
             return false;
+        }
 
-        m_renderIdToInstance.erase(idToRemove);
+        if (instance->second.second > 1) {
+            --instance->second.second;
+            return false;
+        }
 
+        beforeRemove(instance->second.first);
+        m_renderIdToInstance.erase(instance);
         m_freeIds.emplace(idToRemove);
         return true;
     }
 
-    renderID createResourceInstance()
+    template <typename... Args>
+    renderID createResourceInstance(Args&&... args)
     {
         if (m_freeIds.size() == 0) {
             GLX_CORE_ERROR("No more free renderIDs");
-            return -1;
+            return 0;
         }
 
         renderID createdID = m_freeIds.top();
 
-        m_renderIdToInstance.insert_or_assign(createdID, std::make_pair(T(), 1));
+        const auto insertion = m_renderIdToInstance.try_emplace(
+            createdID,
+            std::piecewise_construct,
+            std::forward_as_tuple(std::forward<Args>(args)...),
+            std::forward_as_tuple(size_t { 1 }));
+        const bool inserted = insertion.second;
+        GLX_CORE_ASSERT(inserted, "Duplicate GPU resource ID: {0}", createdID);
+        if (!inserted)
+            return 0;
 
         m_freeIds.pop();
 
@@ -59,12 +84,17 @@ public:
 
     void increaseCount(renderID id)
     {
-        m_renderIdToInstance[id].second++;
+        auto instance = m_renderIdToInstance.find(id);
+        GLX_CORE_ASSERT(instance != m_renderIdToInstance.end(), "Unknown GPU resource: {0}", id);
+        if (instance != m_renderIdToInstance.end())
+            ++instance->second.second;
     }
 
     T* get(renderID id)
     {
-        return &m_renderIdToInstance[id].first;
+        auto instance = m_renderIdToInstance.find(id);
+        GLX_CORE_ASSERT(instance != m_renderIdToInstance.end(), "Unknown GPU resource: {0}", id);
+        return instance != m_renderIdToInstance.end() ? &instance->second.first : nullptr;
     }
 
     std::vector<T*> getAll(){
@@ -78,13 +108,18 @@ public:
     }
 
     bool canAddInstance() { return m_freeIds.size() > 0; }
-    void removeAll(std::function<void(T&)> deletionCallback)
+    void removeAll()
     {
         for (auto& elem : m_renderIdToInstance) {
-            deletionCallback(elem.second.first);
             m_freeIds.emplace(elem.first);
         }
         m_renderIdToInstance.clear();
+    }
+
+    T* tryGet(renderID id) noexcept
+    {
+        auto instance = m_renderIdToInstance.find(id);
+        return instance != m_renderIdToInstance.end() ? &instance->second.first : nullptr;
     }
 
 private:
@@ -95,6 +130,7 @@ private:
 class Backend {
 public:
     Backend(size_t maxSize = 512);
+    ~Backend();
 
     renderID instantiateUBO(unsigned int dataSize);
 
@@ -115,7 +151,7 @@ public:
     using MaterialUpdateCallback = std::function<void(renderID materialID, bool isTransparent)>;
     void onMaterialUpdated(MaterialUpdateCallback callback) { m_materialUpdateCallback = callback; }
 
-    void processCommands(std::vector<RenderCommand>& commands);
+    void processCommands(const std::vector<RenderCommand>& commands);
 
     renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback);
     renderID generateQuad(vec2 dimmensions, std::function<void()> destroyCallback);
@@ -180,8 +216,12 @@ private:
     RenderGpuResourceTable<CubemapFrameBuffer> m_cubemapFrameBufferInstances;
     RenderGpuResourceTable<UBOInstance> m_uboInstances;
 
-    // Will invalidate renderID for things outside of Node that store a renderID
-    std::unordered_map<renderID, std::function<void()>> m_gpuDestroyNotifications;
+    // Temporary until renderID becomes a typed generational handle.
+    std::unordered_map<renderID, std::function<void()>> m_visualDestroyNotifications;
+    std::unordered_map<renderID, std::function<void()>> m_textureDestroyNotifications;
+    std::unordered_map<renderID, std::function<void()>> m_materialDestroyNotifications;
+    std::unordered_map<renderID, std::shared_ptr<int>> m_cubemapUploadLifetimes;
+    std::shared_ptr<int> m_lifetimeToken = std::make_shared<int>(0);
 
     MaterialUpdateCallback m_materialUpdateCallback;
 

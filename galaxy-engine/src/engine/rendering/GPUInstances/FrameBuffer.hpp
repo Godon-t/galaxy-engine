@@ -13,61 +13,78 @@ namespace Galaxy {
 class FrameBuffer {
 public:
     FrameBuffer();
-    FrameBuffer(int width, int height, FramebufferTextureFormat format);
-    ~FrameBuffer() { }
+    FrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1, unsigned int depthLayerCount = 0);
+    ~FrameBuffer();
+
+    FrameBuffer(const FrameBuffer&)            = delete;
+    FrameBuffer& operator=(const FrameBuffer&) = delete;
+    FrameBuffer(FrameBuffer&& other) noexcept;
+    FrameBuffer& operator=(FrameBuffer&& other) noexcept;
 
     void bind(int depthLayer = 0);
     void unbind();
 
     void destroy();
 
-    inline unsigned int getColorTextureID(int idx = 0) { return m_attachedColors[idx]; }
-    inline unsigned int getDepthTextureID() { return m_attachedDepth; }
+    unsigned int getColorTextureID(int idx = 0) const;
+    unsigned int getDepthTextureID() const;
 
     void setAsTextureUniform(unsigned int uniLocation, int textureIdx = -1);
 
     void resize(unsigned int newWidth, unsigned int newHeight, unsigned int depthLayerCount);
 
-    inline void setColorsCount(unsigned int count)
-    {
-        m_colorsCount = count;
-        invalidate();
-    }
-
-    inline void setFormat(FramebufferTextureFormat format)
-    {
-        m_format = format;
-        invalidate();
-    }
+    void setColorsCount(unsigned int count);
+    void setFormat(FramebufferTextureFormat format);
     inline FramebufferTextureFormat getFormat() const { return m_format; }
+    // Attached textures are borrowed and must outlive this framebuffer.
     void attachColorTexture(Texture& texture, int idx);
     void attachDepthTexture(Texture& texture);
-    void savePPM(char* filename);
+    void savePPM(const std::string& filename);
 
 private:
-    FramebufferTextureFormat m_format;
-    unsigned int m_colorsCount;
-    unsigned int m_depthLayerCount;
-    unsigned int m_fbo;
-    int m_width, m_height;
+    struct TextureAttachment {
+        std::unique_ptr<Texture> owned;
+        Texture* borrowed = nullptr;
 
-    std::vector<unsigned int> m_attachedColors;
-    std::vector<bool> m_externalColors;
+        Texture* get() { return borrowed != nullptr ? borrowed : owned.get(); }
+        const Texture* get() const { return borrowed != nullptr ? borrowed : owned.get(); }
+        void makeOwned(TextureFormat format, int width, int height, int depthLayerCount = 0);
+        void borrow(Texture& texture);
+        void reset();
+    };
 
-    unsigned int m_attachedDepth;
-    bool m_externalDepth = false;
+    FramebufferTextureFormat m_format = FramebufferTextureFormat::RGBA8;
+    unsigned int m_colorsCount         = 1;
+    unsigned int m_depthLayerCount     = 0;
+    unsigned int m_fbo                 = 0;
+    int m_width                        = 0;
+    int m_height                       = 0;
+
+    std::vector<TextureAttachment> m_colorAttachments;
+    TextureAttachment m_depthAttachment;
 
     void invalidate();
+    void destroyFramebuffer();
+    bool usesColor() const;
+    bool usesDepth() const;
+    TextureFormat depthFormat() const;
+    unsigned int depthAttachmentPoint() const;
 };
 
 class CubemapFrameBuffer {
 public:
     CubemapFrameBuffer();
-    CubemapFrameBuffer(int size);
-    ~CubemapFrameBuffer() = default;
+    CubemapFrameBuffer(unsigned int size, unsigned int colorCount = 0);
+    ~CubemapFrameBuffer();
 
-    void attachDepthCubemap(Cubemap cubemap);
-    void attachColorCubemap(Cubemap cubemap, int idx);
+    CubemapFrameBuffer(const CubemapFrameBuffer&)            = delete;
+    CubemapFrameBuffer& operator=(const CubemapFrameBuffer&) = delete;
+    CubemapFrameBuffer(CubemapFrameBuffer&& other) noexcept;
+    CubemapFrameBuffer& operator=(CubemapFrameBuffer&& other) noexcept;
+
+    // Borrowed cubemaps must outlive this framebuffer.
+    void attachDepthCubemap(Cubemap& cubemap);
+    void attachColorCubemap(Cubemap& cubemap, int idx);
 
     void setAsCubemapUniform(unsigned int uniLocation, int textureIdx);
 
@@ -80,12 +97,24 @@ public:
     void resize(unsigned int newSize);
 
 private:
-    unsigned int m_fbo;
-    unsigned int m_size;
+    struct CubemapAttachment {
+        std::unique_ptr<Cubemap> owned;
+        Cubemap* borrowed = nullptr;
 
-    std::vector<Cubemap> m_colorCubemaps;
-    Cubemap m_depthCubemap;
+        Cubemap* get() { return borrowed != nullptr ? borrowed : owned.get(); }
+        const Cubemap* get() const { return borrowed != nullptr ? borrowed : owned.get(); }
+        void makeOwned(TextureFormat format, unsigned int size);
+        void borrow(Cubemap& cubemap);
+        void reset();
+    };
+
+    unsigned int m_fbo  = 0;
+    unsigned int m_size = 0;
+
+    std::vector<CubemapAttachment> m_colorCubemaps;
+    CubemapAttachment m_depthCubemap;
 
     void invalidate();
+    void destroyFramebuffer();
 };
 }

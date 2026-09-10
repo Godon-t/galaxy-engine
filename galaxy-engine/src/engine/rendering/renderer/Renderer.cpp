@@ -31,6 +31,11 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
+    shutdown();
+}
+
+void Renderer::shutdown()
+{
     m_backend.destroy();
 }
 

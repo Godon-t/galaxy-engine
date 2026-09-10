@@ -62,13 +62,13 @@ struct DepthMaskCommand {
 
 struct UseTextureCommand {
     renderID instanceID;
-    char* uniformName;
+    std::string uniformName;
     bool important = false;
 };
 
 struct UseCubemapCommand {
     renderID instanceID;
-    char* uniformName;
+    std::string uniformName;
 };
 
 struct AttachTextureToFramebufferCommand {
@@ -109,7 +109,7 @@ enum SetValueTypes {
 };
 struct SetFramebufferAsTextureUniformCommand {
     renderID framebufferID;
-    char* uniformName;
+    std::string uniformName;
     int textureIdx;
     bool aboutCubemap = false;
 };
@@ -137,7 +137,7 @@ struct BindUBOCommand {
 
 struct SetUniformCommand {
     SetValueTypes type;
-    char* uniformName;
+    std::string uniformName;
     // TODO: replace with std::variant
     union {
         bool valueBool;
@@ -175,7 +175,7 @@ struct UpdateCubemapCommand {
 };
 
 struct DebugMsgCommand {
-    char* msg;
+    std::string msg;
 };
 
 struct DrawDebugLineCommand {
@@ -184,7 +184,7 @@ struct DrawDebugLineCommand {
 };
 
 struct SaveFrameBufferCommand {
-    char* path;
+    std::string path;
     renderID frameBufferID;
 };
 

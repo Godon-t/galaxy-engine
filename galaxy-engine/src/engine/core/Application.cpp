@@ -12,6 +12,7 @@
 #include "event/WindowEvent.hpp"
 #include "nodes/rendering/CameraNode.hpp"
 #include "nodes/rendering/MeshInstance.hpp"
+#include "project/Project.hpp"
 #include "rendering/renderer/Renderer.hpp"
 #include "resource/ResourceManager.hpp"
 
@@ -29,7 +30,6 @@ Application::Application()
     m_root            = std::make_unique<Root>();
     m_terminated      = false;
     m_window          = std::unique_ptr<Window>(Window::create(props));
-    m_layerStack      = LayerStack();
     m_frameDuration   = std::chrono::milliseconds(1000 / 60); // 60 fps
     m_imGuiLayer      = new ImGuiLayer();
     pushOverlay(m_imGuiLayer);
@@ -54,7 +54,18 @@ Application::Application()
     });
 }
 
-Application::~Application() { }
+Application::~Application()
+{
+    // Project scenes and editor layers own shared references to the same nodes.
+    // Release all of them while the renderer and its OpenGL context still exist.
+    Project::unloadScenes();
+    m_layerStack.clear();
+    m_imGuiLayer = nullptr;
+    m_root->clear();
+
+    Renderer::getInstance().shutdown();
+    s_instance = nullptr;
+}
 
 void Application::pushLayer(Layer* layer)
 {

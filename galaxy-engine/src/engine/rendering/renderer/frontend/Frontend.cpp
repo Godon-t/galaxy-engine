@@ -3,13 +3,6 @@
 #include "Log.hpp"
 
 namespace Galaxy {
-char* copyString(const std::string& str)
-{
-    char* cstr = new char[str.size() + 1];
-    std::strcpy(cstr, str.c_str());
-    return cstr;
-}
-
 Frontend::Frontend(std::vector<RenderCommand>* commandBuffer)
 {
     m_frontBuffer = commandBuffer;
@@ -120,27 +113,25 @@ void Frontend::setProjectionMatrix(const math::mat4& projection)
 void Frontend::pushCommand(RenderCommand command)
 {
     if(m_addCommandsToDevice && m_frameDevices.size() > 0){
-        m_frameDevices.back()->customPostCommands.push_back(command);
+        m_frameDevices.back()->customPostCommands.push_back(std::move(command));
     } else {
-        m_frontBuffer->push_back(command);
+        m_frontBuffer->push_back(std::move(command));
     }
 }
 
-void Frontend::saveFrameBuffer(renderID framebufferID, std::string& path)
+void Frontend::saveFrameBuffer(renderID framebufferID, std::string path)
 {
     SaveFrameBufferCommand saveFramebufferC;
-    char* copy = new char[path.size() + 1];
-    std::strcpy(copy, path.c_str());
-    saveFramebufferC.path          = copy;
+    saveFramebufferC.path          = std::move(path);
     saveFramebufferC.frameBufferID = framebufferID;
     pushCommand(saveFramebufferC);
 }
 
-void Frontend::bindTexture(renderID textureInstanceID, char* uniformName, bool important)
+void Frontend::bindTexture(renderID textureInstanceID, std::string uniformName, bool important)
 {
     UseTextureCommand useTextureCommand;
     useTextureCommand.instanceID  = textureInstanceID;
-    useTextureCommand.uniformName = uniformName;
+    useTextureCommand.uniformName = std::move(uniformName);
     useTextureCommand.important = important;
     pushCommand(useTextureCommand);
 }
@@ -172,11 +163,11 @@ void Frontend::attachCubemapToFramebuffer(renderID cubemapID, renderID framebuff
     pushCommand(attachCommand);
 }
 
-void Frontend::useCubemap(renderID cubemapInstanceID, char* uniformName)
+void Frontend::useCubemap(renderID cubemapInstanceID, std::string uniformName)
 {
     UseCubemapCommand useCubemapCommand;
     useCubemapCommand.instanceID  = cubemapInstanceID;
-    useCubemapCommand.uniformName = uniformName;
+    useCubemapCommand.uniformName = std::move(uniformName);
     pushCommand(useCubemapCommand);
 }
 
@@ -210,7 +201,7 @@ void Frontend::changeUsedProgram(ProgramType program)
 void Frontend::setUniform(std::string uniformName, bool value)
 {
     SetUniformCommand uniformCommand;
-    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.uniformName = std::move(uniformName);
     uniformCommand.type        = BOOL;
     uniformCommand.valueBool   = value;
     pushCommand(uniformCommand);
@@ -219,7 +210,7 @@ void Frontend::setUniform(std::string uniformName, bool value)
 void Frontend::setUniform(std::string uniformName, float value)
 {
     SetUniformCommand uniformCommand;
-    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.uniformName = std::move(uniformName);
     uniformCommand.type        = FLOAT;
     uniformCommand.valueFloat  = value;
     pushCommand(uniformCommand);
@@ -228,7 +219,7 @@ void Frontend::setUniform(std::string uniformName, float value)
 void Frontend::setUniform(std::string uniformName, int value)
 {
     SetUniformCommand uniformCommand;
-    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.uniformName = std::move(uniformName);
     uniformCommand.type        = INT;
     uniformCommand.valueInt    = value;
     pushCommand(uniformCommand);
@@ -237,7 +228,7 @@ void Frontend::setUniform(std::string uniformName, int value)
 void Frontend::setUniform(std::string uniformName, mat4 value)
 {
     SetUniformCommand uniformCommand;
-    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.uniformName = std::move(uniformName);
     uniformCommand.type        = MAT4;
     uniformCommand.matrixValue = value;
     pushCommand(uniformCommand);
@@ -246,7 +237,7 @@ void Frontend::setUniform(std::string uniformName, mat4 value)
 void Frontend::setUniform(std::string uniformName, vec3 value)
 {
     SetUniformCommand uniformCommand;
-    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.uniformName = std::move(uniformName);
     uniformCommand.type        = VEC3;
     uniformCommand.valueVec3.x = value.x;
     uniformCommand.valueVec3.y = value.y;
@@ -257,7 +248,7 @@ void Frontend::setUniform(std::string uniformName, vec3 value)
 void Frontend::setUniform(std::string uniformName, ivec3 value)
 {
     SetUniformCommand uniformCommand;
-    uniformCommand.uniformName  = copyString(uniformName);
+    uniformCommand.uniformName  = std::move(uniformName);
     uniformCommand.type         = IVEC3;
     uniformCommand.valueIVec3.x = value.x;
     uniformCommand.valueIVec3.y = value.y;
@@ -269,7 +260,7 @@ void Frontend::setUniform(std::string uniformName, ivec3 value)
 void Frontend::setUniform(std::string uniformName, vec2 value)
 {
     SetUniformCommand uniformCommand;
-    uniformCommand.uniformName = copyString(uniformName);
+    uniformCommand.uniformName = std::move(uniformName);
     uniformCommand.type        = VEC2;
     uniformCommand.valueVec2.x = value.r;
     uniformCommand.valueVec2.y = value.g;
@@ -289,7 +280,7 @@ void Frontend::setFramebufferAsTextureUniform(renderID framebufferID, std::strin
 {
     SetFramebufferAsTextureUniformCommand setTextureCommand;
     setTextureCommand.framebufferID = framebufferID;
-    setTextureCommand.uniformName   = copyString(uniformName);
+    setTextureCommand.uniformName   = std::move(uniformName);
     setTextureCommand.textureIdx    = textureIdx;
     pushCommand(setTextureCommand);
 }
@@ -298,7 +289,7 @@ void Frontend::setFramebufferAsCubemapUniform(renderID framebufferID, std::strin
 {
     SetFramebufferAsTextureUniformCommand setTextureCommand;
     setTextureCommand.framebufferID = framebufferID;
-    setTextureCommand.uniformName   = copyString(uniformName);
+    setTextureCommand.uniformName   = std::move(uniformName);
     setTextureCommand.textureIdx    = colorIdx;
     setTextureCommand.aboutCubemap  = true;
     pushCommand(setTextureCommand);
@@ -340,9 +331,7 @@ void Frontend::updateCubemap(renderID targetID, unsigned int resolution)
 void Frontend::addDebugMsg(std::string message)
 {
     DebugMsgCommand debug;
-    char* copy = new char[message.size() + 1];
-    std::strcpy(copy, message.c_str());
-    debug.msg = copy;
+    debug.msg = std::move(message);
     pushCommand(debug);
 }
 

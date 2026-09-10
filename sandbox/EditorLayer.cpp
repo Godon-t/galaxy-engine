@@ -86,7 +86,6 @@ void EditorLayer::onAttach()
 
 void EditorLayer::onDetach()
 {
-    // Renderer::getInstance().clearFrameBuffer(m_viewportFrameID);
 }
 
 void EditorLayer::onUpdate()
@@ -223,12 +222,12 @@ void EditorLayer::displayViewport(bool validScene)
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2 { 100, 1000 });
         }
         ImVec2 pannelSize = ImGui::GetContentRegionAvail();
-        if (m_viewportSize.x != pannelSize.x || m_viewportSize.y != pannelSize.y) {
+        if (pannelSize.x > 0.0f && pannelSize.y > 0.0f
+            && (m_viewportSize.x != pannelSize.x || m_viewportSize.y != pannelSize.y)) {
             // TODO: resize here and on resize event ?
             m_viewportSize = { pannelSize.x, pannelSize.y };
 
             Renderer::getInstance().resize(m_viewportSize.x, m_viewportSize.y);
-            Renderer::getInstance().getBackend().resizeFrameBuffer(m_viewportFrameID, m_viewportSize.x, m_viewportSize.y);
         }
         ImGui::PopStyleVar();
         // TODO: bad design if I have to use textureID outside of Renderer. Will cause problem when multithreading renderer.

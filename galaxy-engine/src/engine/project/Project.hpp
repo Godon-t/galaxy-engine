@@ -37,6 +37,7 @@ public:
     inline static Scene& loadScene(uuid id) { return getInstance()._loadScene(getInstance().getPath(ProjectPathTypes::SCENE, id), id); }
     inline static Scene& createScene(std::string path) { return getInstance()._createScene(path); }
     inline static void saveScene(uuid id) { getInstance()._saveScene(id); }
+    inline static void unloadScenes() { getInstance().m_scenes.clear(); }
     static bool isSceneValid(uuid id);
 
     inline static std::string getProjectRootPath() { return getInstance().m_projectFolderPath; }

@@ -7,6 +7,7 @@
 #include "types/Math.hpp"
 
 #include <assimp/scene.h>
+#include <utility>
 
 namespace Galaxy {
 enum TextureType {
@@ -33,10 +34,10 @@ public:
 
         m_useTransparency = other.m_useTransparency;
 
-        m_materialRenderID = other.m_materialRenderID;
+        m_materialRenderID = std::exchange(other.m_materialRenderID, 0);
 
         m_useImage = other.m_useImage;
-        m_images   = other.m_images;
+        m_images   = std::move(other.m_images);
     }
 
     bool save(bool recursive = true) override;
@@ -45,6 +46,12 @@ public:
     inline bool canUseImage(TextureType type) const { return m_useImage[type]; }
     ResourceHandle<Image> getImage(TextureType type) const { return m_images[type]; }
     inline renderID getRenderID() const { return m_materialRenderID; }
+    inline void setRenderID(renderID id) { m_materialRenderID = id; }
+    inline void notifyGpuInstanceDestroyed(renderID expectedID)
+    {
+        if (m_materialRenderID == expectedID)
+            m_materialRenderID = 0;
+    }
 
     void setImage(TextureType type, ResourceHandle<Image> image);
 

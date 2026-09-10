@@ -11,9 +11,11 @@ Backend::Backend(size_t maxSize)
     : m_visualInstances(maxSize)
     , m_textureInstances(maxSize * 2)
     , m_materialInstances(maxSize)
+    , m_cubemapInstances(maxSize)
     , m_frameBufferInstances(maxSize)
     , m_cubemapFrameBufferInstances(maxSize)
     , m_uboInstances(maxSize)
+    , m_activeProgram(&m_mainProgram)
 {
     GLenum error = glGetError();
 
@@ -34,57 +36,81 @@ Backend::Backend(size_t maxSize)
     glEnable(GL_CULL_FACE);
     // glDisable(GL_CULL_FACE);
 
-    // TODO: Change the way Program object are created
-    m_mainProgram                = std::move(ProgramPBR(engineRes("shaders/base.glsl")));
-    m_skyboxProgram              = std::move(ProgramSkybox(engineRes("shaders/skybox.glsl")));
-    m_irradianceProgram          = std::move(ProgramSkybox(engineRes("shaders/filters/irradiance.glsl")));
-    m_textureProgram             = std::move(ProgramTexture(engineRes("shaders/texture.glsl")));
-    m_unicolorProgram            = std::move(ProgramUnicolor(engineRes("shaders/unicolor.glsl")));
-    m_postProcessingProbeProgram = std::move(ProgramPostProc(engineRes("shaders/post_processing.glsl")));
-    m_postProcessingSSGIProgram  = std::move(ProgramPostProcSSGI(engineRes("shaders/ssgi.glsl")));
-    m_shadowProgram              = std::move(ProgramShadow(engineRes("shaders/shadow_depth.glsl")));
-    m_computeOctahedralProgram   = std::move(ProgramComputeOctahedral(engineRes("shaders/compute_octahedral.glsl")));
-
-    m_debugLinesProgram = std::move(ProgramDebugLines(engineRes("shaders/debug/line_draw.glsl")));
-
-    m_activeProgram = &m_mainProgram;
+    // Shader construction uses OpenGL entry points, so it must happen after GLEW.
+    // Move assignment is safe here: Program is move-only and releases any old ID.
+    m_mainProgram                = ProgramPBR(engineRes("shaders/base.glsl"));
+    m_skyboxProgram              = ProgramSkybox(engineRes("shaders/skybox.glsl"));
+    m_irradianceProgram          = ProgramSkybox(engineRes("shaders/filters/irradiance.glsl"));
+    m_textureProgram             = ProgramTexture(engineRes("shaders/texture.glsl"));
+    m_unicolorProgram            = ProgramUnicolor(engineRes("shaders/unicolor.glsl"));
+    m_postProcessingProbeProgram = ProgramPostProc(engineRes("shaders/post_processing.glsl"));
+    m_postProcessingSSGIProgram  = ProgramPostProcSSGI(engineRes("shaders/ssgi.glsl"));
+    m_shadowProgram              = ProgramShadow(engineRes("shaders/shadow_depth.glsl"));
+    m_computeOctahedralProgram   = ProgramComputeOctahedral(engineRes("shaders/compute_octahedral.glsl"));
+    m_debugLinesProgram          = ProgramDebugLines(engineRes("shaders/debug/line_draw.glsl"));
 
     m_debugLines.init();
 
     checkOpenGLErrors("Renderer constructor");
 }
 
+Backend::~Backend()
+{
+    destroy();
+}
+
 renderID Backend::instantiateUBO(unsigned int dataSize)
 {
+    if (!m_uboInstances.canAddInstance())
+        return 0;
+
     renderID uboID = m_uboInstances.createResourceInstance();
 
     m_uboInstances.get(uboID)->init(dataSize);
-
-    m_gpuDestroyNotifications[uboID] = [this, uboID] {
-        m_uboInstances.get(uboID)->destroy();
-    };
 
     return uboID;
 }
 
 void Backend::destroy()
 {
+    // Pending CPU-resource callbacks use a weak copy of this token.
+    m_lifetimeToken.reset();
+    m_cubemapUploadLifetimes.clear();
     m_debugLines.destroy();
 
-    m_materialInstances.removeAll([this](MaterialInstance& mat) {
-        for (auto& text : mat.images) {
-            m_textureInstances.tryRemove(text);
-        }
-    });
-    m_visualInstances.removeAll([](VisualInstance& visu) {
-        visu.~VisualInstance();
-    });
-    m_cubemapInstances.removeAll([](Cubemap& cubemap) {
-        cubemap.destroy();
-    });
-    m_textureInstances.removeAll([](Texture& texture) {
-        texture.destroy();
-    });
+    auto visualNotifications  = std::move(m_visualDestroyNotifications);
+    auto textureNotifications = std::move(m_textureDestroyNotifications);
+    auto materialNotifications = std::move(m_materialDestroyNotifications);
+    m_visualDestroyNotifications.clear();
+    m_textureDestroyNotifications.clear();
+    m_materialDestroyNotifications.clear();
+    for (auto& [id, notify] : visualNotifications)
+        notify();
+    for (auto& [id, notify] : textureNotifications)
+        notify();
+    for (auto& [id, notify] : materialNotifications)
+        notify();
+
+    // Framebuffers may borrow textures/cubemaps, so release them first.
+    m_frameBufferInstances.removeAll();
+    m_cubemapFrameBufferInstances.removeAll();
+    m_materialInstances.removeAll();
+    m_uboInstances.removeAll();
+    m_visualInstances.removeAll();
+    m_textureInstances.removeAll();
+    m_cubemapInstances.removeAll();
+
+    m_debugLinesProgram.destroy();
+    m_computeOctahedralProgram.destroy();
+    m_shadowProgram.destroy();
+    m_postProcessingSSGIProgram.destroy();
+    m_postProcessingProbeProgram.destroy();
+    m_unicolorProgram.destroy();
+    m_textureProgram.destroy();
+    m_irradianceProgram.destroy();
+    m_skyboxProgram.destroy();
+    m_mainProgram.destroy();
+    m_activeProgram = nullptr;
 }
 
 void Backend::setActiveProgram(ProgramType program)
@@ -122,7 +148,7 @@ renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<sho
     m_visualInstances.get(meshID)->init(vertices, indices);
 
     if (destroyCallback) {
-        m_gpuDestroyNotifications[meshID] = destroyCallback;
+        m_visualDestroyNotifications[meshID] = destroyCallback;
     }
 
     return meshID;
@@ -140,17 +166,27 @@ renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
         m_visualInstances.increaseCount(subMeshID);
         return subMeshID;
     }
+    if (!m_visualInstances.canAddInstance())
+        return 0;
 
     renderID visualID = m_visualInstances.createResourceInstance();
+    mesh.getResource().setVisualID(surfaceIdx, visualID);
+    const std::weak_ptr<int> backendLifetime = m_lifetimeToken;
 
-    mesh.getResource().onLoaded([this, mesh, visualID, surfaceIdx] {
+    mesh.getResource().onLoaded([this, backendLifetime, mesh, visualID, surfaceIdx] {
+        if (backendLifetime.expired() || mesh.getResource().getVisualID(surfaceIdx) != visualID)
+            return;
+
         const auto& meshRes = mesh.getResource();
-        m_visualInstances.get(visualID)->init(
+        auto* visualInstance = m_visualInstances.tryGet(visualID);
+        if (visualInstance == nullptr)
+            return;
+        visualInstance->init(
             meshRes.getVertices(surfaceIdx),
             meshRes.getIndices(surfaceIdx));
     });
 
-    m_gpuDestroyNotifications[visualID] = [surfaceIdx, mesh] { mesh.getResource().notifyGpuInstanceDestroyed(surfaceIdx); };
+    m_visualDestroyNotifications[visualID] = [surfaceIdx, mesh, visualID] { mesh.getResource().notifyGpuInstanceDestroyed(surfaceIdx, visualID); };
 
     return visualID;
 }
@@ -160,10 +196,10 @@ void Backend::clearMesh(renderID meshID)
     if (!m_visualInstances.tryRemove(meshID))
         return;
 
-    auto it = m_gpuDestroyNotifications.find(meshID);
-    if (it != m_gpuDestroyNotifications.end()) {
+    auto it = m_visualDestroyNotifications.find(meshID);
+    if (it != m_visualDestroyNotifications.end()) {
         it->second();
-        m_gpuDestroyNotifications.erase(meshID);
+        m_visualDestroyNotifications.erase(meshID);
     }
 }
 
@@ -174,17 +210,26 @@ renderID Backend::instantiateTexture(ResourceHandle<Image> image)
         m_textureInstances.increaseCount(existingID);
         return existingID;
     }
+    if (!m_textureInstances.canAddInstance())
+        return 0;
 
     renderID textureID = m_textureInstances.createResourceInstance();
     image.getResource().setTextureID(textureID);
+    const std::weak_ptr<int> backendLifetime = m_lifetimeToken;
 
-    image.getResource().onLoaded([this, image, textureID] {
+    image.getResource().onLoaded([this, backendLifetime, image, textureID] {
+        if (backendLifetime.expired() || image.getResource().getTextureID() != textureID)
+            return;
+
         auto& imgRes = image.getResource();
-        m_textureInstances.get(textureID)->init(imgRes.getData(), imgRes.getWidth(), imgRes.getHeight(), imgRes.getNbChannels());
+        auto* texture = m_textureInstances.tryGet(textureID);
+        if (texture == nullptr)
+            return;
+        texture->init(imgRes.getData(), imgRes.getWidth(), imgRes.getHeight(), imgRes.getNbChannels());
         imgRes.freeCpuData();
     });
 
-    m_gpuDestroyNotifications[textureID] = [image] { image.getResource().notifyGpuInstanceDestroyed(); };
+    m_textureDestroyNotifications[textureID] = [image, textureID] { image.getResource().notifyGpuInstanceDestroyed(textureID); };
 
     return textureID;
 }
@@ -194,9 +239,7 @@ renderID Backend::instantiateTexture(TextureFormat format, vec2 size)
     if (!m_textureInstances.canAddInstance())
         return 0;
 
-    renderID textureID = m_textureInstances.createResourceInstance();
-    m_textureInstances.get(textureID)->resize(size.x, size.y);
-    m_textureInstances.get(textureID)->setFormat(format);
+    renderID textureID = m_textureInstances.createResourceInstance(format, static_cast<int>(size.x), static_cast<int>(size.y));
     checkOpenGLErrors("Instantiate texture");
     return textureID;
 }
@@ -206,10 +249,10 @@ void Backend::clearTexture(renderID textureID)
     if (!m_textureInstances.tryRemove(textureID))
         return;
 
-    auto it = m_gpuDestroyNotifications.find(textureID);
-    if (it != m_gpuDestroyNotifications.end()) {
+    auto it = m_textureDestroyNotifications.find(textureID);
+    if (it != m_textureDestroyNotifications.end()) {
         it->second();
-        m_gpuDestroyNotifications.erase(textureID);
+        m_textureDestroyNotifications.erase(textureID);
     }
 }
 
@@ -232,11 +275,23 @@ renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
         m_materialInstances.increaseCount(existingID);
         return existingID;
     }
+    if (!m_materialInstances.canAddInstance())
+        return 0;
 
     renderID materialID = m_materialInstances.createResourceInstance();
+    material.getResource().setRenderID(materialID);
+    m_materialDestroyNotifications[materialID] = [material, materialID] {
+        material.getResource().notifyGpuInstanceDestroyed(materialID);
+    };
+    const std::weak_ptr<int> backendLifetime = m_lifetimeToken;
 
-    material.getResource().onLoaded([this, material, materialID] {
-        auto matInstance        = m_materialInstances.get(materialID);
+    material.getResource().onLoaded([this, backendLifetime, material, materialID] {
+        if (backendLifetime.expired() || material.getResource().getRenderID() != materialID)
+            return;
+
+        auto matInstance = m_materialInstances.tryGet(materialID);
+        if (matInstance == nullptr)
+            return;
         const auto& matResource = material.getResource();
 
         auto setupTexture = [this, &matInstance, &matResource](TextureType type) {
@@ -276,17 +331,24 @@ void Backend::updateMaterial(renderID materialID, ResourceHandle<Material> mater
 
 void Backend::clearMaterial(renderID materialID)
 {
-    if (!m_materialInstances.tryRemove(materialID))
+    const bool removed = m_materialInstances.tryRemove(materialID, [this](MaterialInstance& materialInstance) {
+        for (size_t type = 0; type < TextureType::COUNT; ++type) {
+            if (materialInstance.useImage[type])
+                clearTexture(materialInstance.images[type]);
+        }
+    });
+
+    if (!removed)
         return;
 
-    auto it = m_gpuDestroyNotifications.find(materialID);
-    if (it != m_gpuDestroyNotifications.end()) {
-        it->second();
-        m_gpuDestroyNotifications.erase(materialID);
+    auto notification = m_materialDestroyNotifications.find(materialID);
+    if (notification != m_materialDestroyNotifications.end()) {
+        notification->second();
+        m_materialDestroyNotifications.erase(notification);
     }
 }
 
-void Backend::processCommands(std::vector<RenderCommand>& commands)
+void Backend::processCommands(const std::vector<RenderCommand>& commands)
 {
     for (const auto& command : commands) {
         std::visit([this](auto&& cmd) {
@@ -446,22 +508,16 @@ renderID Backend::generatePyramid(float baseSize, float height, std::function<vo
 
 void Backend::clearCubemap(renderID cubemapID)
 {
-    if (!m_cubemapInstances.tryRemove(cubemapID))
-        return;
-
-    auto it = m_gpuDestroyNotifications.find(cubemapID);
-    if (it != m_gpuDestroyNotifications.end()) {
-        it->second();
-        m_gpuDestroyNotifications.erase(cubemapID);
-    }
+    if (m_cubemapInstances.tryRemove(cubemapID))
+        m_cubemapUploadLifetimes.erase(cubemapID);
 }
 
 renderID Backend::instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount, unsigned int depthLayerCount)
 {
-    renderID frameBufferID = m_frameBufferInstances.createResourceInstance();
-    m_frameBufferInstances.get(frameBufferID)->setFormat(format);
-    m_frameBufferInstances.get(frameBufferID)->setColorsCount(colorCount);
-    m_frameBufferInstances.get(frameBufferID)->resize(width, height, depthLayerCount);
+    if (!m_frameBufferInstances.canAddInstance())
+        return 0;
+
+    renderID frameBufferID = m_frameBufferInstances.createResourceInstance(width, height, format, colorCount, depthLayerCount);
     m_frameBufferInstances.get(frameBufferID)->unbind();
     checkOpenGLErrors("Instantiate frameBuffer");
     return frameBufferID;
@@ -469,14 +525,10 @@ renderID Backend::instanciateFrameBuffer(unsigned int width, unsigned int height
 
 renderID Backend::instantiateCubemapFrameBuffer(unsigned int resolution, unsigned int colorCount)
 {
-    renderID frameBufferID = m_cubemapFrameBufferInstances.createResourceInstance();
+    if (!m_cubemapFrameBufferInstances.canAddInstance())
+        return 0;
 
-    for(int i=0; i<colorCount; i++){
-        Cubemap cubemap;
-        m_cubemapFrameBufferInstances.get(frameBufferID)->attachColorCubemap(cubemap, i);    
-    }
-
-    m_cubemapFrameBufferInstances.get(frameBufferID)->resize(resolution);
+    renderID frameBufferID = m_cubemapFrameBufferInstances.createResourceInstance(resolution, colorCount);
     m_cubemapFrameBufferInstances.get(frameBufferID)->unbind();
     checkOpenGLErrors("Instantiate frameBuffer");
     return frameBufferID;
@@ -484,40 +536,58 @@ renderID Backend::instantiateCubemapFrameBuffer(unsigned int resolution, unsigne
 
 void Backend::clearFrameBuffer(renderID frameBufferID)
 {
-    if (!m_frameBufferInstances.tryRemove(frameBufferID))
-        return;
-
-    auto it = m_gpuDestroyNotifications.find(frameBufferID);
-    if (it != m_gpuDestroyNotifications.end()) {
-        it->second();
-        m_gpuDestroyNotifications.erase(frameBufferID);
-    }
+    m_frameBufferInstances.tryRemove(frameBufferID);
     checkOpenGLErrors("Clear frameBuffer");
 }
 
 void Backend::resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height, unsigned int depthLayerCount)
 {
-    m_frameBufferInstances.get(frameBufferID)->resize(width, height, depthLayerCount);
+    auto* framebuffer = m_frameBufferInstances.tryGet(frameBufferID);
+    if (framebuffer == nullptr) {
+        GLX_CORE_ERROR("Trying to resize an unknown framebuffer: {0}", frameBufferID);
+        return;
+    }
+    framebuffer->resize(width, height, depthLayerCount);
 }
 
 void Backend::resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size)
 {
-    m_cubemapFrameBufferInstances.get(frameBufferID)->resize(size);
+    auto* framebuffer = m_cubemapFrameBufferInstances.tryGet(frameBufferID);
+    if (framebuffer == nullptr) {
+        GLX_CORE_ERROR("Trying to resize an unknown cubemap framebuffer: {0}", frameBufferID);
+        return;
+    }
+    framebuffer->resize(size);
 }
 
 FramebufferTextureFormat Backend::getFramebufferFormat(renderID id)
 {
-    return m_frameBufferInstances.get(id)->getFormat();
+    auto* framebuffer = m_frameBufferInstances.tryGet(id);
+    if (framebuffer == nullptr) {
+        GLX_CORE_ERROR("Trying to inspect an unknown framebuffer: {0}", id);
+        return FramebufferTextureFormat::None;
+    }
+    return framebuffer->getFormat();
 }
 
 unsigned int Backend::getFrameBufferTextureID(renderID frameBufferID)
 {
-    return m_frameBufferInstances.get(frameBufferID)->getColorTextureID();
+    auto* framebuffer = m_frameBufferInstances.tryGet(frameBufferID);
+    if (framebuffer == nullptr) {
+        GLX_CORE_ERROR("Trying to inspect an unknown framebuffer: {0}", frameBufferID);
+        return 0;
+    }
+    return framebuffer->getColorTextureID();
 }
 
 unsigned int Backend::getFrameBufferDepthTextureID(renderID frameBufferID)
 {
-    return m_frameBufferInstances.get(frameBufferID)->getDepthTextureID();
+    auto* framebuffer = m_frameBufferInstances.tryGet(frameBufferID);
+    if (framebuffer == nullptr) {
+        GLX_CORE_ERROR("Trying to inspect an unknown framebuffer: {0}", frameBufferID);
+        return 0;
+    }
+    return framebuffer->getDepthTextureID();
 }
 
 void Backend::setCullMode(renderID visualInstanceID, CullMode mode)
@@ -540,7 +610,7 @@ void Backend::initDebugCallback()
         if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
             return;
 
-        char* severityChr;
+        const char* severityChr;
         switch (severity) {
         case GL_DEBUG_SEVERITY_HIGH:
             severityChr = "High";
@@ -565,18 +635,27 @@ void Backend::initDebugCallback()
 renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
 {
     renderID cubemapID = instanciateCubemap();
-
-    auto& cubemapInstance = *m_cubemapInstances.get(cubemapID);
+    if (cubemapID == 0)
+        return 0;
+    auto uploadLifetime = std::make_shared<int>(0);
+    m_cubemapUploadLifetimes[cubemapID] = uploadLifetime;
+    const std::weak_ptr<int> weakUploadLifetime = uploadLifetime;
+    const std::weak_ptr<int> backendLifetime = m_lifetimeToken;
 
     for (int i = 0; i < 6; i++) {
+        faces[i].getResource().onLoaded([this, backendLifetime, weakUploadLifetime, faces, cubemapID, i] {
+            if (backendLifetime.expired() || weakUploadLifetime.expired())
+                return;
 
-        faces[i].getResource().onLoaded([faces, &cubemapInstance, i] {
+            auto* cubemapInstance = m_cubemapInstances.tryGet(cubemapID);
+            if (cubemapInstance == nullptr)
+                return;
             int w = faces[0].getResource().getWidth();
             int h = faces[0].getResource().getHeight();
-            cubemapInstance.resize(w);
+            cubemapInstance->resize(w);
 
             auto& faceResource = faces[i].getResource();
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapInstance.cubemapID);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapInstance->getId());
 
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                 0, GL_RGB, w, w, 0, GL_RGB, GL_UNSIGNED_BYTE, faceResource.getData());
@@ -589,6 +668,9 @@ renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
 
 renderID Backend::instanciateCubemap(int resolution)
 {
+    if (!m_cubemapInstances.canAddInstance())
+        return 0;
+
     renderID cubemapID = m_cubemapInstances.createResourceInstance();
     m_cubemapInstances.get(cubemapID)->resize(resolution);
     return cubemapID;
@@ -694,7 +776,7 @@ void Backend::processCommand(const RawDrawCommand& command)
 
 void Backend::processCommand(const UseTextureCommand& command)
 {
-    auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
+    auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str());
     Texture* texture = m_textureInstances.get(command.instanceID);
     texture->activate(uniLoc);
     if(command.important)
@@ -704,7 +786,7 @@ void Backend::processCommand(const UseTextureCommand& command)
 
 void Backend::processCommand(const UseCubemapCommand& command)
 {
-    auto uniLoc   = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
+    auto uniLoc   = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str());
     auto& cubemap = *m_cubemapInstances.get(command.instanceID);
     cubemap.activate(uniLoc);
     checkOpenGLErrors("Bind cubemap");
@@ -733,16 +815,16 @@ void Backend::processCommand(const AttachCubemapToFramebufferCommand& command)
 
 void Backend::processCommand(const BindMaterialCommand& command)
 {
-    if (!m_activeProgram->type() == ProgramType::PBR) {
+    if (m_activeProgram->type() != ProgramType::PBR) {
         GLX_CORE_ERROR("PBR Program not active, activating it");
         setActiveProgram(ProgramType::PBR);
     }
 
     MaterialInstance& material = *m_materialInstances.get(command.materialRenderID);
-    std::array<Texture, TextureType::COUNT> materialTextures;
+    std::array<Texture*, TextureType::COUNT> materialTextures {};
     auto addTexture = [&material, &materialTextures, this](TextureType type) {
         if (material.useImage[type]) {
-            materialTextures[type] = *m_textureInstances.get(material.images[type]);
+            materialTextures[type] = m_textureInstances.get(material.images[type]);
         }
     };
     addTexture(ALBEDO);
@@ -751,7 +833,7 @@ void Backend::processCommand(const BindMaterialCommand& command)
     addTexture(ROUGHNESS);
     addTexture(AO);
 
-    ((ProgramPBR*)m_activeProgram)->updateMaterial(material, materialTextures);
+    static_cast<ProgramPBR*>(m_activeProgram)->updateMaterial(material, materialTextures);
     checkOpenGLErrors("Binding material");
 }
 
@@ -775,25 +857,23 @@ void Backend::processCommand(const BindFrameBufferCommand& command)
 void Backend::processCommand(const SetUniformCommand& command)
 {
     if (command.type == SetValueTypes::BOOL) {
-        glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueBool ? GL_TRUE : GL_FALSE);
+        glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()), command.valueBool ? GL_TRUE : GL_FALSE);
     } else if (command.type == SetValueTypes::FLOAT) {
-        glUniform1f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueFloat);
+        glUniform1f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()), command.valueFloat);
     } else if (command.type == SetValueTypes::INT) {
-        glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), command.valueInt);
+        glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()), command.valueInt);
     } else if (command.type == SetValueTypes::VEC3) {
-        glUniform3f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName),
+        glUniform3f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()),
             command.valueVec3.x, command.valueVec3.y, command.valueVec3.z);
     } else if (command.type == SetValueTypes::IVEC3) {
-        glUniform3i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName),
+        glUniform3i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()),
             command.valueIVec3.x, command.valueIVec3.y, command.valueIVec3.z);
     } else if (command.type == SetValueTypes::VEC2) {
-        glUniform2f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName),
+        glUniform2f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()),
             command.valueVec2.x, command.valueVec2.y);
     } else if (command.type == SetValueTypes::MAT4) {
-        glUniformMatrix4fv(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName), 1, GL_FALSE, &command.matrixValue[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()), 1, GL_FALSE, &command.matrixValue[0][0]);
     }
-
-    free(command.uniformName);
 
     checkOpenGLErrors("Set uniform");
 }
@@ -821,7 +901,7 @@ void Backend::processCommand(const UpdateCubemapCommand& command)
 
 void Backend::processCommand(const SetFramebufferAsTextureUniformCommand& command)
 {
-    auto uniLoc       = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName);
+    auto uniLoc       = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str());
     if(!command.aboutCubemap){
         auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
         framebuffer.setAsTextureUniform(uniLoc, command.textureIdx);
@@ -830,7 +910,6 @@ void Backend::processCommand(const SetFramebufferAsTextureUniformCommand& comman
         cubemapFB.setAsCubemapUniform(uniLoc, command.textureIdx);
     }
     checkOpenGLErrors("Bind framebuffer texture as uniform");
-    free(command.uniformName);
 }
 
 void Backend::processCommand(const UpdateUBOCommand& command)
@@ -846,7 +925,6 @@ void Backend::processCommand(const BindUBOCommand& command)
 void Backend::processCommand(const DebugMsgCommand& command)
 {
     GLX_CORE_TRACE(command.msg);
-    free(command.msg);
 }
 
 void Backend::processCommand(const DrawDebugLineCommand& command)
@@ -857,8 +935,6 @@ void Backend::processCommand(const DrawDebugLineCommand& command)
 void Backend::processCommand(const SaveFrameBufferCommand& command)
 {
     m_frameBufferInstances.get(command.frameBufferID)->savePPM(command.path);
-
-    free(command.path);
 }
 
 void Backend::debugDraw()

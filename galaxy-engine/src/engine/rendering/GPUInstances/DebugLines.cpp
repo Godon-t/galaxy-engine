@@ -2,9 +2,42 @@
 
 #include "gl_headers.hpp"
 
+#include <utility>
+
 namespace Galaxy {
+DebugLines::~DebugLines()
+{
+    destroy();
+}
+
+DebugLines::DebugLines(DebugLines&& other) noexcept
+    : m_vertices(std::move(other.m_vertices))
+    , m_maxLines(other.m_maxLines)
+    , m_currentLineCount(std::exchange(other.m_currentLineCount, 0))
+    , m_thickness(other.m_thickness)
+    , m_vao(std::exchange(other.m_vao, 0))
+    , m_vbo(std::exchange(other.m_vbo, 0))
+{
+}
+
+DebugLines& DebugLines::operator=(DebugLines&& other) noexcept
+{
+    if (this == &other)
+        return *this;
+
+    destroy();
+    m_vertices         = std::move(other.m_vertices);
+    m_maxLines         = other.m_maxLines;
+    m_currentLineCount = std::exchange(other.m_currentLineCount, 0);
+    m_thickness        = other.m_thickness;
+    m_vao              = std::exchange(other.m_vao, 0);
+    m_vbo              = std::exchange(other.m_vbo, 0);
+    return *this;
+}
+
 void DebugLines::init()
 {
+    destroy();
     glGenVertexArrays(1, &m_vao);
     glGenBuffers(1, &m_vbo);
 
@@ -49,8 +82,13 @@ void DebugLines::draw()
 }
 void DebugLines::destroy()
 {
-    glDeleteBuffers(1, &m_vbo);
-    glDeleteVertexArrays(1, &m_vao);
+    if (m_vbo != 0)
+        glDeleteBuffers(1, &m_vbo);
+    if (m_vao != 0)
+        glDeleteVertexArrays(1, &m_vao);
+    m_vbo = 0;
+    m_vao = 0;
+    m_currentLineCount = 0;
     m_vertices.clear();
 }
 void DebugLines::addVertex(math::vec3 pos, math::vec3 color)

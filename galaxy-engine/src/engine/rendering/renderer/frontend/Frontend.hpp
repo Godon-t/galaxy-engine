@@ -27,11 +27,11 @@ public:
     void submit(renderID meshID, const Transform& transform);
     void clear(vec4& color);
 
-    void bindTexture(renderID textureInstanceID, char* uniformName, bool important = false);
+    void bindTexture(renderID textureInstanceID, std::string uniformName, bool important = false);
     void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int attachmentIdx);
     void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID);
     void attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID, int colorIdx = 0);
-    void useCubemap(renderID cubemapInstanceID, char* uniformName);
+    void useCubemap(renderID cubemapInstanceID, std::string uniformName);
     void bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx = -1, int depthLayerIdx = -1);
     void unbindFrameBuffer(renderID frameBufferInstanceID, bool cubemap = false);
     void bindMaterial(renderID materialRenderID);
@@ -83,7 +83,7 @@ private:
     void setViewMatrix(const math::mat4& view);
     void setProjectionMatrix(const math::mat4& projection);
     void pushCommand(RenderCommand command);
-    void saveFrameBuffer(renderID framebufferID, std::string& path);
+    void saveFrameBuffer(renderID framebufferID, std::string path);
 
     bool m_addCommandsToDevice = false;
 

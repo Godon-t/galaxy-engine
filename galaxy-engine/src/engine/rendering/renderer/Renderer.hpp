@@ -17,6 +17,7 @@ class Renderer {
 public:
     static Renderer& getInstance();
     void init();
+    void shutdown();
     
     void passShadow();
     void addMainCameraDevice(std::shared_ptr<Camera> camera);

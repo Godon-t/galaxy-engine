@@ -27,8 +27,8 @@ public:
 
 private:
     // Used to ask Project if the scene is still valid
-    uuid m_selectedSceneId;
-    Scene* m_selectedScene;
+    uuid m_selectedSceneId = 0;
+    Scene* m_selectedScene  = nullptr;
 
     NodeListPanel m_nodeList;
     NodeEditPanel m_editNode;
@@ -36,8 +36,7 @@ private:
     EnvironmentCreation m_environmentCreation;
     ImGui::FileBrowser m_fileDialog;
 
-    vec2 m_viewportSize;
-    renderID m_viewportFrameID;
+    vec2 m_viewportSize { 0.0f };
 
     EditorMode m_mode;
     bool m_showAllNodes;

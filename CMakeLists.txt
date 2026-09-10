@@ -17,24 +17,15 @@ option(GALAXY_ENABLE_ASSERTS "Enable assertions" ON)
 # Ajout du sous-projet moteur
 add_subdirectory(galaxy-engine)
 
-# Optionnel : ajout du sandbox
 if(BUILD_SANDBOX)
-  	add_subdirectory(sandbox)
+    add_subdirectory(sandbox)
 
-	add_custom_command(
-		OUTPUT  "${CMAKE_BINARY_DIR}/launch-sandbox.sh"
-		COMMAND "${CMAKE_COMMAND}" -DOUT=${CMAKE_BINARY_DIR}/launch-sandbox.sh
-								-DEXE="$<TARGET_FILE:sandbox>"
-								-DARGS="${CMAKE_SOURCE_DIR}/project/.gproj"
-								-P "${CMAKE_SOURCE_DIR}/cmake/gen_launch.cmake"
-		DEPENDS sandbox
-		COMMENT "Génération du script launch-sandbox.sh"
-		VERBATIM
-	)
-
-	add_custom_target(launch_sandbox ALL
-		DEPENDS "${CMAKE_BINARY_DIR}/launch-sandbox.sh"
-	)
+    add_custom_target(run_sandbox
+        COMMAND $<TARGET_FILE:sandbox> "${CMAKE_SOURCE_DIR}/project/.gproj"
+        DEPENDS sandbox
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        USES_TERMINAL
+    )
 endif()
 
 

@@ -5,17 +5,13 @@
 
 namespace Galaxy {
 LightManager::LightManager()
-    : m_shadowMapFrameBufferID(0)
-    , m_probesFrameBuffer(0)
-    , m_fullQuad(0)
-    , m_gridDimX(0)
+    : m_gridDimX(0)
     , m_gridDimY(0)
     , m_gridDimZ(0)
     , m_probeDistance(1.f)
     , m_textureWidth(2048)
     , m_textureHeight(1024)
     , m_probeResolution(512)
-    , m_lightsUBO(0)
 {
 }
 
@@ -23,24 +19,21 @@ LightManager::~LightManager()
 {
 }
 
-renderID startVisu(0);
-renderID endVisu(0);
-
 void LightManager::init()
 {
     auto& backend = Renderer::getInstance().getBackend();
-    m_shadowMapFrameBufferID = backend.instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH, 0, maxLightCount);
+    m_shadowMapFramebuffer = backend.instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH, 0, maxLightCount);
     
     m_fullQuad = backend.generateQuad(vec2(2, 2), []() {});
     
     // frontend.resizeCubemap(m_colorRenderingCubemap, m_probeResolution);
     
     // TODO: pass to a format for normals in addition to colors and depths
-    m_probesFrameBuffer = backend.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8, 4);
-    m_cubemapFramebufferID   = backend.instantiateCubemapFrameBuffer(1024, 3);
+    m_probesFramebuffer = backend.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8, 4);
+    m_cubemapFramebuffer = backend.instantiateCubemapFrameBuffer(1024, 3);
 
-    m_debugStartVisu = backend.generateCube(1.f, false, []() {});
-    m_debugEndVisu   = backend.generateCube(1.f, false, []() {});
+    m_debugStartGeometry = backend.generateCube(1.f, false, []() {});
+    m_debugEndGeometry   = backend.generateCube(1.f, false, []() {});
 
     m_debugStartTransform.translate(vec3(-50.f, 10.f, -80.f));
     m_debugEndTransform.translate(vec3(80.f, 50.f, 80.f));
@@ -104,17 +97,17 @@ void LightManager::debugDraw()
 {
     auto& frontend = Renderer::getInstance().getFrontend();
 
-    frontend.submit(m_debugStartVisu, m_debugStartTransform);
-    frontend.submit(m_debugEndVisu, m_debugEndTransform);
+    frontend.submit(m_debugStartGeometry, m_debugStartTransform);
+    frontend.submit(m_debugEndGeometry, m_debugEndTransform);
 
     vec3 debugStart = m_debugStartTransform.getGlobalPosition();
     vec3 debugEnd   = m_debugEndTransform.getGlobalPosition();
 
     frontend.changeUsedProgram(POST_PROCESSING_PROBE);
-    frontend.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeIrradianceField", 0);
-    frontend.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeColorField", 1);
-    frontend.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeNormalField", 2);
-    frontend.setFramebufferAsTextureUniform(m_probesFrameBuffer, "probeDepthField", 3);
+    frontend.setFramebufferAsTextureUniform(m_probesFramebuffer, "probeIrradianceField", 0);
+    frontend.setFramebufferAsTextureUniform(m_probesFramebuffer, "probeColorField", 1);
+    frontend.setFramebufferAsTextureUniform(m_probesFramebuffer, "probeNormalField", 2);
+    frontend.setFramebufferAsTextureUniform(m_probesFramebuffer, "probeDepthField", 3);
     // frontend.bindTexture(m_probeRadianceTexture, "probeIrradianceField");
     // frontend.bindTexture(m_probeDepthTexture, "probeDepthField");
 
@@ -135,7 +128,7 @@ void LightManager::shadowPass(Node* sceneRoot)
     auto& frontend = Renderer::getInstance().getFrontend();
 
     frontend.changeUsedProgram(PBR);
-    frontend.setFramebufferAsTextureUniform(m_shadowMapFrameBufferID, "shadowMaps", -1);
+    frontend.setFramebufferAsTextureUniform(m_shadowMapFramebuffer, "shadowMaps", -1);
     
     bool updateUniform = false;
     vec2 viewportDimmension = vec2(1024, 1024);
@@ -170,7 +163,7 @@ void LightManager::shadowPass(Node* sceneRoot)
 
     for (auto& [id, lightData] : m_lights) {
         auto renderCamera = std::make_unique<RenderCameraTransform>();
-        renderCamera->targetFramebuffer = m_shadowMapFrameBufferID;
+        renderCamera->targetFramebuffer = m_shadowMapFramebuffer;
         renderCamera->targetDepthLayer = lightData.shadowMapLayer;
         renderCamera->transform = lightData.transformationMatrix;
         renderCamera->viewportDimmension = viewportDimmension;
@@ -199,19 +192,19 @@ void LightManager::updateProbeField()
     auto initDevice = std::make_unique<RenderDevice>();
     initDevice->renderScene = false;
     initDevice->noClear = false;
-    initDevice->targetFramebuffer = m_probesFrameBuffer;
+    initDevice->targetFramebuffer = m_probesFramebuffer;
     frontend.addRenderDevice(std::move(initDevice));
     frontend.changeUsedProgram(ProgramType::COMPUTE_OCTAHEDRAL);
-    frontend.setFramebufferAsCubemapUniform(m_cubemapFramebufferID, "radianceCubemap", 0);
-    frontend.setFramebufferAsCubemapUniform(m_cubemapFramebufferID, "normalCubemap", 1);
-    frontend.setFramebufferAsCubemapUniform(m_cubemapFramebufferID, "depthCubemap", -1);
+    frontend.setFramebufferAsCubemapUniform(m_cubemapFramebuffer, "radianceCubemap", 0);
+    frontend.setFramebufferAsCubemapUniform(m_cubemapFramebuffer, "normalCubemap", 1);
+    frontend.setFramebufferAsCubemapUniform(m_cubemapFramebuffer, "depthCubemap", -1);
     frontend.changeUsedProgram(ProgramType::PBR);
     frontend.setUniform("includeLightComputation", false);
     
     
     for (auto& probe : m_probeGrid) {
         auto renderPoint = std::make_unique<RenderPoint>();
-        renderPoint->targetFramebuffer = m_cubemapFramebufferID;
+        renderPoint->targetCubemapFramebuffer = m_cubemapFramebuffer;
         
         Transform renderTransform;
         renderTransform.setLocalPosition(probe.position);
@@ -231,7 +224,7 @@ void LightManager::updateProbeField()
         
         
         auto octahedralProjectionDevice = std::make_unique<RenderDevice>();
-        octahedralProjectionDevice->targetFramebuffer = m_probesFrameBuffer;
+        octahedralProjectionDevice->targetFramebuffer = m_probesFramebuffer;
         octahedralProjectionDevice->noClear = true;
         octahedralProjectionDevice->renderScene = false;
         
@@ -273,7 +266,7 @@ void LightManager::resizeProbeFieldGrid(unsigned int width, unsigned int height,
     m_textureWidth  = width * height * m_probeResolution;
     m_textureHeight = depth * m_probeResolution;
 
-    Renderer::getInstance().getBackend().resizeFrameBuffer(m_probesFrameBuffer, m_textureWidth, m_textureHeight);
+    Renderer::getInstance().getBackend().resizeFrameBuffer(m_probesFramebuffer, m_textureWidth, m_textureHeight);
 
     for (int z = 0; z < depth; z++) {
         for (int y = 0; y < height; y++) {

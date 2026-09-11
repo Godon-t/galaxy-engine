@@ -4,6 +4,7 @@
 #include "Log.hpp"
 #include "Resource.hpp"
 #include "ResourceHandle.hpp"
+#include "rendering/renderer/resources/GpuResourceHandle.hpp"
 #include "types/Math.hpp"
 
 #include <assimp/scene.h>
@@ -34,7 +35,7 @@ public:
 
         m_useTransparency = other.m_useTransparency;
 
-        m_materialRenderID = std::exchange(other.m_materialRenderID, 0);
+        m_materialHandle = std::exchange(other.m_materialHandle, {});
 
         m_useImage = other.m_useImage;
         m_images   = std::move(other.m_images);
@@ -45,12 +46,12 @@ public:
 
     inline bool canUseImage(TextureType type) const { return m_useImage[type]; }
     ResourceHandle<Image> getImage(TextureType type) const { return m_images[type]; }
-    inline renderID getRenderID() const { return m_materialRenderID; }
-    inline void setRenderID(renderID id) { m_materialRenderID = id; }
-    inline void notifyGpuInstanceDestroyed(renderID expectedID)
+    inline MaterialHandle getGpuMaterialHandle() const { return m_materialHandle; }
+    inline void setGpuMaterialHandle(MaterialHandle handle) { m_materialHandle = handle; }
+    inline void notifyGpuInstanceDestroyed(MaterialHandle expectedHandle)
     {
-        if (m_materialRenderID == expectedID)
-            m_materialRenderID = 0;
+        if (m_materialHandle == expectedHandle)
+            m_materialHandle = {};
     }
 
     void setImage(TextureType type, ResourceHandle<Image> image);
@@ -88,7 +89,7 @@ private:
 
     bool m_useTransparency = false;
 
-    renderID m_materialRenderID = 0;
+    MaterialHandle m_materialHandle;
 
     std::array<bool, TextureType::COUNT> m_useImage;
     std::array<ResourceHandle<Image>, TextureType::COUNT> m_images;

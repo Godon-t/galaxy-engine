@@ -20,13 +20,13 @@ Renderer::Renderer()
 {
     m_backend.initDebugCallback();
 
-    m_backend.onMaterialUpdated([this](renderID materialID, bool isTransparent) {
-        m_frontend.notifyMaterialUpdated(materialID, isTransparent);
+    m_backend.onMaterialUpdated([this](MaterialHandle material, bool isTransparent) {
+        m_frontend.notifyMaterialUpdated(material, isTransparent);
     });
 
-    m_sceneFrameBufferID     = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8, 5);
-    m_postProcessingBufferID = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
-    m_postProcessingQuadID   = m_backend.generateQuad(vec2(2, 2), [] {});
+    m_sceneFramebuffer = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8, 5);
+    m_postProcessingFramebuffer = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
+    m_postProcessingQuad = m_backend.generateQuad(vec2(2, 2), [] {});
 }
 
 Renderer::~Renderer()
@@ -67,7 +67,7 @@ void Renderer::addMainCameraDevice(std::shared_ptr<Camera> camera)
 
     mainCamera->camera = camera;
     mainCamera->viewportDimmension = m_mainViewportSize;
-    mainCamera->targetFramebuffer = m_sceneFrameBufferID;
+    mainCamera->targetFramebuffer = m_sceneFramebuffer;
     mainCamera->renderScene = true;
     // mainCamera->frustumCulling = false;
     m_frontend.addRenderDevice(std::move(mainCamera));
@@ -80,22 +80,22 @@ void Renderer::passPostProcessing(std::shared_ptr<Camera> camera)
     auto postProcess = std::make_unique<RenderCamera>();
     postProcess->camera = camera;
     postProcess->renderScene = false;
-    postProcess->targetFramebuffer = m_postProcessingBufferID;
+    postProcess->targetFramebuffer = m_postProcessingFramebuffer;
     postProcess->viewportDimmension = m_mainViewportSize;
     m_frontend.addRenderDevice(std::move(postProcess));
     m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING_PROBE);
-    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"sceneBuffer",     0);
-    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"normalBuffer",    1);
-    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"roughnessBuffer", 3);
-    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"directBuffer",    4);
-    m_frontend.setFramebufferAsTextureUniform(m_sceneFrameBufferID,"depthBuffer",    -1);
-    m_frontend.submit(m_postProcessingQuadID);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFramebuffer,"sceneBuffer",     0);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFramebuffer,"normalBuffer",    1);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFramebuffer,"roughnessBuffer", 3);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFramebuffer,"directBuffer",    4);
+    m_frontend.setFramebufferAsTextureUniform(m_sceneFramebuffer,"depthBuffer",    -1);
+    m_frontend.submit(m_postProcessingQuad);
 }
 
 void Renderer::resize(unsigned int width, unsigned int height)
 {
-    m_backend.resizeFrameBuffer(m_sceneFrameBufferID, width, height);
-    m_backend.resizeFrameBuffer(m_postProcessingBufferID, width, height);
+    m_backend.resizeFrameBuffer(m_sceneFramebuffer, width, height);
+    m_backend.resizeFrameBuffer(m_postProcessingFramebuffer, width, height);
     m_mainViewportSize.x = width;
     m_mainViewportSize.y = height;
 }
@@ -114,12 +114,12 @@ void Renderer::renderFrame()
     switchCommandBuffer();
 }
 
-void Renderer::addObjectToScene(renderID meshID, renderID materialID, const Transform& transform)
+void Renderer::addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material, const Transform& transform)
 {
-    m_frontend.addObjectToScene(meshID, m_backend.getMeshBoundingVolume(meshID), materialID, transform);
+    m_frontend.addObjectToScene(geometry, m_backend.getMeshBoundingVolume(geometry), material, transform);
 }
 
-// void Renderer::applyFilterOnCubemap(renderID skyboxMesh, renderID sourceID, renderID targetID, FilterEnum filter)
+// void Renderer::applyFilterOnCubemap(GeometryHandle skyboxMesh, CubemapHandle source, CubemapHandle target, FilterEnum filter)
 // {
 //     // switchCommandBuffer();
 //     // m_commandBuffers[m_frontCommandBufferIdx].clear();

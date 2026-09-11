@@ -4,6 +4,7 @@
 #include "data/Transform.hpp"
 #include "nodes/Node.hpp"
 #include "rendering/renderer/Renderer.hpp"
+#include "rendering/renderer/resources/GpuResourceHandle.hpp"
 #include "resource/Environment.hpp"
 #include "resource/ResourceHandle.hpp"
 
@@ -12,7 +13,6 @@ class EnvironmentNode : public Node {
 public:
     EnvironmentNode(std::string name = "EnvironmentNode")
         : Node(name)
-        , m_skyboxCubemapID(0)
     {
     }
 
@@ -39,10 +39,10 @@ protected:
 
 private:
     ResourceHandle<Environment> m_env;
-    renderID m_skyboxCubemapID;
-    renderID m_irradianceCubemapID;
-    renderID m_cubeMeshID;
-    renderID m_renderingCubemap;
+    CubemapHandle m_skyboxCubemap;
+    CubemapHandle m_irradianceCubemap;
+    GeometryHandle m_cubeGeometry;
+    CubemapHandle m_renderingCubemap;
 
     Transform m_transform;
 };

@@ -3,6 +3,7 @@
 #include "Material.hpp"
 #include "Resource.hpp"
 #include "ResourceHandle.hpp"
+#include "rendering/renderer/resources/GpuResourceHandle.hpp"
 #include "pch.hpp"
 #include "types/Math.hpp"
 #include "types/Render.hpp"
@@ -25,7 +26,7 @@ struct SubMesh {
     std::vector<unsigned short> indices;
     bool hasMaterial = false;
     ResourceHandle<Material> material;
-    renderID visualID = 0;
+    GeometryHandle geometry;
 };
 
 class Mesh : public ResourceBase {
@@ -42,13 +43,13 @@ public:
     inline bool hasMaterial(int surface = 0) const { return m_subMeshes[surface].hasMaterial; }
     inline const ResourceHandle<Material> getMaterial(int surface = 0) const { return m_subMeshes[surface].material; }
 
-    inline const renderID getVisualID(int surface = 0) const { return m_subMeshes[surface].visualID; }
+    inline GeometryHandle getGpuGeometryHandle(int surface = 0) const { return m_subMeshes[surface].geometry; }
 
-    inline void setVisualID(int surfaceIdx, renderID id) { m_subMeshes[surfaceIdx].visualID = id; }
-    inline void notifyGpuInstanceDestroyed(int surfaceIdx, renderID expectedID)
+    inline void setGpuGeometryHandle(int surfaceIdx, GeometryHandle geometry) { m_subMeshes[surfaceIdx].geometry = geometry; }
+    inline void notifyGpuInstanceDestroyed(int surfaceIdx, GeometryHandle expectedHandle)
     {
-        if (m_subMeshes[surfaceIdx].visualID == expectedID)
-            m_subMeshes[surfaceIdx].visualID = 0;
+        if (m_subMeshes[surfaceIdx].geometry == expectedHandle)
+            m_subMeshes[surfaceIdx].geometry = {};
     }
     inline int getSubMeshesCount() const { return m_subMeshes.size(); }
 

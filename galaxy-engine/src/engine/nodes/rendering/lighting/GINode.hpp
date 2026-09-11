@@ -2,6 +2,7 @@
 
 #include "nodes/Node3D.hpp"
 #include "types/Render.hpp"
+#include "rendering/renderer/resources/GpuResourceHandle.hpp"
 
 namespace Galaxy {
 class GINode : public Node3D {
@@ -29,7 +30,7 @@ protected:
     virtual void enteredRoot() override;
 
 private:
-    renderID m_probeVisu;
+    GeometryHandle m_probeGeometry;
     std::vector<Transform> m_probeTransforms;
 
     ivec3 m_probeGrid;

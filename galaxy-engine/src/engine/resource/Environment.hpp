@@ -3,8 +3,10 @@
 #include "Image.hpp"
 #include "Resource.hpp"
 #include "ResourceHandle.hpp"
+#include "rendering/renderer/resources/GpuResourceHandle.hpp"
 
 #include <array>
+#include <utility>
 
 namespace Galaxy {
 class Environment : public ResourceBase {
@@ -20,7 +22,7 @@ public:
         m_resourceID      = std::move(other.m_resourceID);
         m_resourcePath    = std::move(other.m_resourcePath);
         m_skybox          = std::move(other.m_skybox);
-        m_skyboxCubemapID = std::move(other.m_skyboxCubemapID);
+        m_skyboxCubemap = std::exchange(other.m_skyboxCubemap, {});
     }
 
     bool load(YAML::Node& data) override;
@@ -35,6 +37,6 @@ private:
     friend class ResourceSerializer;
 
     std::array<ResourceHandle<Image>, 6> m_skybox;
-    renderID m_skyboxCubemapID; // TODO: Bad design, you shouldn't have to to store renderID inside resource I think
+    CubemapHandle m_skyboxCubemap;
 };
 } // namespace Galaxy

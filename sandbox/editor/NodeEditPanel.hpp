@@ -62,17 +62,17 @@ public:
         if(ImGui::Checkbox("current", &state))
             node.setCurrent(state);
         
-        static renderID cameraFBID = Renderer::getInstance().getBackend().instanciateFrameBuffer(512, 256, FramebufferTextureFormat::DEPTH24RGBA8);
+        static FramebufferHandle cameraFramebuffer = Renderer::getInstance().getBackend().instanciateFrameBuffer(512, 256, FramebufferTextureFormat::DEPTH24RGBA8);
         
         std::unique_ptr<RenderCamera> cam = std::make_unique<RenderCamera>();
         
         cam->camera = node.getCamera();
         cam->renderScene = true;
-        cam->targetFramebuffer = cameraFBID;
+        cam->targetFramebuffer = cameraFramebuffer;
         Renderer::getInstance().getFrontend().addRenderDevice(std::move(cam));
         
         
-        auto textureID = Renderer::getInstance().getBackend().getFrameBufferTextureID(cameraFBID);
+        auto textureID = Renderer::getInstance().getBackend().getFrameBufferTextureID(cameraFramebuffer);
         GLX_TRACE("textureID: {0}", textureID);
         ImVec2 pannelSize(512, 256);
         ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 1, 1 }, ImVec2 { 0, 0 });

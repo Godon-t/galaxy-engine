@@ -3,6 +3,7 @@
 #include "nodes/Node3D.hpp"
 #include "project/UUID.hpp"
 #include "resource/ResourceManager.hpp"
+#include "rendering/renderer/resources/GpuResourceHandle.hpp"
 #include "types/Render.hpp"
 
 namespace Galaxy {
@@ -11,8 +12,6 @@ public:
     MeshInstance(std::string name = "MeshInstance")
         : Node3D(name)
         , m_meshSurfaceIdx(-1)
-        , m_renderId(0)
-        , m_materialId(0)
     {
     }
     ~MeshInstance() override;
@@ -29,11 +28,11 @@ public:
     inline ResourceHandle<Mesh> getMeshResource() const { return m_meshResource; }
 
     inline ResourceHandle<Material> getMaterial() const { return m_materialResource; }
-    inline renderID getMaterialId() const { return m_materialId; }
+    inline MaterialHandle getMaterialId() const { return m_materialHandle; }
 
 private:
-    renderID m_renderId;
-    renderID m_materialId;
+    GeometryHandle m_geometry;
+    MaterialHandle m_materialHandle;
 
     ResourceHandle<Mesh> m_meshResource;
     ResourceHandle<Material> m_materialResource;

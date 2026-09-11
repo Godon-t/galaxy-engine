@@ -2,6 +2,7 @@
 
 #include "Light.hpp"
 #include "engine/types/Render.hpp"
+#include "rendering/renderer/resources/GpuResourceHandle.hpp"
 
 namespace Galaxy {
 
@@ -32,8 +33,8 @@ public:
 
 private:
     lightID m_lightID;
-    renderID m_debugShadowMapID; // For debugging purposes
-    renderID m_visualPyramidID; // Mesh ID for the pyramid visualisation
+    GeometryHandle m_debugShadowMap; // For debugging purposes
+    GeometryHandle m_visualPyramid; // Mesh for the pyramid visualisation
 
     float m_cutoffAngle;
     float m_outerCutoffAngle;

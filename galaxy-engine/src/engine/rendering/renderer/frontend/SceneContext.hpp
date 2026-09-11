@@ -1,7 +1,8 @@
 #pragma once
 
 
-#include "rendering/renderer/RenderCommand.hpp"
+#include "RenderItem.hpp"
+#include "rendering/renderer/commands/RenderCommand.hpp"
 #include "common/geometry/Shapes.hpp"
 #include "Frustum.hpp"
 
@@ -16,13 +17,8 @@ namespace Galaxy
 {
     struct SceneContext
     {
-        struct Visual {
-            Sphere volume;
-            Transform transform;
-            renderID meshID;
-        };
-        std::unordered_map<renderID, std::vector<Visual>> renderCommandsByMaterial;
-        std::unordered_map<renderID, bool> materialsTransparency;
+        std::vector<RenderItem> renderItems;
+        std::unordered_map<MaterialHandle, bool, GpuResourceHandleHash> materialsTransparency;
 
         std::vector<RenderCommand> retrieveOpaqueRenders();
         std::vector<RenderCommand> retrieveTransparentRenders(math::vec3 camPosition);
@@ -30,17 +26,17 @@ namespace Galaxy
         std::vector<RenderCommand> retrieveOpaqueRenders(const Frustum& frustum);
         std::vector<RenderCommand> retrieveTransparentRenders(const Frustum& frustum);
 
-        void pushNewObject(renderID materialID, renderID meshID, const Sphere& volume, const Transform& transform);
-        void removeMaterialID(renderID materialID);
+        void push(RenderItem item);
+        void removeMaterial(MaterialHandle material);
         
-        void onMaterialUpdated(renderID materialID, bool isTransparent);
+        void onMaterialUpdated(MaterialHandle material, bool isTransparent);
 
         void clear();
 
         private:
         struct DistCompare {
             static math::vec3 camPosition;
-            bool operator()(const std::pair<renderID, RenderCommand>& a, const std::pair<renderID, RenderCommand>& b) const;
+            bool operator()(const std::pair<MaterialHandle, RenderCommand>& a, const std::pair<MaterialHandle, RenderCommand>& b) const;
         };
     };
     

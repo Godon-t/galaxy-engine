@@ -30,6 +30,8 @@
 
 #include "rendering/CameraManager.hpp"
 #include "rendering/renderer/Renderer.hpp"
+#include "rendering/renderer/frontend/RenderItem.hpp"
+#include "rendering/renderer/resources/GpuResourceHandle.hpp"
 
 #include "core/KeyCodes.hpp"
 #include "event/ActionEvent.hpp"

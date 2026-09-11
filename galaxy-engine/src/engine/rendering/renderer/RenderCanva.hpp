@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderCommand.hpp"
+#include "commands/RenderCommand.hpp"
 
 #include "types/Math.hpp"
 #include "types/Render.hpp"
@@ -11,40 +11,36 @@ namespace Galaxy {
 struct RenderCanva {
     mat4 viewMat;
     mat4 projectionMat;
-    renderID framebufferID;
+    RenderTargetHandle framebuffer;
     FramebufferTextureFormat format;
     
-    renderID colorTargetID;
-    renderID depthTargetID;
+    TextureHandle colorTarget;
+    TextureHandle depthTarget;
     int cubemapIdx;
     bool useBuffer;
     bool storeResult;
     std::string storagePath;
     bool clearBuffer;
 
-    RenderCanva(const mat4& view, const mat4& projection, renderID framebuffer, FramebufferTextureFormat framebufferFormat)
+    RenderCanva(const mat4& view, const mat4& projection, FramebufferHandle framebufferHandle, FramebufferTextureFormat framebufferFormat)
         : viewMat(view)
         , projectionMat(projection)
-        , framebufferID(framebuffer)
+        , framebuffer(framebufferHandle)
         , format(framebufferFormat)
         , cubemapIdx(-1)
         , useBuffer(true)
-        , colorTargetID(0)
-        , depthTargetID(0)
         , storeResult(false)
         , clearBuffer(true)
     {
     }
 
-    RenderCanva(const mat4& view, const mat4& projection, renderID framebuffer, FramebufferTextureFormat framebufferFormat, int cubemapIndex)
+    RenderCanva(const mat4& view, const mat4& projection, CubemapFramebufferHandle framebufferHandle, FramebufferTextureFormat framebufferFormat, int cubemapIndex)
         : viewMat(view)
         , projectionMat(projection)
-        , framebufferID(framebuffer)
+        , framebuffer(framebufferHandle)
         , format(framebufferFormat)
         , cubemapIdx(cubemapIndex)
         , useBuffer(true)
-        , colorTargetID(0)
-        , depthTargetID(0)
         , storeResult(false)
         , clearBuffer(true)
     {

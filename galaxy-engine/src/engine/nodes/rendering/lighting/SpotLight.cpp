@@ -10,7 +10,6 @@ namespace Galaxy {
 SpotLight::SpotLight(std::string name)
     : Light(name)
     , m_lightID(0)
-    , m_visualPyramidID(0)
     , m_cutoffAngle(45.0f)
     , m_outerCutoffAngle(55.0f)
     , m_castShadows(true)
@@ -20,8 +19,10 @@ SpotLight::SpotLight(std::string name)
 
 SpotLight::~SpotLight()
 {
-    Renderer::getInstance().getBackend().clearMesh(m_visualPyramidID);
-    Renderer::getInstance().getBackend().clearMesh(m_debugShadowMapID);
+    if (m_visualPyramid)
+        Renderer::getInstance().getBackend().clearMesh(m_visualPyramid);
+    if (m_debugShadowMap)
+        Renderer::getInstance().getBackend().clearMesh(m_debugShadowMap);
 
     Renderer::getInstance().getLightManager().unregisterLight(m_lightID);
 }
@@ -35,10 +36,10 @@ void SpotLight::enteredRoot()
     m_lightID = Renderer::getInstance().getLightManager().registerLight(desc);
     // Créer la pyramide de visualisation
     // La base de la pyramide est orientée dans la direction de projection (vers -Z local)
-    if (m_visualPyramidID == 0) {
-        m_visualPyramidID  = Renderer::getInstance().getBackend().generatePyramid(0.3f, 0.5f, []() {});
-        m_debugShadowMapID = Renderer::getInstance().getBackend().generateQuad(vec2(2, 2), [] {});
-        Renderer::getInstance().getBackend().setCullMode(m_debugShadowMapID, CullMode::BOTH_CULLING);
+    if (!m_visualPyramid) {
+        m_visualPyramid  = Renderer::getInstance().getBackend().generatePyramid(0.3f, 0.5f, []() {});
+        m_debugShadowMap = Renderer::getInstance().getBackend().generateQuad(vec2(2, 2), [] {});
+        Renderer::getInstance().getBackend().setCullMode(m_debugShadowMap, CullMode::BOTH_CULLING);
         m_initialized = true;
     }
 }
@@ -51,7 +52,7 @@ void SpotLight::accept(Galaxy::NodeVisitor& visitor)
 void SpotLight::draw()
 {
     // Dessiner la pyramide de visualisation si initialisé
-    if (m_initialized && m_visualPyramidID != 0) {
+    if (m_initialized && m_visualPyramid) {
         // Renderer::getInstance().changeUsedProgram(UNICOLOR);
         // Renderer::getInstance().setUnicolorObjectColor(m_color);
 

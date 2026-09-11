@@ -22,7 +22,7 @@ void Frontend::processDevices()
                 auto views = cubemap->getViews();
 
                 for(int i=0; i < views.size(); i++){
-                    bindFrameBuffer(device->targetFramebuffer, i);
+                    bindCubemapFrameBuffer(device->targetCubemapFramebuffer, i);
                     if(!device->noClear)
                         clear(clearColor);
                     
@@ -35,10 +35,10 @@ void Frontend::processDevices()
                     }
                 }
                 m_frontBuffer->insert(m_frontBuffer->end(), device->customPostCommands.begin(), device->customPostCommands.end());
-                unbindFrameBuffer(device->targetFramebuffer, true);
+                unbindCubemapFrameBuffer(device->targetCubemapFramebuffer);
             } else {
                 auto view = device->getView();
-                bindFrameBuffer(device->targetFramebuffer, -1, device->targetDepthLayer);
+                bindFrameBuffer(device->targetFramebuffer, device->targetDepthLayer);
                 
                 if(!device->noClear)
                     clear(clearColor);
@@ -53,7 +53,7 @@ void Frontend::processDevices()
                     }
                 }
                 m_frontBuffer->insert(m_frontBuffer->end(), device->customPostCommands.begin(), device->customPostCommands.end());
-                unbindFrameBuffer(device->targetFramebuffer, false);
+                unbindFrameBuffer(device->targetFramebuffer);
             }
         }
 
@@ -74,26 +74,26 @@ void Frontend::processDevices()
 //     m_canvas[m_currentCanvaIdx].storagePath = path;
 // }
 
-void Frontend::submit(renderID meshID)
+void Frontend::submit(GeometryHandle geometry)
 {
     RawDrawCommand drawCommand;
-    drawCommand.instanceID = meshID;
-    pushCommand(drawCommand);
+    drawCommand.geometry = geometry;
+    pushCommand(std::move(drawCommand));
 }
 
-void Frontend::submit(renderID meshID, const Transform& transform)
+void Frontend::submit(GeometryHandle geometry, const Transform& transform)
 {
     DrawCommand drawCommand;
-    drawCommand.instanceId = meshID;
+    drawCommand.geometry   = geometry;
     drawCommand.model      = transform.getGlobalModelMatrix();
-    pushCommand(drawCommand);
+    pushCommand(std::move(drawCommand));
 }
 
 void Frontend::clear(math::vec4& color)
 {
     ClearCommand clearCommand;
     clearCommand.color = color;
-    pushCommand(clearCommand);
+    pushCommand(std::move(clearCommand));
 }
 
 void Frontend::setViewMatrix(const math::mat4& view)
@@ -119,75 +119,97 @@ void Frontend::pushCommand(RenderCommand command)
     }
 }
 
-void Frontend::saveFrameBuffer(renderID framebufferID, std::string path)
+void Frontend::saveFrameBuffer(FramebufferHandle framebuffer, std::string path)
 {
     SaveFrameBufferCommand saveFramebufferC;
-    saveFramebufferC.path          = std::move(path);
-    saveFramebufferC.frameBufferID = framebufferID;
-    pushCommand(saveFramebufferC);
+    saveFramebufferC.path        = std::move(path);
+    saveFramebufferC.framebuffer = framebuffer;
+    pushCommand(std::move(saveFramebufferC));
 }
 
-void Frontend::bindTexture(renderID textureInstanceID, std::string uniformName, bool important)
+void Frontend::bindTexture(TextureHandle texture, std::string uniformName, bool important)
 {
     UseTextureCommand useTextureCommand;
-    useTextureCommand.instanceID  = textureInstanceID;
+    useTextureCommand.texture     = texture;
     useTextureCommand.uniformName = std::move(uniformName);
     useTextureCommand.important = important;
-    pushCommand(useTextureCommand);
+    pushCommand(std::move(useTextureCommand));
 }
 
-void Frontend::attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int attachmentIdx)
+void Frontend::attachTextureToColorFramebuffer(TextureHandle texture, FramebufferHandle framebuffer, int attachmentIdx)
 {
     AttachTextureToFramebufferCommand attachCommand;
-    attachCommand.textureID     = textureID;
-    attachCommand.framebufferID = framebufferID;
+    attachCommand.texture       = texture;
+    attachCommand.framebuffer   = framebuffer;
     attachCommand.attachmentIdx = attachmentIdx;
-    pushCommand(attachCommand);
+    pushCommand(std::move(attachCommand));
 }
 
-void Frontend::attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID)
+void Frontend::attachTextureToDepthFramebuffer(TextureHandle texture, FramebufferHandle framebuffer)
 {
     AttachTextureToFramebufferCommand attachCommand;
-    attachCommand.textureID     = textureID;
-    attachCommand.framebufferID = framebufferID;
+    attachCommand.texture       = texture;
+    attachCommand.framebuffer   = framebuffer;
     attachCommand.attachmentIdx = -1;
-    pushCommand(attachCommand);
+    pushCommand(std::move(attachCommand));
 }
 
-void Frontend::attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID, int colorIdx)
+void Frontend::attachCubemapToFramebuffer(CubemapHandle cubemap, CubemapFramebufferHandle framebuffer, int colorIdx)
 {
     AttachCubemapToFramebufferCommand attachCommand;
-    attachCommand.cubemapID     = cubemapID;
-    attachCommand.framebufferID = framebufferID;
-    attachCommand.colorIdx      = colorIdx;
-    pushCommand(attachCommand);
+    attachCommand.cubemap     = cubemap;
+    attachCommand.framebuffer = framebuffer;
+    attachCommand.colorIdx    = colorIdx;
+    pushCommand(std::move(attachCommand));
 }
 
-void Frontend::useCubemap(renderID cubemapInstanceID, std::string uniformName)
+void Frontend::useCubemap(CubemapHandle cubemap, std::string uniformName)
 {
     UseCubemapCommand useCubemapCommand;
-    useCubemapCommand.instanceID  = cubemapInstanceID;
+    useCubemapCommand.cubemap     = cubemap;
     useCubemapCommand.uniformName = std::move(uniformName);
-    pushCommand(useCubemapCommand);
+    pushCommand(std::move(useCubemapCommand));
 }
 
-void Frontend::bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx, int depthLayerIdx)
+void Frontend::bindMaterial(MaterialHandle material)
+{
+    BindMaterialCommand command;
+    command.material = material;
+    pushCommand(std::move(command));
+}
+
+void Frontend::bindFrameBuffer(FramebufferHandle framebuffer, int depthLayerIdx)
 {
     BindFrameBufferCommand typeCommand;
-    typeCommand.frameBufferID  = frameBufferInstanceID;
+    typeCommand.target        = framebuffer;
+    typeCommand.depthLayerIdx = depthLayerIdx;
+    typeCommand.bind          = true;
+    m_frontBuffer->push_back(std::move(typeCommand));
+}
+
+void Frontend::bindCubemapFrameBuffer(CubemapFramebufferHandle framebuffer, int cubemapFaceIdx)
+{
+    BindFrameBufferCommand typeCommand;
+    typeCommand.target         = framebuffer;
     typeCommand.cubemapFaceIdx = cubemapFaceIdx;
-    typeCommand.depthLayerIdx  = depthLayerIdx;
     typeCommand.bind           = true;
-    m_frontBuffer->push_back(typeCommand);
+    m_frontBuffer->push_back(std::move(typeCommand));
 }
 
-void Frontend::unbindFrameBuffer(renderID frameBufferInstanceID, bool cubemap)
+void Frontend::unbindFrameBuffer(FramebufferHandle framebuffer)
 {
     BindFrameBufferCommand typeCommand;
-    typeCommand.frameBufferID  = frameBufferInstanceID;
-    typeCommand.cubemapFaceIdx = cubemap ? 0 : -1;
-    typeCommand.bind           = false;
-    m_frontBuffer->push_back(typeCommand);
+    typeCommand.target = framebuffer;
+    typeCommand.bind   = false;
+    m_frontBuffer->push_back(std::move(typeCommand));
+}
+
+void Frontend::unbindCubemapFrameBuffer(CubemapFramebufferHandle framebuffer)
+{
+    BindFrameBufferCommand typeCommand;
+    typeCommand.target = framebuffer;
+    typeCommand.bind   = false;
+    m_frontBuffer->push_back(std::move(typeCommand));
 }
 
 void Frontend::changeUsedProgram(ProgramType program)
@@ -195,7 +217,7 @@ void Frontend::changeUsedProgram(ProgramType program)
     SetActiveProgramCommand setActiveProgramCommand;
     setActiveProgramCommand.program = program;
 
-    pushCommand(setActiveProgramCommand);
+    pushCommand(std::move(setActiveProgramCommand));
 }
 
 void Frontend::setUniform(std::string uniformName, bool value)
@@ -204,7 +226,7 @@ void Frontend::setUniform(std::string uniformName, bool value)
     uniformCommand.uniformName = std::move(uniformName);
     uniformCommand.type        = BOOL;
     uniformCommand.valueBool   = value;
-    pushCommand(uniformCommand);
+    pushCommand(std::move(uniformCommand));
 }
 
 void Frontend::setUniform(std::string uniformName, float value)
@@ -213,7 +235,7 @@ void Frontend::setUniform(std::string uniformName, float value)
     uniformCommand.uniformName = std::move(uniformName);
     uniformCommand.type        = FLOAT;
     uniformCommand.valueFloat  = value;
-    pushCommand(uniformCommand);
+    pushCommand(std::move(uniformCommand));
 }
 
 void Frontend::setUniform(std::string uniformName, int value)
@@ -222,7 +244,7 @@ void Frontend::setUniform(std::string uniformName, int value)
     uniformCommand.uniformName = std::move(uniformName);
     uniformCommand.type        = INT;
     uniformCommand.valueInt    = value;
-    pushCommand(uniformCommand);
+    pushCommand(std::move(uniformCommand));
 }
 
 void Frontend::setUniform(std::string uniformName, mat4 value)
@@ -231,7 +253,7 @@ void Frontend::setUniform(std::string uniformName, mat4 value)
     uniformCommand.uniformName = std::move(uniformName);
     uniformCommand.type        = MAT4;
     uniformCommand.matrixValue = value;
-    pushCommand(uniformCommand);
+    pushCommand(std::move(uniformCommand));
 }
 
 void Frontend::setUniform(std::string uniformName, vec3 value)
@@ -242,7 +264,7 @@ void Frontend::setUniform(std::string uniformName, vec3 value)
     uniformCommand.valueVec3.x = value.x;
     uniformCommand.valueVec3.y = value.y;
     uniformCommand.valueVec3.z = value.z;
-    pushCommand(uniformCommand);
+    pushCommand(std::move(uniformCommand));
 }
 
 void Frontend::setUniform(std::string uniformName, ivec3 value)
@@ -254,7 +276,7 @@ void Frontend::setUniform(std::string uniformName, ivec3 value)
     uniformCommand.valueIVec3.y = value.y;
     uniformCommand.valueIVec3.z = value.z;
 
-    pushCommand(uniformCommand);
+    pushCommand(std::move(uniformCommand));
 }
 
 void Frontend::setUniform(std::string uniformName, vec2 value)
@@ -264,35 +286,34 @@ void Frontend::setUniform(std::string uniformName, vec2 value)
     uniformCommand.type        = VEC2;
     uniformCommand.valueVec2.x = value.r;
     uniformCommand.valueVec2.y = value.g;
-    pushCommand(uniformCommand);
+    pushCommand(std::move(uniformCommand));
 }
 
-void Frontend::bindUBO(renderID id, unsigned int idx)
+void Frontend::bindUBO(BufferHandle ubo, unsigned int idx)
 {
     BindUBOCommand bindComm;
     bindComm.idx   = idx;
-    bindComm.uboID = id;
+    bindComm.ubo   = ubo;
 
-    pushCommand(bindComm);
+    pushCommand(std::move(bindComm));
 }
 
-void Frontend::setFramebufferAsTextureUniform(renderID framebufferID, std::string uniformName, int textureIdx)
+void Frontend::setFramebufferAsTextureUniform(FramebufferHandle framebuffer, std::string uniformName, int textureIdx)
 {
     SetFramebufferAsTextureUniformCommand setTextureCommand;
-    setTextureCommand.framebufferID = framebufferID;
-    setTextureCommand.uniformName   = std::move(uniformName);
-    setTextureCommand.textureIdx    = textureIdx;
-    pushCommand(setTextureCommand);
+    setTextureCommand.framebuffer = framebuffer;
+    setTextureCommand.uniformName = std::move(uniformName);
+    setTextureCommand.textureIdx  = textureIdx;
+    pushCommand(std::move(setTextureCommand));
 }
 
-void Frontend::setFramebufferAsCubemapUniform(renderID framebufferID, std::string uniformName, int colorIdx)
+void Frontend::setFramebufferAsCubemapUniform(CubemapFramebufferHandle framebuffer, std::string uniformName, int colorIdx)
 {
     SetFramebufferAsTextureUniformCommand setTextureCommand;
-    setTextureCommand.framebufferID = framebufferID;
-    setTextureCommand.uniformName   = std::move(uniformName);
-    setTextureCommand.textureIdx    = colorIdx;
-    setTextureCommand.aboutCubemap  = true;
-    pushCommand(setTextureCommand);
+    setTextureCommand.framebuffer = framebuffer;
+    setTextureCommand.uniformName = std::move(uniformName);
+    setTextureCommand.textureIdx  = colorIdx;
+    pushCommand(std::move(setTextureCommand));
 }
 
 void Frontend::setViewport(vec2 position, vec2 dimmension)
@@ -300,39 +321,39 @@ void Frontend::setViewport(vec2 position, vec2 dimmension)
     SetViewportCommand setViewportCommand;
     setViewportCommand.position = position;
     setViewportCommand.size     = dimmension;
-    pushCommand(setViewportCommand);
+    pushCommand(std::move(setViewportCommand));
 }
 
-void Frontend::resizeTexture(renderID textureID, unsigned int width, unsigned int height)
+void Frontend::resizeTexture(TextureHandle texture, unsigned int width, unsigned int height)
 {
     UpdateTextureCommand update;
-    update.targetID = textureID;
+    update.texture = texture;
     update.width    = width;
     update.height   = height;
-    pushCommand(update);
+    pushCommand(std::move(update));
 }
 
-void Frontend::setTextureFormat(renderID textureID, TextureFormat format)
+void Frontend::setTextureFormat(TextureHandle texture, TextureFormat format)
 {
     UpdateTextureCommand update;
-    update.targetID  = textureID;
+    update.texture   = texture;
     update.newFormat = format;
-    pushCommand(update);
+    pushCommand(std::move(update));
 }
 
-void Frontend::updateCubemap(renderID targetID, unsigned int resolution)
+void Frontend::updateCubemap(CubemapHandle cubemap, unsigned int resolution)
 {
     UpdateCubemapCommand update;
-    update.targetID   = targetID;
+    update.cubemap    = cubemap;
     update.resolution = resolution;
-    pushCommand(update);
+    pushCommand(std::move(update));
 }
 
 void Frontend::addDebugMsg(std::string message)
 {
     DebugMsgCommand debug;
     debug.msg = std::move(message);
-    pushCommand(debug);
+    pushCommand(std::move(debug));
 }
 
 void Frontend::submitDebugLine(vec3 start, vec3 end, vec3 color)
@@ -340,7 +361,7 @@ void Frontend::submitDebugLine(vec3 start, vec3 end, vec3 color)
     DrawDebugLineCommand drawCommand;
     drawCommand.start = start;
     drawCommand.end   = end;
-    pushCommand(drawCommand);
+    pushCommand(std::move(drawCommand));
 }
 
 void Frontend::drawDebug()
@@ -355,9 +376,14 @@ void Frontend::drawDebug()
     // TODO : COMPLETE
 }
 
-void Frontend::addObjectToScene(renderID meshID, const Sphere& boundingVolume, renderID materialID, const Transform& transform)
+void Frontend::addObjectToScene(GeometryHandle geometry, const Sphere& boundingVolume, std::optional<MaterialHandle> material, const Transform& transform)
 {
-    m_frameContext.pushNewObject(materialID, meshID, boundingVolume, transform);
+    RenderItem item;
+    item.geometry = geometry;
+    item.material = material;
+    item.bounds = boundingVolume;
+    item.transform = transform;
+    m_frameContext.push(std::move(item));
 }
 
 void Frontend::dumpCommandsToBuffer(std::shared_ptr<Camera> camera, bool frustumCulling)
@@ -384,9 +410,9 @@ void Frontend::setCommandBuffer(std::vector<RenderCommand>* newBuffer)
     m_frontBuffer = newBuffer;
 }
 
-void Frontend::notifyMaterialUpdated(renderID materialID, bool isTransparent)
+void Frontend::notifyMaterialUpdated(MaterialHandle material, bool isTransparent)
 {
-    m_frameContext.onMaterialUpdated(materialID, isTransparent);
+    m_frameContext.onMaterialUpdated(material, isTransparent);
 }
 
 } // namespace Galaxy

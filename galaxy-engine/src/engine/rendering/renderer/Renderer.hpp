@@ -8,6 +8,8 @@
 #include "nodes/Node.hpp"
 #include "types/Render.hpp"
 
+#include <optional>
+
 namespace Galaxy {
 enum FilterEnum {
     IRRADIANCE
@@ -27,7 +29,7 @@ public:
 
     inline int getDrawCallsCount() { return m_drawCount; }
 
-    void addObjectToScene(renderID meshID, renderID materialID, const Transform& transform);
+    void addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material, const Transform& transform);
 
 
     Backend& getBackend(){return m_backend;}
@@ -37,9 +39,9 @@ public:
     inline vec2 getRenderingWindowSize() const {return m_mainViewportSize;}
 
     // TODO: shouldn't be able to retrieve GPU id outside of backend
-    inline unsigned int getFrameBufferTextureID(renderID frameBufferID) { return m_backend.getFrameBufferTextureID(frameBufferID); }
-    inline unsigned int getRawSceneTextureID() { return m_backend.getFrameBufferTextureID(m_sceneFrameBufferID); }
-    inline unsigned int getPostProcSceneTextureID() { return m_backend.getFrameBufferTextureID(m_postProcessingBufferID); }
+    inline unsigned int getFrameBufferTextureID(FramebufferHandle framebuffer) { return m_backend.getFrameBufferTextureID(framebuffer); }
+    inline unsigned int getRawSceneTextureID() { return m_backend.getFrameBufferTextureID(m_sceneFramebuffer); }
+    inline unsigned int getPostProcSceneTextureID() { return m_backend.getFrameBufferTextureID(m_postProcessingFramebuffer); }
 
     // TODO: Resizing unbind framebuffer
     void resize(unsigned int width, unsigned int height);
@@ -59,9 +61,9 @@ private:
     Backend m_backend;
     LightManager m_lightManager;
 
-    renderID m_sceneFrameBufferID;
-    renderID m_postProcessingBufferID;
-    renderID m_postProcessingQuadID;
+    FramebufferHandle m_sceneFramebuffer;
+    FramebufferHandle m_postProcessingFramebuffer;
+    GeometryHandle m_postProcessingQuad;
     vec2 m_mainViewportSize;
 
     int m_drawCount = 0;

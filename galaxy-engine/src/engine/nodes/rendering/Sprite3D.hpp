@@ -2,6 +2,7 @@
 
 #include "nodes/Node3D.hpp"
 #include "project/UUID.hpp"
+#include "rendering/renderer/resources/GpuResourceHandle.hpp"
 #include "types/Render.hpp"
 
 namespace Galaxy {
@@ -27,10 +28,8 @@ protected:
     void enteredRoot() override;
 
 private:
-    void clear();
-    renderID generateRect(vec2 dimmensions);
-    renderID m_textureID;
-    renderID m_rectID;
+    TextureHandle m_texture;
+    GeometryHandle m_rect;
 
     bool m_initialized;
 

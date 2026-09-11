@@ -6,6 +6,7 @@
 
 #include "engine/types/Math.hpp"
 #include "engine/types/Render.hpp"
+#include "rendering/renderer/resources/GpuResourceHandle.hpp"
 
 namespace Galaxy {
 const unsigned int maxLightCount = 32;
@@ -73,9 +74,9 @@ public:
     void updateLightRange(lightID id, float range);
     void unregisterLight(int id);
     void shadowPass(Node* sceneRoot);
-    renderID getShadowMapLayer(lightID light) { return m_lights[light].shadowMapLayer; }
+    unsigned int getShadowMapLayer(lightID light) { return m_lights[light].shadowMapLayer; }
 
-    renderID getProbesRadianceTexture();
+    unsigned int getProbesRadianceTexture();
 
     void updateProbeField();
     void updateBias(float newValue);
@@ -97,16 +98,16 @@ private:
     lightID m_nextLightID   = 0;
     int m_currentLightCount = 0;
 
-    renderID m_shadowMapFrameBufferID;
+    FramebufferHandle m_shadowMapFramebuffer;
 
     unsigned int getCellCoord(unsigned int x, unsigned int y, unsigned int z);
     vec2 getProbeTexCoord(unsigned int probeGridIdx);
 
-    renderID m_fullQuad;
-    renderID m_cubemapFramebufferID;
-    renderID m_probesFrameBuffer;
+    GeometryHandle m_fullQuad;
+    CubemapFramebufferHandle m_cubemapFramebuffer;
+    FramebufferHandle m_probesFramebuffer;
 
-    renderID m_lightsUBO;
+    BufferHandle m_lightsUBO;
     GPULightData m_lightUniformData;
 
     unsigned int m_probeResolution;
@@ -121,6 +122,7 @@ private:
     std::vector<ProbeData> m_probeGrid;
 
     Transform m_debugStartTransform, m_debugEndTransform;
-    renderID m_debugStartVisu, m_debugEndVisu;
+    GeometryHandle m_debugStartGeometry;
+    GeometryHandle m_debugEndGeometry;
 };
 } // namespace Galaxy

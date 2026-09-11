@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Resource.hpp"
+#include "rendering/renderer/resources/GpuResourceHandle.hpp"
 #include "types/Render.hpp"
 
 namespace Galaxy {
@@ -19,13 +20,13 @@ struct Image : public ResourceBase {
     inline int getNbChannels() const { return m_nbChannels; }
     unsigned char* getData();
 
-    inline void notifyGpuInstanceDestroyed(renderID expectedID)
+    inline void notifyGpuInstanceDestroyed(TextureHandle expectedHandle)
     {
-        if (m_textureID == expectedID)
-            m_textureID = 0;
+        if (m_textureHandle == expectedHandle)
+            m_textureHandle = {};
     }
-    inline renderID getTextureID() const { return m_textureID; }
-    inline void setTextureID(renderID id) { m_textureID = id; }
+    inline TextureHandle getGpuTextureHandle() const { return m_textureHandle; }
+    inline void setGpuTextureHandle(TextureHandle handle) { m_textureHandle = handle; }
 
     inline std::string getExternalFilePath() { return m_relativeExternalFilePath; }
     bool hasTransparency();
@@ -43,7 +44,7 @@ private:
 
     std::string m_relativeExternalFilePath;
 
-    renderID m_textureID = 0;
+    TextureHandle m_textureHandle;
 
     bool m_freed = true;
 };

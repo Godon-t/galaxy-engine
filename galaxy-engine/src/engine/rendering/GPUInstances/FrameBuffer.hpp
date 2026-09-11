@@ -37,8 +37,8 @@ public:
     void setFormat(FramebufferTextureFormat format);
     inline FramebufferTextureFormat getFormat() const { return m_format; }
     // Attached textures are borrowed and must outlive this framebuffer.
-    void attachColorTexture(Texture& texture, int idx);
-    void attachDepthTexture(Texture& texture);
+    bool attachColorTexture(Texture& texture, int idx);
+    bool attachDepthTexture(Texture& texture);
     void savePPM(const std::string& filename);
 
 private:
@@ -83,8 +83,8 @@ public:
     CubemapFrameBuffer& operator=(CubemapFrameBuffer&& other) noexcept;
 
     // Borrowed cubemaps must outlive this framebuffer.
-    void attachDepthCubemap(Cubemap& cubemap);
-    void attachColorCubemap(Cubemap& cubemap, int idx);
+    bool attachDepthCubemap(Cubemap& cubemap);
+    bool attachColorCubemap(Cubemap& cubemap, int idx);
 
     void setAsCubemapUniform(unsigned int uniLocation, int textureIdx);
 

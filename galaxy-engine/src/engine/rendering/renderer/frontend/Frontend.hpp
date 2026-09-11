@@ -3,7 +3,7 @@
 #include "pch.hpp"
 
 #include "SceneContext.hpp"
-#include "rendering/renderer/RenderCommand.hpp"
+#include "rendering/renderer/commands/RenderCommand.hpp"
 #include "data/Transform.hpp"
 #include "types/Render.hpp"
 #include "RenderDevice.hpp"
@@ -11,6 +11,7 @@
 
 #include "queue"
 #include <memory>
+#include <optional>
 
 namespace Galaxy {
 class Frontend {
@@ -23,18 +24,20 @@ public:
 
     // void storeCanvaResult(std::string& path);
 
-    void submit(renderID meshID);
-    void submit(renderID meshID, const Transform& transform);
+    void submit(GeometryHandle geometry);
+    void submit(GeometryHandle geometry, const Transform& transform);
     void clear(vec4& color);
 
-    void bindTexture(renderID textureInstanceID, std::string uniformName, bool important = false);
-    void attachTextureToColorFramebuffer(renderID textureID, renderID framebufferID, int attachmentIdx);
-    void attachTextureToDepthFramebuffer(renderID textureID, renderID framebufferID);
-    void attachCubemapToFramebuffer(renderID cubemapID, renderID framebufferID, int colorIdx = 0);
-    void useCubemap(renderID cubemapInstanceID, std::string uniformName);
-    void bindFrameBuffer(renderID frameBufferInstanceID, int cubemapFaceIdx = -1, int depthLayerIdx = -1);
-    void unbindFrameBuffer(renderID frameBufferInstanceID, bool cubemap = false);
-    void bindMaterial(renderID materialRenderID);
+    void bindTexture(TextureHandle texture, std::string uniformName, bool important = false);
+    void attachTextureToColorFramebuffer(TextureHandle texture, FramebufferHandle framebuffer, int attachmentIdx);
+    void attachTextureToDepthFramebuffer(TextureHandle texture, FramebufferHandle framebuffer);
+    void attachCubemapToFramebuffer(CubemapHandle cubemap, CubemapFramebufferHandle framebuffer, int colorIdx = 0);
+    void useCubemap(CubemapHandle cubemap, std::string uniformName);
+    void bindFrameBuffer(FramebufferHandle framebuffer, int depthLayerIdx = -1);
+    void bindCubemapFrameBuffer(CubemapFramebufferHandle framebuffer, int cubemapFaceIdx);
+    void unbindFrameBuffer(FramebufferHandle framebuffer);
+    void unbindCubemapFrameBuffer(CubemapFramebufferHandle framebuffer);
+    void bindMaterial(MaterialHandle material);
     // TODO: rename to match setActiveProgram command
     void changeUsedProgram(ProgramType program);
 
@@ -46,20 +49,20 @@ public:
     void setUniform(std::string uniformName, ivec3 value);
     void setUniform(std::string uniformName, vec2 value);
     template <typename T>
-    void updateUniform(renderID id, const T& payload)
+    void updateUniform(BufferHandle ubo, const T& payload)
     {
-        auto updateCommand = UpdateUBOCommand::make(id, payload);
-        pushCommand(updateCommand);
+        auto updateCommand = UpdateUBOCommand::make(ubo, payload);
+        pushCommand(std::move(updateCommand));
     }
-    void bindUBO(renderID id, unsigned int idx);
+    void bindUBO(BufferHandle ubo, unsigned int idx);
 
-    void setFramebufferAsTextureUniform(renderID framebufferID, std::string uniformName, int textureIdx);
-    void setFramebufferAsCubemapUniform(renderID framebufferID, std::string uniformName, int colorIdx);
+    void setFramebufferAsTextureUniform(FramebufferHandle framebuffer, std::string uniformName, int textureIdx);
+    void setFramebufferAsCubemapUniform(CubemapFramebufferHandle framebuffer, std::string uniformName, int colorIdx);
 
     void setViewport(vec2 position, vec2 dimmension);
-    void resizeTexture(renderID textureID, unsigned int width, unsigned int height);
-    void setTextureFormat(renderID textureID, TextureFormat format);
-    void updateCubemap(renderID targetID, unsigned int resolution);
+    void resizeTexture(TextureHandle texture, unsigned int width, unsigned int height);
+    void setTextureFormat(TextureHandle texture, TextureFormat format);
+    void updateCubemap(CubemapHandle cubemap, unsigned int resolution);
 
     void addDebugMsg(std::string message);
     void submitDebugLine(vec3 start, vec3 end, vec3 color);
@@ -67,13 +70,13 @@ public:
 
 
 
-    void addObjectToScene(renderID meshID, const Sphere& boundingVolume, renderID materialID, const Transform& transform);
+    void addObjectToScene(GeometryHandle geometry, const Sphere& boundingVolume, std::optional<MaterialHandle> material, const Transform& transform);
 
     void setCommandBuffer(std::vector<RenderCommand>* newBuffer);
 
 
-    inline void removeMaterialID(renderID matID) { m_frameContext.removeMaterialID(matID); }
-    void notifyMaterialUpdated(renderID materialID, bool isTransparent);
+    inline void removeMaterialID(MaterialHandle material) { m_frameContext.removeMaterial(material); }
+    void notifyMaterialUpdated(MaterialHandle material, bool isTransparent);
     inline void clearContext(){m_frameContext.clear();}
     
 private:
@@ -83,7 +86,7 @@ private:
     void setViewMatrix(const math::mat4& view);
     void setProjectionMatrix(const math::mat4& projection);
     void pushCommand(RenderCommand command);
-    void saveFrameBuffer(renderID framebufferID, std::string path);
+    void saveFrameBuffer(FramebufferHandle framebuffer, std::string path);
 
     bool m_addCommandsToDevice = false;
 

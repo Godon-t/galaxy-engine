@@ -2,7 +2,8 @@
 
 #include "types/Math.hpp"
 #include "pch.hpp"
-#include "rendering/renderer/RenderCommand.hpp"
+#include "rendering/renderer/commands/RenderCommand.hpp"
+#include "rendering/renderer/resources/GpuResourceHandle.hpp"
 #include "SceneContext.hpp"
 #include "rendering/CameraManager.hpp"
 
@@ -12,7 +13,9 @@ namespace Galaxy
 {
     struct RenderDevice {
         bool renderScene = false;
-        renderID targetFramebuffer = -1;
+        // GLX-TODO: not ideal to have 2 targets at the same time
+        FramebufferHandle targetFramebuffer;
+        CubemapFramebufferHandle targetCubemapFramebuffer;
         int targetDepthLayer = -1;
         vec2 viewportPosition = vec2(0);
         vec2 viewportDimmension = vec2(512);
@@ -23,7 +26,7 @@ namespace Galaxy
 
         std::vector<RenderCommand> customPostCommands;
 
-        bool useBuffer() {return targetFramebuffer >= 0;}
+        bool useBuffer() const { return targetFramebuffer || targetCubemapFramebuffer; }
 
         virtual mat4 getView(){
             vec3 pos = vec3(0,0,0);

@@ -2,6 +2,7 @@
 
 #include "Light.hpp"
 #include "engine/types/Render.hpp"
+#include "rendering/renderer/resources/GpuResourceHandle.hpp"
 
 namespace Galaxy {
 
@@ -21,7 +22,7 @@ public:
 
 private:
     lightID m_lightID;
-    renderID m_visualCubeID;
+    GeometryHandle m_visualCube;
 
     // bool m_castShadows;
 };

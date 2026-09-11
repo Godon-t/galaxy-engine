@@ -148,11 +148,11 @@ void FrameBuffer::savePPM(const std::string& filename)
     }
 }
 
-void FrameBuffer::attachColorTexture(Texture& texture, int idx)
+bool FrameBuffer::attachColorTexture(Texture& texture, int idx)
 {
     if (idx < 0 || idx >= static_cast<int>(m_colorsCount)) {
         GLX_CORE_ERROR("Can't bind texture to framebuffer's color attachment: {0}", idx);
-        return;
+        return false;
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -162,9 +162,10 @@ void FrameBuffer::attachColorTexture(Texture& texture, int idx)
 
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
+    return true;
 }
 
-void FrameBuffer::attachDepthTexture(Texture& texture)
+bool FrameBuffer::attachDepthTexture(Texture& texture)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     texture.setFormat(depthFormat());
@@ -183,6 +184,7 @@ void FrameBuffer::attachDepthTexture(Texture& texture)
 
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
+    return true;
 }
 
 // TODO: Should work with texture bound
@@ -382,23 +384,25 @@ CubemapFrameBuffer& CubemapFrameBuffer::operator=(CubemapFrameBuffer&& other) no
     return *this;
 }
 
-void CubemapFrameBuffer::attachDepthCubemap(Cubemap& cubemap)
+bool CubemapFrameBuffer::attachDepthCubemap(Cubemap& cubemap)
 {
     cubemap.setFormat(TextureFormat::DEPTH);
     cubemap.resize(m_size);
     m_depthCubemap.borrow(cubemap);
+    return true;
 }
 
-void CubemapFrameBuffer::attachColorCubemap(Cubemap& cubemap, int idx)
+bool CubemapFrameBuffer::attachColorCubemap(Cubemap& cubemap, int idx)
 {
     if (idx < 0)
-        return;
+        return false;
     if (idx >= static_cast<int>(m_colorCubemaps.size()))
         m_colorCubemaps.resize(idx + 1);
 
     cubemap.setFormat(TextureFormat::RGB);
     cubemap.resize(m_size);
     m_colorCubemaps[idx].borrow(cubemap);
+    return true;
 }
 
 void CubemapFrameBuffer::setAsCubemapUniform(unsigned int uniLocation, int textureIdx)

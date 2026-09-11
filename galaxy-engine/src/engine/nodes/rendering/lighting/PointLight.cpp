@@ -8,7 +8,6 @@ namespace Galaxy {
 PointLight::PointLight(std::string name)
     : Light(name)
     , m_lightID(0)
-    , m_visualCubeID(0)
 {
 }
 
@@ -17,8 +16,8 @@ PointLight::~PointLight()
     if (m_lightID != 0) {
         Renderer::getInstance().getLightManager().unregisterLight(m_lightID);
     }
-    if (m_visualCubeID != 0) {
-        Renderer::getInstance().getBackend().clearMesh(m_visualCubeID);
+    if (m_visualCube) {
+        Renderer::getInstance().getBackend().clearMesh(m_visualCube);
     }
 }
 
@@ -34,7 +33,7 @@ void PointLight::enteredRoot()
     updateLight();
 
     // Create visual cube
-    m_visualCubeID = Renderer::getInstance().getBackend().generateCube(1.f, false, []() {});
+    m_visualCube = Renderer::getInstance().getBackend().generateCube(1.f, false, []() {});
 }
 
 void PointLight::accept(Galaxy::NodeVisitor& visitor)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderCommand.hpp"
+#include "commands/RenderCommand.hpp"
 #include "core/Log.hpp"
 #include "rendering/GPUInstances/DebugLines.hpp"
 #include "rendering/GPUInstances/FrameBuffer.hpp"
@@ -8,173 +8,74 @@
 #include "rendering/GPUInstances/UBOInstance.hpp"
 #include "rendering/GPUInstances/VisualInstance.hpp"
 #include "rendering/Program.hpp"
+#include "resources/GpuResourceRegistry.hpp"
 #include "resource/Image.hpp"
 #include "resource/Mesh.hpp"
 #include "resource/ResourceHandle.hpp"
 #include "types/Render.hpp"
 #include <functional>
 #include <memory>
-#include <tuple>
-#include <utility>
 
 namespace Galaxy {
 class Renderer;
-
-template <typename T>
-class RenderGpuResourceTable {
-public:
-    RenderGpuResourceTable(int maxSize = 512)
-    {
-        m_renderIdToInstance.reserve(maxSize);
-        // 0 reserved for invalid renderID
-        for (size_t i = 1; i <= maxSize; i++) {
-            m_freeIds.push(i);
-        }
-    }
-
-    bool tryRemove(renderID idToRemove)
-    {
-        return tryRemove(idToRemove, [](T&) {});
-    }
-
-    template <typename BeforeRemove>
-    bool tryRemove(renderID idToRemove, BeforeRemove&& beforeRemove)
-    {
-        auto instance = m_renderIdToInstance.find(idToRemove);
-        if (instance == m_renderIdToInstance.end()) {
-            GLX_CORE_ERROR("Trying to remove an unknown GPU resource: {0}", idToRemove);
-            return false;
-        }
-
-        if (instance->second.second > 1) {
-            --instance->second.second;
-            return false;
-        }
-
-        beforeRemove(instance->second.first);
-        m_renderIdToInstance.erase(instance);
-        m_freeIds.emplace(idToRemove);
-        return true;
-    }
-
-    template <typename... Args>
-    renderID createResourceInstance(Args&&... args)
-    {
-        if (m_freeIds.size() == 0) {
-            GLX_CORE_ERROR("No more free renderIDs");
-            return 0;
-        }
-
-        renderID createdID = m_freeIds.top();
-
-        const auto insertion = m_renderIdToInstance.try_emplace(
-            createdID,
-            std::piecewise_construct,
-            std::forward_as_tuple(std::forward<Args>(args)...),
-            std::forward_as_tuple(size_t { 1 }));
-        const bool inserted = insertion.second;
-        GLX_CORE_ASSERT(inserted, "Duplicate GPU resource ID: {0}", createdID);
-        if (!inserted)
-            return 0;
-
-        m_freeIds.pop();
-
-        return createdID;
-    }
-
-    void increaseCount(renderID id)
-    {
-        auto instance = m_renderIdToInstance.find(id);
-        GLX_CORE_ASSERT(instance != m_renderIdToInstance.end(), "Unknown GPU resource: {0}", id);
-        if (instance != m_renderIdToInstance.end())
-            ++instance->second.second;
-    }
-
-    T* get(renderID id)
-    {
-        auto instance = m_renderIdToInstance.find(id);
-        GLX_CORE_ASSERT(instance != m_renderIdToInstance.end(), "Unknown GPU resource: {0}", id);
-        return instance != m_renderIdToInstance.end() ? &instance->second.first : nullptr;
-    }
-
-    std::vector<T*> getAll(){
-        std::vector<T*> res;
-        res.reserve(m_renderIdToInstance.size());
-        
-        for(auto& [id, value] : m_renderIdToInstance){
-            res.push_back(&value.first);
-        }
-        return res;
-    }
-
-    bool canAddInstance() { return m_freeIds.size() > 0; }
-    void removeAll()
-    {
-        for (auto& elem : m_renderIdToInstance) {
-            m_freeIds.emplace(elem.first);
-        }
-        m_renderIdToInstance.clear();
-    }
-
-    T* tryGet(renderID id) noexcept
-    {
-        auto instance = m_renderIdToInstance.find(id);
-        return instance != m_renderIdToInstance.end() ? &instance->second.first : nullptr;
-    }
-
-private:
-    std::unordered_map<renderID, std::pair<T, size_t>> m_renderIdToInstance;
-    std::stack<renderID> m_freeIds;
-};
 
 class Backend {
 public:
     Backend(size_t maxSize = 512);
     ~Backend();
 
-    renderID instantiateUBO(unsigned int dataSize);
+    BufferHandle instantiateUBO(unsigned int dataSize);
 
-    renderID instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx);
-    renderID instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices, std::function<void()> destroyCallback = nullptr);
-    Sphere& getMeshBoundingVolume(renderID meshID);
-    void clearMesh(renderID meshID);
+    GeometryHandle instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx);
+    GeometryHandle instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices, std::function<void()> destroyCallback = nullptr);
+    Sphere getMeshBoundingVolume(GeometryHandle mesh);
+    void clearMesh(GeometryHandle mesh);
 
-    renderID instantiateTexture(TextureFormat format, vec2 size);
-    renderID instantiateTexture(ResourceHandle<Image> image);
-    void clearTexture(renderID textureID);
+    TextureHandle instantiateTexture(TextureFormat format, vec2 size);
+    TextureHandle instantiateTexture(ResourceHandle<Image> image);
+    void clearTexture(TextureHandle texture);
     void frameReset();
 
-    renderID instanciateMaterial(ResourceHandle<Material> material);
-    void updateMaterial(renderID materialID, ResourceHandle<Material> material);
-    void clearMaterial(renderID materialID);
+    MaterialHandle instanciateMaterial(ResourceHandle<Material> material);
+    void updateMaterial(MaterialHandle materialHandle, ResourceHandle<Material> material);
+    void clearMaterial(MaterialHandle material);
 
-    using MaterialUpdateCallback = std::function<void(renderID materialID, bool isTransparent)>;
+    using MaterialUpdateCallback = std::function<void(MaterialHandle material, bool isTransparent)>;
     void onMaterialUpdated(MaterialUpdateCallback callback) { m_materialUpdateCallback = callback; }
 
     void processCommands(const std::vector<RenderCommand>& commands);
 
-    renderID generateCube(float dimmension, bool inward, std::function<void()> destroyCallback);
-    renderID generateQuad(vec2 dimmensions, std::function<void()> destroyCallback);
-    renderID generatePyramid(float baseSize, float height, std::function<void()> destroyCallback);
+    GeometryHandle generateCube(float dimmension, bool inward, std::function<void()> destroyCallback);
+    GeometryHandle generateQuad(vec2 dimmensions, std::function<void()> destroyCallback);
+    GeometryHandle generatePyramid(float baseSize, float height, std::function<void()> destroyCallback);
 
-    renderID instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces);
-    renderID instanciateCubemap(int resolution = 1024);
-    void clearCubemap(renderID cubemapID);
+    CubemapHandle instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces);
+    CubemapHandle instanciateCubemap(int resolution = 1024);
+    void clearCubemap(CubemapHandle cubemap);
 
-    renderID instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1, unsigned int depthLayerCount = 0);
-    renderID instantiateCubemapFrameBuffer(unsigned int resolution, unsigned int colorCount = 1);
+    FramebufferHandle instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1, unsigned int depthLayerCount = 0);
+    CubemapFramebufferHandle instantiateCubemapFrameBuffer(unsigned int resolution, unsigned int colorCount = 1);
 
-    void clearFrameBuffer(renderID frameBufferID);
-    void resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height, unsigned int depthLayerCount = 0);
-    void resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size);
+    void clearFrameBuffer(FramebufferHandle framebuffer);
+    void clearFrameBuffer(CubemapFramebufferHandle framebuffer);
+    void resizeFrameBuffer(FramebufferHandle framebuffer, unsigned int width, unsigned int height, unsigned int depthLayerCount = 0);
+    void resizeCubemapFrameBuffer(CubemapFramebufferHandle framebuffer, unsigned int size);
     // TODO: Wrong way ?
-    FramebufferTextureFormat getFramebufferFormat(renderID id);
+    FramebufferTextureFormat getFramebufferFormat(FramebufferHandle framebuffer);
 
     void setProjectionMatrix(const mat4& projectionMatrix);
-    unsigned int getFrameBufferTextureID(renderID frameBufferID);
-    unsigned int getFrameBufferDepthTextureID(renderID frameBufferID);
+    unsigned int getFrameBufferTextureID(FramebufferHandle framebuffer);
+    unsigned int getFrameBufferDepthTextureID(FramebufferHandle framebuffer);
 
-    void setCullMode(renderID visualInstanceID, CullMode mode);
+    void setCullMode(GeometryHandle geometry, CullMode mode);
+
+    [[nodiscard]] bool isValid(GeometryHandle handle) const noexcept { return m_visualInstances.contains(handle); }
+    [[nodiscard]] bool isValid(TextureHandle handle) const noexcept { return m_textureInstances.contains(handle); }
+    [[nodiscard]] bool isValid(MaterialHandle handle) const noexcept { return m_materialInstances.contains(handle); }
+    [[nodiscard]] bool isValid(CubemapHandle handle) const noexcept { return m_cubemapInstances.contains(handle); }
+    [[nodiscard]] bool isValid(FramebufferHandle handle) const noexcept { return m_frameBufferInstances.contains(handle); }
+    [[nodiscard]] bool isValid(CubemapFramebufferHandle handle) const noexcept { return m_cubemapFrameBufferInstances.contains(handle); }
+    [[nodiscard]] bool isValid(BufferHandle handle) const noexcept { return m_uboInstances.contains(handle); }
 
     void initDebugCallback();
 
@@ -182,6 +83,19 @@ public:
     void setActiveProgram(ProgramType program);
 
 private:
+    struct FramebufferAttachments {
+        std::vector<TextureHandle> colors;
+        TextureHandle depth;
+    };
+
+    struct CubemapFramebufferAttachments {
+        std::vector<CubemapHandle> colors;
+        CubemapHandle depth;
+    };
+
+    void releaseAttachments(FramebufferHandle framebuffer);
+    void releaseAttachments(CubemapFramebufferHandle framebuffer);
+
     void processCommand(const ClearCommand& command);
     void processCommand(const DepthMaskCommand& command);
     void processCommand(const SetViewCommand& command);
@@ -208,19 +122,20 @@ private:
     void processCommand(const SaveFrameBufferCommand& command);
     void debugDraw();
 
-    RenderGpuResourceTable<VisualInstance> m_visualInstances;
-    RenderGpuResourceTable<Texture> m_textureInstances;
-    RenderGpuResourceTable<MaterialInstance> m_materialInstances;
-    RenderGpuResourceTable<Cubemap> m_cubemapInstances;
-    RenderGpuResourceTable<FrameBuffer> m_frameBufferInstances;
-    RenderGpuResourceTable<CubemapFrameBuffer> m_cubemapFrameBufferInstances;
-    RenderGpuResourceTable<UBOInstance> m_uboInstances;
+    GpuResourceRegistry<VisualInstance, GeometryHandle> m_visualInstances;
+    GpuResourceRegistry<Texture, TextureHandle> m_textureInstances;
+    GpuResourceRegistry<MaterialInstance, MaterialHandle> m_materialInstances;
+    GpuResourceRegistry<Cubemap, CubemapHandle> m_cubemapInstances;
+    GpuResourceRegistry<FrameBuffer, FramebufferHandle> m_frameBufferInstances;
+    GpuResourceRegistry<CubemapFrameBuffer, CubemapFramebufferHandle> m_cubemapFrameBufferInstances;
+    GpuResourceRegistry<UBOInstance, BufferHandle> m_uboInstances;
 
-    // Temporary until renderID becomes a typed generational handle.
-    std::unordered_map<renderID, std::function<void()>> m_visualDestroyNotifications;
-    std::unordered_map<renderID, std::function<void()>> m_textureDestroyNotifications;
-    std::unordered_map<renderID, std::function<void()>> m_materialDestroyNotifications;
-    std::unordered_map<renderID, std::shared_ptr<int>> m_cubemapUploadLifetimes;
+    std::unordered_map<GeometryHandle, std::function<void()>, GpuResourceHandleHash> m_visualDestroyNotifications;
+    std::unordered_map<TextureHandle, std::function<void()>, GpuResourceHandleHash> m_textureDestroyNotifications;
+    std::unordered_map<MaterialHandle, std::function<void()>, GpuResourceHandleHash> m_materialDestroyNotifications;
+    std::unordered_map<CubemapHandle, std::shared_ptr<int>, GpuResourceHandleHash> m_cubemapUploadLifetimes;
+    std::unordered_map<FramebufferHandle, FramebufferAttachments, GpuResourceHandleHash> m_framebufferAttachments;
+    std::unordered_map<CubemapFramebufferHandle, CubemapFramebufferAttachments, GpuResourceHandleHash> m_cubemapFramebufferAttachments;
     std::shared_ptr<int> m_lifetimeToken = std::make_shared<int>(0);
 
     MaterialUpdateCallback m_materialUpdateCallback;

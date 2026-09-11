@@ -2,184 +2,177 @@
 
 #include "Log.hpp"
 
+#include <algorithm>
 
-namespace Galaxy
+namespace Galaxy {
+
+vec3 SceneContext::DistCompare::camPosition = vec3(0);
+
+bool SceneContext::DistCompare::operator()(
+    const std::pair<MaterialHandle, RenderCommand>& a,
+    const std::pair<MaterialHandle, RenderCommand>& b) const
 {
-    vec3 SceneContext::DistCompare::camPosition = vec3(0);
-    bool SceneContext::DistCompare::operator()(const std::pair<renderID, RenderCommand>& a, const std::pair<renderID, RenderCommand>& b) const
-    {
-        try {
-            return (camPosition - vec3(std::get<DrawCommand>(a.second).model[3])).length() < (camPosition - vec3(std::get<DrawCommand>(b.second).model[3])).length();
-        } catch (const std::bad_variant_access& ex) {
-            GLX_CORE_ERROR("Wrong command type when drawing according to distance");
-            return false;
-        }
+    try {
+        return (camPosition - vec3(std::get<DrawCommand>(a.second).model[3])).length()
+            < (camPosition - vec3(std::get<DrawCommand>(b.second).model[3])).length();
+    } catch (const std::bad_variant_access&) {
+        GLX_CORE_ERROR("Wrong command type when drawing according to distance");
+        return false;
     }
+}
 
-    std::vector<RenderCommand> SceneContext::retrieveOpaqueRenders()
-    {
-        std::vector<RenderCommand> res;
-        for (auto& queue : renderCommandsByMaterial) {
-            auto matID = queue.first;
-            if (!materialsTransparency[matID]) {
-                BindMaterialCommand bindMaterialCommand;
-                bindMaterialCommand.materialRenderID = matID;
+namespace {
 
-                res.push_back(bindMaterialCommand);
+bool isTransparent(
+    const std::unordered_map<MaterialHandle, bool, GpuResourceHandleHash>& transparencies,
+    MaterialHandle material)
+{
+    const auto found = transparencies.find(material);
+    return found != transparencies.end() && found->second;
+}
 
-                for (auto& meshVisual : queue.second) {
-                    DrawCommand draw;
-                    draw.instanceId = meshVisual.meshID;
-                    draw.model = meshVisual.transform.getGlobalModelMatrix();
-                    res.push_back(draw);
-                }
-            }
-        }
+void appendDraw(std::vector<RenderCommand>& commands, const RenderItem& item)
+{
+    DrawCommand draw;
+    draw.geometry = item.geometry;
+    draw.model = item.transform.getGlobalModelMatrix();
+    commands.emplace_back(std::move(draw));
+}
 
-        return res;
-    }
+} // namespace
 
-    std::vector<RenderCommand> SceneContext::retrieveTransparentRenders(math::vec3 camPosition)
-    {
-        DistCompare::camPosition = math::vec3(camPosition);
+std::vector<RenderCommand> SceneContext::retrieveOpaqueRenders()
+{
+    std::vector<RenderCommand> commands;
+    std::unordered_map<MaterialHandle, std::vector<const RenderItem*>, GpuResourceHandleHash> groupedItems;
 
-        std::priority_queue<std::pair<renderID, RenderCommand>, std::vector<std::pair<renderID, RenderCommand>>, DistCompare> transparentPQ;
-
-        std::vector<RenderCommand> res;
-        for (auto& queue : renderCommandsByMaterial) {
-            auto matID = queue.first;
-            if (materialsTransparency[matID]) {
-                for (auto& meshVisual : queue.second) {
-                    DrawCommand draw;
-                    draw.instanceId = meshVisual.meshID;
-                    draw.model = meshVisual.transform.getGlobalModelMatrix();
-                
-                    auto elem = std::make_pair(matID, draw);
-                    transparentPQ.push(elem);
-                }
-            }
+    for (const RenderItem& item : renderItems) {
+        if (!item.material) {
+            appendDraw(commands, item);
+            continue;
         }
 
-        // DepthMaskCommand depthMask;
-        // depthMask.state = false;
+        if (!isTransparent(materialsTransparency, *item.material))
+            groupedItems[*item.material].push_back(&item);
+    }
 
-        // res.push_back(depthMask);
+    for (const auto& [material, items] : groupedItems) {
+        commands.emplace_back(BindMaterialCommand { material });
+        for (const RenderItem* item : items)
+            appendDraw(commands, *item);
+    }
 
-        while (!transparentPQ.empty()) {
-            BindMaterialCommand bindMaterialCommand;
-            bindMaterialCommand.materialRenderID = transparentPQ.top().first;
+    return commands;
+}
 
-            res.push_back(bindMaterialCommand);
-            res.push_back(transparentPQ.top().second);
+std::vector<RenderCommand> SceneContext::retrieveTransparentRenders(math::vec3 camPosition)
+{
+    DistCompare::camPosition = camPosition;
+    std::priority_queue<
+        std::pair<MaterialHandle, RenderCommand>,
+        std::vector<std::pair<MaterialHandle, RenderCommand>>,
+        DistCompare>
+        transparentItems;
 
-            transparentPQ.pop();
+    for (const RenderItem& item : renderItems) {
+        if (!item.material || !isTransparent(materialsTransparency, *item.material))
+            continue;
+
+        DrawCommand draw;
+        draw.geometry = item.geometry;
+        draw.model = item.transform.getGlobalModelMatrix();
+        transparentItems.emplace(*item.material, std::move(draw));
+    }
+
+    std::vector<RenderCommand> commands;
+    while (!transparentItems.empty()) {
+        commands.emplace_back(BindMaterialCommand { transparentItems.top().first });
+        commands.push_back(transparentItems.top().second);
+        transparentItems.pop();
+    }
+    return commands;
+}
+
+std::vector<RenderCommand> SceneContext::retrieveOpaqueRenders(const Frustum& frustum)
+{
+    std::vector<RenderCommand> commands;
+    std::unordered_map<MaterialHandle, std::vector<const RenderItem*>, GpuResourceHandleHash> groupedItems;
+
+    for (const RenderItem& item : renderItems) {
+        if (!Frustum::isSphereInFrustum(item.bounds, frustum, item.transform))
+            continue;
+
+        if (!item.material) {
+            appendDraw(commands, item);
+            continue;
         }
 
-        // depthMask.state = true;
-        // res.push_back(depthMask);
-
-        return res;
+        if (!isTransparent(materialsTransparency, *item.material))
+            groupedItems[*item.material].push_back(&item);
     }
 
-    std::vector<RenderCommand> SceneContext::retrieveOpaqueRenders(const Frustum& frustum)
-    {
-        std::vector<RenderCommand> res;
-        for (auto& queue : renderCommandsByMaterial) {
-            auto matID = queue.first;
-            if (!materialsTransparency[matID]) {
-                BindMaterialCommand bindMaterialCommand;
-                bindMaterialCommand.materialRenderID = matID;
-
-                res.push_back(bindMaterialCommand);
-
-                for (auto& meshVisual : queue.second) {
-                    if(frustum.isSphereInFrustum(meshVisual.volume, frustum, meshVisual.transform)){
-                        DrawCommand draw;
-    
-                        
-                        draw.model = meshVisual.transform.getGlobalModelMatrix();
-                        draw.instanceId = meshVisual.meshID;
-                        res.push_back(draw);
-                    }
-
-                    
-                }
-            }
-        }
-
-        return res;
+    for (const auto& [material, items] : groupedItems) {
+        commands.emplace_back(BindMaterialCommand { material });
+        for (const RenderItem* item : items)
+            appendDraw(commands, *item);
     }
 
-    std::vector<RenderCommand> SceneContext::retrieveTransparentRenders(const Frustum& frustum)
-    {
-        DistCompare::camPosition = frustum.nearFace.position;
+    return commands;
+}
 
-        std::priority_queue<std::pair<renderID, RenderCommand>, std::vector<std::pair<renderID, RenderCommand>>, DistCompare> transparentPQ;
+std::vector<RenderCommand> SceneContext::retrieveTransparentRenders(const Frustum& frustum)
+{
+    DistCompare::camPosition = frustum.nearFace.position;
+    std::priority_queue<
+        std::pair<MaterialHandle, RenderCommand>,
+        std::vector<std::pair<MaterialHandle, RenderCommand>>,
+        DistCompare>
+        transparentItems;
 
-        std::vector<RenderCommand> res;
-        for (auto& queue : renderCommandsByMaterial) {
-            auto matID = queue.first;
-            if (materialsTransparency[matID]) {
-                for (auto& meshVisual : queue.second) {
-                    if(Frustum::isSphereInFrustum(meshVisual.volume, frustum, meshVisual.transform)){
-                        DrawCommand draw;
-                        draw.instanceId = meshVisual.meshID;
-                        draw.model = meshVisual.transform.getGlobalModelMatrix();
-                    
-                        auto elem = std::make_pair(matID, draw);
-                        transparentPQ.push(elem);
-                    }
-                    
-                }
-            }
-        }
+    for (const RenderItem& item : renderItems) {
+        if (!item.material || !isTransparent(materialsTransparency, *item.material))
+            continue;
+        if (!Frustum::isSphereInFrustum(item.bounds, frustum, item.transform))
+            continue;
 
-        // DepthMaskCommand depthMask;
-        // depthMask.state = false;
-
-        // res.push_back(depthMask);
-
-        while (!transparentPQ.empty()) {
-            BindMaterialCommand bindMaterialCommand;
-            bindMaterialCommand.materialRenderID = transparentPQ.top().first;
-
-            res.push_back(bindMaterialCommand);
-            res.push_back(transparentPQ.top().second);
-
-            transparentPQ.pop();
-        }
-
-        // depthMask.state = true;
-        // res.push_back(depthMask);
-
-        return res;
+        DrawCommand draw;
+        draw.geometry = item.geometry;
+        draw.model = item.transform.getGlobalModelMatrix();
+        transparentItems.emplace(*item.material, std::move(draw));
     }
 
-    void SceneContext::pushNewObject(renderID materialID, renderID meshID, const Sphere& volume, const Transform& transform)
-    {
-        Visual vis;
-        vis.meshID = meshID;
-        vis.transform = transform;
-        vis.volume = volume;
-        renderCommandsByMaterial[materialID].push_back(vis);
+    std::vector<RenderCommand> commands;
+    while (!transparentItems.empty()) {
+        commands.emplace_back(BindMaterialCommand { transparentItems.top().first });
+        commands.push_back(transparentItems.top().second);
+        transparentItems.pop();
     }
+    return commands;
+}
 
-    void SceneContext::removeMaterialID(renderID materialID)
-    {
-        materialsTransparency.erase(materialID);
-        renderCommandsByMaterial.erase(materialID);
-    }
+void SceneContext::push(RenderItem item)
+{
+    renderItems.push_back(std::move(item));
+}
 
-    void SceneContext::onMaterialUpdated(renderID materialID, bool isTransparent)
-    {
-        materialsTransparency[materialID] = isTransparent;
-    }
+void SceneContext::removeMaterial(MaterialHandle material)
+{
+    materialsTransparency.erase(material);
+    renderItems.erase(
+        std::remove_if(renderItems.begin(), renderItems.end(), [material](const RenderItem& item) {
+            return item.material && *item.material == material;
+        }),
+        renderItems.end());
+}
 
-    void SceneContext::clear()
-    {
-        for(auto& ite: renderCommandsByMaterial){
-            ite.second.clear();
-        }
-    }
+void SceneContext::onMaterialUpdated(MaterialHandle material, bool transparent)
+{
+    materialsTransparency[material] = transparent;
+}
+
+void SceneContext::clear()
+{
+    renderItems.clear();
+}
 
 } // namespace Galaxy

@@ -59,12 +59,12 @@ Backend::~Backend()
     destroy();
 }
 
-renderID Backend::instantiateUBO(unsigned int dataSize)
+BufferHandle Backend::instantiateUBO(unsigned int dataSize)
 {
-    if (!m_uboInstances.canAddInstance())
-        return 0;
+    if (!m_uboInstances.canCreate())
+        return {};
 
-    renderID uboID = m_uboInstances.createResourceInstance();
+    BufferHandle uboID = m_uboInstances.create();
 
     m_uboInstances.get(uboID)->init(dataSize);
 
@@ -92,13 +92,15 @@ void Backend::destroy()
         notify();
 
     // Framebuffers may borrow textures/cubemaps, so release them first.
-    m_frameBufferInstances.removeAll();
-    m_cubemapFrameBufferInstances.removeAll();
-    m_materialInstances.removeAll();
-    m_uboInstances.removeAll();
-    m_visualInstances.removeAll();
-    m_textureInstances.removeAll();
-    m_cubemapInstances.removeAll();
+    m_frameBufferInstances.clear();
+    m_cubemapFrameBufferInstances.clear();
+    m_framebufferAttachments.clear();
+    m_cubemapFramebufferAttachments.clear();
+    m_materialInstances.clear();
+    m_uboInstances.clear();
+    m_visualInstances.clear();
+    m_textureInstances.clear();
+    m_cubemapInstances.clear();
 
     m_debugLinesProgram.destroy();
     m_computeOctahedralProgram.destroy();
@@ -139,12 +141,12 @@ void Backend::setActiveProgram(ProgramType program)
     m_activeProgram->use();
 }
 
-renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices, std::function<void()> destroyCallback)
+GeometryHandle Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices, std::function<void()> destroyCallback)
 {
-    if (!m_visualInstances.canAddInstance())
-        return 0;
+    if (!m_visualInstances.canCreate())
+        return {};
 
-    renderID meshID = m_visualInstances.createResourceInstance();
+    GeometryHandle meshID = m_visualInstances.create();
     m_visualInstances.get(meshID)->init(vertices, indices);
 
     if (destroyCallback) {
@@ -154,27 +156,36 @@ renderID Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<sho
     return meshID;
 }
 
-Sphere& Backend::getMeshBoundingVolume(renderID meshID)
+Sphere Backend::getMeshBoundingVolume(GeometryHandle meshID)
 {
-    return m_visualInstances.get(meshID)->getBoundingVolume();
+    auto* geometry = m_visualInstances.tryGet(meshID);
+    if (geometry == nullptr) {
+        GLX_CORE_ERROR("Cannot inspect an invalid geometry handle");
+        return Sphere { 0.0f, vec3(0.0f) };
+    }
+    return geometry->getBoundingVolume();
 }
 
-renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
+GeometryHandle Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 {
-    renderID subMeshID = mesh.getResource().getVisualID(surfaceIdx);
-    if (subMeshID != 0) {
-        m_visualInstances.increaseCount(subMeshID);
-        return subMeshID;
+    GeometryHandle subMeshID = mesh.getResource().getGpuGeometryHandle(surfaceIdx);
+    if (subMeshID) {
+        if (m_visualInstances.contains(subMeshID)) {
+            m_visualInstances.retain(subMeshID);
+            return subMeshID;
+        }
+        GLX_WARN("Unvalid GPU handle on mesh {0} for surface index {1}", mesh.getResource().getPath(), surfaceIdx);
+        mesh.getResource().notifyGpuInstanceDestroyed(surfaceIdx, subMeshID);
     }
-    if (!m_visualInstances.canAddInstance())
-        return 0;
+    if (!m_visualInstances.canCreate())
+        return {};
 
-    renderID visualID = m_visualInstances.createResourceInstance();
-    mesh.getResource().setVisualID(surfaceIdx, visualID);
+    GeometryHandle visualID = m_visualInstances.create();
+    mesh.getResource().setGpuGeometryHandle(surfaceIdx, visualID);
     const std::weak_ptr<int> backendLifetime = m_lifetimeToken;
 
     mesh.getResource().onLoaded([this, backendLifetime, mesh, visualID, surfaceIdx] {
-        if (backendLifetime.expired() || mesh.getResource().getVisualID(surfaceIdx) != visualID)
+        if (backendLifetime.expired() || mesh.getResource().getGpuGeometryHandle(surfaceIdx) != visualID)
             return;
 
         const auto& meshRes = mesh.getResource();
@@ -191,9 +202,9 @@ renderID Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
     return visualID;
 }
 
-void Backend::clearMesh(renderID meshID)
+void Backend::clearMesh(GeometryHandle meshID)
 {
-    if (!m_visualInstances.tryRemove(meshID))
+    if (!m_visualInstances.release(meshID))
         return;
 
     auto it = m_visualDestroyNotifications.find(meshID);
@@ -203,22 +214,26 @@ void Backend::clearMesh(renderID meshID)
     }
 }
 
-renderID Backend::instantiateTexture(ResourceHandle<Image> image)
+TextureHandle Backend::instantiateTexture(ResourceHandle<Image> image)
 {
-    renderID existingID = image.getResource().getTextureID();
-    if (existingID != 0) {
-        m_textureInstances.increaseCount(existingID);
-        return existingID;
+    TextureHandle existingID = image.getResource().getGpuTextureHandle();
+    if (existingID) {
+        if (m_textureInstances.contains(existingID)) {
+            m_textureInstances.retain(existingID);
+            return existingID;
+        }
+        GLX_WARN("Unvalid texture handle on image {0}", image.getResource().getPath());
+        image.getResource().notifyGpuInstanceDestroyed(existingID);
     }
-    if (!m_textureInstances.canAddInstance())
-        return 0;
+    if (!m_textureInstances.canCreate())
+        return {};
 
-    renderID textureID = m_textureInstances.createResourceInstance();
-    image.getResource().setTextureID(textureID);
+    TextureHandle textureID = m_textureInstances.create();
+    image.getResource().setGpuTextureHandle(textureID);
     const std::weak_ptr<int> backendLifetime = m_lifetimeToken;
 
     image.getResource().onLoaded([this, backendLifetime, image, textureID] {
-        if (backendLifetime.expired() || image.getResource().getTextureID() != textureID)
+        if (backendLifetime.expired() || image.getResource().getGpuTextureHandle() != textureID)
             return;
 
         auto& imgRes = image.getResource();
@@ -234,19 +249,19 @@ renderID Backend::instantiateTexture(ResourceHandle<Image> image)
     return textureID;
 }
 
-renderID Backend::instantiateTexture(TextureFormat format, vec2 size)
+TextureHandle Backend::instantiateTexture(TextureFormat format, vec2 size)
 {
-    if (!m_textureInstances.canAddInstance())
-        return 0;
+    if (!m_textureInstances.canCreate())
+        return {};
 
-    renderID textureID = m_textureInstances.createResourceInstance(format, static_cast<int>(size.x), static_cast<int>(size.y));
+    TextureHandle textureID = m_textureInstances.create(format, static_cast<int>(size.x), static_cast<int>(size.y));
     checkOpenGLErrors("Instantiate texture");
     return textureID;
 }
 
-void Backend::clearTexture(renderID textureID)
+void Backend::clearTexture(TextureHandle textureID)
 {
-    if (!m_textureInstances.tryRemove(textureID))
+    if (!m_textureInstances.release(textureID))
         return;
 
     auto it = m_textureDestroyNotifications.find(textureID);
@@ -267,26 +282,30 @@ void Backend::frameReset()
     }
 }
 
-renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
+MaterialHandle Backend::instanciateMaterial(ResourceHandle<Material> material)
 {
 
-    renderID existingID = material.getResource().getRenderID();
+    MaterialHandle existingID = material.getResource().getGpuMaterialHandle();
     if (existingID) {
-        m_materialInstances.increaseCount(existingID);
-        return existingID;
+        if (m_materialInstances.contains(existingID)) {
+            m_materialInstances.retain(existingID);
+            return existingID;
+        }
+        GLX_WARN("Unvalid material handle on material {0}", material.getResource().getPath());
+        material.getResource().notifyGpuInstanceDestroyed(existingID);
     }
-    if (!m_materialInstances.canAddInstance())
-        return 0;
+    if (!m_materialInstances.canCreate())
+        return {};
 
-    renderID materialID = m_materialInstances.createResourceInstance();
-    material.getResource().setRenderID(materialID);
+    MaterialHandle materialID = m_materialInstances.create();
+    material.getResource().setGpuMaterialHandle(materialID);
     m_materialDestroyNotifications[materialID] = [material, materialID] {
         material.getResource().notifyGpuInstanceDestroyed(materialID);
     };
     const std::weak_ptr<int> backendLifetime = m_lifetimeToken;
 
     material.getResource().onLoaded([this, backendLifetime, material, materialID] {
-        if (backendLifetime.expired() || material.getResource().getRenderID() != materialID)
+        if (backendLifetime.expired() || material.getResource().getGpuMaterialHandle() != materialID)
             return;
 
         auto matInstance = m_materialInstances.tryGet(materialID);
@@ -319,21 +338,27 @@ renderID Backend::instanciateMaterial(ResourceHandle<Material> material)
     return materialID;
 }
 
-void Backend::updateMaterial(renderID materialID, ResourceHandle<Material> material)
+void Backend::updateMaterial(MaterialHandle materialID, ResourceHandle<Material> material)
 {
+    auto* materialInstance = m_materialInstances.tryGet(materialID);
+    if (materialInstance == nullptr) {
+        GLX_CORE_ERROR("Cannot update an invalid material handle");
+        return;
+    }
+
     auto& matResource = material.getResource();
-    m_materialInstances.get(materialID)->transparency = matResource.getTransparency();
+    materialInstance->transparency = matResource.getTransparency();
     
     if (m_materialUpdateCallback) {
         m_materialUpdateCallback(materialID, matResource.isUsingTransparency());
     }
 }
 
-void Backend::clearMaterial(renderID materialID)
+void Backend::clearMaterial(MaterialHandle materialID)
 {
-    const bool removed = m_materialInstances.tryRemove(materialID, [this](MaterialInstance& materialInstance) {
+    const bool removed = m_materialInstances.release(materialID, [this](MaterialInstance& materialInstance) {
         for (size_t type = 0; type < TextureType::COUNT; ++type) {
-            if (materialInstance.useImage[type])
+            if (materialInstance.useImage[type] && materialInstance.images[type])
                 clearTexture(materialInstance.images[type]);
         }
     });
@@ -359,7 +384,7 @@ void Backend::processCommands(const std::vector<RenderCommand>& commands)
     }
 }
 
-renderID Backend::generateCube(float dimmension, bool inward, std::function<void()> destroyCallback)
+GeometryHandle Backend::generateCube(float dimmension, bool inward, std::function<void()> destroyCallback)
 {
     std::vector<Vertex> vertices;
     std::vector<short unsigned int> indices;
@@ -406,7 +431,7 @@ renderID Backend::generateCube(float dimmension, bool inward, std::function<void
     return instanciateMesh(vertices, indices, destroyCallback);
 }
 
-renderID Backend::generateQuad(vec2 dimmensions, std::function<void()> destroyCallback)
+GeometryHandle Backend::generateQuad(vec2 dimmensions, std::function<void()> destroyCallback)
 {
     vec2 half = dimmensions / 2.f;
 
@@ -441,7 +466,7 @@ renderID Backend::generateQuad(vec2 dimmensions, std::function<void()> destroyCa
     return instanciateMesh(vertices, indices, destroyCallback);
 }
 
-renderID Backend::generatePyramid(float baseSize, float height, std::function<void()> destroyCallback)
+GeometryHandle Backend::generatePyramid(float baseSize, float height, std::function<void()> destroyCallback)
 {
     std::vector<Vertex> vertices;
     std::vector<short unsigned int> indices;
@@ -506,93 +531,141 @@ renderID Backend::generatePyramid(float baseSize, float height, std::function<vo
     return instanciateMesh(vertices, indices, destroyCallback);
 }
 
-void Backend::clearCubemap(renderID cubemapID)
+void Backend::clearCubemap(CubemapHandle cubemapID)
 {
-    if (m_cubemapInstances.tryRemove(cubemapID))
+    if (m_cubemapInstances.release(cubemapID))
         m_cubemapUploadLifetimes.erase(cubemapID);
 }
 
-renderID Backend::instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount, unsigned int depthLayerCount)
+FramebufferHandle Backend::instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount, unsigned int depthLayerCount)
 {
-    if (!m_frameBufferInstances.canAddInstance())
-        return 0;
+    if (!m_frameBufferInstances.canCreate())
+        return {};
 
-    renderID frameBufferID = m_frameBufferInstances.createResourceInstance(width, height, format, colorCount, depthLayerCount);
+    FramebufferHandle frameBufferID = m_frameBufferInstances.create(width, height, format, colorCount, depthLayerCount);
     m_frameBufferInstances.get(frameBufferID)->unbind();
     checkOpenGLErrors("Instantiate frameBuffer");
     return frameBufferID;
 }
 
-renderID Backend::instantiateCubemapFrameBuffer(unsigned int resolution, unsigned int colorCount)
+CubemapFramebufferHandle Backend::instantiateCubemapFrameBuffer(unsigned int resolution, unsigned int colorCount)
 {
-    if (!m_cubemapFrameBufferInstances.canAddInstance())
-        return 0;
+    if (!m_cubemapFrameBufferInstances.canCreate())
+        return {};
 
-    renderID frameBufferID = m_cubemapFrameBufferInstances.createResourceInstance(resolution, colorCount);
+    CubemapFramebufferHandle frameBufferID = m_cubemapFrameBufferInstances.create(resolution, colorCount);
     m_cubemapFrameBufferInstances.get(frameBufferID)->unbind();
     checkOpenGLErrors("Instantiate frameBuffer");
     return frameBufferID;
 }
 
-void Backend::clearFrameBuffer(renderID frameBufferID)
+void Backend::clearFrameBuffer(FramebufferHandle frameBufferID)
 {
-    m_frameBufferInstances.tryRemove(frameBufferID);
+    if (m_frameBufferInstances.release(frameBufferID))
+        releaseAttachments(frameBufferID);
     checkOpenGLErrors("Clear frameBuffer");
 }
 
-void Backend::resizeFrameBuffer(renderID frameBufferID, unsigned int width, unsigned int height, unsigned int depthLayerCount)
+void Backend::clearFrameBuffer(CubemapFramebufferHandle frameBufferID)
+{
+    if (m_cubemapFrameBufferInstances.release(frameBufferID))
+        releaseAttachments(frameBufferID);
+    checkOpenGLErrors("Clear cubemap frameBuffer");
+}
+
+void Backend::releaseAttachments(FramebufferHandle framebuffer)
+{
+    const auto found = m_framebufferAttachments.find(framebuffer);
+    if (found == m_framebufferAttachments.end())
+        return;
+
+    for (TextureHandle texture : found->second.colors) {
+        if (texture)
+            clearTexture(texture);
+    }
+    if (found->second.depth)
+        clearTexture(found->second.depth);
+    m_framebufferAttachments.erase(found);
+}
+
+void Backend::releaseAttachments(CubemapFramebufferHandle framebuffer)
+{
+    const auto found = m_cubemapFramebufferAttachments.find(framebuffer);
+    if (found == m_cubemapFramebufferAttachments.end())
+        return;
+
+    for (CubemapHandle cubemap : found->second.colors) {
+        if (cubemap)
+            clearCubemap(cubemap);
+    }
+    if (found->second.depth)
+        clearCubemap(found->second.depth);
+    m_cubemapFramebufferAttachments.erase(found);
+}
+
+void Backend::resizeFrameBuffer(FramebufferHandle frameBufferID, unsigned int width, unsigned int height, unsigned int depthLayerCount)
 {
     auto* framebuffer = m_frameBufferInstances.tryGet(frameBufferID);
     if (framebuffer == nullptr) {
-        GLX_CORE_ERROR("Trying to resize an unknown framebuffer: {0}", frameBufferID);
+        GLX_CORE_ERROR("Trying to resize an unknown framebuffer (slot={0}, generation={1})",
+            frameBufferID.index(), frameBufferID.generation());
         return;
     }
     framebuffer->resize(width, height, depthLayerCount);
 }
 
-void Backend::resizeCubemapFrameBuffer(renderID frameBufferID, unsigned int size)
+void Backend::resizeCubemapFrameBuffer(CubemapFramebufferHandle frameBufferID, unsigned int size)
 {
     auto* framebuffer = m_cubemapFrameBufferInstances.tryGet(frameBufferID);
     if (framebuffer == nullptr) {
-        GLX_CORE_ERROR("Trying to resize an unknown cubemap framebuffer: {0}", frameBufferID);
+        GLX_CORE_ERROR("Trying to resize an unknown cubemap framebuffer (slot={0}, generation={1})",
+            frameBufferID.index(), frameBufferID.generation());
         return;
     }
     framebuffer->resize(size);
 }
 
-FramebufferTextureFormat Backend::getFramebufferFormat(renderID id)
+FramebufferTextureFormat Backend::getFramebufferFormat(FramebufferHandle id)
 {
     auto* framebuffer = m_frameBufferInstances.tryGet(id);
     if (framebuffer == nullptr) {
-        GLX_CORE_ERROR("Trying to inspect an unknown framebuffer: {0}", id);
+        GLX_CORE_ERROR("Trying to inspect an unknown framebuffer (slot={0}, generation={1})",
+            id.index(), id.generation());
         return FramebufferTextureFormat::None;
     }
     return framebuffer->getFormat();
 }
 
-unsigned int Backend::getFrameBufferTextureID(renderID frameBufferID)
+unsigned int Backend::getFrameBufferTextureID(FramebufferHandle frameBufferID)
 {
     auto* framebuffer = m_frameBufferInstances.tryGet(frameBufferID);
     if (framebuffer == nullptr) {
-        GLX_CORE_ERROR("Trying to inspect an unknown framebuffer: {0}", frameBufferID);
+        GLX_CORE_ERROR("Trying to inspect an unknown framebuffer (slot={0}, generation={1})",
+            frameBufferID.index(), frameBufferID.generation());
         return 0;
     }
     return framebuffer->getColorTextureID();
 }
 
-unsigned int Backend::getFrameBufferDepthTextureID(renderID frameBufferID)
+unsigned int Backend::getFrameBufferDepthTextureID(FramebufferHandle frameBufferID)
 {
     auto* framebuffer = m_frameBufferInstances.tryGet(frameBufferID);
     if (framebuffer == nullptr) {
-        GLX_CORE_ERROR("Trying to inspect an unknown framebuffer: {0}", frameBufferID);
+        GLX_CORE_ERROR("Trying to inspect an unknown framebuffer (slot={0}, generation={1})",
+            frameBufferID.index(), frameBufferID.generation());
         return 0;
     }
     return framebuffer->getDepthTextureID();
 }
 
-void Backend::setCullMode(renderID visualInstanceID, CullMode mode)
+void Backend::setCullMode(GeometryHandle visualInstanceID, CullMode mode)
 {
-    m_visualInstances.get(visualInstanceID)->setCullMode(mode);
+    auto* geometry = m_visualInstances.tryGet(visualInstanceID);
+    if (geometry == nullptr) {
+        GLX_CORE_ERROR("Cannot change cull mode on an invalid geometry handle");
+        return;
+    }
+    geometry->setCullMode(mode);
 }
 
 void Backend::initDebugCallback()
@@ -632,11 +705,11 @@ void Backend::initDebugCallback()
         nullptr);
 }
 
-renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
+CubemapHandle Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
 {
-    renderID cubemapID = instanciateCubemap();
-    if (cubemapID == 0)
-        return 0;
+    CubemapHandle cubemapID = instanciateCubemap();
+    if (!cubemapID)
+        return {};
     auto uploadLifetime = std::make_shared<int>(0);
     m_cubemapUploadLifetimes[cubemapID] = uploadLifetime;
     const std::weak_ptr<int> weakUploadLifetime = uploadLifetime;
@@ -666,12 +739,12 @@ renderID Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
     return cubemapID;
 }
 
-renderID Backend::instanciateCubemap(int resolution)
+CubemapHandle Backend::instanciateCubemap(int resolution)
 {
-    if (!m_cubemapInstances.canAddInstance())
-        return 0;
+    if (!m_cubemapInstances.canCreate())
+        return {};
 
-    renderID cubemapID = m_cubemapInstances.createResourceInstance();
+    CubemapHandle cubemapID = m_cubemapInstances.create();
     m_cubemapInstances.get(cubemapID)->resize(resolution);
     return cubemapID;
 }
@@ -764,20 +837,38 @@ void Backend::processCommand(const SetActiveProgramCommand& command)
 
 void Backend::processCommand(const DrawCommand& command)
 {
+    auto* geometry = m_visualInstances.tryGet(command.geometry);
+    if (geometry == nullptr) {
+        GLX_CORE_ERROR("Skipping draw with an invalid geometry handle (slot={0}, generation={1})",
+            command.geometry.index(), command.geometry.generation());
+        return;
+    }
+
     auto& modelMatrix = command.model;
     m_activeProgram->updateModelMatrix(modelMatrix);
-    m_visualInstances.get(command.instanceId)->draw();
+    geometry->draw();
 }
 
 void Backend::processCommand(const RawDrawCommand& command)
 {
-    m_visualInstances.get(command.instanceID)->draw();
+    auto* geometry = m_visualInstances.tryGet(command.geometry);
+    if (geometry == nullptr) {
+        GLX_CORE_ERROR("Skipping draw with an invalid geometry handle (slot={0}, generation={1})",
+            command.geometry.index(), command.geometry.generation());
+        return;
+    }
+    geometry->draw();
 }
 
 void Backend::processCommand(const UseTextureCommand& command)
 {
     auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str());
-    Texture* texture = m_textureInstances.get(command.instanceID);
+    Texture* texture = m_textureInstances.tryGet(command.texture);
+    if (texture == nullptr) {
+        GLX_CORE_ERROR("Cannot bind an invalid texture handle (slot={0}, generation={1})",
+            command.texture.index(), command.texture.generation());
+        return;
+    }
     texture->activate(uniLoc);
     if(command.important)
         texture->reserveActivationInt();
@@ -786,31 +877,95 @@ void Backend::processCommand(const UseTextureCommand& command)
 
 void Backend::processCommand(const UseCubemapCommand& command)
 {
+    // GLX-TODO: repetition for a lot of command in tryget -> check nullptr
     auto uniLoc   = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str());
-    auto& cubemap = *m_cubemapInstances.get(command.instanceID);
-    cubemap.activate(uniLoc);
+    auto* cubemap = m_cubemapInstances.tryGet(command.cubemap);
+    if (cubemap == nullptr) {
+        GLX_CORE_ERROR("Cannot bind an invalid cubemap handle (slot={0}, generation={1})",
+            command.cubemap.index(), command.cubemap.generation());
+        return;
+    }
+    cubemap->activate(uniLoc);
     checkOpenGLErrors("Bind cubemap");
 }
 
 void Backend::processCommand(const AttachTextureToFramebufferCommand& command)
 {
-    auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
-    auto& texture     = *m_textureInstances.get(command.textureID);
-    if (command.attachmentIdx < 0)
-        framebuffer.attachDepthTexture(texture);
-    else
-        framebuffer.attachColorTexture(texture, command.attachmentIdx);
+    // GLX-TODO: ensure it works correctly
+    auto* framebuffer = m_frameBufferInstances.tryGet(command.framebuffer);
+    auto* texture = m_textureInstances.tryGet(command.texture);
+    if (framebuffer == nullptr || texture == nullptr) {
+        GLX_CORE_ERROR("Cannot attach invalid texture/framebuffer GPU handles");
+        return;
+    }
+    auto& attachments = m_framebufferAttachments[command.framebuffer];
+    TextureHandle* destination = nullptr;
+    if (command.attachmentIdx < 0) {
+        destination = &attachments.depth;
+    } else {
+        if (attachments.colors.size() <= static_cast<size_t>(command.attachmentIdx))
+            attachments.colors.resize(static_cast<size_t>(command.attachmentIdx) + 1);
+        destination = &attachments.colors[command.attachmentIdx];
+    }
+
+    const TextureHandle previous = *destination;
+    if (previous != command.texture)
+        m_textureInstances.retain(command.texture);
+
+    const bool attached = command.attachmentIdx < 0
+        ? framebuffer->attachDepthTexture(*texture)
+        : framebuffer->attachColorTexture(*texture, command.attachmentIdx);
+
+    if (!attached) {
+        if (previous != command.texture)
+            clearTexture(command.texture);
+        return;
+    }
+
+    *destination = command.texture;
+    if (previous && previous != command.texture)
+        clearTexture(previous);
 
     checkOpenGLErrors("Attach texture to framebuffer");
 }
 
 void Backend::processCommand(const AttachCubemapToFramebufferCommand& command)
 {
-    // TODO: Beware of memory handling !!!
-    if (command.colorIdx < 0)
-        m_cubemapFrameBufferInstances.get(command.framebufferID)->attachDepthCubemap(*m_cubemapInstances.get(command.cubemapID));
-    else
-        m_cubemapFrameBufferInstances.get(command.framebufferID)->attachColorCubemap(*m_cubemapInstances.get(command.cubemapID), command.colorIdx);
+    // GLX-TODO: ensure it works correctly
+    auto* framebuffer = m_cubemapFrameBufferInstances.tryGet(command.framebuffer);
+    auto* cubemap = m_cubemapInstances.tryGet(command.cubemap);
+    if (framebuffer == nullptr || cubemap == nullptr) {
+        GLX_CORE_ERROR("Cannot attach invalid cubemap/framebuffer GPU handles");
+        return;
+    }
+
+    auto& attachments = m_cubemapFramebufferAttachments[command.framebuffer];
+    CubemapHandle* destination = nullptr;
+    if (command.colorIdx < 0) {
+        destination = &attachments.depth;
+    } else {
+        if (attachments.colors.size() <= static_cast<size_t>(command.colorIdx))
+            attachments.colors.resize(static_cast<size_t>(command.colorIdx) + 1);
+        destination = &attachments.colors[command.colorIdx];
+    }
+
+    const CubemapHandle previous = *destination;
+    if (previous != command.cubemap)
+        m_cubemapInstances.retain(command.cubemap);
+
+    const bool attached = command.colorIdx < 0
+        ? framebuffer->attachDepthCubemap(*cubemap)
+        : framebuffer->attachColorCubemap(*cubemap, command.colorIdx);
+
+    if (!attached) {
+        if (previous != command.cubemap)
+            clearCubemap(command.cubemap);
+        return;
+    }
+
+    *destination = command.cubemap;
+    if (previous && previous != command.cubemap)
+        clearCubemap(previous);
 }
 
 void Backend::processCommand(const BindMaterialCommand& command)
@@ -820,11 +975,17 @@ void Backend::processCommand(const BindMaterialCommand& command)
         setActiveProgram(ProgramType::PBR);
     }
 
-    MaterialInstance& material = *m_materialInstances.get(command.materialRenderID);
+    MaterialInstance* material = m_materialInstances.tryGet(command.material);
+    if (material == nullptr) {
+        GLX_CORE_ERROR("Cannot bind an invalid material handle (slot={0}, generation={1})",
+            command.material.index(), command.material.generation());
+        return;
+    }
+
     std::array<Texture*, TextureType::COUNT> materialTextures {};
-    auto addTexture = [&material, &materialTextures, this](TextureType type) {
-        if (material.useImage[type]) {
-            materialTextures[type] = m_textureInstances.get(material.images[type]);
+    auto addTexture = [material, &materialTextures, this](TextureType type) {
+        if (material->useImage[type]) {
+            materialTextures[type] = m_textureInstances.tryGet(material->images[type]);
         }
     };
     addTexture(ALBEDO);
@@ -833,22 +994,33 @@ void Backend::processCommand(const BindMaterialCommand& command)
     addTexture(ROUGHNESS);
     addTexture(AO);
 
-    static_cast<ProgramPBR*>(m_activeProgram)->updateMaterial(material, materialTextures);
+    static_cast<ProgramPBR*>(m_activeProgram)->updateMaterial(*material, materialTextures);
     checkOpenGLErrors("Binding material");
 }
 
 void Backend::processCommand(const BindFrameBufferCommand& command)
 {
-    if (command.bind)
-        if (command.cubemapFaceIdx >= 0)
-            m_cubemapFrameBufferInstances.get(command.frameBufferID)->bind(command.cubemapFaceIdx);
+    if (const auto* framebufferHandle = std::get_if<FramebufferHandle>(&command.target)) {
+        auto* framebuffer = m_frameBufferInstances.tryGet(*framebufferHandle);
+        if (framebuffer == nullptr) {
+            GLX_CORE_ERROR("Cannot bind an invalid framebuffer handle");
+            return;
+        }
+        if (command.bind)
+            framebuffer->bind(command.depthLayerIdx);
         else
-            m_frameBufferInstances.get(command.frameBufferID)->bind(command.depthLayerIdx);
-    else {
-        if (command.cubemapFaceIdx >= 0)
-            m_cubemapFrameBufferInstances.get(command.frameBufferID)->unbind();
+            framebuffer->unbind();
+    } else {
+        const auto handle = std::get<CubemapFramebufferHandle>(command.target);
+        auto* framebuffer = m_cubemapFrameBufferInstances.tryGet(handle);
+        if (framebuffer == nullptr) {
+            GLX_CORE_ERROR("Cannot bind an invalid cubemap framebuffer handle");
+            return;
+        }
+        if (command.bind)
+            framebuffer->bind(command.cubemapFaceIdx);
         else
-            m_frameBufferInstances.get(command.frameBufferID)->unbind();
+            framebuffer->unbind();
     }
 
     checkOpenGLErrors("Binding framebuffer");
@@ -885,41 +1057,70 @@ void Backend::processCommand(const SetViewportCommand& command)
 
 void Backend::processCommand(const UpdateTextureCommand& command)
 {
+    auto* texture = m_textureInstances.tryGet(command.texture);
+    if (texture == nullptr) {
+        GLX_CORE_ERROR("Cannot update an invalid texture handle");
+        return;
+    }
     if (command.newFormat == TextureFormat::NONE)
-        m_textureInstances.get(command.targetID)->resize(command.width, command.height);
+        texture->resize(command.width, command.height);
     else
-        m_textureInstances.get(command.targetID)->setFormat(command.newFormat);
+        texture->setFormat(command.newFormat);
 
     checkOpenGLErrors("Update texture");
 }
 
 void Backend::processCommand(const UpdateCubemapCommand& command)
 {
-    m_cubemapInstances.get(command.targetID)->resize(command.resolution);
+    auto* cubemap = m_cubemapInstances.tryGet(command.cubemap);
+    if (cubemap == nullptr) {
+        GLX_CORE_ERROR("Cannot update an invalid cubemap handle");
+        return;
+    }
+    cubemap->resize(command.resolution);
     checkOpenGLErrors("Update cubemap");
 }
 
 void Backend::processCommand(const SetFramebufferAsTextureUniformCommand& command)
 {
     auto uniLoc       = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str());
-    if(!command.aboutCubemap){
-        auto& framebuffer = *m_frameBufferInstances.get(command.framebufferID);
-        framebuffer.setAsTextureUniform(uniLoc, command.textureIdx);
+    if (const auto* framebufferHandle = std::get_if<FramebufferHandle>(&command.framebuffer)) {
+        auto* framebuffer = m_frameBufferInstances.tryGet(*framebufferHandle);
+        if (framebuffer == nullptr) {
+            GLX_CORE_ERROR("Cannot sample an invalid framebuffer handle");
+            return;
+        }
+        framebuffer->setAsTextureUniform(uniLoc, command.textureIdx);
     } else {
-        auto& cubemapFB = *m_cubemapFrameBufferInstances.get(command.framebufferID);
-        cubemapFB.setAsCubemapUniform(uniLoc, command.textureIdx);
+        const auto handle = std::get<CubemapFramebufferHandle>(command.framebuffer);
+        auto* framebuffer = m_cubemapFrameBufferInstances.tryGet(handle);
+        if (framebuffer == nullptr) {
+            GLX_CORE_ERROR("Cannot sample an invalid cubemap framebuffer handle");
+            return;
+        }
+        framebuffer->setAsCubemapUniform(uniLoc, command.textureIdx);
     }
     checkOpenGLErrors("Bind framebuffer texture as uniform");
 }
 
 void Backend::processCommand(const UpdateUBOCommand& command)
 {
-    m_uboInstances.get(command.uboID)->update(command.data.data(), command.data.size());
+    auto* ubo = m_uboInstances.tryGet(command.ubo);
+    if (ubo == nullptr) {
+        GLX_CORE_ERROR("Cannot update an invalid uniform buffer handle");
+        return;
+    }
+    ubo->update(command.data.data(), command.data.size());
 }
 
 void Backend::processCommand(const BindUBOCommand& command)
 {
-    m_uboInstances.get(command.uboID)->bind(command.idx);
+    auto* ubo = m_uboInstances.tryGet(command.ubo);
+    if (ubo == nullptr) {
+        GLX_CORE_ERROR("Cannot bind an invalid uniform buffer handle");
+        return;
+    }
+    ubo->bind(command.idx);
 }
 
 void Backend::processCommand(const DebugMsgCommand& command)
@@ -934,7 +1135,12 @@ void Backend::processCommand(const DrawDebugLineCommand& command)
 
 void Backend::processCommand(const SaveFrameBufferCommand& command)
 {
-    m_frameBufferInstances.get(command.frameBufferID)->savePPM(command.path);
+    auto* framebuffer = m_frameBufferInstances.tryGet(command.framebuffer);
+    if (framebuffer == nullptr) {
+        GLX_CORE_ERROR("Cannot save an invalid framebuffer handle");
+        return;
+    }
+    framebuffer->savePPM(command.path);
 }
 
 void Backend::debugDraw()

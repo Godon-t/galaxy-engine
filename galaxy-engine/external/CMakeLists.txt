@@ -94,9 +94,10 @@ FetchContent_MakeAvailable(spdlog)
 FetchContent_Declare(
   yaml-cpp
   GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-  GIT_TAG master
+  GIT_TAG yaml-cpp-0.9.0
 )
-set(YAML_CPP_BUILD_SHARED_LIBS OFF CACHE BOOL "Build yaml-cpp statically" FORCE)
+set(YAML_BUILD_SHARED_LIBS OFF CACHE BOOL "Build yaml-cpp statically" FORCE)
+set(YAML_MSVC_SHARED_RT ON CACHE BOOL "Build yaml-cpp with the shared MSVC runtime" FORCE)
 FetchContent_MakeAvailable(yaml-cpp)
 
 # target_link_libraries(YOUR_LIBRARY PUBLIC yaml-cpp::yaml-cpp) # The library or executable that require yaml-cpp library

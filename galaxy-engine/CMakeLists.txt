@@ -126,13 +126,25 @@ add_subdirectory(external/imgui)
 
 
 target_link_libraries(galaxy-engine ${ALL_LIBS})
-# Xcode and Visual working directories
-#include(CreateLaunchers)
-set_target_properties(galaxy-engine PROPERTIES XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/")
-#create_target_launcher(galaxy-engine WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/")
-
 
 
 SOURCE_GROUP(shaders REGULAR_EXPRESSION ".*/.*shader$" )
 
 
+if(MSVC)
+    target_compile_options(galaxy-engine PRIVATE
+        $<$<CONFIG:Debug>:/Od;/Zi;/RTC1>
+    )
+
+    target_compile_definitions(galaxy-engine PRIVATE
+        $<$<CONFIG:Debug>:GALAXY_DEBUG>
+    )
+else()
+    target_compile_options(galaxy-engine PRIVATE
+        $<$<CONFIG:Debug>:-O0;-g>
+    )
+
+    target_compile_definitions(galaxy-engine PRIVATE
+        $<$<CONFIG:Debug>:GALAXY_DEBUG>
+    )
+endif()

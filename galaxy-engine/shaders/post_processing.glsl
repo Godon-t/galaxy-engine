@@ -59,7 +59,6 @@ uniform vec3 probeFieldOrigin      = vec3(0.f);
 uniform vec3[8] probePositions;
 
 uniform sampler2D probeIrradianceField;
-uniform sampler2D probeColorField;
 uniform sampler2D probeNormalField;
 uniform sampler2D probeDepthField;
 

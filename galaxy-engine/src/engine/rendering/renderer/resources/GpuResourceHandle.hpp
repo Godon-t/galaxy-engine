@@ -12,7 +12,7 @@ class GpuResourceHandle {
 public:
     using Index = uint32_t;
 
-    static Index InvalidIndex = std::numeric_limits<Index>::max();
+    inline static const Index InvalidIndex = std::numeric_limits<Index>::max();
 
     GpuResourceHandle() noexcept = default;
     GpuResourceHandle(Index index, uint32_t generation) noexcept
@@ -47,6 +47,7 @@ private:
     uint32_t m_generation = 0;
 };
 
+struct ProgramResourceTag;
 struct GeometryResourceTag;
 struct TextureResourceTag;
 struct CubemapResourceTag;
@@ -55,6 +56,7 @@ struct FramebufferResourceTag;
 struct CubemapFramebufferResourceTag;
 struct BufferResourceTag;
 
+using ProgramHandle = GpuResourceHandle<ProgramResourceTag>;
 using GeometryHandle = GpuResourceHandle<GeometryResourceTag>;
 using TextureHandle = GpuResourceHandle<TextureResourceTag>;
 using CubemapHandle = GpuResourceHandle<CubemapResourceTag>;

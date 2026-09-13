@@ -1,166 +1,105 @@
 #pragma once
 
-#include "GPUInstances/MaterialInstance.hpp"
-#include "GPUInstances/Texture.hpp"
-#include "pch.hpp"
 #include "types/Math.hpp"
 
-using namespace math;
+#include <cstddef>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace Galaxy {
-class Program {
-private:
-    unsigned int m_programID = 0;
-    int m_modelLocation      = -1;
-    int m_viewLocation       = -1;
-    int m_projectionLocation = -1;
-    void compile(unsigned int id, const char* content);
-    std::unordered_map<unsigned int, std::string> preProcess(const std::string& source);
 
-    void link(std::vector<unsigned int> shaderIDs);
+// Description of a value exposed by a shader. The OpenGL location is reflected
+// once after linking and is never looked up while executing render commands.
+enum class ShaderValueType {
+    Unknown,
+    Bool,
+    Int,
+    UnsignedInt,
+    Float,
+    Float2,
+    Float3,
+    Float4,
+    Int2,
+    Int3,
+    Int4,
+    Matrix2,
+    Matrix3,
+    Matrix4,
+    Sampler2D,
+    Sampler2DArray,
+    SamplerCube
+};
 
-    void init(const char* vertexContent, const char* fragmentContent);
-    void init(const std::unordered_map<unsigned int, std::string>& shaderContents);
+struct UniformInfo {
+    std::string name;
+    ShaderValueType type = ShaderValueType::Unknown;
+    int location = -1;
+    int elementCount = 1;
+};
 
+struct UniformBlockInfo {
+    std::string name;
+    unsigned int index = 0;
+    unsigned int bindingPoint = 0;
+    int byteSize = 0;
+};
+
+// OpenGL program resource. Shader roles (PBR, skybox, etc.) are deliberately
+// not represented through inheritance.
+class Program final {
 public:
     Program() = default;
     Program(const char* vertexContent, const char* fragmentContent);
     Program(const std::string& vertexContent, const std::string& fragmentContent);
-    Program(const std::string& shaderPath);
+    explicit Program(const std::string& shaderPath);
+
+    ~Program();
 
     Program(Program&& other) noexcept;
     Program& operator=(Program&& other) noexcept;
 
-    Program(const Program&)            = delete;
+    Program(const Program&) = delete;
     Program& operator=(const Program&) = delete;
 
-    virtual ~Program();
-
     void destroy();
+    void use() const;
 
-    inline int getProgramID() const { return m_programID; }
+    [[nodiscard]] bool isLinked() const noexcept { return m_programID != 0; }
+    [[nodiscard]] unsigned int getProgramID() const noexcept { return m_programID; }
 
-    void updateViewMatrix(const mat4& v);
-    void updateProjectionMatrix(const mat4& p);
-    void updateModelMatrix(const mat4& model);
+    [[nodiscard]] int getUniformLocation(const std::string& uniformName) const noexcept;
+    [[nodiscard]] const UniformInfo* getUniformInfo(const std::string& uniformName) const noexcept;
+    [[nodiscard]] bool hasUniform(const std::string& uniformName) const noexcept;
+    [[nodiscard]] const std::vector<UniformInfo>& getUniforms() const noexcept { return m_uniforms; }
+    [[nodiscard]] const std::vector<UniformBlockInfo>& getUniformBlocks() const noexcept { return m_uniformBlocks; }
 
-    void use();
-    void setUniform(const char* uniformName, float value);
-    void setUniform(const char* uniformName, int value);
-    void setUniform(const char* uniformName, vec2 value);
+    bool bindUniformBlock(const std::string& blockName, unsigned int bindingPoint);
 
-    virtual ProgramType type() const = 0;
-};
-
-class ProgramPBR : public Program {
-public:
-    ProgramPBR() = default;
-    ProgramPBR(std::string path);
-    void updateMaterial(const MaterialInstance& mat, const std::array<Texture*, TextureType::COUNT>& materialTextures);
-    void setLightSpaceMatrix(const mat4& lightSpaceMatrix);
-    ProgramType type() const override { return ProgramType::PBR; }
-
-private:
-    int albedoLocation       = -1;
-    int metallicLocation     = -1;
-    int roughnessLocation    = -1;
-    int ambientLocation      = -1;
-    int transparencyLocation = -1;
-    int albedoTexLocation    = -1;
-    int metallicTexLocation  = -1;
-    int roughnessTexLocation = -1;
-    int ambientTexLocation   = -1;
-    int normalTexLocation    = -1;
-    int useAlbedoMapLocation    = -1;
-    int useNormalMapLocation    = -1;
-    int useMetallicMapLocation  = -1;
-    int useRoughnessMapLocation = -1;
-    int useAmbientMapLocation   = -1;
-    int lightSpaceMatrixLocation = -1;
-
-    unsigned int lightBlockidx = 0;
-};
-
-class ProgramTexture : public Program {
-public:
-    ProgramTexture() = default;
-    ProgramTexture(std::string path);
-    ProgramType type() const override { return ProgramType::TEXTURE; }
-};
-
-class ProgramUnicolor : public Program {
-public:
-    ProgramUnicolor() = default;
-    ProgramUnicolor(std::string path);
-    void setColor(const vec3& color);
-    ProgramType type() const override { return ProgramType::UNICOLOR; }
+    bool setUniform(const std::string& uniformName, bool value) const;
+    bool setUniform(const std::string& uniformName, float value) const;
+    bool setUniform(const std::string& uniformName, int value) const;
+    bool setUniform(const std::string& uniformName, const math::vec2& value) const;
+    bool setUniform(const std::string& uniformName, const math::vec3& value) const;
+    bool setUniform(const std::string& uniformName, const math::ivec3& value) const;
+    bool setUniform(const std::string& uniformName, const math::vec4& value) const;
+    bool setUniform(const std::string& uniformName, const math::mat4& value) const;
 
 private:
-    int m_colorLocation = -1;
-};
+    [[nodiscard]] bool compile(unsigned int shaderID, const char* content) const;
+    [[nodiscard]] std::unordered_map<unsigned int, std::string> preProcess(const std::string& source) const;
+    [[nodiscard]] bool link(const std::vector<unsigned int>& shaderIDs);
 
-class ProgramSkybox : public Program {
-public:
-    ProgramSkybox() = default;
-    ProgramSkybox(std::string path);
-    ProgramType type() const override { return ProgramType::SKYBOX; }
+    void init(const char* vertexContent, const char* fragmentContent);
+    void init(const std::unordered_map<unsigned int, std::string>& shaderContents);
+    void reflectBindings();
 
-private:
-    int m_skyboxMapLocation = -1;
-};
-
-class ProgramPostProc : public Program {
-public:
-    ProgramPostProc() = default;
-    ProgramPostProc(std::string path);
-    virtual ProgramType type() const override { return ProgramType::POST_PROCESSING_PROBE; }
-
-    void updateInverseViewMatrix(const mat4& invView);
-    void updateInverseProjectionMatrix(const mat4& invProjection);
-    void setTextures(unsigned int colorTexture, unsigned int normalTexture, unsigned int depthTexture, unsigned int directDiffuseTexture, unsigned int direcAmbiantTexture);
-
-private:
-    int m_inverseProjectionLocation = -1;
-    int m_inverseViewLocation       = -1;
-    int m_cameraPositionLocation    = -1;
-    int m_depthLocation             = -1;
-    int m_colorLocation             = -1;
-    int m_normalLocation            = -1;
-    int m_directDiffuseLocation     = -1;
-    int m_directAmbiantLocation     = -1;
-};
-
-class ProgramPostProcSSGI : public ProgramPostProc {
-public:
-    ProgramPostProcSSGI() = default;
-    ProgramPostProcSSGI(std::string path);
-    ProgramType type() const override { return ProgramType::POST_PROCESSING_SSGI; }
-};
-
-class ProgramShadow : public Program {
-public:
-    ProgramShadow() = default;
-    ProgramShadow(std::string path);
-    ProgramType type() const override { return ProgramType::SHADOW_DEPTH; }
-
-    void setLightSpaceMatrix(const mat4& lightSpaceMatrix);
-
-private:
-    int m_lightSpaceMatrixLocation = -1;
-};
-
-class ProgramComputeOctahedral : public Program {
-public:
-    ProgramComputeOctahedral() = default;
-    ProgramComputeOctahedral(std::string path);
-    ProgramType type() const override { return ProgramType::COMPUTE_OCTAHEDRAL; }
-};
-
-class ProgramDebugLines : public Program {
-public:
-    ProgramDebugLines() = default;
-    ProgramDebugLines(std::string path);
-    ProgramType type() const override { return ProgramType::NONE; }
+    unsigned int m_programID = 0;
+    std::vector<UniformInfo> m_uniforms;
+    std::vector<UniformBlockInfo> m_uniformBlocks;
+    std::unordered_map<std::string, int> m_uniformLocations;
+    std::unordered_map<std::string, std::size_t> m_uniformInfoIndices;
+    std::unordered_map<std::string, std::size_t> m_uniformBlockIndices;
 };
 
 } // namespace Galaxy

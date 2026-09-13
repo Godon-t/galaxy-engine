@@ -40,6 +40,7 @@ public:
     void bindMaterial(MaterialHandle material);
     // TODO: rename to match setActiveProgram command
     void changeUsedProgram(ProgramType program);
+    void changeUsedProgram(ProgramHandle program);
 
     void setUniform(std::string uniformName, bool value);
     void setUniform(std::string uniformName, float value);

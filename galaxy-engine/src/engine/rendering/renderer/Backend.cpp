@@ -8,17 +8,15 @@
 
 namespace Galaxy {
 Backend::Backend(size_t maxSize)
-    : m_visualInstances(maxSize)
+    : m_programInstances(maxSize)
+    , m_visualInstances(maxSize)
     , m_textureInstances(maxSize * 2)
     , m_materialInstances(maxSize)
     , m_cubemapInstances(maxSize)
     , m_frameBufferInstances(maxSize)
     , m_cubemapFrameBufferInstances(maxSize)
     , m_uboInstances(maxSize)
-    , m_activeProgram(&m_mainProgram)
 {
-    GLenum error = glGetError();
-
     checkOpenGLErrors("error before glewInit");
     glewExperimental    = true; // Needed for core profile
     int glewInitialized = glewInit();
@@ -36,18 +34,30 @@ Backend::Backend(size_t maxSize)
     glEnable(GL_CULL_FACE);
     // glDisable(GL_CULL_FACE);
 
-    // Shader construction uses OpenGL entry points, so it must happen after GLEW.
-    // Move assignment is safe here: Program is move-only and releases any old ID.
-    m_mainProgram                = ProgramPBR(engineRes("shaders/base.glsl"));
-    m_skyboxProgram              = ProgramSkybox(engineRes("shaders/skybox.glsl"));
-    m_irradianceProgram          = ProgramSkybox(engineRes("shaders/filters/irradiance.glsl"));
-    m_textureProgram             = ProgramTexture(engineRes("shaders/texture.glsl"));
-    m_unicolorProgram            = ProgramUnicolor(engineRes("shaders/unicolor.glsl"));
-    m_postProcessingProbeProgram = ProgramPostProc(engineRes("shaders/post_processing.glsl"));
-    m_postProcessingSSGIProgram  = ProgramPostProcSSGI(engineRes("shaders/ssgi.glsl"));
-    m_shadowProgram              = ProgramShadow(engineRes("shaders/shadow_depth.glsl"));
-    m_computeOctahedralProgram   = ProgramComputeOctahedral(engineRes("shaders/compute_octahedral.glsl"));
-    m_debugLinesProgram          = ProgramDebugLines(engineRes("shaders/debug/line_draw.glsl"));
+    auto loadDefaultProgram = [this](ProgramType type, const std::string& path) {
+        const ProgramHandle handle = loadShader(engineRes(path));
+        GLX_CORE_ASSERT(handle, "Failed to load a default renderer program: {0}", path);
+        if (handle)
+            m_defaultPrograms.emplace(type, handle);
+    };
+
+    loadDefaultProgram(PBR, "shaders/base.glsl");
+    loadDefaultProgram(SKYBOX, "shaders/skybox.glsl");
+    loadDefaultProgram(FILTER_IRRADIANCE, "shaders/filters/irradiance.glsl");
+    loadDefaultProgram(TEXTURE, "shaders/texture.glsl");
+    loadDefaultProgram(UNICOLOR, "shaders/unicolor.glsl");
+    loadDefaultProgram(POST_PROCESSING_PROBE, "shaders/post_processing.glsl");
+    loadDefaultProgram(POST_PROCESSING_SSGI, "shaders/ssgi.glsl");
+    loadDefaultProgram(SHADOW_DEPTH, "shaders/shadow_depth.glsl");
+    loadDefaultProgram(COMPUTE_OCTAHEDRAL, "shaders/compute_octahedral.glsl");
+    m_debugLinesProgram = loadShader(engineRes("shaders/debug/line_draw.glsl"));
+
+    setActiveProgram(PBR);
+
+    processCommand(SetViewCommand {
+        lookAt(vec3(0, 0, 0), vec3(0, 0, -1), vec3(0, 1, 0))
+    });
+    setProjectionMatrix(perspective(radians(45.f), 16.f / 9.f, 0.1f, 999.0f));
 
     m_debugLines.init();
 
@@ -69,6 +79,37 @@ BufferHandle Backend::instantiateUBO(unsigned int dataSize)
     m_uboInstances.get(uboID)->init(dataSize);
 
     return uboID;
+}
+
+ProgramHandle Backend::loadShader(std::string path)
+{
+    if (!m_programInstances.canCreate())
+        return {};
+
+    const ProgramHandle handle = m_programInstances.create(path);
+    Program* program = m_programInstances.get(handle);
+    if (program == nullptr || !program->isLinked()) {
+        (void)m_programInstances.release(handle);
+        return {};
+    }
+    return handle;
+}
+
+void Backend::clearProgram(ProgramHandle program)
+{
+    if (m_activeProgram == program)
+        m_activeProgram = {};
+    if (m_debugLinesProgram == program)
+        m_debugLinesProgram = {};
+
+    for (auto it = m_defaultPrograms.begin(); it != m_defaultPrograms.end();) {
+        if (it->second == program)
+            it = m_defaultPrograms.erase(it);
+        else
+            ++it;
+    }
+
+    (void)m_programInstances.release(program);
 }
 
 void Backend::destroy()
@@ -102,43 +143,49 @@ void Backend::destroy()
     m_textureInstances.clear();
     m_cubemapInstances.clear();
 
-    m_debugLinesProgram.destroy();
-    m_computeOctahedralProgram.destroy();
-    m_shadowProgram.destroy();
-    m_postProcessingSSGIProgram.destroy();
-    m_postProcessingProbeProgram.destroy();
-    m_unicolorProgram.destroy();
-    m_textureProgram.destroy();
-    m_irradianceProgram.destroy();
-    m_skyboxProgram.destroy();
-    m_mainProgram.destroy();
-    m_activeProgram = nullptr;
+    m_activeProgram = {};
+    m_debugLinesProgram = {};
+    m_defaultPrograms.clear();
+    m_programInstances.clear();
 }
 
 void Backend::setActiveProgram(ProgramType program)
 {
-    if (program == SKYBOX)
-        m_activeProgram = &m_skyboxProgram;
-    else if (program == PBR)
-        m_activeProgram = &m_mainProgram;
-    else if (program == TEXTURE)
-        m_activeProgram = &m_textureProgram;
-    else if (program == UNICOLOR)
-        m_activeProgram = &m_unicolorProgram;
-    else if (program == POST_PROCESSING_PROBE)
-        m_activeProgram = &m_postProcessingProbeProgram;
-    else if (program == FILTER_IRRADIANCE)
-        m_activeProgram = &m_irradianceProgram;
-    else if (program == SHADOW_DEPTH)
-        m_activeProgram = &m_shadowProgram;
-    else if (program == COMPUTE_OCTAHEDRAL)
-        m_activeProgram = &m_computeOctahedralProgram;
-    else if (program == POST_PROCESSING_SSGI)
-        m_activeProgram = &m_postProcessingSSGIProgram;
-    else
-        GLX_CORE_ASSERT(false, "unknown asked program!");
+    const ProgramHandle handle = getDefaultProgram(program);
+    if (!handle) {
+        GLX_CORE_ERROR("Unknown or unavailable default program: {0}", static_cast<int>(program));
+        return;
+    }
+    setActiveProgram(handle);
+}
 
-    m_activeProgram->use();
+void Backend::setActiveProgram(ProgramHandle program)
+{
+    Program* instance = m_programInstances.tryGet(program);
+    if (instance == nullptr) {
+        GLX_CORE_ERROR("Cannot activate an invalid program handle (slot={0}, generation={1})",
+            program.index(), program.generation());
+        return;
+    }
+
+    m_activeProgram = program;
+    instance->use();
+}
+
+Program* Backend::getActiveProgram()
+{
+    return m_programInstances.tryGet(m_activeProgram);
+}
+
+const Program* Backend::getActiveProgram() const
+{
+    return m_programInstances.tryGet(m_activeProgram);
+}
+
+ProgramHandle Backend::getDefaultProgram(ProgramType type) const
+{
+    const auto found = m_defaultPrograms.find(type);
+    return found == m_defaultPrograms.end() ? ProgramHandle {} : found->second;
 }
 
 GeometryHandle Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices, std::function<void()> destroyCallback)
@@ -766,64 +813,30 @@ void Backend::processCommand(const DepthMaskCommand& command)
 
 void Backend::processCommand(const SetViewCommand& setViewCommand)
 {
-    m_mainProgram.use();
-    m_mainProgram.updateViewMatrix(setViewCommand.view);
+    const mat4 inverseView = inverse(setViewCommand.view);
+    const vec3 cameraPosition = vec3(inverseView[3]);
 
-    m_textureProgram.use();
-    m_textureProgram.updateViewMatrix(setViewCommand.view);
+    for (Program* program : m_programInstances.getAll()) {
+        program->use();
+        program->setUniform("view", setViewCommand.view);
+        program->setUniform("inverseView", inverseView);
+        program->setUniform("cameraPos", cameraPosition);
+    }
 
-    m_unicolorProgram.use();
-    m_unicolorProgram.updateViewMatrix(setViewCommand.view);
-
-    m_skyboxProgram.use();
-    m_skyboxProgram.updateViewMatrix(setViewCommand.view);
-
-    m_irradianceProgram.use();
-    m_irradianceProgram.updateViewMatrix(setViewCommand.view);
-
-    m_postProcessingProbeProgram.use();
-    m_postProcessingProbeProgram.updateViewMatrix(setViewCommand.view);
-    m_postProcessingProbeProgram.updateInverseViewMatrix(inverse(setViewCommand.view));
-
-    m_postProcessingSSGIProgram.use();
-    m_postProcessingSSGIProgram.updateViewMatrix(setViewCommand.view);
-    m_postProcessingSSGIProgram.updateInverseViewMatrix(inverse(setViewCommand.view));
-
-    m_debugLinesProgram.use();
-    m_debugLinesProgram.updateViewMatrix(setViewCommand.view);
-
-    m_activeProgram->use();
+    if (Program* activeProgram = getActiveProgram())
+        activeProgram->use();
 }
 void Backend::setProjectionMatrix(const mat4& projectionMatrix)
 {
-    // TODO: bug prone
-    m_mainProgram.use();
-    m_mainProgram.updateProjectionMatrix(projectionMatrix);
+    const mat4 inverseProjection = inverse(projectionMatrix);
+    for (Program* program : m_programInstances.getAll()) {
+        program->use();
+        program->setUniform("projection", projectionMatrix);
+        program->setUniform("inverseProjection", inverseProjection);
+    }
 
-    m_textureProgram.use();
-    m_textureProgram.updateProjectionMatrix(projectionMatrix);
-
-    m_unicolorProgram.use();
-    m_unicolorProgram.updateProjectionMatrix(projectionMatrix);
-
-    m_skyboxProgram.use();
-    m_skyboxProgram.updateProjectionMatrix(projectionMatrix);
-
-    m_irradianceProgram.use();
-    m_irradianceProgram.updateProjectionMatrix(projectionMatrix);
-
-    m_postProcessingProbeProgram.use();
-    m_postProcessingProbeProgram.updateProjectionMatrix(projectionMatrix);
-    m_postProcessingProbeProgram.updateInverseProjectionMatrix(inverse(projectionMatrix));
-
-    m_postProcessingSSGIProgram.use();
-    m_postProcessingSSGIProgram.updateProjectionMatrix(projectionMatrix);
-    m_postProcessingSSGIProgram.updateInverseProjectionMatrix(inverse(projectionMatrix));
-
-    m_debugLinesProgram.use();
-    m_debugLinesProgram.updateProjectionMatrix(projectionMatrix);
-
-    m_activeProgram->use();
+    if (Program* activeProgram = getActiveProgram())
+        activeProgram->use();
 }
 void Backend::processCommand(const SetProjectionCommand& command)
 {
@@ -832,7 +845,7 @@ void Backend::processCommand(const SetProjectionCommand& command)
 
 void Backend::processCommand(const SetActiveProgramCommand& command)
 {
-    setActiveProgram(command.program);
+    std::visit([this](auto program) { setActiveProgram(program); }, command.program);
 }
 
 void Backend::processCommand(const DrawCommand& command)
@@ -844,13 +857,23 @@ void Backend::processCommand(const DrawCommand& command)
         return;
     }
 
-    auto& modelMatrix = command.model;
-    m_activeProgram->updateModelMatrix(modelMatrix);
+    Program* program = getActiveProgram();
+    if (program == nullptr) {
+        GLX_CORE_ERROR("Skipping draw because no valid program is active");
+        return;
+    }
+
+    program->setUniform("model", command.model);
     geometry->draw();
 }
 
 void Backend::processCommand(const RawDrawCommand& command)
 {
+    if (getActiveProgram() == nullptr) {
+        GLX_CORE_ERROR("Skipping draw because no valid program is active");
+        return;
+    }
+
     auto* geometry = m_visualInstances.tryGet(command.geometry);
     if (geometry == nullptr) {
         GLX_CORE_ERROR("Skipping draw with an invalid geometry handle (slot={0}, generation={1})",
@@ -862,14 +885,25 @@ void Backend::processCommand(const RawDrawCommand& command)
 
 void Backend::processCommand(const UseTextureCommand& command)
 {
-    auto uniLoc = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str());
+    Program* program = getActiveProgram();
+    if (program == nullptr) {
+        GLX_CORE_ERROR("Cannot bind a texture because no valid program is active");
+        return;
+    }
+
+    const int uniformLocation = program->getUniformLocation(command.uniformName);
+    if (uniformLocation < 0) {
+        GLX_CORE_ERROR("Program does not expose texture uniform '{0}'", command.uniformName);
+        return;
+    }
+
     Texture* texture = m_textureInstances.tryGet(command.texture);
     if (texture == nullptr) {
         GLX_CORE_ERROR("Cannot bind an invalid texture handle (slot={0}, generation={1})",
             command.texture.index(), command.texture.generation());
         return;
     }
-    texture->activate(uniLoc);
+    texture->activate(uniformLocation);
     if(command.important)
         texture->reserveActivationInt();
     checkOpenGLErrors("Bind texture");
@@ -877,15 +911,25 @@ void Backend::processCommand(const UseTextureCommand& command)
 
 void Backend::processCommand(const UseCubemapCommand& command)
 {
-    // GLX-TODO: repetition for a lot of command in tryget -> check nullptr
-    auto uniLoc   = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str());
+    Program* program = getActiveProgram();
+    if (program == nullptr) {
+        GLX_CORE_ERROR("Cannot bind a cubemap because no valid program is active");
+        return;
+    }
+
+    const int uniformLocation = program->getUniformLocation(command.uniformName);
+    if (uniformLocation < 0) {
+        GLX_CORE_ERROR("Program does not expose cubemap uniform '{0}'", command.uniformName);
+        return;
+    }
+
     auto* cubemap = m_cubemapInstances.tryGet(command.cubemap);
     if (cubemap == nullptr) {
         GLX_CORE_ERROR("Cannot bind an invalid cubemap handle (slot={0}, generation={1})",
             command.cubemap.index(), command.cubemap.generation());
         return;
     }
-    cubemap->activate(uniLoc);
+    cubemap->activate(uniformLocation);
     checkOpenGLErrors("Bind cubemap");
 }
 
@@ -970,10 +1014,15 @@ void Backend::processCommand(const AttachCubemapToFramebufferCommand& command)
 
 void Backend::processCommand(const BindMaterialCommand& command)
 {
-    if (m_activeProgram->type() != ProgramType::PBR) {
+    const ProgramHandle pbrProgram = getDefaultProgram(ProgramType::PBR);
+    if (m_activeProgram != pbrProgram) {
         GLX_CORE_ERROR("PBR Program not active, activating it");
         setActiveProgram(ProgramType::PBR);
     }
+
+    Program* program = getActiveProgram();
+    if (program == nullptr)
+        return;
 
     MaterialInstance* material = m_materialInstances.tryGet(command.material);
     if (material == nullptr) {
@@ -994,7 +1043,30 @@ void Backend::processCommand(const BindMaterialCommand& command)
     addTexture(ROUGHNESS);
     addTexture(AO);
 
-    static_cast<ProgramPBR*>(m_activeProgram)->updateMaterial(*material, materialTextures);
+    program->setUniform("metallicVal", material->metallic);
+    program->setUniform("roughnessVal", material->roughness);
+    program->setUniform("aoVal", material->ambient);
+    program->setUniform("albedoVal", material->albedo);
+    program->setUniform("transparencyVal", material->transparency);
+
+    auto activateTexture = [program, material, &materialTextures](
+                               TextureType type,
+                               const std::string& useUniform,
+                               const std::string& samplerUniform) {
+        program->setUniform(useUniform, material->useImage[type]);
+        if (!material->useImage[type] || materialTextures[type] == nullptr)
+            return;
+
+        const int location = program->getUniformLocation(samplerUniform);
+        if (location >= 0)
+            materialTextures[type]->activate(location);
+    };
+
+    activateTexture(ALBEDO, "useAlbedoMap", "albedoMap");
+    activateTexture(METALLIC, "useMetallicMap", "metallicMap");
+    activateTexture(ROUGHNESS, "useRoughnessMap", "roughnessMap");
+    activateTexture(NORMAL, "useNormalMap", "normalMap");
+    activateTexture(AO, "useAoMap", "aoMap");
     checkOpenGLErrors("Binding material");
 }
 
@@ -1028,24 +1100,34 @@ void Backend::processCommand(const BindFrameBufferCommand& command)
 
 void Backend::processCommand(const SetUniformCommand& command)
 {
-    if (command.type == SetValueTypes::BOOL) {
-        glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()), command.valueBool ? GL_TRUE : GL_FALSE);
-    } else if (command.type == SetValueTypes::FLOAT) {
-        glUniform1f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()), command.valueFloat);
-    } else if (command.type == SetValueTypes::INT) {
-        glUniform1i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()), command.valueInt);
-    } else if (command.type == SetValueTypes::VEC3) {
-        glUniform3f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()),
-            command.valueVec3.x, command.valueVec3.y, command.valueVec3.z);
-    } else if (command.type == SetValueTypes::IVEC3) {
-        glUniform3i(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()),
-            command.valueIVec3.x, command.valueIVec3.y, command.valueIVec3.z);
-    } else if (command.type == SetValueTypes::VEC2) {
-        glUniform2f(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()),
-            command.valueVec2.x, command.valueVec2.y);
-    } else if (command.type == SetValueTypes::MAT4) {
-        glUniformMatrix4fv(glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str()), 1, GL_FALSE, &command.matrixValue[0][0]);
+    Program* program = getActiveProgram();
+    if (program == nullptr) {
+        GLX_CORE_ERROR("Cannot set uniform '{0}' because no valid program is active", command.uniformName);
+        return;
     }
+
+    bool updated = false;
+    if (command.type == SetValueTypes::BOOL) {
+        updated = program->setUniform(command.uniformName, command.valueBool);
+    } else if (command.type == SetValueTypes::FLOAT) {
+        updated = program->setUniform(command.uniformName, command.valueFloat);
+    } else if (command.type == SetValueTypes::INT) {
+        updated = program->setUniform(command.uniformName, command.valueInt);
+    } else if (command.type == SetValueTypes::VEC3) {
+        updated = program->setUniform(command.uniformName,
+            vec3(command.valueVec3.x, command.valueVec3.y, command.valueVec3.z));
+    } else if (command.type == SetValueTypes::IVEC3) {
+        updated = program->setUniform(command.uniformName,
+            ivec3(command.valueIVec3.x, command.valueIVec3.y, command.valueIVec3.z));
+    } else if (command.type == SetValueTypes::VEC2) {
+        updated = program->setUniform(command.uniformName,
+            vec2(command.valueVec2.x, command.valueVec2.y));
+    } else if (command.type == SetValueTypes::MAT4) {
+        updated = program->setUniform(command.uniformName, command.matrixValue);
+    }
+
+    if (!updated)
+        GLX_CORE_ERROR("Active program does not expose uniform '{0}'", command.uniformName);
 
     checkOpenGLErrors("Set uniform");
 }
@@ -1083,14 +1165,25 @@ void Backend::processCommand(const UpdateCubemapCommand& command)
 
 void Backend::processCommand(const SetFramebufferAsTextureUniformCommand& command)
 {
-    auto uniLoc       = glGetUniformLocation(m_activeProgram->getProgramID(), command.uniformName.c_str());
+    Program* program = getActiveProgram();
+    if (program == nullptr) {
+        GLX_CORE_ERROR("Cannot bind framebuffer texture because no valid program is active");
+        return;
+    }
+
+    const int uniformLocation = program->getUniformLocation(command.uniformName);
+    if (uniformLocation < 0) {
+        GLX_CORE_ERROR("Active program does not expose framebuffer uniform '{0}'", command.uniformName);
+        return;
+    }
+
     if (const auto* framebufferHandle = std::get_if<FramebufferHandle>(&command.framebuffer)) {
         auto* framebuffer = m_frameBufferInstances.tryGet(*framebufferHandle);
         if (framebuffer == nullptr) {
             GLX_CORE_ERROR("Cannot sample an invalid framebuffer handle");
             return;
         }
-        framebuffer->setAsTextureUniform(uniLoc, command.textureIdx);
+        framebuffer->setAsTextureUniform(uniformLocation, command.textureIdx);
     } else {
         const auto handle = std::get<CubemapFramebufferHandle>(command.framebuffer);
         auto* framebuffer = m_cubemapFrameBufferInstances.tryGet(handle);
@@ -1098,7 +1191,7 @@ void Backend::processCommand(const SetFramebufferAsTextureUniformCommand& comman
             GLX_CORE_ERROR("Cannot sample an invalid cubemap framebuffer handle");
             return;
         }
-        framebuffer->setAsCubemapUniform(uniLoc, command.textureIdx);
+        framebuffer->setAsCubemapUniform(uniformLocation, command.textureIdx);
     }
     checkOpenGLErrors("Bind framebuffer texture as uniform");
 }
@@ -1145,7 +1238,13 @@ void Backend::processCommand(const SaveFrameBufferCommand& command)
 
 void Backend::debugDraw()
 {
-    m_debugLinesProgram.use();
+    Program* program = m_programInstances.tryGet(m_debugLinesProgram);
+    if (program == nullptr) {
+        GLX_CORE_ERROR("Cannot draw debug lines without a valid debug program");
+        return;
+    }
+
+    program->use();
     m_debugLines.draw();
 }
 

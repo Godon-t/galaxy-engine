@@ -4,6 +4,7 @@
 #include "core/Log.hpp"
 #include "rendering/GPUInstances/DebugLines.hpp"
 #include "rendering/GPUInstances/FrameBuffer.hpp"
+#include "rendering/GPUInstances/MaterialInstance.hpp"
 #include "rendering/GPUInstances/Texture.hpp"
 #include "rendering/GPUInstances/UBOInstance.hpp"
 #include "rendering/GPUInstances/VisualInstance.hpp"
@@ -25,6 +26,9 @@ public:
     ~Backend();
 
     BufferHandle instantiateUBO(unsigned int dataSize);
+
+    ProgramHandle loadShader(std::string path);
+    void clearProgram(ProgramHandle program);
 
     GeometryHandle instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx);
     GeometryHandle instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices, std::function<void()> destroyCallback = nullptr);
@@ -69,6 +73,7 @@ public:
 
     void setCullMode(GeometryHandle geometry, CullMode mode);
 
+    [[nodiscard]] bool isValid(ProgramHandle handle) const noexcept { return m_programInstances.contains(handle); }
     [[nodiscard]] bool isValid(GeometryHandle handle) const noexcept { return m_visualInstances.contains(handle); }
     [[nodiscard]] bool isValid(TextureHandle handle) const noexcept { return m_textureInstances.contains(handle); }
     [[nodiscard]] bool isValid(MaterialHandle handle) const noexcept { return m_materialInstances.contains(handle); }
@@ -81,6 +86,7 @@ public:
 
     void destroy();
     void setActiveProgram(ProgramType program);
+    void setActiveProgram(ProgramHandle program);
 
 private:
     struct FramebufferAttachments {
@@ -122,6 +128,11 @@ private:
     void processCommand(const SaveFrameBufferCommand& command);
     void debugDraw();
 
+    Program* getActiveProgram();
+    const Program* getActiveProgram() const;
+    ProgramHandle getDefaultProgram(ProgramType type) const;
+
+    GpuResourceRegistry<Program, ProgramHandle> m_programInstances;
     GpuResourceRegistry<VisualInstance, GeometryHandle> m_visualInstances;
     GpuResourceRegistry<Texture, TextureHandle> m_textureInstances;
     GpuResourceRegistry<MaterialInstance, MaterialHandle> m_materialInstances;
@@ -140,18 +151,9 @@ private:
 
     MaterialUpdateCallback m_materialUpdateCallback;
 
-    ProgramPBR m_mainProgram;
-    ProgramSkybox m_skyboxProgram;
-    ProgramSkybox m_irradianceProgram;
-    ProgramTexture m_textureProgram;
-    ProgramUnicolor m_unicolorProgram;
-    ProgramPostProc m_postProcessingProbeProgram;
-    ProgramPostProcSSGI m_postProcessingSSGIProgram;
-    ProgramShadow m_shadowProgram;
-    ProgramComputeOctahedral m_computeOctahedralProgram;
-    Program* m_activeProgram;
-
-    ProgramDebugLines m_debugLinesProgram;
+    std::unordered_map<ProgramType, ProgramHandle> m_defaultPrograms;
+    ProgramHandle m_activeProgram;
+    ProgramHandle m_debugLinesProgram;
     DebugLines m_debugLines;
 
     friend class Renderer;

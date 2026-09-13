@@ -105,7 +105,7 @@ void LightManager::debugDraw()
 
     frontend.changeUsedProgram(POST_PROCESSING_PROBE);
     frontend.setFramebufferAsTextureUniform(m_probesFramebuffer, "probeIrradianceField", 0);
-    frontend.setFramebufferAsTextureUniform(m_probesFramebuffer, "probeColorField", 1);
+    // frontend.setFramebufferAsTextureUniform(m_probesFramebuffer, "probeColorField", 1);
     frontend.setFramebufferAsTextureUniform(m_probesFramebuffer, "probeNormalField", 2);
     frontend.setFramebufferAsTextureUniform(m_probesFramebuffer, "probeDepthField", 3);
     // frontend.bindTexture(m_probeRadianceTexture, "probeIrradianceField");

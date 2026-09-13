@@ -220,6 +220,14 @@ void Frontend::changeUsedProgram(ProgramType program)
     pushCommand(std::move(setActiveProgramCommand));
 }
 
+void Frontend::changeUsedProgram(ProgramHandle program)
+{
+    SetActiveProgramCommand setActiveProgramCommand;
+    setActiveProgramCommand.program = program;
+
+    pushCommand(std::move(setActiveProgramCommand));
+}
+
 void Frontend::setUniform(std::string uniformName, bool value)
 {
     SetUniformCommand uniformCommand;

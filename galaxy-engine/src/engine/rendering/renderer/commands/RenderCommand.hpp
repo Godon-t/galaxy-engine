@@ -66,8 +66,10 @@ struct BindMaterialCommand {
     MaterialHandle material;
 };
 
+using ProgramSelection = std::variant<ProgramType, ProgramHandle>;
+
 struct SetActiveProgramCommand {
-    ProgramType program;
+    ProgramSelection program;
 };
 
 using RenderTargetHandle = std::variant<FramebufferHandle, CubemapFramebufferHandle>;

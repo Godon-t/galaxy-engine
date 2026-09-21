@@ -9,16 +9,12 @@ namespace Galaxy {
 vec3 SceneContext::DistCompare::camPosition = vec3(0);
 
 bool SceneContext::DistCompare::operator()(
-    const std::pair<MaterialHandle, RenderCommand>& a,
-    const std::pair<MaterialHandle, RenderCommand>& b) const
+    const RenderItem& a,
+    const RenderItem& b) const
 {
-    try {
-        return (camPosition - vec3(std::get<DrawCommand>(a.second).model[3])).length()
-            < (camPosition - vec3(std::get<DrawCommand>(b.second).model[3])).length();
-    } catch (const std::bad_variant_access&) {
-        GLX_CORE_ERROR("Wrong command type when drawing according to distance");
-        return false;
-    }
+    const vec3 aPosition = vec3(a.transform.getGlobalModelMatrix()[3]);
+    const vec3 bPosition = vec3(b.transform.getGlobalModelMatrix()[3]);
+    return (camPosition - aPosition).length() < (camPosition - bPosition).length();
 }
 
 namespace {
@@ -31,46 +27,27 @@ bool isTransparent(
     return found != transparencies.end() && found->second;
 }
 
-void appendDraw(std::vector<RenderCommand>& commands, const RenderItem& item)
-{
-    DrawCommand draw;
-    draw.geometry = item.geometry;
-    draw.model = item.transform.getGlobalModelMatrix();
-    commands.emplace_back(std::move(draw));
-}
-
 } // namespace
 
-std::vector<RenderCommand> SceneContext::retrieveOpaqueRenders()
+std::vector<RenderItem> SceneContext::retrieveOpaqueRenders()
 {
-    std::vector<RenderCommand> commands;
-    std::unordered_map<MaterialHandle, std::vector<const RenderItem*>, GpuResourceHandleHash> groupedItems;
+    std::vector<RenderItem> items;
 
     for (const RenderItem& item : renderItems) {
-        if (!item.material) {
-            appendDraw(commands, item);
-            continue;
+        if (!item.material || !isTransparent(materialsTransparency, *item.material)) {
+            items.push_back(item);
         }
-
-        if (!isTransparent(materialsTransparency, *item.material))
-            groupedItems[*item.material].push_back(&item);
     }
 
-    for (const auto& [material, items] : groupedItems) {
-        commands.emplace_back(BindMaterialCommand { material });
-        for (const RenderItem* item : items)
-            appendDraw(commands, *item);
-    }
-
-    return commands;
+    return items;
 }
 
-std::vector<RenderCommand> SceneContext::retrieveTransparentRenders(math::vec3 camPosition)
+std::vector<RenderItem> SceneContext::retrieveTransparentRenders(math::vec3 camPosition)
 {
     DistCompare::camPosition = camPosition;
     std::priority_queue<
-        std::pair<MaterialHandle, RenderCommand>,
-        std::vector<std::pair<MaterialHandle, RenderCommand>>,
+        RenderItem,
+        std::vector<RenderItem>,
         DistCompare>
         transparentItems;
 
@@ -78,54 +55,38 @@ std::vector<RenderCommand> SceneContext::retrieveTransparentRenders(math::vec3 c
         if (!item.material || !isTransparent(materialsTransparency, *item.material))
             continue;
 
-        DrawCommand draw;
-        draw.geometry = item.geometry;
-        draw.model = item.transform.getGlobalModelMatrix();
-        transparentItems.emplace(*item.material, std::move(draw));
+        transparentItems.emplace(item);
     }
 
-    std::vector<RenderCommand> commands;
+    std::vector<RenderItem> items;
     while (!transparentItems.empty()) {
-        commands.emplace_back(BindMaterialCommand { transparentItems.top().first });
-        commands.push_back(transparentItems.top().second);
+        items.emplace_back(transparentItems.top());
         transparentItems.pop();
     }
-    return commands;
+    return items;
 }
 
-std::vector<RenderCommand> SceneContext::retrieveOpaqueRenders(const Frustum& frustum)
+std::vector<RenderItem> SceneContext::retrieveOpaqueRenders(const Frustum& frustum)
 {
-    std::vector<RenderCommand> commands;
-    std::unordered_map<MaterialHandle, std::vector<const RenderItem*>, GpuResourceHandleHash> groupedItems;
-
+    std::vector<RenderItem> items;
     for (const RenderItem& item : renderItems) {
         if (!Frustum::isSphereInFrustum(item.bounds, frustum, item.transform))
             continue;
 
-        if (!item.material) {
-            appendDraw(commands, item);
-            continue;
+        if (!item.material || !isTransparent(materialsTransparency, *item.material)) {
+            items.push_back(item);
         }
-
-        if (!isTransparent(materialsTransparency, *item.material))
-            groupedItems[*item.material].push_back(&item);
     }
 
-    for (const auto& [material, items] : groupedItems) {
-        commands.emplace_back(BindMaterialCommand { material });
-        for (const RenderItem* item : items)
-            appendDraw(commands, *item);
-    }
-
-    return commands;
+    return items;
 }
 
-std::vector<RenderCommand> SceneContext::retrieveTransparentRenders(const Frustum& frustum)
+std::vector<RenderItem> SceneContext::retrieveTransparentRenders(const Frustum& frustum)
 {
     DistCompare::camPosition = frustum.nearFace.position;
     std::priority_queue<
-        std::pair<MaterialHandle, RenderCommand>,
-        std::vector<std::pair<MaterialHandle, RenderCommand>>,
+        RenderItem,
+        std::vector<RenderItem>,
         DistCompare>
         transparentItems;
 
@@ -135,19 +96,15 @@ std::vector<RenderCommand> SceneContext::retrieveTransparentRenders(const Frustu
         if (!Frustum::isSphereInFrustum(item.bounds, frustum, item.transform))
             continue;
 
-        DrawCommand draw;
-        draw.geometry = item.geometry;
-        draw.model = item.transform.getGlobalModelMatrix();
-        transparentItems.emplace(*item.material, std::move(draw));
+        transparentItems.emplace(item);
     }
 
-    std::vector<RenderCommand> commands;
+    std::vector<RenderItem> items;
     while (!transparentItems.empty()) {
-        commands.emplace_back(BindMaterialCommand { transparentItems.top().first });
-        commands.push_back(transparentItems.top().second);
+        items.emplace_back(transparentItems.top());
         transparentItems.pop();
     }
-    return commands;
+    return items;
 }
 
 void SceneContext::push(RenderItem item)

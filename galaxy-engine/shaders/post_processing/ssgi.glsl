@@ -30,13 +30,13 @@ in vec2 TexCoords;
 
 uniform mat4 inverseProjection;
 uniform mat4 inverseView;
+uniform mat4 view;
 uniform mat4 projection;
 uniform vec3 cameraPos;
 
 uniform sampler2D sceneBuffer;
 uniform sampler2D normalBuffer;
 uniform sampler2D depthBuffer;
-uniform mat4 view;
 uniform float zNear = 0.1;
 uniform float zFar  = 9999.0;
 
@@ -195,6 +195,6 @@ void main()
     }
 
     // Combiner la couleur de base avec l'illumination indirecte
-    color.rgb = baseColor + indirectLight;
+    color.rgb = normal;
     color.a   = 1.0;
 }

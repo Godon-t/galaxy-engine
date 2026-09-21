@@ -121,12 +121,9 @@ void EditorLayer::onUpdate()
         //     Application::getInstance().getRootNodePtr()->draw();
         //     renderer.endShadowPass();
         // }
-        renderer.passShadow();
         renderer.addMainCameraDevice(camera);
 
         Application::getInstance().getRootNodePtr()->draw();
-
-        renderer.passPostProcessing(camera);
 
         // TODO: should the application handle the render ?
         // m_selectedScene->getNodePtr()->draw();
@@ -231,11 +228,9 @@ void EditorLayer::displayViewport(bool validScene)
         }
         ImGui::PopStyleVar();
         // TODO: bad design if I have to use textureID outside of Renderer. Will cause problem when multithreading renderer.
-        unsigned int textureID;
+        unsigned int textureID = Renderer::getInstance().getSceneTextureID();
         if (m_disablePostProcessing)
-            textureID = Renderer::getInstance().getRawSceneTextureID();
-        else
-            textureID = Renderer::getInstance().getPostProcSceneTextureID();
+            GLX_WARN("Cannot disable post processing currently (TODO)");
         ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 1, 1 }, ImVec2 { 0, 0 });
     } else {
         ImGui::PopStyleVar();

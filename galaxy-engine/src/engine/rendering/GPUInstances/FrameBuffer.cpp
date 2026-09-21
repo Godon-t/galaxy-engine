@@ -88,14 +88,20 @@ void FrameBuffer::unbind()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void FrameBuffer::resize(unsigned int newWidth, unsigned int newHeight, unsigned int depthLayerCount)
+void FrameBuffer::resize(unsigned int newWidth, unsigned int newHeight, int depthLayerCount)
 {
-    if (m_width == static_cast<int>(newWidth) && m_height == static_cast<int>(newHeight) && m_depthLayerCount == depthLayerCount)
+    const int requestedLayerCount = depthLayerCount < 0
+        ? static_cast<int>(m_depthLayerCount)
+        : depthLayerCount;
+
+    if (m_width == static_cast<int>(newWidth)
+        && m_height == static_cast<int>(newHeight)
+        && static_cast<int>(m_depthLayerCount) == requestedLayerCount)
         return;
 
     m_width  = static_cast<int>(newWidth);
     m_height = static_cast<int>(newHeight);
-    m_depthLayerCount = depthLayerCount;
+    m_depthLayerCount = static_cast<unsigned int>(requestedLayerCount);
     invalidate();
 }
 
@@ -155,6 +161,9 @@ bool FrameBuffer::attachColorTexture(Texture& texture, int idx)
         return false;
     }
 
+    GLint previousFramebuffer = 0;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previousFramebuffer);
+
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     texture.resize(m_width, m_height);
     m_colorAttachments[idx].borrow(texture);
@@ -162,6 +171,8 @@ bool FrameBuffer::attachColorTexture(Texture& texture, int idx)
 
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
+
+    glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(previousFramebuffer));
     return true;
 }
 

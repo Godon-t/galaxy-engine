@@ -7,8 +7,11 @@
 #include "engine/types/Math.hpp"
 #include "engine/types/Render.hpp"
 #include "rendering/renderer/resources/GpuResourceHandle.hpp"
+#include "rendering/renderer/commands/RenderCommand.hpp"
 
 namespace Galaxy {
+struct RenderCameraTransform;
+
 const unsigned int maxLightCount = 32;
 
 enum LightType {
@@ -20,7 +23,6 @@ struct LightData {
     int idx;
     math::mat4 transformationMatrix;
     int shadowMapLayer;
-    bool needUpdate = true;
     vec3 color;
     float intensity;
     float range;
@@ -78,11 +80,17 @@ public:
 
     unsigned int getProbesRadianceTexture();
 
+    unsigned int getLightCount() const {return m_currentLightCount;}
+
     void updateProbeField();
     void updateBias(float newValue);
     void resizeProbeFieldGrid(unsigned int width, unsigned int height, unsigned int depth, float spaceBetween = 10.f, unsigned int probeResolution = 512, vec3 probeFieldCenter = vec3(0));
     void debugDraw();
     std::vector<vec3> getProbePositions();
+
+    bool isDirty() const {return m_dirty;}
+    UpdateUBOCommand getLightUboUpdate();
+    std::vector<std::unique_ptr<RenderCameraTransform>> getLightsDevices();
 
 private:
     struct ProbeCell {
@@ -109,6 +117,8 @@ private:
 
     BufferHandle m_lightsUBO;
     GPULightData m_lightUniformData;
+
+    bool m_dirty;
 
     unsigned int m_probeResolution;
     unsigned int m_textureWidth;

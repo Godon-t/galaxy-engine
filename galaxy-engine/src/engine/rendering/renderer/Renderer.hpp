@@ -2,7 +2,6 @@
 
 #include "Backend.hpp"
 #include "frontend/Frontend.hpp"
-#include "LightManager.hpp"
 
 #include "data/Transform.hpp"
 #include "nodes/Node.hpp"
@@ -21,27 +20,21 @@ public:
     void init();
     void shutdown();
     
-    void passShadow();
     void addMainCameraDevice(std::shared_ptr<Camera> camera);
-    void passPostProcessing(std::shared_ptr<Camera> camera);
     void updateGI();
     void renderFrame();
-
-    inline int getDrawCallsCount() { return m_drawCount; }
+    [[nodiscard]] std::size_t getDrawCallsCount() const noexcept { return m_backend.getDrawCallsCount(); }
 
     void addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material, const Transform& transform);
 
-
     Backend& getBackend(){return m_backend;}
     Frontend& getFrontend(){return m_frontend;}
-    LightManager& getLightManager(){return m_lightManager;}
+    LightManager& getLightManager(){return m_frontend.getLightManager();}
 
     inline vec2 getRenderingWindowSize() const {return m_mainViewportSize;}
 
     // TODO: shouldn't be able to retrieve GPU id outside of backend
-    inline unsigned int getFrameBufferTextureID(FramebufferHandle framebuffer) { return m_backend.getFrameBufferTextureID(framebuffer); }
-    inline unsigned int getRawSceneTextureID() { return m_backend.getFrameBufferTextureID(m_sceneFramebuffer); }
-    inline unsigned int getPostProcSceneTextureID() { return m_backend.getFrameBufferTextureID(m_postProcessingFramebuffer); }
+    inline unsigned int getSceneTextureID() { return m_backend.getFrameBufferTextureID(m_sceneFramebuffer); }
 
     // TODO: Resizing unbind framebuffer
     void resize(unsigned int width, unsigned int height);
@@ -50,22 +43,10 @@ private:
     Renderer();
     ~Renderer();
 
-    void switchCommandBuffer();
-    void applyPostProcessing();
-
-    std::vector<std::vector<RenderCommand>> m_commandBuffers;
-    int m_frontCommandBufferIdx;
-
-
-    Frontend m_frontend;
     Backend m_backend;
-    LightManager m_lightManager;
+    Frontend m_frontend;
 
     FramebufferHandle m_sceneFramebuffer;
-    FramebufferHandle m_postProcessingFramebuffer;
-    GeometryHandle m_postProcessingQuad;
     vec2 m_mainViewportSize;
-
-    int m_drawCount = 0;
 };
 }

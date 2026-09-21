@@ -14,10 +14,12 @@
 #include "resource/Mesh.hpp"
 #include "resource/ResourceHandle.hpp"
 #include "types/Render.hpp"
+
 #include <functional>
 #include <memory>
 
 namespace Galaxy {
+struct RenderGraphExecution;
 class Renderer;
 
 class Backend {
@@ -39,6 +41,7 @@ public:
     TextureHandle instantiateTexture(ResourceHandle<Image> image);
     void clearTexture(TextureHandle texture);
     void frameReset();
+    [[nodiscard]] std::size_t getDrawCallsCount() const noexcept { return m_drawCount; }
 
     MaterialHandle instanciateMaterial(ResourceHandle<Material> material);
     void updateMaterial(MaterialHandle materialHandle, ResourceHandle<Material> material);
@@ -62,7 +65,7 @@ public:
 
     void clearFrameBuffer(FramebufferHandle framebuffer);
     void clearFrameBuffer(CubemapFramebufferHandle framebuffer);
-    void resizeFrameBuffer(FramebufferHandle framebuffer, unsigned int width, unsigned int height, unsigned int depthLayerCount = 0);
+    void resizeFrameBuffer(FramebufferHandle framebuffer, unsigned int width, unsigned int height, int depthLayerCount = -1);
     void resizeCubemapFrameBuffer(CubemapFramebufferHandle framebuffer, unsigned int size);
     // TODO: Wrong way ?
     FramebufferTextureFormat getFramebufferFormat(FramebufferHandle framebuffer);
@@ -87,7 +90,16 @@ public:
     void destroy();
     void setActiveProgram(ProgramType program);
     void setActiveProgram(ProgramHandle program);
-
+    [[nodiscard]] int getUniformLocation(ProgramHandle program, const std::string& uniformName) const;
+    
+    
+    void bindFramebuffer(FramebufferHandle fb, int targetLayer = -1);
+    void unbindFramebuffer(FramebufferHandle fb);
+    bool attachColorTextureToFramebuffer(TextureHandle texture, FramebufferHandle framebuffer, int colorattachmentIdx);
+    bool attachDepthTextureToFramebuffer(TextureHandle texture, FramebufferHandle framebuffer);
+    
+    void execute(RenderGraphExecution& execution);
+    
 private:
     struct FramebufferAttachments {
         std::vector<TextureHandle> colors;
@@ -155,6 +167,7 @@ private:
     ProgramHandle m_activeProgram;
     ProgramHandle m_debugLinesProgram;
     DebugLines m_debugLines;
+    std::size_t m_drawCount = 0;
 
     friend class Renderer;
 };

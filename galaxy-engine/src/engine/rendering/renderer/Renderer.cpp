@@ -11,11 +11,8 @@
 
 namespace Galaxy {
 Renderer::Renderer()
-    : m_commandBuffers(2)
-    , m_frontCommandBufferIdx(0)
-    , m_frontend(&m_commandBuffers[m_frontCommandBufferIdx])
-    , m_backend()
-    , m_lightManager()
+    : m_backend()
+    , m_frontend(m_backend)
     , m_mainViewportSize(1024)
 {
     m_backend.initDebugCallback();
@@ -23,10 +20,9 @@ Renderer::Renderer()
     m_backend.onMaterialUpdated([this](MaterialHandle material, bool isTransparent) {
         m_frontend.notifyMaterialUpdated(material, isTransparent);
     });
+    
 
-    m_sceneFramebuffer = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::DEPTH24RGBA8, 5);
-    m_postProcessingFramebuffer = m_backend.instanciateFrameBuffer(100, 100, FramebufferTextureFormat::RGBA8);
-    m_postProcessingQuad = m_backend.generateQuad(vec2(2, 2), [] {});
+    m_sceneFramebuffer = m_frontend.getFinalFramebuffer();
 }
 
 Renderer::~Renderer()
@@ -39,12 +35,6 @@ void Renderer::shutdown()
     m_backend.destroy();
 }
 
-void Renderer::switchCommandBuffer()
-{
-    m_frontCommandBufferIdx = 1 - m_frontCommandBufferIdx;
-    m_frontend.setCommandBuffer(&m_commandBuffers[m_frontCommandBufferIdx]);
-}
-
 Renderer& Renderer::getInstance()
 {
     static Renderer renderer;
@@ -53,12 +43,7 @@ Renderer& Renderer::getInstance()
 
 void Renderer::init()
 {
-    m_lightManager.init();
-}
-
-void Renderer::passShadow()
-{
-    m_lightManager.shadowPass(Application::getInstance().getRootNodePtr().get());
+    m_frontend.getLightManager().init();
 }
 
 void Renderer::addMainCameraDevice(std::shared_ptr<Camera> camera)
@@ -73,45 +58,19 @@ void Renderer::addMainCameraDevice(std::shared_ptr<Camera> camera)
     m_frontend.addRenderDevice(std::move(mainCamera));
 }
 
-void Renderer::passPostProcessing(std::shared_ptr<Camera> camera)
-{
-    m_lightManager.debugDraw();
-
-    auto postProcess = std::make_unique<RenderCamera>();
-    postProcess->camera = camera;
-    postProcess->renderScene = false;
-    postProcess->targetFramebuffer = m_postProcessingFramebuffer;
-    postProcess->viewportDimmension = m_mainViewportSize;
-    m_frontend.addRenderDevice(std::move(postProcess));
-    m_frontend.changeUsedProgram(ProgramType::POST_PROCESSING_PROBE);
-    m_frontend.setFramebufferAsTextureUniform(m_sceneFramebuffer,"sceneBuffer",     0);
-    m_frontend.setFramebufferAsTextureUniform(m_sceneFramebuffer,"normalBuffer",    1);
-    m_frontend.setFramebufferAsTextureUniform(m_sceneFramebuffer,"roughnessBuffer", 3);
-    m_frontend.setFramebufferAsTextureUniform(m_sceneFramebuffer,"directBuffer",    4);
-    m_frontend.setFramebufferAsTextureUniform(m_sceneFramebuffer,"depthBuffer",    -1);
-    m_frontend.submit(m_postProcessingQuad);
-}
-
 void Renderer::resize(unsigned int width, unsigned int height)
 {
-    m_backend.resizeFrameBuffer(m_sceneFramebuffer, width, height);
-    m_backend.resizeFrameBuffer(m_postProcessingFramebuffer, width, height);
     m_mainViewportSize.x = width;
     m_mainViewportSize.y = height;
 }
 
 void Renderer::renderFrame()
 {
-    // m_frontend.drawDebug();
-
-
-    m_frontend.processDevices();
-    m_drawCount = m_commandBuffers[m_frontCommandBufferIdx].size();
+    auto execution = m_frontend.buildFrameExecution();
     m_backend.frameReset();
-    m_backend.processCommands(m_commandBuffers[m_frontCommandBufferIdx]);
-    m_commandBuffers[m_frontCommandBufferIdx].clear();
+    m_backend.execute(execution);
+    
     m_frontend.clearContext();
-    switchCommandBuffer();
 }
 
 void Renderer::addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material, const Transform& transform)

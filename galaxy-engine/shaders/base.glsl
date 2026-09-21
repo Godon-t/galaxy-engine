@@ -80,6 +80,7 @@ in vec3 v_normal;
 in vec3 v_camPos;
 in vec4 v_fragPosLightSpace;
 
+// GLX-TODO: rename albedo to correct name
 layout(location = 0) out vec4 gAlbedo;
 layout(location = 1) out vec4 gNormal;
 layout(location = 2) out vec4 gDepth;
@@ -255,17 +256,18 @@ void main()
     // ambient lighting (we now use IBL as the ambient term)
     vec3 kS  = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
     vec3 kD = 1.0 - kS;
-    // kD *= 1.0 - metallic;
+    kD *= 1.0 - metallic;
 
+    // GLX-TODO: what does brdf mean ?
     // vec2 brdf     = vec2(0.2);
     // vec3 specular = prefilteredColor * (kS * brdf.x + brdf.y);
 
 
-    // vec3 irradiance = vec3(0.5);
-    // vec3 diffuse = irradiance * albedo;
+    vec3 irradiance = vec3(0.5);
+    vec3 diffuse = irradiance * albedo;
     // // vec3 ambient = (kD * diffuse + specular) * ao;
-    // vec3 ambient = (kD * diffuse) * ao;
-    // vec3 pbr     = ambient + Lo;
+    vec3 ambient = (kD * diffuse) * ao;
+    vec3 pbr     = ambient + Lo;
 
     // pbr = pbr / (pbr + vec3(1.0));
     // pbr = pow(pbr, vec3(1.0 / 2.2));
@@ -274,7 +276,7 @@ void main()
     if(transparency > 0.1){
         gDepth = vec4(length(v_camPos - v_worldPos) / zFar, ao, 0, 1);
 
-        gAlbedo.rgb = albedo;
+        gAlbedo.rgb = pbr;
         gAlbedo.a   = transparency;
 
         gNormal.rgb = (normal + vec3(1.0)) * 0.5;

@@ -31,7 +31,7 @@ public:
 
     void setAsTextureUniform(unsigned int uniLocation, int textureIdx = -1);
 
-    void resize(unsigned int newWidth, unsigned int newHeight, unsigned int depthLayerCount);
+    void resize(unsigned int newWidth, unsigned int newHeight, int depthLayerCount = -1);
 
     void setColorsCount(unsigned int count);
     void setFormat(FramebufferTextureFormat format);

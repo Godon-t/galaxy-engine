@@ -2,7 +2,6 @@
 
 
 #include "RenderItem.hpp"
-#include "rendering/renderer/commands/RenderCommand.hpp"
 #include "common/geometry/Shapes.hpp"
 #include "Frustum.hpp"
 
@@ -20,11 +19,11 @@ namespace Galaxy
         std::vector<RenderItem> renderItems;
         std::unordered_map<MaterialHandle, bool, GpuResourceHandleHash> materialsTransparency;
 
-        std::vector<RenderCommand> retrieveOpaqueRenders();
-        std::vector<RenderCommand> retrieveTransparentRenders(math::vec3 camPosition);
+        std::vector<RenderItem> retrieveOpaqueRenders();
+        std::vector<RenderItem> retrieveTransparentRenders(math::vec3 camPosition);
 
-        std::vector<RenderCommand> retrieveOpaqueRenders(const Frustum& frustum);
-        std::vector<RenderCommand> retrieveTransparentRenders(const Frustum& frustum);
+        std::vector<RenderItem> retrieveOpaqueRenders(const Frustum& frustum);
+        std::vector<RenderItem> retrieveTransparentRenders(const Frustum& frustum);
 
         void push(RenderItem item);
         void removeMaterial(MaterialHandle material);
@@ -36,7 +35,7 @@ namespace Galaxy
         private:
         struct DistCompare {
             static math::vec3 camPosition;
-            bool operator()(const std::pair<MaterialHandle, RenderCommand>& a, const std::pair<MaterialHandle, RenderCommand>& b) const;
+            bool operator()(const RenderItem& a, const RenderItem& b) const;
         };
     };
     

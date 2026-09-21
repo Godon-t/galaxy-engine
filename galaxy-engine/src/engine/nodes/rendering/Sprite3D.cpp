@@ -12,17 +12,17 @@ Sprite3D::~Sprite3D()
 }
 void Sprite3D::draw()
 {
-    if (m_initialized) {
-        // TODO: integrate in sceneContext
-        Renderer::getInstance().getFrontend().changeUsedProgram(TEXTURE);
-        Renderer::getInstance().getFrontend().bindTexture(m_texture, "sampledTexture");
-        Renderer::getInstance().getFrontend().submit(m_rect, m_transform);
-    }
+    // if (m_initialized) {
+    //     // TODO: integrate in sceneContext
+    //     Renderer::getInstance().getFrontend().changeUsedProgram(TEXTURE);
+    //     Renderer::getInstance().getFrontend().bindTexture(m_texture, "sampledTexture");
+    //     Renderer::getInstance().getFrontend().submit(m_rect, m_transform);
+    // }
 }
 void Sprite3D::lightPassDraw()
 {
-    if (m_initialized)
-        Renderer::getInstance().getFrontend().submit(m_rect, m_transform);
+    // if (m_initialized)
+    //     Renderer::getInstance().getFrontend().submit(m_rect, m_transform);
 }
 void Sprite3D::accept(Galaxy::NodeVisitor& visitor)
 {

@@ -4,6 +4,17 @@
 
 #include <cstddef>
 
+using ShaderParameterValue = std::variant<
+    bool,
+    int,
+    float,
+    math::vec2,
+    math::vec3,
+    math::ivec3,
+    math::vec4,
+    math::mat4
+>;
+
 using camID    = size_t;
 using lightID  = size_t;
 

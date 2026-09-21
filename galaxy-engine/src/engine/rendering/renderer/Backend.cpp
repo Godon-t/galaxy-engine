@@ -5,6 +5,8 @@
 #include "gl_headers.hpp"
 #include "pch.hpp"
 #include "rendering/OpenglHelper.hpp"
+#include "rendering/renderer/refactor/RenderGraphExecution.hpp"
+#include "rendering/renderer/refactor/RenderGraph.hpp"
 
 namespace Galaxy {
 Backend::Backend(size_t maxSize)
@@ -172,6 +174,16 @@ void Backend::setActiveProgram(ProgramHandle program)
     instance->use();
 }
 
+int Backend::getUniformLocation(ProgramHandle program, const std::string& uniformName) const
+{
+    const Program* instance = m_programInstances.tryGet(program);
+    if (instance == nullptr) {
+        GLX_CORE_ERROR("Cannot inspect an invalid program handle");
+        return -1;
+    }
+    return instance->getUniformLocation(uniformName);
+}
+
 Program* Backend::getActiveProgram()
 {
     return m_programInstances.tryGet(m_activeProgram);
@@ -187,6 +199,170 @@ ProgramHandle Backend::getDefaultProgram(ProgramType type) const
     const auto found = m_defaultPrograms.find(type);
     return found == m_defaultPrograms.end() ? ProgramHandle {} : found->second;
 }
+
+
+void applyState(const RenderState& state){
+    if(state.clear)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    if(state.depthTest)
+        glEnable(GL_DEPTH_TEST);
+    else
+        glDisable(GL_DEPTH_TEST);
+
+    // state.blend
+    if(state.blend == BlendMode::Alpha){
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    } else if (state.blend == BlendMode::Disabled)
+        glDisable(GL_BLEND);
+
+}
+
+
+void Backend::execute(RenderGraphExecution& execution){
+    const auto& compiledGraph = execution.graph.compilation;
+    const auto& passes = compiledGraph.passes;
+    const size_t passesCount = passes.size();
+
+    FramebufferHandle currentFramebuffer;
+    for(size_t passIdx = 0; passIdx < passesCount; passIdx++){
+        const auto& compiledPass = passes[passIdx];
+        const auto& pass = execution.graph.getRenderPassAt(passIdx);
+        auto& passExecution = execution.passes[passIdx];
+
+        setActiveProgram(pass.program);
+        const auto& renderState = compiledGraph.getPassDescription(compiledPass.id).state;
+
+        for (auto& invocation : passExecution.invocations) {
+            const bool framebufferChanged = currentFramebuffer != pass.targetFramebufferHandle;
+            if(currentFramebuffer && framebufferChanged)
+                unbindFramebuffer(currentFramebuffer);
+
+            resizeFrameBuffer(
+                pass.targetFramebufferHandle,
+                invocation.viewportSize.x,
+                invocation.viewportSize.y);
+            bindFramebuffer(pass.targetFramebufferHandle, invocation.targetLayer);
+            currentFramebuffer = pass.targetFramebufferHandle;
+
+            glClearColor(
+                invocation.clearColor.r,
+                invocation.clearColor.g,
+                invocation.clearColor.b,
+                invocation.clearColor.a);
+            glViewport(
+                invocation.viewportPosition.x,
+                invocation.viewportPosition.y,
+                invocation.viewportSize.x,
+                invocation.viewportSize.y);
+            applyState(renderState);
+
+            Program& currentProg = *getActiveProgram();
+            // GLX-TODO: no diff between viewParameters and parameters
+            for(auto& setParameter : invocation.viewParameters)
+                applyShaderParameter(currentProg, setParameter.first, setParameter.second);
+
+            for(auto& setParameter : invocation.parameters)
+                applyShaderParameter(currentProg, setParameter.first, setParameter.second);
+
+            for (const auto& update : invocation.updates)
+                processCommand(update);
+
+            for(auto& binding : invocation.uniformBindings){
+                auto* ubo = m_uboInstances.get(binding.buffer);
+                if(ubo != nullptr)
+                    ubo->bind(binding.bindingPoint);
+            }
+
+            for(size_t i = 0; i<pass.inputTextures.size(); i++)
+            {
+                const TextureHandle textureHandle = pass.inputTextures[i];
+
+                Texture* texture = m_textureInstances.tryGet(textureHandle);
+                if (texture == nullptr) {
+                    GLX_CORE_ERROR("Cannot bind an invalid texture handle (slot={0}, generation={1})",
+                        textureHandle.index(), textureHandle.generation());
+                    return;
+                }
+                texture->activate(pass.inputTexturesLocations[i]);
+            }
+
+            const bool supportPBR = renderState.supportPBR;
+            for (const RenderItem& item : invocation.items) {
+                // GLX-TODO: need to fix material usage (should work with other thing than PBR ?)
+                if(supportPBR && item.material){
+                    BindMaterialCommand bindMat;
+                    bindMat.material = item.material.value();
+                    processCommand(bindMat);
+                }
+                DrawCommand draw;
+                draw.geometry = item.geometry;
+                draw.model = item.transform.getGlobalModelMatrix();
+                processCommand(draw);
+            }
+        }
+    }
+    if(currentFramebuffer)
+        unbindFramebuffer(currentFramebuffer);
+}
+
+void Backend::bindFramebuffer(FramebufferHandle fb, int targetLayer){
+    // GLX-TODO: redudancy in framebuffer accession
+    auto* framebufferInstance = m_frameBufferInstances.tryGet(fb);
+    if (framebufferInstance == nullptr) {
+        GLX_CORE_ERROR("Cannot attach texture to inexistent framebuffer");
+        return;
+    }
+
+    framebufferInstance->bind(targetLayer < 0 ? 0 : targetLayer);
+}
+void Backend::unbindFramebuffer(FramebufferHandle fb){
+    auto* framebufferInstance = m_frameBufferInstances.tryGet(fb);
+    if (framebufferInstance == nullptr) {
+        GLX_CORE_ERROR("Cannot attach texture to inexistent framebuffer");
+        return;
+    }
+
+    framebufferInstance->unbind();
+}
+
+
+
+bool Backend::attachColorTextureToFramebuffer(TextureHandle texture, FramebufferHandle framebuffer, int colorattachmentIdx){
+    auto* framebufferInstance = m_frameBufferInstances.tryGet(framebuffer);
+    if (framebufferInstance == nullptr) {
+        GLX_CORE_ERROR("Cannot attach texture to inexistent framebuffer");
+        return false;
+    }
+
+    auto* textureInstance = m_textureInstances.tryGet(texture);
+    if (textureInstance == nullptr) {
+        GLX_CORE_ERROR("Cannot attach inexistent texture to framebuffer");
+        return false;
+    }
+
+    return framebufferInstance->attachColorTexture(*textureInstance, colorattachmentIdx);
+}
+
+bool Backend::attachDepthTextureToFramebuffer(TextureHandle texture, FramebufferHandle framebuffer){
+    auto* framebufferInstance = m_frameBufferInstances.tryGet(framebuffer);
+    if (framebufferInstance == nullptr) {
+        GLX_CORE_ERROR("Cannot attach texture to inexistent framebuffer");
+        return false;
+    }
+
+    auto* textureInstance = m_textureInstances.tryGet(texture);
+    if (textureInstance == nullptr) {
+        GLX_CORE_ERROR("Cannot attach inexistent texture to framebuffer");
+        return false;
+    }
+
+    return framebufferInstance->attachDepthTexture(*textureInstance);
+}
+
+
+
 
 GeometryHandle Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices, std::function<void()> destroyCallback)
 {
@@ -320,6 +496,7 @@ void Backend::clearTexture(TextureHandle textureID)
 
 void Backend::frameReset()
 {
+    m_drawCount = 0;
     Texture::resetStaticActivationInt();
     Texture::clearReservedActivationInts();
     
@@ -650,7 +827,7 @@ void Backend::releaseAttachments(CubemapFramebufferHandle framebuffer)
     m_cubemapFramebufferAttachments.erase(found);
 }
 
-void Backend::resizeFrameBuffer(FramebufferHandle frameBufferID, unsigned int width, unsigned int height, unsigned int depthLayerCount)
+void Backend::resizeFrameBuffer(FramebufferHandle frameBufferID, unsigned int width, unsigned int height, int depthLayerCount)
 {
     auto* framebuffer = m_frameBufferInstances.tryGet(frameBufferID);
     if (framebuffer == nullptr) {
@@ -865,6 +1042,7 @@ void Backend::processCommand(const DrawCommand& command)
 
     program->setUniform("model", command.model);
     geometry->draw();
+    ++m_drawCount;
 }
 
 void Backend::processCommand(const RawDrawCommand& command)
@@ -881,6 +1059,7 @@ void Backend::processCommand(const RawDrawCommand& command)
         return;
     }
     geometry->draw();
+    ++m_drawCount;
 }
 
 void Backend::processCommand(const UseTextureCommand& command)
@@ -1014,12 +1193,6 @@ void Backend::processCommand(const AttachCubemapToFramebufferCommand& command)
 
 void Backend::processCommand(const BindMaterialCommand& command)
 {
-    const ProgramHandle pbrProgram = getDefaultProgram(ProgramType::PBR);
-    if (m_activeProgram != pbrProgram) {
-        GLX_CORE_ERROR("PBR Program not active, activating it");
-        setActiveProgram(ProgramType::PBR);
-    }
-
     Program* program = getActiveProgram();
     if (program == nullptr)
         return;

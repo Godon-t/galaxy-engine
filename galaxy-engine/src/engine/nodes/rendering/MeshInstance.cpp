@@ -31,8 +31,8 @@ void MeshInstance::draw()
 
 void MeshInstance::lightPassDraw()
 {
-    if (m_geometry)
-        Renderer::getInstance().getFrontend().submit(m_geometry, *getTransform());
+    // if (m_geometry)
+    //     Renderer::getInstance().getFrontend().submit(m_geometry, *getTransform());
 }
 
 void MeshInstance::accept(NodeVisitor& visitor)

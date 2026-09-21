@@ -56,7 +56,7 @@ Root:
       Childs:
         []
       Transform:
-        Position: [-32, 100, 0]
+        Position: [-32, 100, 20]
         Rotation: [0, 1.5969763, 0]
         Scale: [1, 1, 1]
       Intensity: 500

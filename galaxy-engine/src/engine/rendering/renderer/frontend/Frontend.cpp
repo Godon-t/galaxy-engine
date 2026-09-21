@@ -16,6 +16,8 @@ Frontend::Frontend(Backend& backend)
     shadowTexture.format = TextureFormat::DEPTH;
     shadowTexture.name = "shadow_maps";
     shadowTexture.arrayLayers = maxLightCount;
+    shadowTexture.wrapS = TextureWrap::CLAMP_TO_BORDER;
+    shadowTexture.wrapT = TextureWrap::CLAMP_TO_BORDER;
 
     const GraphTextureId shadowTextureId = renderGraphDeclaration.addTexture(shadowTexture);
 
@@ -385,6 +387,14 @@ RenderGraphExecution Frontend::buildFrameExecution()
         configureView(transparentInvocation);
         transparentInvocation.items = std::move(transparents);
         transparentInvocation.parameters.emplace("lightCount", static_cast<int>(m_lightManager.getLightCount()));
+
+        if(m_lightManager.isDirty()){
+            auto updateCommand = m_lightManager.getLightUboUpdate();
+            opaqueInvocation.updates.push_back(updateCommand);
+            transparentInvocation.updates.push_back(updateCommand);
+        }
+        opaqueInvocation.uniformBindings.push_back({m_lightManager.getLightUboHandle(), 0});
+        transparentInvocation.uniformBindings.push_back({m_lightManager.getLightUboHandle(), 0});
 
         auto& postProcessInvocation = execution.addInvocation(m_passPostprocessId);
         configureView(postProcessInvocation);

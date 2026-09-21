@@ -55,7 +55,6 @@ uniform bool useAoMap        = false;
 // lights
 const int MAX_LIGHT    = 32;
 uniform int lightCount = 3;
-uniform bool includeLightComputation = true;
 uniform sampler2DArray shadowMaps;
 
 layout(std140, binding = 0) uniform LightBlock
@@ -155,7 +154,7 @@ vec3 getNormalFromNormalMap()
     return normalize(TBN * tangentNormal);
 }
 
-float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir, int layerIndex)
+float ShadowCalculation(vec4 fragPosLightSpace, int layerIndex)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
@@ -207,50 +206,48 @@ void main()
     vec3 directDiffuse  = vec3(0.0);
     vec3 directSpecular = vec3(0.0);
 
-    if(includeLightComputation){
-        for (int i = 0; i < lightCount; ++i) {
-            // calculate per-light radiance
-            float intensity = lightData.params[i].y;
-            float range     = lightData.params[i].z;
+    for (int i = 0; i < lightCount; ++i) {
+        // calculate per-light radiance
+        float intensity = lightData.params[i].y;
+        float range     = lightData.params[i].z;
 
-            vec3 L            = normalize(lightData.positions[i].xyz - v_worldPos);
-            vec3 H            = normalize(V + L);
-            float distance    = length(lightData.positions[i].xyz - v_worldPos);
-            float smoothRange = clamp(1.0 - distance / range, 0.0, 1.0);
-            float attenuation = (1 / (distance * distance)) * smoothRange;
-            vec3 radiance     = lightData.colors[i].xyz * intensity * attenuation;
+        vec3 L            = normalize(lightData.positions[i].xyz - v_worldPos);
+        vec3 H            = normalize(V + L);
+        float distance    = length(lightData.positions[i].xyz - v_worldPos);
+        float smoothRange = clamp(1.0 - distance / range, 0.0, 1.0);
+        float attenuation = (1 / (distance * distance)) * smoothRange;
+        vec3 radiance     = lightData.colors[i].xyz * intensity * attenuation;
 
-            // cook-torrance brdf
-            float NDF = DistributionGGX(N, H, roughness);
-            float G   = GeometrySmith(N, V, L, roughness);
-            vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
+        // cook-torrance brdf
+        float NDF = DistributionGGX(N, H, roughness);
+        float G   = GeometrySmith(N, V, L, roughness);
+        vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-            vec3 numerator    = NDF * G * F;
-            float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
-            vec3 specular     = numerator / denominator;
+        vec3 numerator    = NDF * G * F;
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
+        vec3 specular     = numerator / denominator;
 
-            vec3 kS = F;
-            vec3 kD = vec3(1.0) - kS;
-            kD *= 1.0 - metallic;
+        vec3 kS = F;
+        vec3 kD = vec3(1.0) - kS;
+        kD *= 1.0 - metallic;
 
-            // add to outgoing radiance Lo
-            float NdotL = max(dot(N, L), 0.0);
+        // add to outgoing radiance Lo
+        float NdotL = max(dot(N, L), 0.0);
 
-            // Calculer l'ombre
-            vec4 lightSpacePos = lightData.lightMatrices[i] * vec4(v_worldPos, 1.0);
-            float shadow       = ShadowCalculation(lightSpacePos, N, L, lightData.shadowMapLayers[i].x);
-            float shadowFactor = 1.0 - shadow;
+        // Calculer l'ombre
+        vec4 lightSpacePos = lightData.lightMatrices[i] * vec4(v_worldPos, 1.0);
+        float shadow       = ShadowCalculation(lightSpacePos, lightData.shadowMapLayers[i].x);
+        float shadowFactor = 1.0 - shadow;
 
-            vec3 diffuseTerm  = kD * albedo / PI;
-            vec3 specularTerm = specular;
+        vec3 diffuseTerm  = kD * albedo / PI;
+        vec3 specularTerm = specular;
 
-            vec3 lightContribution = radiance * NdotL * 50.0;
+        vec3 lightContribution = radiance * NdotL * 50.0;
 
-            directDiffuse += shadowFactor * diffuseTerm * lightContribution;
-            directSpecular += shadowFactor * specularTerm * lightContribution;
+        directDiffuse += shadowFactor * diffuseTerm * lightContribution;
+        directSpecular += shadowFactor * specularTerm * lightContribution;
 
-            Lo += (1.0 - shadow) * (kD * albedo / PI + specular) * radiance * NdotL * 50.f;
-        }
+        Lo += (1.0 - shadow) * (kD * albedo / PI + specular) * radiance * NdotL * 50.f;
     }
 
     // ambient lighting (we now use IBL as the ambient term)

@@ -472,6 +472,17 @@ TextureHandle Backend::instantiateTexture(ResourceHandle<Image> image)
     return textureID;
 }
 
+void Backend::setTextureWrap(TextureHandle textureHandle, TextureWrap wrapS, TextureWrap wrapT)
+{
+    auto* texture  = m_textureInstances.get(textureHandle);
+    if(texture == nullptr){
+        GLX_ERROR("texture not found when changing wrap!");
+        return;
+    } else {
+        texture->setWrap(wrapS, wrapT);
+    }
+}
+
 TextureHandle Backend::instantiateTexture(TextureFormat format, vec2 size)
 {
     if (!m_textureInstances.canCreate())

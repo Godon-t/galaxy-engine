@@ -39,7 +39,10 @@ public:
 
     TextureHandle instantiateTexture(TextureFormat format, vec2 size);
     TextureHandle instantiateTexture(ResourceHandle<Image> image);
+    void setTextureWrap(TextureHandle texture, TextureWrap wrapS, TextureWrap wrapT);
     void clearTexture(TextureHandle texture);
+    
+    
     void frameReset();
     [[nodiscard]] std::size_t getDrawCallsCount() const noexcept { return m_drawCount; }
 

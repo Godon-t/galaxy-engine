@@ -90,6 +90,7 @@ public:
 
     bool isDirty() const {return m_dirty;}
     UpdateUBOCommand getLightUboUpdate();
+    [[nodiscard]] BufferHandle getLightUboHandle()const { return m_lightsUBO; }
     std::vector<std::unique_ptr<RenderCameraTransform>> getLightsDevices();
 
 private:

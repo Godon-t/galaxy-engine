@@ -57,6 +57,9 @@ struct GraphTextureDesc {
     TextureFormat format = TextureFormat::RGBA;
     std::uint32_t arrayLayers = 0;
 
+    TextureWrap wrapS = TextureWrap::REPEAT;
+    TextureWrap wrapT = TextureWrap::REPEAT;
+
     // GLX-TODO: should describe state like wrap, filtering, etc ?
     bool imported = false;
 

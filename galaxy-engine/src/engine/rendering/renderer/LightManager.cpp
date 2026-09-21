@@ -22,7 +22,7 @@ LightManager::~LightManager()
 
 void LightManager::init()
 {
-    // auto& backend = Renderer::getInstance().getBackend();
+    auto& backend = Renderer::getInstance().getBackend();
     // m_shadowMapFramebuffer = backend.instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH, 0, maxLightCount);
     
     // m_fullQuad = backend.generateQuad(vec2(2, 2), []() {});
@@ -43,7 +43,7 @@ void LightManager::init()
 
     // resizeProbeFieldGrid(2, 2, 2, 100.f);
 
-    // m_lightsUBO = backend.instantiateUBO(sizeof(m_lightUniformData));
+    m_lightsUBO = backend.instantiateUBO(sizeof(m_lightUniformData));
 
     // auto& frontend = Renderer::getInstance().getFrontend();
     // frontend.bindUBO(m_lightsUBO, 0);

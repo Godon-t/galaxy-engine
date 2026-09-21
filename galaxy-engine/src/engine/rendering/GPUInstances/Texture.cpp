@@ -19,8 +19,10 @@ Texture::Texture(unsigned char* data, int width, int height, int nbChannels, int
 Texture::Texture(TextureFormat format, int width, int height, int depthLayerCount)
     : m_format(format)
     , m_layerCount(depthLayerCount)
+    , m_width(width)
+    , m_height(height)
 {
-    resize(width, height);
+    regenerate();
 }
 
 Texture::~Texture()
@@ -53,10 +55,58 @@ Texture& Texture::operator=(Texture&& other) noexcept
     return *this;
 }
 
+void setOpenglWrap(GLuint id, bool horizontal, TextureWrap wrap){
+    GLenum glWrap;
+
+    if(wrap == TextureWrap::REPEAT)
+        glWrap = GL_REPEAT;
+    else if(wrap == TextureWrap::CLAMP_TO_BORDER)
+        glWrap = GL_CLAMP_TO_BORDER;
+    else if(wrap == TextureWrap::CLAMP_TO_EDGE)
+        glWrap = GL_CLAMP_TO_EDGE;
+    
+    if(horizontal)
+        glTextureParameteri(id, GL_TEXTURE_WRAP_T, glWrap);
+    else
+        glTextureParameteri(id, GL_TEXTURE_WRAP_S, glWrap);
+}
+
+void Texture::regenerate()
+{
+    destroy();
+
+    if (m_width <= 0 || m_height <= 0) {
+        return;
+    }
+
+    unsigned int internalFormat = getInternalFormat(m_format);
+
+    const GLenum target = m_layerCount > 0 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
+    glCreateTextures(target, 1, &m_id);
+    
+    setOpenglWrap(m_id, true, m_wrapS);
+    setOpenglWrap(m_id, false, m_wrapT);
+
+    if (m_layerCount > 0)
+        glTextureParameteri(m_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    if (m_format == TextureFormat::DEPTH24STENCIL8 || m_format == TextureFormat::DEPTH) {
+        float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        glTextureParameterfv(m_id, GL_TEXTURE_BORDER_COLOR, borderColor);
+    }
+
+    if (m_layerCount > 0)
+        glTextureStorage3D(m_id, 1, internalFormat, m_width, m_height, m_layerCount);
+    else
+        glTextureStorage2D(m_id, 1, internalFormat, m_width, m_height);
+    checkOpenGLErrors("Texture resize");
+}
+
 void Texture::resize(int width, int height)
 {
     if (width <= 0 || height <= 0) {
-        destroy();
         return;
     }
 
@@ -66,30 +116,7 @@ void Texture::resize(int width, int height)
     m_width  = width;
     m_height = height;
 
-    unsigned int internalFormat = getInternalFormat(m_format);
-
-    if (m_id != 0)
-        glDeleteTextures(1, &m_id);
-
-    const GLenum target = m_layerCount > 0 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
-    glCreateTextures(target, 1, &m_id);
-    glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    if (m_layerCount > 0)
-        glTextureParameteri(m_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    if (m_format == TextureFormat::DEPTH24STENCIL8 || m_format == TextureFormat::DEPTH) {
-        float borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        glTextureParameterfv(m_id, GL_TEXTURE_BORDER_COLOR, borderColor);
-    }
-
-    if (m_layerCount > 0)
-        glTextureStorage3D(m_id, 1, internalFormat, width, height, m_layerCount);
-    else
-        glTextureStorage2D(m_id, 1, internalFormat, width, height);
-    checkOpenGLErrors("Texture resize");
+    regenerate();
 }
 
 void Texture::resize(int width, int height, int depthLayerCount)
@@ -100,7 +127,6 @@ void Texture::resize(int width, int height, int depthLayerCount)
     }
 
     const TextureFormat keepFormat = m_format;
-    destroy();
     m_format     = keepFormat;
     m_layerCount = depthLayerCount;
     resize(width, height);
@@ -109,16 +135,18 @@ void Texture::resize(int width, int height, int depthLayerCount)
 void Texture::setFormat(TextureFormat format)
 {
     if (format != m_format) {
-        const unsigned int keepWidth      = m_width;
-        const unsigned int keepHeight     = m_height;
-        const unsigned int keepLayerCount = m_layerCount;
-
-        destroy();
         m_format = format;
-        m_layerCount = keepLayerCount;
-        if (keepWidth > 0 && keepHeight > 0)
-            resize(keepWidth, keepHeight);
+        regenerate();
         checkOpenGLErrors("Texture set format");
+    }
+}
+
+void Texture::setWrap(TextureWrap wrapS, TextureWrap wrapT)
+{
+    if(m_wrapS != wrapS || m_wrapT != wrapT){
+        m_wrapS = wrapS;
+        m_wrapT = wrapT;
+        regenerate();
     }
 }
 
@@ -145,9 +173,9 @@ void Texture::init(unsigned char* data, int width, int height, int nbChannels, i
     unsigned int type     = getType(m_format);
 
     m_layerCount = depthLayerCount;
-    resize(width, height);
-    glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    m_width = width;
+    m_height = height;
+    regenerate();
 
     if(data != nullptr && depthLayerCount > 0){
         glTextureSubImage3D(m_id, 0, 0, 0, 0, width, height, depthLayerCount, format, type, data);
@@ -222,9 +250,6 @@ void Texture::destroy()
     if (m_id != 0)
         glDeleteTextures(1, &m_id);
     m_id = 0;
-    m_width = 0;
-    m_height = 0;
-    m_layerCount = 0;
     m_activationInt = -1;
 }
 

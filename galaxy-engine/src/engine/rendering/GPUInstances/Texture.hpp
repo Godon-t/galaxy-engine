@@ -17,9 +17,13 @@ public:
     Texture(Texture&& other) noexcept;
     Texture& operator=(Texture&& other) noexcept;
 
+    void regenerate();
+
     void resize(int width, int height);
     void resize(int width, int height, int depthLayerCount);
     void setFormat(TextureFormat format);
+
+    void setWrap(TextureWrap wrapS, TextureWrap wrapT);
 
     void init(unsigned char* data, int width, int height, int nbChannels, int depthLayerCount = 0);
     void resetActivationInt();
@@ -43,6 +47,8 @@ private:
 
     unsigned int m_id = 0;
     TextureFormat m_format = TextureFormat::RGBA;
+    TextureWrap m_wrapS = TextureWrap::REPEAT;
+    TextureWrap m_wrapT = TextureWrap::REPEAT;
 
     unsigned int m_width  = 0;
     unsigned int m_height = 0;
@@ -72,6 +78,7 @@ struct Cubemap {
     void allocateFaces();
     void resize(unsigned int res);
     void setFormat(TextureFormat newFormat);
+    void setWrap(TextureWrap wrapS, TextureWrap wrapT);
 
 private:
     unsigned int m_id         = 0;

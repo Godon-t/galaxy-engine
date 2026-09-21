@@ -46,6 +46,12 @@ enum class TextureFormat {
     NONE
 };
 
+enum struct TextureWrap {
+    CLAMP_TO_EDGE,
+    CLAMP_TO_BORDER,
+    REPEAT
+};
+
 enum class FramebufferTextureFormat {
     None = 0,
 

@@ -158,6 +158,9 @@ void Texture::init(unsigned char* data, int width, int height, int nbChannels, i
     case 1:
         m_format = TextureFormat::RED;
         break;
+    case 2:
+        m_format = TextureFormat::RG;
+        break;
     case 3:
         m_format = TextureFormat::RGB;
         break;
@@ -165,8 +168,8 @@ void Texture::init(unsigned char* data, int width, int height, int nbChannels, i
         m_format = TextureFormat::RGBA;
         break;
     default:
-        GLX_CORE_ERROR("Warning: Unsupported texture format, defaulting to GL_RGB8\n");
-        m_format = TextureFormat::RGB;
+        GLX_CORE_ERROR("Warning: Unsupported texture format, defaulting to GL_RGBA\n");
+        m_format = TextureFormat::RGBA;
     }
 
     GLenum format         = getExternalFormat(m_format);
@@ -270,12 +273,15 @@ unsigned int Texture::getInternalFormat(TextureFormat format)
 
 unsigned int Texture::getExternalFormat(TextureFormat format)
 {
-    if (format == TextureFormat::RGBA)
-        return GL_RGBA;
     if (format == TextureFormat::RED)
         return GL_RED;
+    if (format == TextureFormat::RG)
+        return GL_RG;
     if (format == TextureFormat::RGB)
         return GL_RGB;
+    if (format == TextureFormat::RGBA)
+        return GL_RGBA;
+    
     if (format == TextureFormat::DEPTH)
         return GL_DEPTH_COMPONENT;
     if (format == TextureFormat::DEPTH24STENCIL8)
@@ -285,7 +291,7 @@ unsigned int Texture::getExternalFormat(TextureFormat format)
 
 unsigned int Texture::getType(TextureFormat format)
 {
-    if (format == TextureFormat::RGBA || format == TextureFormat::RGB || format == TextureFormat::RED)
+    if (format == TextureFormat::RED || format == TextureFormat::RG || format == TextureFormat::RGB || format == TextureFormat::RGBA)
         return GL_UNSIGNED_BYTE;
     if (format == TextureFormat::DEPTH)
         return GL_FLOAT;
@@ -354,7 +360,8 @@ void Cubemap::allocateFaces()
         } else if (m_format == TextureFormat::DEPTH) {
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT24,
                 m_resolution, m_resolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-        }
+        } else
+            GLX_CORE_ERROR("(cubemap) unsupported texture format");
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }

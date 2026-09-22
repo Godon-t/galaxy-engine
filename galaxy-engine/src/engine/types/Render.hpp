@@ -39,6 +39,7 @@ struct Vertex {
 
 enum class TextureFormat {
     RED,
+    RG,
     RGB,
     RGBA,
     DEPTH,

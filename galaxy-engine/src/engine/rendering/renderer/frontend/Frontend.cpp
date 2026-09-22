@@ -102,6 +102,7 @@ Frontend::Frontend(Backend& backend)
     // transparentDesc.state.depthTest = false;
     transparentDesc.state.clear = false;
     transparentDesc.state.supportPBR = true;
+    transparentDesc.state.blend = BlendMode::Alpha;
     
     RenderPassDesc skyboxDesc(opaquePBRDesc);
     skyboxDesc.associatedProgram = backend.loadShader(engineRes("shaders/skybox.glsl"));

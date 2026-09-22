@@ -14,7 +14,7 @@ bool SceneContext::DistCompare::operator()(
 {
     const vec3 aPosition = vec3(a.transform.getGlobalModelMatrix()[3]);
     const vec3 bPosition = vec3(b.transform.getGlobalModelMatrix()[3]);
-    return (camPosition - aPosition).length() < (camPosition - bPosition).length();
+    return (camPosition - aPosition).length() - a.bounds.radius < (camPosition - bPosition).length() - b.bounds.radius;
 }
 
 namespace {

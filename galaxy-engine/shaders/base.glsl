@@ -62,7 +62,6 @@ layout(std140, binding = 0) uniform LightBlock
     vec4 positions[MAX_LIGHT];
     vec4 colors[MAX_LIGHT];
     vec4 params[MAX_LIGHT];
-
     ivec4 shadowMapLayers[MAX_LIGHT];
 
     mat4 lightMatrices[MAX_LIGHT];
@@ -174,7 +173,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, int layerIndex)
         for (int y = -1; y <= 1; ++y) {
             vec2 offset = vec2(x, y) * texelSize;
             vec2 uv = projCoords.xy + offset;
-            float pcfDepth = texture(shadowMaps, vec3(uv, float(layerIndex + 0.5))).r;
+            float pcfDepth = texture(shadowMaps, vec3(uv, layerIndex)).r;
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
         }
     }

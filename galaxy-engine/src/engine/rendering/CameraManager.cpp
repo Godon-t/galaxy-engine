@@ -61,29 +61,23 @@ const std::shared_ptr<Camera> CameraManager::getCurrentCamera()
     }
 }
 
-mat4 CameraManager::processProjectionMatrix(vec2 viewPortDimmensions)
+mat4 CameraManager::processProjectionMatrix(vec2 viewPortDimmensions, float zNear, float zFar, float outerCutoffAngle)
 {
-    return perspective(radians(45.f), viewPortDimmensions.x / viewPortDimmensions.y, 0.1f, 9999.f);
+    const float fov = glm::radians(outerCutoffAngle * 2.0f);
+
+    return perspective(fov, viewPortDimmensions.x / viewPortDimmensions.y, zNear, zFar);
 }
 
 mat4 CameraManager::processViewMatrix(const mat4& transform)
 {
     vec3 position = vec3(transform[3][0], transform[3][1], transform[3][2]);
     vec3 forward  = vec3(transform[2][0], transform[2][1], transform[2][2]);
-    vec3 target   = position + forward;
+    vec3 target   = position - forward;
     return lookAt(position, target, vec3(0, 1, 0));
 }
 
 mat4 CameraManager::processViewMatrix(std::shared_ptr<Camera> camera)
 {
     return lookAt(camera->position, camera->position + camera->forward, camera->up);
-}
-
-mat4 CameraManager::processViewMatrix(mat4& transform)
-{
-    vec3 position = vec3(transform[3][0], transform[3][1], transform[3][2]);
-    vec3 forward  = vec3(transform[2][0], transform[2][1], transform[2][2]);
-    vec3 target   = position + forward;
-    return lookAt(position, target, vec3(0, 1, 0));
 }
 }

@@ -8,6 +8,9 @@
 #include "resource/Environment.hpp"
 #include "resource/ResourceHandle.hpp"
 
+
+// GLX-TODO: crash when saving (maybe when without resource attached)
+
 namespace Galaxy {
 class EnvironmentNode : public Node {
 public:

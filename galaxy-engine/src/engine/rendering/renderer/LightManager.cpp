@@ -85,11 +85,25 @@ void LightManager::updateLightRange(lightID id, float range)
     m_dirty = true;
 }
 
+void LightManager::updateLightCutoffs(lightID id, float innerCutoff, float outerCutoff)
+{
+    m_lights[id].innerCutoff      = innerCutoff;
+    m_lights[id].outerCutoff      = outerCutoff;
+    m_dirty = true;
+}
+
+void LightManager::updateLightCastShadow(lightID id, bool state)
+{
+    m_lights[id].castShadow = state;
+    m_dirty = true;
+}
+
 void LightManager::unregisterLight(int id)
 {
     m_lights.erase(id);
     m_dirty = true;
 }
+
 
 void LightManager::debugDraw()
 {
@@ -124,15 +138,21 @@ std::vector<vec3> LightManager::getProbePositions()
 UpdateUBOCommand LightManager::getLightUboUpdate()
 {
     vec2 viewportDimmension = vec2(1024, 1024);
-    mat4 projMat  = CameraManager::processProjectionMatrix(viewportDimmension);
     for (auto& light : m_lights) {
         auto& lightData = light.second;
+        mat4 projMat = lightData.getProjection(viewportDimmension);
 
         m_lightUniformData.colors[lightData.idx]    = vec4(lightData.color, 1.0);
         m_lightUniformData.positions[lightData.idx] = lightData.transformationMatrix[3];
-        m_lightUniformData.params[lightData.idx].y  = lightData.intensity;
-        m_lightUniformData.params[lightData.idx].z  = lightData.range;
+        const vec3 direction = normalize(-vec3(lightData.transformationMatrix[2]));
+        m_lightUniformData.directions[lightData.idx] = vec4(direction, 0.0f);
+        m_lightUniformData.params[lightData.idx].x  = lightData.intensity;
+        m_lightUniformData.params[lightData.idx].y  = lightData.range;
+        m_lightUniformData.params[lightData.idx].z  = lightData.innerCutoff;
+        m_lightUniformData.params[lightData.idx].w  = lightData.outerCutoff;
         m_lightUniformData.shadowMapLayers[lightData.idx].layer = lightData.shadowMapLayer;
+        m_lightUniformData.shadowMapLayers[lightData.idx].type = lightData.type;
+        m_lightUniformData.shadowMapLayers[lightData.idx].castShadow = lightData.castShadow ? 1 : 0;
 
 
         mat4 view             = CameraManager::processViewMatrix(lightData.transformationMatrix);
@@ -143,20 +163,16 @@ UpdateUBOCommand LightManager::getLightUboUpdate()
     return UpdateUBOCommand::make(m_lightsUBO, m_lightUniformData);
 }
 
-std::vector<std::unique_ptr<RenderCameraTransform>> LightManager::getLightsDevices()
+const std::vector<LightData> LightManager::getLightsData() const
 {
-    vec2 viewportDimmension = vec2(1024, 1024);
-    std::vector<std::unique_ptr<RenderCameraTransform>> res;
-    for (auto& [id, lightData] : m_lights) {
-        auto renderCamera = std::make_unique<RenderCameraTransform>();
-        renderCamera->targetFramebuffer = m_shadowMapFramebuffer;
-        renderCamera->targetDepthLayer = lightData.shadowMapLayer;
-        renderCamera->transform = lightData.transformationMatrix;
-        renderCamera->viewportDimmension = viewportDimmension;
-        renderCamera->renderScene = true;
+    std::vector<LightData> res;
+    res.reserve(m_lights.size());
 
-        res.push_back(std::move(renderCamera));
+    vec2 viewportDimmension = vec2(1024, 1024);
+    for (auto& [id, lightData] : m_lights) {
+        res.push_back(lightData);
     }
+
     return res;
 }
 
@@ -281,6 +297,11 @@ vec2 LightManager::getProbeTexCoord(unsigned int probeGridIdx)
     unsigned int yPosition     = (probeGridIdx / probesByWidth) * m_probeResolution;
     vec2 texturePos(xPosition, yPosition);
     return texturePos;
+}
+
+mat4 LightData::getProjection(const vec2& viewportDimmension)
+{
+    return CameraManager::processProjectionMatrix(viewportDimmension, 0.01f, range, outerCutoff);
 }
 
 } // namespace Galaxy

@@ -94,14 +94,14 @@ void SceneSerializer::visitLightCommon(Light& node)
     m_yaml << YAML::Key << "Intensity" << YAML::Value << node.getIntensity();
     m_yaml << YAML::Key << "Color" << YAML::Value << node.getColor();
     m_yaml << YAML::Key << "Range" << YAML::Value << node.getRange();
+    m_yaml << YAML::Key << "Shadows" << YAML::Value << node.getCastShadows();
 }
 
 void SceneSerializer::visit(SpotLight& node)
 {
     visitLightCommon(static_cast<Light&>(node));
-    // m_yaml << YAML::Key << "CutoffAngle" << YAML::Value << node.getCutoffAngle();
-    // m_yaml << YAML::Key << "OuterCutoffAngle" << YAML::Value << node.getOuterCutoffAngle();
-    // m_yaml << YAML::Key << "CastShadows" << YAML::Value << node.getCastShadows();
+    m_yaml << YAML::Key << "InnerCutoffAngle" << YAML::Value << node.getInnerCutoffAngle();
+    m_yaml << YAML::Key << "OuterCutoffAngle" << YAML::Value << node.getOuterCutoffAngle();
 }
 
 void SceneSerializer::visit(PointLight& node)

@@ -22,11 +22,15 @@ public:
     inline float getRange() const { return m_range; }
     void setRange(float range) { m_range = range; }
 
+    inline bool getCastShadows() const { return m_castShadows; }
+    void setCastShadows(bool castShadows){ m_castShadows = castShadows; }
+
 
 protected:
     float m_intensity;
     vec3 m_color;
     float m_range;
+    bool m_castShadows = false;
 
 };
 } // namespace Galaxy

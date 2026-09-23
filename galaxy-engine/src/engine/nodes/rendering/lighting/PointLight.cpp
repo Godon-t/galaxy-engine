@@ -60,6 +60,7 @@ void PointLight::updateLight()
     Renderer::getInstance().getLightManager().updateLightTransform(m_lightID, getTransform()->getGlobalModelMatrix());
     Renderer::getInstance().getLightManager().updateLightIntensity(m_lightID, m_intensity);
     Renderer::getInstance().getLightManager().updateLightRange(m_lightID, m_range);
+    Renderer::getInstance().getLightManager().updateLightCastShadow(m_lightID, m_castShadows);
 }
 
 }

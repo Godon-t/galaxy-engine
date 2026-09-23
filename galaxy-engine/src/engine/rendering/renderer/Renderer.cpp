@@ -52,7 +52,6 @@ void Renderer::addMainCameraDevice(std::shared_ptr<Camera> camera)
 
     mainCamera->camera = camera;
     mainCamera->viewportDimmension = m_mainViewportSize;
-    mainCamera->targetFramebuffer = m_sceneFramebuffer;
     mainCamera->renderScene = true;
     // mainCamera->frustumCulling = false;
     m_frontend.addRenderDevice(std::move(mainCamera));

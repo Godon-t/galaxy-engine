@@ -15,8 +15,8 @@ struct RenderCameraTransform;
 const unsigned int maxLightCount = 32;
 
 enum LightType {
-    SPOTLIGHT = 0,
-    POINTLIGHT,
+    POINTLIGHT = 0,
+    SPOTLIGHT = 1,
 };
 struct LightData {
     LightType type;
@@ -26,15 +26,22 @@ struct LightData {
     vec3 color;
     float intensity;
     float range;
+    float innerCutoff;
+    float outerCutoff;
+    bool castShadow;
+
+    mat4 getProjection(const vec2& viewportDimmension);
 
     LightData()
         : idx(-1)
         , shadowMapLayer(0)
         , color(1)
-        , intensity(0.5)
-        , range(1.0)
-    {
-    }
+        , intensity(0.5f)
+        , range(1.0f)
+        , innerCutoff(22.5f)
+        , outerCutoff(22.5f)
+        {
+        }
     LightData(int lightIdx, math::mat4& matrix)
         : idx(lightIdx)
         , transformationMatrix(matrix)
@@ -42,18 +49,23 @@ struct LightData {
         , color(1)
         , intensity(0.5)
         , range(1.0)
+        , innerCutoff(22.5f)
+        , outerCutoff(22.5f)
     {
     }
 };
 
 struct GPULightData {
     glm::vec4 positions[maxLightCount];
+    glm::vec4 directions[maxLightCount];
     glm::vec4 colors[maxLightCount];
     glm::vec4 params[maxLightCount];
 
     struct alignas(16) ShadowLayer {
         int layer;
-        int pad0, pad1, pad2;
+        int type; 
+        int castShadow;
+        int pad0;
     };
     ShadowLayer shadowMapLayers[maxLightCount];
 
@@ -74,6 +86,9 @@ public:
     void updateLightColor(lightID id, math::vec3 color);
     void updateLightIntensity(lightID id, float intensity);
     void updateLightRange(lightID id, float range);
+    void updateLightCutoffs(lightID id, float innerCutoff, float outerCutoff);
+    void updateLightCastShadow(lightID id, bool state);
+
     void unregisterLight(int id);
     void shadowPass(Node* sceneRoot);
     unsigned int getShadowMapLayer(lightID light) { return m_lights[light].shadowMapLayer; }
@@ -91,7 +106,7 @@ public:
     bool isDirty() const {return m_dirty;}
     UpdateUBOCommand getLightUboUpdate();
     [[nodiscard]] BufferHandle getLightUboHandle()const { return m_lightsUBO; }
-    std::vector<std::unique_ptr<RenderCameraTransform>> getLightsDevices();
+    const std::vector<LightData> getLightsData() const;
 
 private:
     struct ProbeCell {

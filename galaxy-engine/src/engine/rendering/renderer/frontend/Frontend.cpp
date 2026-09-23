@@ -186,122 +186,6 @@ Frontend::Frontend(Backend& backend)
     
 }
 
-// void Frontend::storeCanvaResult(std::string& path)
-// {
-//     m_canvas[m_currentCanvaIdx].storeResult = true;
-//     m_canvas[m_currentCanvaIdx].storagePath = path;
-// }
-
-
-// void Frontend::saveFrameBuffer(FramebufferHandle framebuffer, std::string path)
-// {
-//     SaveFrameBufferCommand saveFramebufferC;
-//     saveFramebufferC.path        = std::move(path);
-//     saveFramebufferC.framebuffer = framebuffer;
-//     pushCommand(std::move(saveFramebufferC));
-// }
-
-// void Frontend::bindTexture(TextureHandle texture, std::string uniformName, bool important)
-// {
-//     UseTextureCommand useTextureCommand;
-//     useTextureCommand.texture     = texture;
-//     useTextureCommand.uniformName = std::move(uniformName);
-//     useTextureCommand.important = important;
-//     pushCommand(std::move(useTextureCommand));
-// }
-
-
-// void Frontend::changeUsedProgram(ProgramType program)
-// {
-//     SetActiveProgramCommand setActiveProgramCommand;
-//     setActiveProgramCommand.program = program;
-
-//     pushCommand(std::move(setActiveProgramCommand));
-// }
-
-// void Frontend::changeUsedProgram(ProgramHandle program)
-// {
-//     SetActiveProgramCommand setActiveProgramCommand;
-//     setActiveProgramCommand.program = program;
-
-//     pushCommand(std::move(setActiveProgramCommand));
-// }
-
-// void Frontend::bindUBO(BufferHandle ubo, unsigned int idx)
-// {
-//     BindUBOCommand bindComm;
-//     bindComm.idx   = idx;
-//     bindComm.ubo   = ubo;
-
-//     pushCommand(std::move(bindComm));
-// }
-
-// void Frontend::setFramebufferAsTextureUniform(FramebufferHandle framebuffer, std::string uniformName, int textureIdx)
-// {
-//     SetFramebufferAsTextureUniformCommand setTextureCommand;
-//     setTextureCommand.framebuffer = framebuffer;
-//     setTextureCommand.uniformName = std::move(uniformName);
-//     setTextureCommand.textureIdx  = textureIdx;
-//     pushCommand(std::move(setTextureCommand));
-// }
-
-// void Frontend::setFramebufferAsCubemapUniform(CubemapFramebufferHandle framebuffer, std::string uniformName, int colorIdx)
-// {
-//     SetFramebufferAsTextureUniformCommand setTextureCommand;
-//     setTextureCommand.framebuffer = framebuffer;
-//     setTextureCommand.uniformName = std::move(uniformName);
-//     setTextureCommand.textureIdx  = colorIdx;
-//     pushCommand(std::move(setTextureCommand));
-// }
-
-// void Frontend::setViewport(vec2 position, vec2 dimmension)
-// {
-//     SetViewportCommand setViewportCommand;
-//     setViewportCommand.position = position;
-//     setViewportCommand.size     = dimmension;
-//     pushCommand(std::move(setViewportCommand));
-// }
-
-// void Frontend::resizeTexture(TextureHandle texture, unsigned int width, unsigned int height)
-// {
-//     UpdateTextureCommand update;
-//     update.texture = texture;
-//     update.width    = width;
-//     update.height   = height;
-//     pushCommand(std::move(update));
-// }
-
-// void Frontend::setTextureFormat(TextureHandle texture, TextureFormat format)
-// {
-//     UpdateTextureCommand update;
-//     update.texture   = texture;
-//     update.newFormat = format;
-//     pushCommand(std::move(update));
-// }
-
-// void Frontend::updateCubemap(CubemapHandle cubemap, unsigned int resolution)
-// {
-//     UpdateCubemapCommand update;
-//     update.cubemap    = cubemap;
-//     update.resolution = resolution;
-//     pushCommand(std::move(update));
-// }
-
-// void Frontend::addDebugMsg(std::string message)
-// {
-//     DebugMsgCommand debug;
-//     debug.msg = std::move(message);
-//     pushCommand(std::move(debug));
-// }
-
-// void Frontend::submitDebugLine(vec3 start, vec3 end, vec3 color)
-// {
-//     DrawDebugLineCommand drawCommand;
-//     drawCommand.start = start;
-//     drawCommand.end   = end;
-//     pushCommand(std::move(drawCommand));
-// }
-
 void Frontend::drawDebug()
 {
     // RenderCommand command;
@@ -337,14 +221,18 @@ RenderGraphExecution Frontend::buildFrameExecution()
     RenderGraphExecution execution(m_renderGraph);
 
     // A single compiled shadow pass is invoked once for every light view.
-    auto lightDevices = m_lightManager.getLightsDevices();
-    for (auto& device : lightDevices) {
+    auto lightsData = m_lightManager.getLightsData();
+    vec2 viewportDimmension = vec2(1024, 1024);
+    for (auto& light : lightsData) {
+        if(!light.castShadow)
+            continue;
         auto& invocation = execution.addInvocation(m_passShadowId);
         invocation.clearColor = vec4(0.0f);
-        invocation.viewportPosition = device->viewportPosition;
-        invocation.viewportSize = device->viewportDimmension;
-        invocation.targetLayer = device->targetDepthLayer;
-        invocation.viewParameters["lightSpaceMatrix"] = device->getProjection() * device->getView();
+        // invocation.viewportPosition = light.;
+        invocation.viewportSize = viewportDimmension;
+        invocation.targetLayer = light.shadowMapLayer;
+        auto proj = light.getProjection(viewportDimmension);
+        invocation.viewParameters["lightSpaceMatrix"] = proj * CameraManager::getInstance().processViewMatrix(light.transformationMatrix);
         invocation.items = m_frameContext.retrieveOpaqueRenders();
     }
 

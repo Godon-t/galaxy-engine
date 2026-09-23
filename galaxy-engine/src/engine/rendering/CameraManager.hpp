@@ -25,10 +25,9 @@ public:
     bool hasCamera();
     const std::shared_ptr<Camera> getCurrentCamera();
 
-    static mat4 processProjectionMatrix(vec2 viewPortDimmensions);
+    static mat4 processProjectionMatrix(vec2 viewPortDimmensions, float zNear = 0.1f, float zFar = 9999.0f, float outerCutoffAngle = 22.5f);
     static mat4 processViewMatrix(const mat4& transform);
     static mat4 processViewMatrix(std::shared_ptr<Camera> camera);
-    static mat4 processViewMatrix(mat4& transform);
     static inline CameraManager& getInstance() { return *s_instance; }
 };
 }

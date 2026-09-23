@@ -3,10 +3,6 @@ Id: 7857652255564026288
 Root:
   Type: Node
   Childs:
-    - Type: EnvironmentNode
-      Childs:
-        []
-      EnvID: 1097610545970168729
     - Type: Sprite3D
       Childs:
         []
@@ -39,9 +35,9 @@ Root:
             Rotation: [0, -0, 0]
             Scale: [1, 1, 1]
       Transform:
-        Position: [52, 58, 70]
-        Rotation: [-1.5707964, 0, 1.5707964]
-        Scale: [0.1, 0.1, 0.1]
+        Position: [8, 2, 0]
+        Rotation: [-1.5707964, 0, 3.1415927]
+        Scale: [0.01, 0.01, 0.01]
     - Type: GINode
       Childs:
         []
@@ -52,16 +48,6 @@ Root:
       Grid: [7, 7, 7]
       SpaceBetween: 42
       ProbeResolution: 64
-    - Type: PointLight
-      Childs:
-        []
-      Transform:
-        Position: [-32, 100, 20]
-        Rotation: [0, 1.5969763, 0]
-        Scale: [1, 1, 1]
-      Intensity: 500
-      Color: [1, 0.4745098, 1]
-      Range: 500
     - Type: Node3D
       Childs:
         - Type: Node3D
@@ -157,7 +143,7 @@ Root:
       Transform:
         Position: [0, -4, 0]
         Rotation: [0, -0, 0]
-        Scale: [100, 100, 100]
+        Scale: [10, 10, 10]
     - Type: CameraNode
       Childs:
         []
@@ -165,3 +151,16 @@ Root:
         Position: [-103, 147, 1]
         Rotation: [0, 1.2601277, 0]
         Scale: [1, 1, 1]
+    - Type: SpotLight
+      Childs:
+        []
+      Transform:
+        Position: [0, 0, 23]
+        Rotation: [0, 0, 0]
+        Scale: [1, 1, 1]
+      Intensity: 7
+      Color: [0.67058825, 0.84705883, 0.6313726]
+      Range: 1000
+      Shadows: true
+      InnerCutoffAngle: 31.023
+      OuterCutoffAngle: 45

@@ -37,7 +37,7 @@ public:
     Sphere getMeshBoundingVolume(GeometryHandle mesh);
     void clearMesh(GeometryHandle mesh);
 
-    TextureHandle instantiateTexture(TextureFormat format, vec2 size);
+    TextureHandle instantiateTexture(TextureFormat format, vec2 size, size_t layerCount = 0);
     TextureHandle instantiateTexture(ResourceHandle<Image> image);
     void setTextureWrap(TextureHandle texture, TextureWrap wrapS, TextureWrap wrapT);
     void clearTexture(TextureHandle texture);

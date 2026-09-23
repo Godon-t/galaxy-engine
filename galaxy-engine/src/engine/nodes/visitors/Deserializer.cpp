@@ -130,35 +130,24 @@ void SceneDeSerializer::visit(EnvironmentNode& node)
 void SceneDeSerializer::deserializeLightCommon(Light& node)
 {
     visit(static_cast<Node3D&>(node));
-    if (m_currentYAMLNode["Intensity"]) {
-        node.setIntensity(m_currentYAMLNode["Intensity"].as<float>());
-    }
-    if (m_currentYAMLNode["Color"]) {
-        node.setColor(m_currentYAMLNode["Color"].as<vec3>());
-    }
-    if (m_currentYAMLNode["Range"]) {
-        node.setRange(m_currentYAMLNode["Range"].as<float>());
-    }
+    node.setIntensity(m_currentYAMLNode["Intensity"].as<float>());
+    node.setColor(m_currentYAMLNode["Color"].as<vec3>());
+    node.setRange(m_currentYAMLNode["Range"].as<float>());
+    node.setCastShadows(m_currentYAMLNode["Shadows"].as<bool>());
 }
 
 void SceneDeSerializer::visit(SpotLight& node)
 {
     deserializeLightCommon(static_cast<Light&>(node));
-
-    // if (m_currentYAMLNode["CutoffAngle"]) {
-    //     node.setCutoffAngle(m_currentYAMLNode["CutoffAngle"].as<float>());
-    // }
-    // if (m_currentYAMLNode["OuterCutoffAngle"]) {
-    //     node.setOuterCutoffAngle(m_currentYAMLNode["OuterCutoffAngle"].as<float>());
-    // }
-    // if (m_currentYAMLNode["CastShadows"]) {
-    //     node.setCastShadows(m_currentYAMLNode["CastShadows"].as<bool>());
-    // }
+    node.setInnerCutoffAngle(m_currentYAMLNode["InnerCutoffAngle"].as<float>());
+    node.setOuterCutoffAngle(m_currentYAMLNode["OuterCutoffAngle"].as<float>());
+    node.updateLight();
 }
 
 void SceneDeSerializer::visit(PointLight& node)
 {
     deserializeLightCommon(static_cast<Light&>(node));
+    node.updateLight();
 }
 
 void SceneDeSerializer::visit(GINode& node)

@@ -68,7 +68,6 @@ public:
         
         cam->camera = node.getCamera();
         cam->renderScene = true;
-        cam->targetFramebuffer = cameraFramebuffer;
         Renderer::getInstance().getFrontend().addRenderDevice(std::move(cam));
         
         
@@ -111,6 +110,12 @@ public:
             modified = true;
         }
 
+        bool castShadows = node.getCastShadows();
+        if (ImGui::Checkbox("Cast Shadows", &castShadows)) {
+            node.setCastShadows(castShadows);
+            modified = true;
+        }
+
         return modified;
     }
     void visit(SpotLight& node)
@@ -118,22 +123,19 @@ public:
         bool modified = visit(static_cast<Light&>(node));
 
         ImGui::SeparatorText("SpotLight Properties");
-        float cutoffAngle = node.getCutoffAngle();
-        if (ImGui::SliderFloat("Cutoff Angle", &cutoffAngle, 0.0f, 90.0f)) {
-            node.setCutoffAngle(cutoffAngle);
+        float innerCutoffAngle = node.getInnerCutoffAngle();
+        if (ImGui::SliderFloat("Inner Cutoff Angle", &innerCutoffAngle, 0.0f, 45.0f)) {
+            node.setInnerCutoffAngle(innerCutoffAngle);
+            modified = true;
         }
-
+        
         float outerCutoffAngle = node.getOuterCutoffAngle();
-        if (ImGui::SliderFloat("Outer Cutoff Angle", &outerCutoffAngle, 0.0f, 90.0f)) {
+        if (ImGui::SliderFloat("Outer Cutoff Angle", &outerCutoffAngle, 0.0f, 45.0f)) {
             node.setOuterCutoffAngle(outerCutoffAngle);
+            modified = true;
         }
 
-        bool castShadows = node.getCastShadows();
-        if (ImGui::Checkbox("Cast Shadows", &castShadows)) {
-            node.setCastShadows(castShadows);
-        }
-
-        if (ImGui::Button("Update light") || modified) {
+        if (modified) {
             node.updateLight();
         }
     }

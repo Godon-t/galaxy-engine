@@ -483,12 +483,12 @@ void Backend::setTextureWrap(TextureHandle textureHandle, TextureWrap wrapS, Tex
     }
 }
 
-TextureHandle Backend::instantiateTexture(TextureFormat format, vec2 size)
+TextureHandle Backend::instantiateTexture(TextureFormat format, vec2 size, size_t layerCount)
 {
     if (!m_textureInstances.canCreate())
         return {};
 
-    TextureHandle textureID = m_textureInstances.create(format, static_cast<int>(size.x), static_cast<int>(size.y));
+    TextureHandle textureID = m_textureInstances.create(format, static_cast<int>(size.x), static_cast<int>(size.y), static_cast<int>(layerCount));
     checkOpenGLErrors("Instantiate texture");
     return textureID;
 }

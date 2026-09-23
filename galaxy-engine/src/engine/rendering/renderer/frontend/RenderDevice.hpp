@@ -13,20 +13,16 @@ namespace Galaxy
 {
     struct RenderDevice {
         bool renderScene = false;
-        // GLX-TODO: not ideal to have 2 targets at the same time
-        FramebufferHandle targetFramebuffer;
-        CubemapFramebufferHandle targetCubemapFramebuffer;
         int targetDepthLayer = -1;
         vec2 viewportPosition = vec2(0);
         vec2 viewportDimmension = vec2(512);
 
+        // GLX-TODO: render graph already fullfill this role (in render pass)
         bool noClear = false;
         bool frustumCulling = true;
 
 
         std::vector<RenderCommand> customPostCommands;
-
-        bool useBuffer() const { return targetFramebuffer || targetCubemapFramebuffer; }
 
         virtual mat4 getView(){
             vec3 pos = vec3(0,0,0);

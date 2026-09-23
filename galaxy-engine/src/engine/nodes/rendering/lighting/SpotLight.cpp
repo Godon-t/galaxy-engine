@@ -10,8 +10,8 @@ namespace Galaxy {
 SpotLight::SpotLight(std::string name)
     : Light(name)
     , m_lightID(0)
-    , m_cutoffAngle(45.0f)
-    , m_outerCutoffAngle(55.0f)
+    , m_innerCutoffAngle(20.0f)
+    , m_outerCutoffAngle(45.0f)
     , m_castShadows(true)
     , m_initialized(false)
 {
@@ -42,6 +42,8 @@ void SpotLight::enteredRoot()
         Renderer::getInstance().getBackend().setCullMode(m_debugShadowMap, CullMode::BOTH_CULLING);
         m_initialized = true;
     }
+
+    updateLight();
 }
 
 void SpotLight::accept(Galaxy::NodeVisitor& visitor)
@@ -72,9 +74,16 @@ void SpotLight::draw()
     Node3D::draw();
 }
 
-void SpotLight::setCastShadows(bool castShadows)
+void SpotLight::setInnerCutoffAngle(float angle)
 {
-    m_castShadows = castShadows;
+    m_innerCutoffAngle = angle;
+    m_outerCutoffAngle = std::max(m_innerCutoffAngle, m_outerCutoffAngle);
+}
+
+void SpotLight::setOuterCutoffAngle(float angle)
+{
+    m_outerCutoffAngle = angle;
+    m_innerCutoffAngle = std::min(m_innerCutoffAngle, m_outerCutoffAngle);
 }
 
 void SpotLight::updateLight()
@@ -82,6 +91,10 @@ void SpotLight::updateLight()
     m_transform.computeModelMatrix();
     Renderer::getInstance().getLightManager().updateLightColor(m_lightID, m_color);
     Renderer::getInstance().getLightManager().updateLightTransform(m_lightID, getTransform()->getGlobalModelMatrix());
+    Renderer::getInstance().getLightManager().updateLightIntensity(m_lightID, m_intensity);
+    Renderer::getInstance().getLightManager().updateLightRange(m_lightID, m_range);
+    Renderer::getInstance().getLightManager().updateLightCutoffs(m_lightID, m_innerCutoffAngle, m_outerCutoffAngle);
+    Renderer::getInstance().getLightManager().updateLightCastShadow(m_lightID, m_castShadows);
 }
 
 vec3 SpotLight::getDirection() const

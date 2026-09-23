@@ -121,15 +121,17 @@ void Texture::resize(int width, int height)
 
 void Texture::resize(int width, int height, int depthLayerCount)
 {
-    if (depthLayerCount == static_cast<int>(m_layerCount)) {
-        resize(width, height);
+    if (
+        m_id != 0 && 
+        width == m_width && 
+        height == m_height &&
+        depthLayerCount == static_cast<int>(m_layerCount))
         return;
-    }
 
-    const TextureFormat keepFormat = m_format;
-    m_format     = keepFormat;
+    m_width = width;
+    m_height = height;
     m_layerCount = depthLayerCount;
-    resize(width, height);
+    regenerate();
 }
 
 void Texture::setFormat(TextureFormat format)

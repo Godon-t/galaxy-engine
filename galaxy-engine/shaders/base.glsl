@@ -57,9 +57,13 @@ const int MAX_LIGHT    = 32;
 uniform int lightCount = 3;
 uniform sampler2DArray shadowMaps;
 
+const int TYPE_POINTLIGHT = 0;
+const int TYPE_SPOTLIGHT = 1;
+
 layout(std140, binding = 0) uniform LightBlock
 {
     vec4 positions[MAX_LIGHT];
+    vec4 directions[MAX_LIGHT];
     vec4 colors[MAX_LIGHT];
     vec4 params[MAX_LIGHT];
     ivec4 shadowMapLayers[MAX_LIGHT];
@@ -202,13 +206,16 @@ void main()
 
     // reflectance equation
     vec3 Lo             = vec3(0.0);
-    vec3 directDiffuse  = vec3(0.0);
-    vec3 directSpecular = vec3(0.0);
 
     for (int i = 0; i < lightCount; ++i) {
         // calculate per-light radiance
-        float intensity = lightData.params[i].y;
-        float range     = lightData.params[i].z;
+        float intensity = lightData.params[i].x;
+        float range     = lightData.params[i].y;
+        float innerCutoff     = lightData.params[i].z;
+        float outerCutoff     = lightData.params[i].a;
+        vec3 direction = -lightData.directions[i].xyz;
+        int type = lightData.shadowMapLayers[i].y;
+        bool castShadow = lightData.shadowMapLayers[i].z != 0;
 
         vec3 L            = normalize(lightData.positions[i].xyz - v_worldPos);
         vec3 H            = normalize(V + L);
@@ -216,6 +223,16 @@ void main()
         float smoothRange = clamp(1.0 - distance / range, 0.0, 1.0);
         float attenuation = (1 / (distance * distance)) * smoothRange;
         vec3 radiance     = lightData.colors[i].xyz * intensity * attenuation;
+
+        if(type == TYPE_SPOTLIGHT){
+            float innerCos = cos(innerCutoff * 0.01);
+            float outerCos = cos(outerCutoff * 0.01);
+            float theta = dot(L, direction);
+            float coneFactor = smoothstep(outerCos, innerCos, theta);
+
+            radiance *= coneFactor;
+        }
+
 
         // cook-torrance brdf
         float NDF = DistributionGGX(N, H, roughness);
@@ -235,18 +252,13 @@ void main()
 
         // Calculer l'ombre
         vec4 lightSpacePos = lightData.lightMatrices[i] * vec4(v_worldPos, 1.0);
-        float shadow       = ShadowCalculation(lightSpacePos, lightData.shadowMapLayers[i].x);
-        float shadowFactor = 1.0 - shadow;
+        float shadowFactor = 1.0;
+        if(castShadow){
+            float shadow       = ShadowCalculation(lightSpacePos, lightData.shadowMapLayers[i].x);
+            shadowFactor = 1.0 - shadow;
+        }
 
-        vec3 diffuseTerm  = kD * albedo / PI;
-        vec3 specularTerm = specular;
-
-        vec3 lightContribution = radiance * NdotL * 50.0;
-
-        directDiffuse += shadowFactor * diffuseTerm * lightContribution;
-        directSpecular += shadowFactor * specularTerm * lightContribution;
-
-        Lo += (1.0 - shadow) * (kD * albedo / PI + specular) * radiance * NdotL * 50.f;
+        Lo += shadowFactor * (kD * albedo / PI + specular) * radiance * NdotL * 50.f;
     }
 
     // ambient lighting (we now use IBL as the ambient term)

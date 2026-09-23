@@ -33,42 +33,9 @@ public:
     void submit(GeometryHandle geometry, const Transform& transform);
     void clear(vec4& color);
 
-    // void bindTexture(TextureHandle texture, std::string uniformName, bool important = false);
-    // void attachTextureToColorFramebuffer(TextureHandle texture, FramebufferHandle framebuffer, int attachmentIdx);
-    // void attachTextureToDepthFramebuffer(TextureHandle texture, FramebufferHandle framebuffer);
-    // void attachCubemapToFramebuffer(CubemapHandle cubemap, CubemapFramebufferHandle framebuffer, int colorIdx = 0);
-    // void useCubemap(CubemapHandle cubemap, std::string uniformName);
-    // void bindFrameBuffer(FramebufferHandle framebuffer, int depthLayerIdx = -1);
-    // void bindCubemapFrameBuffer(CubemapFramebufferHandle framebuffer, int cubemapFaceIdx);
-    // void unbindFrameBuffer(FramebufferHandle framebuffer);
-    // void unbindCubemapFrameBuffer(CubemapFramebufferHandle framebuffer);
-    // void bindMaterial(MaterialHandle material);
     // TODO: rename to match setActiveProgram command
     void changeUsedProgram(ProgramType program);
     void changeUsedProgram(ProgramHandle program);
-
-    // void setUniform(std::string uniformName, bool value);
-    // void setUniform(std::string uniformName, float value);
-    // void setUniform(std::string uniformName, int value);
-    // void setUniform(std::string uniformName, mat4 value);
-    // void setUniform(std::string uniformName, vec3 value);
-    // void setUniform(std::string uniformName, ivec3 value);
-    // void setUniform(std::string uniformName, vec2 value);
-    // template <typename T>
-    // void updateUniform(BufferHandle ubo, const T& payload)
-    // {
-    //     auto updateCommand = UpdateUBOCommand::make(ubo, payload);
-    //     pushCommand(std::move(updateCommand));
-    // }
-    // void bindUBO(BufferHandle ubo, unsigned int idx);
-
-    // void setFramebufferAsTextureUniform(FramebufferHandle framebuffer, std::string uniformName, int textureIdx);
-    // void setFramebufferAsCubemapUniform(CubemapFramebufferHandle framebuffer, std::string uniformName, int colorIdx);
-
-    // void setViewport(vec2 position, vec2 dimmension);
-    // void resizeTexture(TextureHandle texture, unsigned int width, unsigned int height);
-    // void setTextureFormat(TextureHandle texture, TextureFormat format);
-    // void updateCubemap(CubemapHandle cubemap, unsigned int resolution);
 
     void addDebugMsg(std::string message);
     void submitDebugLine(vec3 start, vec3 end, vec3 color);

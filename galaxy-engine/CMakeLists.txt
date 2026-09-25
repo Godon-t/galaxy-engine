@@ -79,6 +79,7 @@ add_library(galaxy-engine
 	src/engine/nodes/rendering/EnvironmentNode.cpp
 	src/engine/nodes/rendering/Sprite3D.cpp
 	src/engine/nodes/rendering/CameraNode.cpp
+	src/engine/nodes/rendering/lighting/Light.cpp
 	src/engine/nodes/rendering/lighting/SpotLight.cpp
 	src/engine/nodes/rendering/lighting/PointLight.cpp
 	src/engine/nodes/rendering/lighting/GINode.cpp

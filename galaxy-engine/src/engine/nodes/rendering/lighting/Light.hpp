@@ -1,32 +1,38 @@
 #pragma once
 
 #include "engine/nodes/Node3D.hpp"
+#include "engine/types/Render.hpp"
 
 namespace Galaxy {
 class Light : public Node3D {
 public:
     Light(std::string name = "Light")
         : Node3D(name)
+        , m_lightID(0)
         , m_intensity(1.0f)
         , m_color(vec3(1.0f, 1.0f, 1.0f))
         , m_range(10.0f)
     {
     }
 
-    void setIntensity(float intensity) { m_intensity = intensity; }
-    inline float getIntensity() const { return m_intensity; }
+    void setIntensity(float intensity);
+    float getIntensity() const;
     
-    void setColor(const vec3& color) { m_color = color; }
-    inline vec3 getColor() const { return m_color; }
+    void setColor(const vec3& color);
+    vec3 getColor() const;
 
-    inline float getRange() const { return m_range; }
-    void setRange(float range) { m_range = range; }
+    void setRange(float range);
+    float getRange() const;
 
-    inline bool getCastShadows() const { return m_castShadows; }
-    void setCastShadows(bool castShadows){ m_castShadows = castShadows; }
+    void setCastShadows(bool castShadows);
+    bool getCastShadows() const;
 
 
 protected:
+    void onWorldTransformChanged() override;
+
+    lightID m_lightID;
+
     float m_intensity;
     vec3 m_color;
     float m_range;

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Light.hpp"
-#include "engine/types/Render.hpp"
 #include "rendering/renderer/resources/GpuResourceHandle.hpp"
 
 namespace Galaxy {
@@ -27,11 +26,7 @@ public:
     void setInnerCutoffAngle(float angle);
     void setOuterCutoffAngle(float angle);
 
-    void updateLight();
-
 private:
-    lightID m_lightID;
-    GeometryHandle m_debugShadowMap; // For debugging purposes
     GeometryHandle m_visualPyramid; // Mesh for the pyramid visualisation
 
     float m_innerCutoffAngle;

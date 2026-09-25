@@ -9,7 +9,6 @@ namespace Galaxy {
 
 SpotLight::SpotLight(std::string name)
     : Light(name)
-    , m_lightID(0)
     , m_innerCutoffAngle(20.0f)
     , m_outerCutoffAngle(45.0f)
     , m_castShadows(true)
@@ -21,8 +20,6 @@ SpotLight::~SpotLight()
 {
     if (m_visualPyramid)
         Renderer::getInstance().getBackend().clearMesh(m_visualPyramid);
-    if (m_debugShadowMap)
-        Renderer::getInstance().getBackend().clearMesh(m_debugShadowMap);
 
     Renderer::getInstance().getLightManager().unregisterLight(m_lightID);
 }
@@ -31,19 +28,21 @@ void SpotLight::enteredRoot()
 {
     LightData desc;
     desc.type                 = LightType::SPOTLIGHT;
-    desc.transformationMatrix = getTransform()->getGlobalModelMatrix();
+    desc.transformationMatrix = getTransform().getGlobalModelMatrix();
+    desc.castShadow = m_castShadows;
+    desc.color = m_color;
+    desc.range = m_range;
+    desc.intensity = m_intensity;
+    desc.innerCutoff = m_innerCutoffAngle;
+    desc.outerCutoff = m_outerCutoffAngle;
 
     m_lightID = Renderer::getInstance().getLightManager().registerLight(desc);
     // Créer la pyramide de visualisation
     // La base de la pyramide est orientée dans la direction de projection (vers -Z local)
     if (!m_visualPyramid) {
         m_visualPyramid  = Renderer::getInstance().getBackend().generatePyramid(0.3f, 0.5f, []() {});
-        m_debugShadowMap = Renderer::getInstance().getBackend().generateQuad(vec2(2, 2), [] {});
-        Renderer::getInstance().getBackend().setCullMode(m_debugShadowMap, CullMode::BOTH_CULLING);
         m_initialized = true;
     }
-
-    updateLight();
 }
 
 void SpotLight::accept(Galaxy::NodeVisitor& visitor)
@@ -78,30 +77,21 @@ void SpotLight::setInnerCutoffAngle(float angle)
 {
     m_innerCutoffAngle = angle;
     m_outerCutoffAngle = std::max(m_innerCutoffAngle, m_outerCutoffAngle);
+    Renderer::getInstance().getLightManager().updateLightCutoffs(m_lightID, m_innerCutoffAngle, m_outerCutoffAngle);
 }
 
 void SpotLight::setOuterCutoffAngle(float angle)
 {
     m_outerCutoffAngle = angle;
     m_innerCutoffAngle = std::min(m_innerCutoffAngle, m_outerCutoffAngle);
-}
-
-void SpotLight::updateLight()
-{
-    m_transform.computeModelMatrix();
-    Renderer::getInstance().getLightManager().updateLightColor(m_lightID, m_color);
-    Renderer::getInstance().getLightManager().updateLightTransform(m_lightID, getTransform()->getGlobalModelMatrix());
-    Renderer::getInstance().getLightManager().updateLightIntensity(m_lightID, m_intensity);
-    Renderer::getInstance().getLightManager().updateLightRange(m_lightID, m_range);
     Renderer::getInstance().getLightManager().updateLightCutoffs(m_lightID, m_innerCutoffAngle, m_outerCutoffAngle);
-    Renderer::getInstance().getLightManager().updateLightCastShadow(m_lightID, m_castShadows);
 }
 
 vec3 SpotLight::getDirection() const
 {
 
     vec3 dir = vec3(0, 0, -1);
-    return normalize(getTransform()->getLocalRotationQuat() * dir);
+    return normalize(getTransform().getLocalRotationQuat() * dir);
 }
 
 mat4 SpotLight::getLightSpaceMatrix() const
@@ -112,7 +102,7 @@ mat4 SpotLight::getLightSpaceMatrix() const
     mat4 projection = glm::perspective(fov, aspect, 0.1f, m_range);
 
     // Créer la matrice de vue depuis la position et direction de la lumière
-    vec3 position  = getTransform()->getGlobalPosition();
+    vec3 position  = getTransform().getGlobalPosition();
     vec3 direction = getDirection();
     vec3 up        = vec3(0, 1, 0);
 

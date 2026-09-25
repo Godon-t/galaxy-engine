@@ -112,7 +112,7 @@ void EditorLayer::onUpdate()
 
         // // PASS 1: Generate shadow map if a spotlight exists and casts shadows
         // if (mainLight && mainLight->getCastShadows()) {
-        //     vec3 lightPos = mainLight->getTransform()->getGlobalPosition();
+        //     vec3 lightPos = mainLight->getTransform().getGlobalPosition();
         //     vec3 lightDir = mainLight->getDirection();
         //     float fov = mainLight->getOuterCutoffAngle() * 2.0f;
         //     float range = mainLight->getRange();
@@ -336,8 +336,8 @@ void EditorLayer::onEvent(Event& evt)
         m_cameraSpeed = m_cameraSpeed <= 0 ? 0.0001 : m_cameraSpeed;
     } else if (evt.getEventType() == EventType::MouseMotion && m_rightClickDown) {
         MouseMotionEvent& mouseMotion = (MouseMotionEvent&)evt;
-        m_editorCamera->getTransform()->globalRotateY(mouseMotion.getDeltaX() * 0.001);
-        m_editorCamera->getTransform()->localRotateX(mouseMotion.getDeltaY() * 0.001);
+        m_editorCamera->getTransform().globalRotateY(mouseMotion.getDeltaX() * 0.001);
+        m_editorCamera->getTransform().localRotateX(mouseMotion.getDeltaY() * 0.001);
     } else if (evt.getEventType() == EventType::MouseButtonInteract) {
         MouseButtonEvent& mouseBtn = (MouseButtonEvent&)evt;
         if (mouseBtn.getButton() == 1) {

@@ -1,13 +1,12 @@
 #include "PointLight.hpp"
 
-#include "engine/rendering/renderer/LightManager.hpp"
 #include "engine/rendering/renderer/Renderer.hpp"
+
 
 namespace Galaxy {
 
 PointLight::PointLight(std::string name)
     : Light(name)
-    , m_lightID(0)
 {
 }
 
@@ -27,10 +26,13 @@ void PointLight::enteredRoot()
 
     LightData desc;
     desc.type                 = LightType::POINTLIGHT;
-    desc.transformationMatrix = getTransform()->getGlobalModelMatrix();
-    m_lightID                 = Renderer::getInstance().getLightManager().registerLight(desc);
+    desc.transformationMatrix = getTransform().getGlobalModelMatrix();
+    desc.castShadow = m_castShadows;
+    desc.color = m_color;
+    desc.range = m_range;
+    desc.intensity = m_intensity;
 
-    updateLight();
+    m_lightID                 = Renderer::getInstance().getLightManager().registerLight(desc);
 
     // Create visual cube
     m_visualCube = Renderer::getInstance().getBackend().generateCube(1.f, false, []() {});
@@ -49,18 +51,7 @@ void PointLight::draw()
     // if (m_visualCubeID && ri.canDrawDebug()) {
     //     ri.changeUsedProgram(UNICOLOR);
     //     ri.setUniform("objectColor", m_color);
-    //     ri.submit(m_visualCubeID, *getTransform());
+    //     ri.submit(m_visualCubeID, getTransform());
     // }
 }
-
-void PointLight::updateLight()
-{
-    m_transform.computeModelMatrix();
-    Renderer::getInstance().getLightManager().updateLightColor(m_lightID, m_color);
-    Renderer::getInstance().getLightManager().updateLightTransform(m_lightID, getTransform()->getGlobalModelMatrix());
-    Renderer::getInstance().getLightManager().updateLightIntensity(m_lightID, m_intensity);
-    Renderer::getInstance().getLightManager().updateLightRange(m_lightID, m_range);
-    Renderer::getInstance().getLightManager().updateLightCastShadow(m_lightID, m_castShadows);
-}
-
 }

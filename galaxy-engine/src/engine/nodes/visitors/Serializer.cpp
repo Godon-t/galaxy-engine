@@ -57,9 +57,9 @@ void SceneSerializer::visit(Node3D& node)
 {
     visit(static_cast<Node&>(node));
     m_yaml << YAML::Key << "Transform" << YAML::Value << YAML::BeginMap;
-    m_yaml << YAML::Key << "Position" << YAML::Value << node.getTransform()->getLocalPosition();
-    m_yaml << YAML::Key << "Rotation" << YAML::Value << node.getTransform()->getLocalRotation();
-    m_yaml << YAML::Key << "Scale" << YAML::Value << node.getTransform()->getLocalScale();
+    m_yaml << YAML::Key << "Position" << YAML::Value << node.getTransform().getLocalPosition();
+    m_yaml << YAML::Key << "Rotation" << YAML::Value << node.getTransform().getLocalRotation();
+    m_yaml << YAML::Key << "Scale" << YAML::Value << node.getTransform().getLocalScale();
     m_yaml << YAML::EndMap;
 }
 

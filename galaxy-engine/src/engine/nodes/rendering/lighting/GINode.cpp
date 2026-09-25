@@ -32,7 +32,7 @@ void GINode::draw()
 void GINode::updateProbes()
 {
     auto& lm = Renderer::getInstance().getLightManager();
-    lm.resizeProbeFieldGrid(m_probeGrid.x, m_probeGrid.y, m_probeGrid.z, m_spaceBetween, m_probeResolution, getTransform()->getGlobalPosition());
+    lm.resizeProbeFieldGrid(m_probeGrid.x, m_probeGrid.y, m_probeGrid.z, m_spaceBetween, m_probeResolution, getTransform().getGlobalPosition());
     Renderer::getInstance().getLightManager().updateProbeField();
 
     auto probePositions = Renderer::getInstance().getLightManager().getProbePositions();

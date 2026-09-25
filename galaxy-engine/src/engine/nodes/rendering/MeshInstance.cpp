@@ -26,13 +26,13 @@ void MeshInstance::draw()
     std::optional<MaterialHandle> material;
     if (m_materialHandle)
         material = m_materialHandle;
-    Renderer::getInstance().addObjectToScene(m_geometry, material, *getTransform());
+    Renderer::getInstance().addObjectToScene(m_geometry, material, getTransform());
 }
 
 void MeshInstance::lightPassDraw()
 {
     // if (m_geometry)
-    //     Renderer::getInstance().getFrontend().submit(m_geometry, *getTransform());
+    //     Renderer::getInstance().getFrontend().submit(m_geometry, getTransform());
 }
 
 void MeshInstance::accept(NodeVisitor& visitor)

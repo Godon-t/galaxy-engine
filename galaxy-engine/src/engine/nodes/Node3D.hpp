@@ -10,14 +10,16 @@ protected:
     Transform m_transform;
     virtual void enteringRoot() override {};
     virtual void enteredRoot() override {};
+    virtual void onWorldTransformChanged() {}
+
 
 public:
     Node3D(std::string name = "Node3D")
         : Node(name)
     {
     }
-    Transform* getTransform() { return &m_transform; }
-    const Transform* getTransform() const { return &m_transform; }
+    const Transform& getTransform() const { return m_transform; }
+    Transform& getTransform() { return m_transform; }
     void setTransform(Transform& transform);
     
     virtual void updateTransformAndChilds(const mat4& matrix) override;

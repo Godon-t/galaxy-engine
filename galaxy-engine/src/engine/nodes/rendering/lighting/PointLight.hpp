@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Light.hpp"
-#include "engine/types/Render.hpp"
 #include "rendering/renderer/resources/GpuResourceHandle.hpp"
 
 namespace Galaxy {
@@ -18,12 +17,7 @@ public:
 
     virtual void draw() override;
 
-    void updateLight();
-
 private:
-    lightID m_lightID;
     GeometryHandle m_visualCube;
-
-    // bool m_castShadows;
 };
 }

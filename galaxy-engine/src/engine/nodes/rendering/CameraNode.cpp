@@ -61,7 +61,7 @@ bool CameraNode::getCurrent()
 vec3 CameraNode::getForward() const
 {
     vec3 fwd = vec3(0, 0, -1);
-    return normalize(getTransform()->getLocalRotationQuat() * fwd);
+    return normalize(getTransform().getLocalRotationQuat() * fwd);
 }
 const std::shared_ptr<Camera> CameraNode::getCamera()
 {

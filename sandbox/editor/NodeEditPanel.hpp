@@ -23,7 +23,7 @@ public:
     void visit(Node3D& node)
     {
         visit(static_cast<Node&>(node));
-        transformEdit(*node.getTransform());
+        transformEdit(node.getTransform());
     }
     void visit(MeshInstance& node)
     {
@@ -88,65 +88,49 @@ public:
             node.testingFunc();
         }
     }
-    bool visit(Light& node)
+    void visit(Light& node)
     {
         visit(static_cast<Node3D&>(node));
-        bool modified = node.getTransform()->dirty;
+
         ImGui::SeparatorText("Light Properties");
         float intensity = node.getIntensity();
         if (ImGui::DragFloat("Intensity", &intensity, 0.01f, 0.0f, 10.0f)) {
             node.setIntensity(intensity);
-            modified = true;
         }
         vec3 color = node.getColor();
         if (ImGui::ColorEdit3("Color", &color[0])) {
             node.setColor(color);
-            modified = true;
         }
 
         float range = node.getRange();
         if (ImGui::DragFloat("Range", &range, 0.1f, 0.1f, 100.0f)) {
             node.setRange(range);
-            modified = true;
         }
 
         bool castShadows = node.getCastShadows();
         if (ImGui::Checkbox("Cast Shadows", &castShadows)) {
             node.setCastShadows(castShadows);
-            modified = true;
         }
-
-        return modified;
     }
     void visit(SpotLight& node)
     {
-        bool modified = visit(static_cast<Light&>(node));
+        visit(static_cast<Light&>(node));
 
         ImGui::SeparatorText("SpotLight Properties");
         float innerCutoffAngle = node.getInnerCutoffAngle();
         if (ImGui::SliderFloat("Inner Cutoff Angle", &innerCutoffAngle, 0.0f, 45.0f)) {
             node.setInnerCutoffAngle(innerCutoffAngle);
-            modified = true;
         }
         
         float outerCutoffAngle = node.getOuterCutoffAngle();
         if (ImGui::SliderFloat("Outer Cutoff Angle", &outerCutoffAngle, 0.0f, 45.0f)) {
             node.setOuterCutoffAngle(outerCutoffAngle);
-            modified = true;
-        }
-
-        if (modified) {
-            node.updateLight();
         }
     }
 
     void visit(PointLight& node) override
     {
-        bool modified = visit(static_cast<Light&>(node));
-
-        if (modified) {
-            node.updateLight();
-        }
+        visit(static_cast<Light&>(node));
     }
 
     void visit(GINode& node)

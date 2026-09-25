@@ -141,13 +141,11 @@ void SceneDeSerializer::visit(SpotLight& node)
     deserializeLightCommon(static_cast<Light&>(node));
     node.setInnerCutoffAngle(m_currentYAMLNode["InnerCutoffAngle"].as<float>());
     node.setOuterCutoffAngle(m_currentYAMLNode["OuterCutoffAngle"].as<float>());
-    node.updateLight();
 }
 
 void SceneDeSerializer::visit(PointLight& node)
 {
     deserializeLightCommon(static_cast<Light&>(node));
-    node.updateLight();
 }
 
 void SceneDeSerializer::visit(GINode& node)

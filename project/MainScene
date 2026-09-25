@@ -34,8 +34,21 @@ Root:
             Position: [0, 0, 0]
             Rotation: [0, -0, 0]
             Scale: [1, 1, 1]
+        - Type: SpotLight
+          Childs:
+            []
+          Transform:
+            Position: [748, 2000, -859]
+            Rotation: [-2.0804324, 0.02094395, 0]
+            Scale: [1, 1, 1]
+          Intensity: 7
+          Color: [1, 1, 1]
+          Range: 500
+          Shadows: true
+          InnerCutoffAngle: 24.546
+          OuterCutoffAngle: 45
       Transform:
-        Position: [8, 2, 0]
+        Position: [8, 1, 1]
         Rotation: [-1.5707964, 0, 3.1415927]
         Scale: [0.01, 0.01, 0.01]
     - Type: GINode
@@ -151,16 +164,3 @@ Root:
         Position: [-103, 147, 1]
         Rotation: [0, 1.2601277, 0]
         Scale: [1, 1, 1]
-    - Type: SpotLight
-      Childs:
-        []
-      Transform:
-        Position: [0, 0, 23]
-        Rotation: [0, 0, 0]
-        Scale: [1, 1, 1]
-      Intensity: 7
-      Color: [0.67058825, 0.84705883, 0.6313726]
-      Range: 1000
-      Shadows: true
-      InnerCutoffAngle: 31.023
-      OuterCutoffAngle: 45

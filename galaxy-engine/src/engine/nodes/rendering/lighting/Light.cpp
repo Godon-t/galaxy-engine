@@ -5,6 +5,21 @@
 
 namespace Galaxy
 {
+    Light::Light(std::string name): 
+        Node3D(name)
+        , m_lightID(0)
+        , m_intensity(1.0f)
+        , m_color(vec3(1.0f, 1.0f, 1.0f))
+        , m_range(10.0f)
+    {
+    }
+
+    Light::~Light()
+    {
+        if(m_lightID)
+            Renderer::getInstance().getLightManager().unregisterLight(m_lightID);
+    }
+
     void Light::setIntensity(float intensity){ 
         m_intensity = intensity; 
         Renderer::getInstance().getLightManager().updateLightIntensity(m_lightID, m_intensity);

@@ -6,14 +6,8 @@
 namespace Galaxy {
 class Light : public Node3D {
 public:
-    Light(std::string name = "Light")
-        : Node3D(name)
-        , m_lightID(0)
-        , m_intensity(1.0f)
-        , m_color(vec3(1.0f, 1.0f, 1.0f))
-        , m_range(10.0f)
-    {
-    }
+    Light(std::string name = "Light");
+    ~Light();
 
     void setIntensity(float intensity);
     float getIntensity() const;

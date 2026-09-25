@@ -13,7 +13,11 @@ LightManager::LightManager()
     , m_textureHeight(1024)
     , m_probeResolution(512)
     , m_dirty(true)
+    , m_maxLightCount(32)
 {
+    for(size_t i=0; i<m_maxLightCount; i++){
+        m_availableIDs.emplace(static_cast<lightID>(i));
+    }
 }
 
 LightManager::~LightManager()
@@ -51,14 +55,21 @@ void LightManager::init()
 
 int LightManager::registerLight(LightData desc)
 {
-    desc.idx                = m_currentLightCount++;
-    lightID id              = m_nextLightID++;
-    m_lights[id]            = desc;
-
-    m_lights[id].shadowMapLayer = id;
-    m_dirty = true;
-
-    return id;
+    if(!m_availableIDs.empty()){
+        lightID id              = m_availableIDs.top();
+        desc.idx                = static_cast<int>(id);
+        m_availableIDs.pop();
+        m_lights[id]            = desc;
+    
+        m_lights[id].shadowMapLayer = id;
+        m_dirty = true;
+    
+        return id;
+    } else {
+        GLX_CORE_WARN("Max light count ({0}) reached", m_maxLightCount);
+        // GLX-TODO: how to return error ?
+        return -1;
+    }
 }
 
 void LightManager::updateLightTransform(lightID id, math::mat4 transform)
@@ -101,6 +112,7 @@ void LightManager::updateLightCastShadow(lightID id, bool state)
 void LightManager::unregisterLight(int id)
 {
     m_lights.erase(id);
+    m_availableIDs.emplace(id);
     m_dirty = true;
 }
 

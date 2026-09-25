@@ -1,5 +1,7 @@
 #pragma once
 
+#include <queue>
+
 #include "engine/data/Transform.hpp"
 #include "engine/nodes/Node.hpp"
 #include "engine/nodes/rendering/lighting/SpotLight.hpp"
@@ -95,7 +97,7 @@ public:
 
     unsigned int getProbesRadianceTexture();
 
-    unsigned int getLightCount() const {return m_currentLightCount;}
+    unsigned int getLightCount() const {return m_lights.size();}
 
     void updateProbeField();
     void updateBias(float newValue);
@@ -119,8 +121,8 @@ private:
     };
 
     std::unordered_map<lightID, LightData> m_lights;
-    lightID m_nextLightID   = 0;
-    int m_currentLightCount = 0;
+    std::priority_queue<lightID, std::vector<lightID>, std::greater<lightID>> m_availableIDs; 
+    int m_maxLightCount = 32;
 
     FramebufferHandle m_shadowMapFramebuffer;
 

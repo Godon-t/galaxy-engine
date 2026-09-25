@@ -167,7 +167,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, int layerIndex)
 
     float currentDepth = projCoords.z;
 
-    float bias = 0.0001;
+    float bias = 0.000001;
 
     // PCF (Percentage Closer Filtering) pour adoucir les ombres
     float shadow   = 0.0;

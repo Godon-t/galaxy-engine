@@ -33,12 +33,7 @@ public:
     void submit(GeometryHandle geometry, const Transform& transform);
     void clear(vec4& color);
 
-    // TODO: rename to match setActiveProgram command
-    void changeUsedProgram(ProgramType program);
-    void changeUsedProgram(ProgramHandle program);
-
     void addDebugMsg(std::string message);
-    void submitDebugLine(vec3 start, vec3 end, vec3 color);
     void drawDebug();
 
     void addObjectToScene(GeometryHandle geometry, const Sphere& boundingVolume, std::optional<MaterialHandle> material, const Transform& transform);
@@ -78,6 +73,7 @@ private:
     RenderPassId m_passTextureId;
     RenderPassId m_passUnicolorId;
     RenderPassId m_passSkyboxId;
+    RenderPassId m_passLightingId;
     RenderPassId m_passPostprocessId;
 };
 } // namespace Galaxy

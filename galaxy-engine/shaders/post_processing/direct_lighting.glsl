@@ -1,56 +1,45 @@
 #type vertex
-#version 420 core
 
+#version 420 core
 layout(location = 0) in vec3 vertices_position_modelspace;
 layout(location = 1) in vec2 texCoord;
-layout(location = 2) in vec3 normal;
 
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 
-out vec2 v_texCoords;
-out vec3 v_worldPos;
-out vec3 v_normal;
-out vec3 v_camPos;
+out vec2 TexCoords;
 
 void main()
 {
-    v_texCoords = texCoord;
-    gl_Position = projection * view * model * vec4(vertices_position_modelspace, 1);
-
-    v_normal            = normalize(mat3(transpose(inverse(model))) * normal);
-    v_worldPos          = vec3(model * vec4(vertices_position_modelspace, 1.0));
-    v_camPos            = vec3(inverse(view)[3]);
+    TexCoords   = texCoord;
+    gl_Position = vec4(vertices_position_modelspace.xy, 0.0, 1.0);
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
 #type fragment
 #version 420 core
 
-uniform bool useIrradianceMap;
-uniform samplerCube irradianceMap;
+#include utils.glsl
 
-uniform float zFar = 9999.0;
+out vec4 color;
 
-uniform vec3 albedoVal        = vec3(1.0, 0.f, 0.f);
-uniform float metallicVal     = 0.5f;
-uniform float roughnessVal    = 0.5f;
-uniform float aoVal           = 1.f;
-uniform float transparencyVal = 1.0f;
+in vec2 TexCoords;
 
-uniform sampler2D albedoMap;
-uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D aoMap;
+uniform sampler2D albedoBuffer;
+uniform sampler2D normalBuffer;
+uniform sampler2D materialBuffer;
+uniform sampler2D depthBuffer;
 
-uniform bool useAlbedoMap    = false;
-uniform bool useNormalMap    = false;
-uniform bool useMetallicMap  = false;
-uniform bool useRoughnessMap = false;
-uniform bool useAoMap        = false;
+
+
+
+uniform mat4 inverseProjection;
+uniform mat4 inverseView;
+uniform vec3 cameraPos;
+
+
 
 // lights
 const int MAX_LIGHT    = 32;
@@ -76,21 +65,9 @@ layout(std140, binding = 0) uniform LightBlock
     int _pad3;
 } lightData;
 
-in vec2 v_texCoords;
-in vec3 v_worldPos;
-in vec3 v_normal;
-in vec3 v_camPos;
-in vec4 v_fragPosLightSpace;
 
-// GLX-TODO: rename albedo to correct name
-layout(location = 0) out vec4 gAlbedo;
-layout(location = 1) out vec4 gNormal;
-layout(location = 2) out vec4 gDepth;
 
-layout(location = 3) out vec4 gRoughness;
-layout(location = 4) out vec4 gDirect;
 
-const float PI = 3.14159265359;
 /*--------------------------------------PBR--------------------------------------*/
 float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
@@ -118,6 +95,8 @@ float GeometrySchlickGGX(float NdotV, float roughness)
     return num / denom;
 }
 
+
+
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 {
     float NdotV = max(dot(N, V), 0.0);
@@ -128,34 +107,18 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
+
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
+
 
 vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 {
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-vec3 getNormalFromNormalMap()
-{
-    // Récupère la normale en espace tangent depuis la texture
-    vec3 tangentNormal = texture2D(normalMap, v_texCoords).rgb * 2.0 - 1.0;
-
-    // Calcule les dérivées pour construire la matrice TBN
-    vec3 Q1  = dFdx(v_worldPos);
-    vec3 Q2  = dFdy(v_worldPos);
-    vec2 st1 = dFdx(v_texCoords);
-    vec2 st2 = dFdy(v_texCoords);
-
-    vec3 N   = normalize(v_normal);
-    vec3 T   = normalize(Q1 * st2.t - Q2 * st1.t);
-    vec3 B   = -normalize(cross(N, T));
-    mat3 TBN = mat3(T, B, N);
-
-    return normalize(TBN * tangentNormal);
-}
 
 float ShadowCalculation(vec4 fragPosLightSpace, int layerIndex)
 {
@@ -183,28 +146,45 @@ float ShadowCalculation(vec4 fragPosLightSpace, int layerIndex)
     }
     return shadow / 9.0;
 }
-/*--------------------------------------PBR--------------------------------------*/
+
+
 
 void main()
 {
-    vec3 albedo, normal;
-    float metallic, roughness, ao;
+    float depth = texture(depthBuffer, TexCoords).r;
 
-    float transparency = useAlbedoMap ? texture(albedoMap, v_texCoords).a : transparencyVal;
-    albedo             = useAlbedoMap ? texture(albedoMap, v_texCoords).rgb : albedoVal;
-    normal             = useNormalMap ? getNormalFromNormalMap() : v_normal;
-    metallic           = useMetallicMap ? texture(metallicMap, v_texCoords).r : metallicVal;
-    roughness          = useRoughnessMap ? texture(roughnessMap, v_texCoords).r : roughnessVal;
-    ao                 = useAoMap ? texture(aoMap, v_texCoords).r : aoVal;
+    vec3 normalEncoded = texture(normalBuffer, TexCoords).xyz;
+    vec3 normal        = normalize(normalEncoded * 2.0 - vec3(1));
+    vec3 albedo     = texture(albedoBuffer, TexCoords).rgb;
+    vec3 material = texture(materialBuffer, TexCoords).rgb;
 
+    float roughness = material.x;
+    float metallic = material.y;
+    float ao = material.z;
+
+
+
+    if (depth >= 0.999999) {
+        color = vec4(0.0);
+        return;
+    }
+
+    vec3 worldPos = reconstructWorldPos(
+        TexCoords,
+        depth,
+        inverseProjection,
+        inverseView
+    );
+
+    vec3 V = normalize(cameraPos - worldPos);
     vec3 N = normalize(normal);
-    vec3 V = normalize(v_camPos - v_worldPos);
-    vec3 R = reflect(-V, N);
-
     vec3 F0 = vec3(0.04);
-    F0      = mix(F0, albedo, metallic);
+    F0 = mix(F0, albedo, metallic);
 
-    // reflectance equation
+
+
+    // reflectance + shadow
+
     vec3 Lo             = vec3(0.0);
 
     for (int i = 0; i < lightCount; ++i) {
@@ -217,9 +197,9 @@ void main()
         int type = lightData.shadowMapLayers[i].y;
         bool castShadow = lightData.shadowMapLayers[i].z != 0;
 
-        vec3 L            = normalize(lightData.positions[i].xyz - v_worldPos);
+        vec3 L            = normalize(lightData.positions[i].xyz - worldPos);
         vec3 H            = normalize(V + L);
-        float distance    = length(lightData.positions[i].xyz - v_worldPos);
+        float distance    = length(lightData.positions[i].xyz - worldPos);
         float smoothRange = clamp(1.0 - distance / range, 0.0, 1.0);
         float attenuation = (1 / (distance * distance)) * smoothRange;
         vec3 radiance     = lightData.colors[i].xyz * intensity * attenuation;
@@ -251,7 +231,7 @@ void main()
         float NdotL = max(dot(N, L), 0.0);
 
         // Calculer l'ombre
-        vec4 lightSpacePos = lightData.lightMatrices[i] * vec4(v_worldPos, 1.0);
+        vec4 lightSpacePos = lightData.lightMatrices[i] * vec4(worldPos, 1.0);
         float shadowFactor = 1.0;
         if(castShadow){
             float shadow       = ShadowCalculation(lightSpacePos, lightData.shadowMapLayers[i].x);
@@ -266,33 +246,20 @@ void main()
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
 
-    // GLX-TODO: what does brdf mean ?
-    // vec2 brdf     = vec2(0.2);
-    // vec3 specular = prefilteredColor * (kS * brdf.x + brdf.y);
 
 
     vec3 irradiance = vec3(0.5);
     vec3 diffuse = irradiance * albedo;
-    // // vec3 ambient = (kD * diffuse + specular) * ao;
     vec3 ambient = (kD * diffuse) * ao;
     vec3 pbr     = ambient + Lo;
 
-    // pbr = pbr / (pbr + vec3(1.0));
-    // pbr = pow(pbr, vec3(1.0 / 2.2));
 
 
-    if(transparency > 0.1){
-        gDepth = vec4(length(v_camPos - v_worldPos) / zFar, ao, 0, 1);
 
-        gAlbedo.rgb = pbr;
-        gAlbedo.a   = transparency;
 
-        gNormal.rgb = (normal + vec3(1.0)) * 0.5;
-        gNormal.a = 1.0;
 
-        gRoughness = vec4(kS, ao);
-        gDirect = vec4(Lo, 1.0);
-    } else {
-        discard;
-    }
+
+
+    color.rgb = pbr * ao;
+    color.a   = 1.0;
 }

@@ -49,15 +49,10 @@ Frontend::Frontend(Backend& backend)
     opaqueDepth.name = "gDepth";
     opaqueDepth.imported = true;
     
-    GraphTextureDesc opaqueRoughness;
-    opaqueRoughness.format = TextureFormat::RGBA;
-    opaqueRoughness.name = "gRoughness";
-    opaqueRoughness.imported = true;
-    
-    GraphTextureDesc opaqueDirect;
-    opaqueDirect.format = TextureFormat::RGBA;
-    opaqueDirect.name = "gDirect";
-    opaqueDirect.imported = true;
+    GraphTextureDesc opaqueMaterial;
+    opaqueMaterial.format = TextureFormat::RGBA;
+    opaqueMaterial.name = "gMaterial";
+    opaqueMaterial.imported = true;
 
     GraphTextureDesc hardwareDepth;
     hardwareDepth.name = "hardwareDepth";
@@ -67,27 +62,22 @@ Frontend::Frontend(Backend& backend)
     
     
     
-    auto colorTexId = renderGraphDeclaration.addTexture(opaqueColor);
+    auto albedoTexId = renderGraphDeclaration.addTexture(opaqueColor);
     auto normalTexId = renderGraphDeclaration.addTexture(opaqueNormal);
-    auto depthTexId = renderGraphDeclaration.addTexture(opaqueDepth);
-    auto roughnessTexId = renderGraphDeclaration.addTexture(opaqueRoughness);
-    auto directTexId = renderGraphDeclaration.addTexture(opaqueDirect);
+    auto materialTexId = renderGraphDeclaration.addTexture(opaqueMaterial);
     auto hardwareDepthId = renderGraphDeclaration.addTexture(hardwareDepth);
     
     RenderTargetDesc step1Target;
-    step1Target.colorAttachments.push_back(colorTexId);
+    step1Target.colorAttachments.push_back(albedoTexId);
     step1Target.colorAttachments.push_back(normalTexId);
-    // GLX-TODO: write depth inside color attachment ??
-    step1Target.colorAttachments.push_back(depthTexId);
-    step1Target.colorAttachments.push_back(roughnessTexId);
-    step1Target.colorAttachments.push_back(directTexId);
+    step1Target.colorAttachments.push_back(materialTexId);
     step1Target.depthAttachment = hardwareDepthId;
     
     TargetId step1Id = renderGraphDeclaration.addTarget(step1Target);
 
 
     RenderPassDesc opaquePBRDesc;
-    opaquePBRDesc.associatedProgram = backend.loadShader(engineRes("shaders/base.glsl"));
+    opaquePBRDesc.associatedProgram = backend.loadShader(engineRes("shaders/material.glsl"));
     opaquePBRDesc.name = "opaque_pbr";
     opaquePBRDesc.targetId = step1Id;
     opaquePBRDesc.state.clear = true;
@@ -121,6 +111,31 @@ Frontend::Frontend(Backend& backend)
 
     opaquePBRDesc.inputTextures.push_back({shadowTextureId, "shadowMaps"});
     transparentDesc.inputTextures.push_back({shadowTextureId, "shadowMaps"});
+
+
+    // Lighting step
+    GraphTextureDesc lightingColor;
+    lightingColor.format = TextureFormat::RGBA;
+    // lightingColor.filter = TextureFiltering::NEAREST;
+    lightingColor.name = "lighting";
+    lightingColor.imported = true;
+    auto lightingColorTexId = renderGraphDeclaration.addTexture(lightingColor);
+    RenderTargetDesc lightingStepTarget;
+    lightingStepTarget.colorAttachments.push_back(lightingColorTexId);
+    TargetId lightingStepTargetId = renderGraphDeclaration.addTarget(lightingStepTarget);
+
+    RenderPassDesc lightingDesc(opaquePBRDesc);
+    lightingDesc.associatedProgram = backend.loadShader(engineRes("shaders/post_processing/direct_lighting.glsl"));
+    lightingDesc.name = "lighting";
+    lightingDesc.targetId = lightingStepTargetId;
+    lightingDesc.inputTextures.push_back({albedoTexId, "albedoBuffer"});
+    lightingDesc.inputTextures.push_back({normalTexId, "normalBuffer"});
+    lightingDesc.inputTextures.push_back({materialTexId, "materialBuffer"});
+    lightingDesc.inputTextures.push_back({hardwareDepthId, "depthBuffer"});
+    lightingDesc.state.clear = true;
+
+
+
     
     
     GraphTextureDesc finalColor;
@@ -136,18 +151,17 @@ Frontend::Frontend(Backend& backend)
     noPostProcessingDesc.targetId = finalStepTargetId;
     noPostProcessingDesc.associatedProgram = backend.loadShader(engineRes("shaders/post_processing/none.glsl"));
     noPostProcessingDesc.name = "post_processing_no";
-    noPostProcessingDesc.inputTextures.push_back({colorTexId, "sceneBuffer"});
+    noPostProcessingDesc.inputTextures.push_back({lightingColorTexId, "sceneBuffer"});
     noPostProcessingDesc.state.clear = true;
     
     RenderPassDesc postProcessingDesc;
     postProcessingDesc.targetId = finalStepTargetId;
     postProcessingDesc.associatedProgram = backend.loadShader(engineRes("shaders/post_processing/probe_gi.glsl"));
     postProcessingDesc.name = "post_processing_a";
-    postProcessingDesc.inputTextures.push_back({colorTexId, "sceneBuffer"});
+    postProcessingDesc.inputTextures.push_back({lightingColorTexId, "sceneBuffer"});
     postProcessingDesc.inputTextures.push_back({normalTexId, "normalBuffer"});
-    postProcessingDesc.inputTextures.push_back({depthTexId, "depthBuffer"});
-    postProcessingDesc.inputTextures.push_back({roughnessTexId, "roughnessBuffer"});
-    postProcessingDesc.inputTextures.push_back({directTexId, "directBuffer"});
+    postProcessingDesc.inputTextures.push_back({hardwareDepthId, "depthBuffer"});
+    postProcessingDesc.inputTextures.push_back({materialTexId, "materialBuffer"});
     postProcessingDesc.state.clear = true;
     
     
@@ -155,9 +169,9 @@ Frontend::Frontend(Backend& backend)
     postProcessingSSGIDesc.targetId = finalStepTargetId;
     postProcessingSSGIDesc.associatedProgram = backend.loadShader(engineRes("shaders/post_processing/ssgi.glsl"));
     postProcessingSSGIDesc.name = "post_processing_b";
-    postProcessingSSGIDesc.inputTextures.push_back({colorTexId, "sceneBuffer"});
+    postProcessingSSGIDesc.inputTextures.push_back({lightingColorTexId, "sceneBuffer"});
     postProcessingSSGIDesc.inputTextures.push_back({normalTexId, "normalBuffer"});
-    postProcessingSSGIDesc.inputTextures.push_back({depthTexId, "depthBuffer"});
+    postProcessingSSGIDesc.inputTextures.push_back({hardwareDepthId, "depthBuffer"});
     postProcessingSSGIDesc.state.clear = true;
     
     m_passOpaquePBRId = renderGraphDeclaration.addPass(opaquePBRDesc);
@@ -165,6 +179,7 @@ Frontend::Frontend(Backend& backend)
     m_passSkyboxId = renderGraphDeclaration.addPass(skyboxDesc);
     m_passTextureId = renderGraphDeclaration.addPass(textureDesc);
     m_passUnicolorId = renderGraphDeclaration.addPass(unicolorDesc);
+    m_passLightingId = renderGraphDeclaration.addPass(lightingDesc);
     // renderGraphDeclaration.addPass(postProcessingDesc);
     // m_passPostprocessId = renderGraphDeclaration.addPass(postProcessingSSGIDesc);
     m_passPostprocessId = renderGraphDeclaration.addPass(noPostProcessingDesc);
@@ -172,7 +187,6 @@ Frontend::Frontend(Backend& backend)
     
     CompiledRenderGraph compiledRenderGraph(renderGraphDeclaration);
     m_renderGraph.build(compiledRenderGraph, backend);
-
 
     
     // GLX-TODO: only applied on probe cubemap
@@ -270,24 +284,34 @@ RenderGraphExecution Frontend::buildFrameExecution()
         auto& opaqueInvocation = execution.addInvocation(m_passOpaquePBRId);
         configureView(opaqueInvocation);
         opaqueInvocation.items = std::move(opaques);
-        opaqueInvocation.parameters.emplace("lightCount", static_cast<int>(m_lightManager.getLightCount()));
-
+        
         auto& transparentInvocation = execution.addInvocation(m_passTransparentPBRId);
         configureView(transparentInvocation);
         transparentInvocation.items = std::move(transparents);
-        transparentInvocation.parameters.emplace("lightCount", static_cast<int>(m_lightManager.getLightCount()));
-
+        
+        
+        auto& lightInvocation = execution.addInvocation(m_passLightingId);
         if(m_lightManager.isDirty()){
             auto updateCommand = m_lightManager.getLightUboUpdate();
-            opaqueInvocation.updates.push_back(updateCommand);
-            transparentInvocation.updates.push_back(updateCommand);
+            lightInvocation.updates.push_back(updateCommand);
         }
-        opaqueInvocation.uniformBindings.push_back({m_lightManager.getLightUboHandle(), 0});
-        transparentInvocation.uniformBindings.push_back({m_lightManager.getLightUboHandle(), 0});
+        lightInvocation.items.push_back(RenderItem { m_postProcessingQuad });
+        lightInvocation.uniformBindings.push_back({m_lightManager.getLightUboHandle(), 0});
+        lightInvocation.parameters.emplace("lightCount", static_cast<int>(m_lightManager.getLightCount()));
+        lightInvocation.parameters.emplace("inverseView", inverse(view));
+        lightInvocation.parameters.emplace("inverseProjection", inverse(projection));
+        lightInvocation.parameters.emplace("cameraPos", cameraDevice->camera->position);
+
 
         auto& postProcessInvocation = execution.addInvocation(m_passPostprocessId);
         configureView(postProcessInvocation);
         postProcessInvocation.items.push_back(RenderItem { m_postProcessingQuad });
+
+        postProcessInvocation.parameters.emplace("view", view);
+        postProcessInvocation.parameters.emplace("projection", projection);
+        postProcessInvocation.parameters.emplace("inverseView", inverse(view));
+        postProcessInvocation.parameters.emplace("inverseProjection", inverse(projection));
+        postProcessInvocation.parameters.emplace("cameraPos", cameraDevice->camera->position);
     }
 
     m_frameDevices.clear();

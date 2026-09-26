@@ -237,14 +237,9 @@ void Backend::execute(RenderGraphExecution& execution){
             for (const RenderItem& item : invocation.items) {
                 // GLX-TODO: need to fix material usage (should work with other thing than PBR ?)
                 if(supportPBR && item.material){
-                    BindMaterialCommand bindMat;
-                    bindMat.material = item.material.value();
-                    processCommand(bindMat);
+                    bindMaterial(item.material.value());
                 }
-                DrawCommand draw;
-                draw.geometry = item.geometry;
-                draw.model = item.transform.getGlobalModelMatrix();
-                processCommand(draw);
+                draw(item.geometry, item.transform.getGlobalModelMatrix());
             }
         }
     }
@@ -929,36 +924,6 @@ CubemapHandle Backend::instanciateCubemap(int resolution)
     return cubemapID;
 }
 
-void Backend::processCommand(const ClearCommand& clearCommand)
-{
-    auto& clearColor = clearCommand.color;
-    glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-void Backend::processCommand(const DepthMaskCommand& command)
-{
-    if (command.state)
-        glDepthMask(GL_TRUE);
-    else
-        glDepthMask(GL_FALSE);
-}
-
-void Backend::processCommand(const SetViewCommand& setViewCommand)
-{
-    const mat4 inverseView = inverse(setViewCommand.view);
-    const vec3 cameraPosition = vec3(inverseView[3]);
-
-    for (Program* program : m_programInstances.getAll()) {
-        program->use();
-        program->setUniform("view", setViewCommand.view);
-        program->setUniform("inverseView", inverseView);
-        program->setUniform("cameraPos", cameraPosition);
-    }
-
-    if (Program* activeProgram = getActiveProgram())
-        activeProgram->use();
-}
 void Backend::setProjectionMatrix(const mat4& projectionMatrix)
 {
     const mat4 inverseProjection = inverse(projectionMatrix);
@@ -971,17 +936,13 @@ void Backend::setProjectionMatrix(const mat4& projectionMatrix)
     if (Program* activeProgram = getActiveProgram())
         activeProgram->use();
 }
-void Backend::processCommand(const SetProjectionCommand& command)
-{
-    setProjectionMatrix(command.projection);
-}
 
-void Backend::processCommand(const DrawCommand& command)
+void Backend::draw(const GeometryHandle geometryH, const mat4 model)
 {
-    auto* geometry = m_visualInstances.tryGet(command.geometry);
+    auto* geometry = m_visualInstances.tryGet(geometryH);
     if (geometry == nullptr) {
         GLX_CORE_ERROR("Skipping draw with an invalid geometry handle (slot={0}, generation={1})",
-            command.geometry.index(), command.geometry.generation());
+            geometryH.index(), geometryH.generation());
         return;
     }
 
@@ -991,167 +952,167 @@ void Backend::processCommand(const DrawCommand& command)
         return;
     }
 
-    program->setUniform("model", command.model);
+    program->setUniform("model", model);
     geometry->draw();
     ++m_drawCount;
 }
 
-void Backend::processCommand(const RawDrawCommand& command)
+void Backend::draw(const GeometryHandle geometryH)
 {
     if (getActiveProgram() == nullptr) {
         GLX_CORE_ERROR("Skipping draw because no valid program is active");
         return;
     }
 
-    auto* geometry = m_visualInstances.tryGet(command.geometry);
+    auto* geometry = m_visualInstances.tryGet(geometryH);
     if (geometry == nullptr) {
         GLX_CORE_ERROR("Skipping draw with an invalid geometry handle (slot={0}, generation={1})",
-            command.geometry.index(), command.geometry.generation());
+            geometryH.index(), geometryH.generation());
         return;
     }
     geometry->draw();
     ++m_drawCount;
 }
 
-void Backend::processCommand(const UseTextureCommand& command)
-{
-    Program* program = getActiveProgram();
-    if (program == nullptr) {
-        GLX_CORE_ERROR("Cannot bind a texture because no valid program is active");
-        return;
-    }
+// void Backend::processCommand(const UseTextureCommand& command)
+// {
+//     Program* program = getActiveProgram();
+//     if (program == nullptr) {
+//         GLX_CORE_ERROR("Cannot bind a texture because no valid program is active");
+//         return;
+//     }
 
-    const int uniformLocation = program->getUniformLocation(command.uniformName);
-    if (uniformLocation < 0) {
-        GLX_CORE_ERROR("Program does not expose texture uniform '{0}'", command.uniformName);
-        return;
-    }
+//     const int uniformLocation = program->getUniformLocation(command.uniformName);
+//     if (uniformLocation < 0) {
+//         GLX_CORE_ERROR("Program does not expose texture uniform '{0}'", command.uniformName);
+//         return;
+//     }
 
-    Texture* texture = m_textureInstances.tryGet(command.texture);
-    if (texture == nullptr) {
-        GLX_CORE_ERROR("Cannot bind an invalid texture handle (slot={0}, generation={1})",
-            command.texture.index(), command.texture.generation());
-        return;
-    }
-    texture->activate(uniformLocation);
-    if(command.important)
-        texture->reserveActivationInt();
-    checkOpenGLErrors("Bind texture");
-}
+//     Texture* texture = m_textureInstances.tryGet(command.texture);
+//     if (texture == nullptr) {
+//         GLX_CORE_ERROR("Cannot bind an invalid texture handle (slot={0}, generation={1})",
+//             command.texture.index(), command.texture.generation());
+//         return;
+//     }
+//     texture->activate(uniformLocation);
+//     if(command.important)
+//         texture->reserveActivationInt();
+//     checkOpenGLErrors("Bind texture");
+// }
 
-void Backend::processCommand(const UseCubemapCommand& command)
-{
-    Program* program = getActiveProgram();
-    if (program == nullptr) {
-        GLX_CORE_ERROR("Cannot bind a cubemap because no valid program is active");
-        return;
-    }
+// void Backend::processCommand(const UseCubemapCommand& command)
+// {
+//     Program* program = getActiveProgram();
+//     if (program == nullptr) {
+//         GLX_CORE_ERROR("Cannot bind a cubemap because no valid program is active");
+//         return;
+//     }
 
-    const int uniformLocation = program->getUniformLocation(command.uniformName);
-    if (uniformLocation < 0) {
-        GLX_CORE_ERROR("Program does not expose cubemap uniform '{0}'", command.uniformName);
-        return;
-    }
+//     const int uniformLocation = program->getUniformLocation(command.uniformName);
+//     if (uniformLocation < 0) {
+//         GLX_CORE_ERROR("Program does not expose cubemap uniform '{0}'", command.uniformName);
+//         return;
+//     }
 
-    auto* cubemap = m_cubemapInstances.tryGet(command.cubemap);
-    if (cubemap == nullptr) {
-        GLX_CORE_ERROR("Cannot bind an invalid cubemap handle (slot={0}, generation={1})",
-            command.cubemap.index(), command.cubemap.generation());
-        return;
-    }
-    cubemap->activate(uniformLocation);
-    checkOpenGLErrors("Bind cubemap");
-}
+//     auto* cubemap = m_cubemapInstances.tryGet(command.cubemap);
+//     if (cubemap == nullptr) {
+//         GLX_CORE_ERROR("Cannot bind an invalid cubemap handle (slot={0}, generation={1})",
+//             command.cubemap.index(), command.cubemap.generation());
+//         return;
+//     }
+//     cubemap->activate(uniformLocation);
+//     checkOpenGLErrors("Bind cubemap");
+// }
 
-void Backend::processCommand(const AttachTextureToFramebufferCommand& command)
+// void Backend::processCommand(const AttachTextureToFramebufferCommand& command)
+// {
+//     // GLX-TODO: ensure it works correctly
+//     auto* framebuffer = m_frameBufferInstances.tryGet(command.framebuffer);
+//     auto* texture = m_textureInstances.tryGet(command.texture);
+//     if (framebuffer == nullptr || texture == nullptr) {
+//         GLX_CORE_ERROR("Cannot attach invalid texture/framebuffer GPU handles");
+//         return;
+//     }
+//     auto& attachments = m_framebufferAttachments[command.framebuffer];
+//     TextureHandle* destination = nullptr;
+//     if (command.attachmentIdx < 0) {
+//         destination = &attachments.depth;
+//     } else {
+//         if (attachments.colors.size() <= static_cast<size_t>(command.attachmentIdx))
+//             attachments.colors.resize(static_cast<size_t>(command.attachmentIdx) + 1);
+//         destination = &attachments.colors[command.attachmentIdx];
+//     }
+
+//     const TextureHandle previous = *destination;
+//     if (previous != command.texture)
+//         m_textureInstances.retain(command.texture);
+
+//     const bool attached = command.attachmentIdx < 0
+//         ? framebuffer->attachDepthTexture(*texture)
+//         : framebuffer->attachColorTexture(*texture, command.attachmentIdx);
+
+//     if (!attached) {
+//         if (previous != command.texture)
+//             clearTexture(command.texture);
+//         return;
+//     }
+
+//     *destination = command.texture;
+//     if (previous && previous != command.texture)
+//         clearTexture(previous);
+
+//     checkOpenGLErrors("Attach texture to framebuffer");
+// }
+
+void Backend::attachCubemapToFramebuffer(const CubemapFramebufferHandle fbHandle, const CubemapHandle cubemapHandle, const size_t colorIdx)
 {
     // GLX-TODO: ensure it works correctly
-    auto* framebuffer = m_frameBufferInstances.tryGet(command.framebuffer);
-    auto* texture = m_textureInstances.tryGet(command.texture);
-    if (framebuffer == nullptr || texture == nullptr) {
-        GLX_CORE_ERROR("Cannot attach invalid texture/framebuffer GPU handles");
-        return;
-    }
-    auto& attachments = m_framebufferAttachments[command.framebuffer];
-    TextureHandle* destination = nullptr;
-    if (command.attachmentIdx < 0) {
-        destination = &attachments.depth;
-    } else {
-        if (attachments.colors.size() <= static_cast<size_t>(command.attachmentIdx))
-            attachments.colors.resize(static_cast<size_t>(command.attachmentIdx) + 1);
-        destination = &attachments.colors[command.attachmentIdx];
-    }
-
-    const TextureHandle previous = *destination;
-    if (previous != command.texture)
-        m_textureInstances.retain(command.texture);
-
-    const bool attached = command.attachmentIdx < 0
-        ? framebuffer->attachDepthTexture(*texture)
-        : framebuffer->attachColorTexture(*texture, command.attachmentIdx);
-
-    if (!attached) {
-        if (previous != command.texture)
-            clearTexture(command.texture);
-        return;
-    }
-
-    *destination = command.texture;
-    if (previous && previous != command.texture)
-        clearTexture(previous);
-
-    checkOpenGLErrors("Attach texture to framebuffer");
-}
-
-void Backend::processCommand(const AttachCubemapToFramebufferCommand& command)
-{
-    // GLX-TODO: ensure it works correctly
-    auto* framebuffer = m_cubemapFrameBufferInstances.tryGet(command.framebuffer);
-    auto* cubemap = m_cubemapInstances.tryGet(command.cubemap);
+    auto* framebuffer = m_cubemapFrameBufferInstances.tryGet(fbHandle);
+    auto* cubemap = m_cubemapInstances.tryGet(cubemapHandle);
     if (framebuffer == nullptr || cubemap == nullptr) {
         GLX_CORE_ERROR("Cannot attach invalid cubemap/framebuffer GPU handles");
         return;
     }
 
-    auto& attachments = m_cubemapFramebufferAttachments[command.framebuffer];
+    auto& attachments = m_cubemapFramebufferAttachments[fbHandle];
     CubemapHandle* destination = nullptr;
-    if (command.colorIdx < 0) {
+    if (colorIdx < 0) {
         destination = &attachments.depth;
     } else {
-        if (attachments.colors.size() <= static_cast<size_t>(command.colorIdx))
-            attachments.colors.resize(static_cast<size_t>(command.colorIdx) + 1);
-        destination = &attachments.colors[command.colorIdx];
+        if (attachments.colors.size() <= colorIdx)
+            attachments.colors.resize(colorIdx + 1);
+        destination = &attachments.colors[colorIdx];
     }
 
     const CubemapHandle previous = *destination;
-    if (previous != command.cubemap)
-        m_cubemapInstances.retain(command.cubemap);
+    if (previous != cubemapHandle)
+        m_cubemapInstances.retain(cubemapHandle);
 
-    const bool attached = command.colorIdx < 0
+    const bool attached = colorIdx < 0
         ? framebuffer->attachDepthCubemap(*cubemap)
-        : framebuffer->attachColorCubemap(*cubemap, command.colorIdx);
+        : framebuffer->attachColorCubemap(*cubemap, colorIdx);
 
     if (!attached) {
-        if (previous != command.cubemap)
-            clearCubemap(command.cubemap);
+        if (previous != cubemapHandle)
+            clearCubemap(cubemapHandle);
         return;
     }
 
-    *destination = command.cubemap;
-    if (previous && previous != command.cubemap)
+    *destination = cubemapHandle;
+    if (previous && previous != cubemapHandle)
         clearCubemap(previous);
 }
 
-void Backend::processCommand(const BindMaterialCommand& command)
+void Backend::bindMaterial(const MaterialHandle materialHandle)
 {
     Program* program = getActiveProgram();
     if (program == nullptr)
         return;
 
-    MaterialInstance* material = m_materialInstances.tryGet(command.material);
+    MaterialInstance* material = m_materialInstances.tryGet(materialHandle);
     if (material == nullptr) {
         GLX_CORE_ERROR("Cannot bind an invalid material handle (slot={0}, generation={1})",
-            command.material.index(), command.material.generation());
+            materialHandle.index(), materialHandle.generation());
         return;
     }
 
@@ -1194,34 +1155,6 @@ void Backend::processCommand(const BindMaterialCommand& command)
     checkOpenGLErrors("Binding material");
 }
 
-void Backend::processCommand(const BindFrameBufferCommand& command)
-{
-    if (const auto* framebufferHandle = std::get_if<FramebufferHandle>(&command.target)) {
-        auto* framebuffer = m_frameBufferInstances.tryGet(*framebufferHandle);
-        if (framebuffer == nullptr) {
-            GLX_CORE_ERROR("Cannot bind an invalid framebuffer handle");
-            return;
-        }
-        if (command.bind)
-            framebuffer->bind(command.depthLayerIdx);
-        else
-            framebuffer->unbind();
-    } else {
-        const auto handle = std::get<CubemapFramebufferHandle>(command.target);
-        auto* framebuffer = m_cubemapFrameBufferInstances.tryGet(handle);
-        if (framebuffer == nullptr) {
-            GLX_CORE_ERROR("Cannot bind an invalid cubemap framebuffer handle");
-            return;
-        }
-        if (command.bind)
-            framebuffer->bind(command.cubemapFaceIdx);
-        else
-            framebuffer->unbind();
-    }
-
-    checkOpenGLErrors("Binding framebuffer");
-}
-
 void Backend::processCommand(const SetUniformCommand& command)
 {
     Program* program = getActiveProgram();
@@ -1256,11 +1189,6 @@ void Backend::processCommand(const SetUniformCommand& command)
     checkOpenGLErrors("Set uniform");
 }
 
-void Backend::processCommand(const SetViewportCommand& command)
-{
-    glViewport((int)command.position.x, (int)command.position.y, (int)command.size.x, (int)command.size.y);
-}
-
 void Backend::processCommand(const UpdateTextureCommand& command)
 {
     auto* texture = m_textureInstances.tryGet(command.texture);
@@ -1274,50 +1202,6 @@ void Backend::processCommand(const UpdateTextureCommand& command)
         texture->setFormat(command.newFormat);
 
     checkOpenGLErrors("Update texture");
-}
-
-void Backend::processCommand(const UpdateCubemapCommand& command)
-{
-    auto* cubemap = m_cubemapInstances.tryGet(command.cubemap);
-    if (cubemap == nullptr) {
-        GLX_CORE_ERROR("Cannot update an invalid cubemap handle");
-        return;
-    }
-    cubemap->resize(command.resolution);
-    checkOpenGLErrors("Update cubemap");
-}
-
-void Backend::processCommand(const SetFramebufferAsTextureUniformCommand& command)
-{
-    Program* program = getActiveProgram();
-    if (program == nullptr) {
-        GLX_CORE_ERROR("Cannot bind framebuffer texture because no valid program is active");
-        return;
-    }
-
-    const int uniformLocation = program->getUniformLocation(command.uniformName);
-    if (uniformLocation < 0) {
-        GLX_CORE_ERROR("Active program does not expose framebuffer uniform '{0}'", command.uniformName);
-        return;
-    }
-
-    if (const auto* framebufferHandle = std::get_if<FramebufferHandle>(&command.framebuffer)) {
-        auto* framebuffer = m_frameBufferInstances.tryGet(*framebufferHandle);
-        if (framebuffer == nullptr) {
-            GLX_CORE_ERROR("Cannot sample an invalid framebuffer handle");
-            return;
-        }
-        framebuffer->setAsTextureUniform(uniformLocation, command.textureIdx);
-    } else {
-        const auto handle = std::get<CubemapFramebufferHandle>(command.framebuffer);
-        auto* framebuffer = m_cubemapFrameBufferInstances.tryGet(handle);
-        if (framebuffer == nullptr) {
-            GLX_CORE_ERROR("Cannot sample an invalid cubemap framebuffer handle");
-            return;
-        }
-        framebuffer->setAsCubemapUniform(uniformLocation, command.textureIdx);
-    }
-    checkOpenGLErrors("Bind framebuffer texture as uniform");
 }
 
 void Backend::processCommand(const UpdateUBOCommand& command)
@@ -1338,16 +1222,6 @@ void Backend::processCommand(const BindUBOCommand& command)
         return;
     }
     ubo->bind(command.idx);
-}
-
-void Backend::processCommand(const DebugMsgCommand& command)
-{
-    GLX_CORE_TRACE(command.msg);
-}
-
-void Backend::processCommand(const DrawDebugLineCommand& command)
-{
-    // m_debugLines.addLine(command.start, command.end, vec3(0, 1, 0));
 }
 
 void Backend::processCommand(const SaveFrameBufferCommand& command)

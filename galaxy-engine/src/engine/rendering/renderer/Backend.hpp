@@ -116,28 +116,15 @@ private:
     void releaseAttachments(FramebufferHandle framebuffer);
     void releaseAttachments(CubemapFramebufferHandle framebuffer);
 
-    void processCommand(const ClearCommand& command);
-    void processCommand(const DepthMaskCommand& command);
-    void processCommand(const SetViewCommand& command);
-    void processCommand(const SetProjectionCommand& command);
-    void processCommand(const DrawCommand& command);
-    void processCommand(const RawDrawCommand& command);
-    void processCommand(const UseTextureCommand& command);
-    void processCommand(const UseCubemapCommand& command);
-    void processCommand(const AttachTextureToFramebufferCommand& command);
-    void processCommand(const AttachCubemapToFramebufferCommand& command);
-    void processCommand(const BindMaterialCommand& command);
-    void processCommand(const BindFrameBufferCommand& command);
+    void draw(const GeometryHandle geometryH, const mat4 model);
+    void draw(const GeometryHandle geometryH);
+    void attachCubemapToFramebuffer(const CubemapFramebufferHandle fbHandle, const CubemapHandle cubemapHandle, const size_t colorIdx);
+    void bindMaterial(const MaterialHandle handle);
     void processCommand(const SetUniformCommand& command);
-    void processCommand(const SetViewportCommand& command);
     void processCommand(const UpdateTextureCommand& command);
-    void processCommand(const UpdateCubemapCommand& command);
-    void processCommand(const SetFramebufferAsTextureUniformCommand& command);
     void processCommand(const UpdateUBOCommand& command);
     void processCommand(const BindUBOCommand& command);
 
-    void processCommand(const DebugMsgCommand& command);
-    void processCommand(const DrawDebugLineCommand& command);
     void processCommand(const SaveFrameBufferCommand& command);
 
     Program* getActiveProgram();

@@ -13,68 +13,7 @@ namespace Galaxy {
 
 // These are transient messages consumed by the rendering backend. GPU resource
 // ownership lives in GpuResourceRegistry and is referenced only through handles.
-
-struct SetViewCommand {
-    math::mat4 view;
-};
-
-struct SetProjectionCommand {
-    math::mat4 projection;
-};
-
-struct RawDrawCommand {
-    GeometryHandle geometry;
-};
-
-struct DrawCommand {
-    GeometryHandle geometry;
-    math::mat4 model;
-};
-
-struct ClearCommand {
-    math::vec4 color;
-};
-
-struct DepthMaskCommand {
-    bool state;
-};
-
-struct UseTextureCommand {
-    TextureHandle texture;
-    std::string uniformName;
-    bool important = false;
-};
-
-struct UseCubemapCommand {
-    CubemapHandle cubemap;
-    std::string uniformName;
-};
-
-struct AttachTextureToFramebufferCommand {
-    TextureHandle texture;
-    FramebufferHandle framebuffer;
-    int attachmentIdx;
-};
-
-struct AttachCubemapToFramebufferCommand {
-    CubemapHandle cubemap;
-    CubemapFramebufferHandle framebuffer;
-    int colorIdx;
-};
-
-struct BindMaterialCommand {
-    MaterialHandle material;
-};
-
-
 using RenderTargetHandle = std::variant<FramebufferHandle, CubemapFramebufferHandle>;
-
-struct BindFrameBufferCommand {
-    RenderTargetHandle target;
-    int depthLayerIdx = 0;
-    int cubemapFaceIdx = -1;
-    bool bind;
-};
 
 enum SetValueTypes {
     BOOL,
@@ -84,12 +23,6 @@ enum SetValueTypes {
     VEC3,
     IVEC3,
     MAT4
-};
-
-struct SetFramebufferAsTextureUniformCommand {
-    RenderTargetHandle framebuffer;
-    std::string uniformName;
-    int textureIdx;
 };
 
 struct UpdateUBOCommand {
@@ -133,10 +66,6 @@ struct SetUniformCommand {
     math::mat4 matrixValue;
 };
 
-struct SetViewportCommand {
-    math::vec2 position;
-    math::vec2 size;
-};
 
 struct UpdateTextureCommand {
     TextureHandle texture;
@@ -145,47 +74,16 @@ struct UpdateTextureCommand {
     unsigned int height;
 };
 
-struct UpdateCubemapCommand {
-    CubemapHandle cubemap;
-    unsigned int resolution;
-};
-
-struct DebugMsgCommand {
-    std::string msg;
-};
-
-struct DrawDebugLineCommand {
-    math::vec3 start;
-    math::vec3 end;
-};
-
 struct SaveFrameBufferCommand {
     std::string path;
     FramebufferHandle framebuffer;
 };
 
 using RenderCommand = std::variant<
-    SetViewCommand,
-    SetProjectionCommand,
-    ClearCommand,
-    DepthMaskCommand,
-    DrawCommand,
-    RawDrawCommand,
-    UseTextureCommand,
-    UseCubemapCommand,
-    AttachTextureToFramebufferCommand,
-    AttachCubemapToFramebufferCommand,
-    BindMaterialCommand,
-    BindFrameBufferCommand,
     SetUniformCommand,
-    SetViewportCommand,
     UpdateTextureCommand,
-    UpdateCubemapCommand,
-    SetFramebufferAsTextureUniformCommand,
     UpdateUBOCommand,
     BindUBOCommand,
-    DebugMsgCommand,
-    DrawDebugLineCommand,
     SaveFrameBufferCommand>;
 
 } // namespace Galaxy

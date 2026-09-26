@@ -36,33 +36,6 @@ Backend::Backend(size_t maxSize)
     glEnable(GL_CULL_FACE);
     // glDisable(GL_CULL_FACE);
 
-    auto loadDefaultProgram = [this](ProgramType type, const std::string& path) {
-        const ProgramHandle handle = loadShader(engineRes(path));
-        GLX_CORE_ASSERT(handle, "Failed to load a default renderer program: {0}", path);
-        if (handle)
-            m_defaultPrograms.emplace(type, handle);
-    };
-
-    loadDefaultProgram(PBR, "shaders/base.glsl");
-    loadDefaultProgram(SKYBOX, "shaders/skybox.glsl");
-    loadDefaultProgram(FILTER_IRRADIANCE, "shaders/filters/irradiance.glsl");
-    loadDefaultProgram(TEXTURE, "shaders/texture.glsl");
-    loadDefaultProgram(UNICOLOR, "shaders/unicolor.glsl");
-    loadDefaultProgram(POST_PROCESSING_PROBE, "shaders/post_processing.glsl");
-    loadDefaultProgram(POST_PROCESSING_SSGI, "shaders/ssgi.glsl");
-    loadDefaultProgram(SHADOW_DEPTH, "shaders/shadow_depth.glsl");
-    loadDefaultProgram(COMPUTE_OCTAHEDRAL, "shaders/compute_octahedral.glsl");
-    m_debugLinesProgram = loadShader(engineRes("shaders/debug/line_draw.glsl"));
-
-    setActiveProgram(PBR);
-
-    processCommand(SetViewCommand {
-        lookAt(vec3(0, 0, 0), vec3(0, 0, -1), vec3(0, 1, 0))
-    });
-    setProjectionMatrix(perspective(radians(45.f), 16.f / 9.f, 0.1f, 999.0f));
-
-    m_debugLines.init();
-
     checkOpenGLErrors("Renderer constructor");
 }
 
@@ -101,15 +74,6 @@ void Backend::clearProgram(ProgramHandle program)
 {
     if (m_activeProgram == program)
         m_activeProgram = {};
-    if (m_debugLinesProgram == program)
-        m_debugLinesProgram = {};
-
-    for (auto it = m_defaultPrograms.begin(); it != m_defaultPrograms.end();) {
-        if (it->second == program)
-            it = m_defaultPrograms.erase(it);
-        else
-            ++it;
-    }
 
     (void)m_programInstances.release(program);
 }
@@ -119,7 +83,6 @@ void Backend::destroy()
     // Pending CPU-resource callbacks use a weak copy of this token.
     m_lifetimeToken.reset();
     m_cubemapUploadLifetimes.clear();
-    m_debugLines.destroy();
 
     auto visualNotifications  = std::move(m_visualDestroyNotifications);
     auto textureNotifications = std::move(m_textureDestroyNotifications);
@@ -146,19 +109,7 @@ void Backend::destroy()
     m_cubemapInstances.clear();
 
     m_activeProgram = {};
-    m_debugLinesProgram = {};
-    m_defaultPrograms.clear();
     m_programInstances.clear();
-}
-
-void Backend::setActiveProgram(ProgramType program)
-{
-    const ProgramHandle handle = getDefaultProgram(program);
-    if (!handle) {
-        GLX_CORE_ERROR("Unknown or unavailable default program: {0}", static_cast<int>(program));
-        return;
-    }
-    setActiveProgram(handle);
 }
 
 void Backend::setActiveProgram(ProgramHandle program)
@@ -192,12 +143,6 @@ Program* Backend::getActiveProgram()
 const Program* Backend::getActiveProgram() const
 {
     return m_programInstances.tryGet(m_activeProgram);
-}
-
-ProgramHandle Backend::getDefaultProgram(ProgramType type) const
-{
-    const auto found = m_defaultPrograms.find(type);
-    return found == m_defaultPrograms.end() ? ProgramHandle {} : found->second;
 }
 
 
@@ -483,12 +428,12 @@ void Backend::setTextureWrap(TextureHandle textureHandle, TextureWrap wrapS, Tex
     }
 }
 
-TextureHandle Backend::instantiateTexture(TextureFormat format, vec2 size, size_t layerCount)
+TextureHandle Backend::instantiateTexture(TextureFormat format, vec2 size, TextureFiltering filter, size_t layerCount)
 {
     if (!m_textureInstances.canCreate())
         return {};
 
-    TextureHandle textureID = m_textureInstances.create(format, static_cast<int>(size.x), static_cast<int>(size.y), static_cast<int>(layerCount));
+    TextureHandle textureID = m_textureInstances.create(format, static_cast<int>(size.x), static_cast<int>(size.y), filter, static_cast<int>(layerCount));
     checkOpenGLErrors("Instantiate texture");
     return textureID;
 }
@@ -1031,11 +976,6 @@ void Backend::processCommand(const SetProjectionCommand& command)
     setProjectionMatrix(command.projection);
 }
 
-void Backend::processCommand(const SetActiveProgramCommand& command)
-{
-    std::visit([this](auto program) { setActiveProgram(program); }, command.program);
-}
-
 void Backend::processCommand(const DrawCommand& command)
 {
     auto* geometry = m_visualInstances.tryGet(command.geometry);
@@ -1407,7 +1347,7 @@ void Backend::processCommand(const DebugMsgCommand& command)
 
 void Backend::processCommand(const DrawDebugLineCommand& command)
 {
-    m_debugLines.addLine(command.start, command.end, vec3(0, 1, 0));
+    // m_debugLines.addLine(command.start, command.end, vec3(0, 1, 0));
 }
 
 void Backend::processCommand(const SaveFrameBufferCommand& command)
@@ -1418,18 +1358,6 @@ void Backend::processCommand(const SaveFrameBufferCommand& command)
         return;
     }
     framebuffer->savePPM(command.path);
-}
-
-void Backend::debugDraw()
-{
-    Program* program = m_programInstances.tryGet(m_debugLinesProgram);
-    if (program == nullptr) {
-        GLX_CORE_ERROR("Cannot draw debug lines without a valid debug program");
-        return;
-    }
-
-    program->use();
-    m_debugLines.draw();
 }
 
 } // namespace Galaxy

@@ -25,6 +25,16 @@ Texture::Texture(TextureFormat format, int width, int height, int depthLayerCoun
     regenerate();
 }
 
+Texture::Texture(TextureFormat format, int width, int height, TextureFiltering filter, int depthLayerCount) 
+    : m_format(format)
+    , m_layerCount(depthLayerCount)
+    , m_width(width)
+    , m_height(height)
+    , m_filter(filter)
+{
+    regenerate();
+}
+
 Texture::~Texture()
 {
     destroy();
@@ -89,8 +99,12 @@ void Texture::regenerate()
 
     if (m_layerCount > 0)
         glTextureParameteri(m_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    GLenum GlFilter;
+    if(m_filter == TextureFiltering::LINEAR) GlFilter = GL_LINEAR; 
+    else if(m_filter == TextureFiltering::NEAREST) GlFilter = GL_NEAREST; 
+    glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GlFilter);
+    glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GlFilter);
 
     if (m_format == TextureFormat::DEPTH24STENCIL8 || m_format == TextureFormat::DEPTH) {
         float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };

@@ -15,7 +15,7 @@ void RenderGraph::build(const CompiledRenderGraph& compiledGraph, Backend& backe
     m_graphTextureHandles.reserve(compiledGraph.textures.size());
     for (const CompiledGraphTexture& texture : compiledGraph.textures) {
         const GraphTextureDesc& textureDesc = compiledGraph.getTextureDescription(texture.textureId);
-        auto gpuHandle = backend.instantiateTexture(textureDesc.format, math::vec2(temporarySize));
+        auto gpuHandle = backend.instantiateTexture(textureDesc.format, math::vec2(temporarySize), textureDesc.filter);
         m_graphTextureHandles.push_back(gpuHandle);
         backend.setTextureWrap(gpuHandle, textureDesc.wrapS, textureDesc.wrapT);
     }

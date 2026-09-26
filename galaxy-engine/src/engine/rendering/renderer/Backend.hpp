@@ -37,7 +37,7 @@ public:
     Sphere getMeshBoundingVolume(GeometryHandle mesh);
     void clearMesh(GeometryHandle mesh);
 
-    TextureHandle instantiateTexture(TextureFormat format, vec2 size, size_t layerCount = 0);
+    TextureHandle instantiateTexture(TextureFormat format, vec2 size, TextureFiltering filter = TextureFiltering::LINEAR, size_t layerCount = 0);
     TextureHandle instantiateTexture(ResourceHandle<Image> image);
     void setTextureWrap(TextureHandle texture, TextureWrap wrapS, TextureWrap wrapT);
     void clearTexture(TextureHandle texture);
@@ -91,7 +91,6 @@ public:
     void initDebugCallback();
 
     void destroy();
-    void setActiveProgram(ProgramType program);
     void setActiveProgram(ProgramHandle program);
     [[nodiscard]] int getUniformLocation(ProgramHandle program, const std::string& uniformName) const;
     
@@ -121,7 +120,6 @@ private:
     void processCommand(const DepthMaskCommand& command);
     void processCommand(const SetViewCommand& command);
     void processCommand(const SetProjectionCommand& command);
-    void processCommand(const SetActiveProgramCommand& command);
     void processCommand(const DrawCommand& command);
     void processCommand(const RawDrawCommand& command);
     void processCommand(const UseTextureCommand& command);
@@ -141,11 +139,9 @@ private:
     void processCommand(const DebugMsgCommand& command);
     void processCommand(const DrawDebugLineCommand& command);
     void processCommand(const SaveFrameBufferCommand& command);
-    void debugDraw();
 
     Program* getActiveProgram();
     const Program* getActiveProgram() const;
-    ProgramHandle getDefaultProgram(ProgramType type) const;
 
     GpuResourceRegistry<Program, ProgramHandle> m_programInstances;
     GpuResourceRegistry<VisualInstance, GeometryHandle> m_visualInstances;
@@ -166,10 +162,7 @@ private:
 
     MaterialUpdateCallback m_materialUpdateCallback;
 
-    std::unordered_map<ProgramType, ProgramHandle> m_defaultPrograms;
     ProgramHandle m_activeProgram;
-    ProgramHandle m_debugLinesProgram;
-    DebugLines m_debugLines;
     std::size_t m_drawCount = 0;
 
     friend class Renderer;

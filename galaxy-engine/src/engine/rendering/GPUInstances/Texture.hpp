@@ -10,6 +10,7 @@ public:
     Texture() = default;
     Texture(unsigned char* data, int width, int height, int nbChannels, int depthLayerCount = 0);
     Texture(TextureFormat format, int width, int height, int depthLayerCount = 0);
+    Texture(TextureFormat format, int width, int height, TextureFiltering filter, int depthLayerCount = 0);
     ~Texture();
 
     Texture(const Texture&)            = delete;
@@ -47,6 +48,7 @@ private:
 
     unsigned int m_id = 0;
     TextureFormat m_format = TextureFormat::RGBA;
+    TextureFiltering m_filter = TextureFiltering::LINEAR;
     TextureWrap m_wrapS = TextureWrap::REPEAT;
     TextureWrap m_wrapT = TextureWrap::REPEAT;
 

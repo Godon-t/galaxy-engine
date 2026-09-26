@@ -18,19 +18,6 @@ using ShaderParameterValue = std::variant<
 using camID    = size_t;
 using lightID  = size_t;
 
-enum ProgramType {
-    NONE,
-    PBR,
-    SKYBOX,
-    TEXTURE,
-    UNICOLOR,
-    POST_PROCESSING_PROBE,
-    POST_PROCESSING_SSGI,
-    FILTER_IRRADIANCE,
-    SHADOW_DEPTH,
-    COMPUTE_OCTAHEDRAL
-};
-
 struct Vertex {
     math::vec3 position;
     math::vec2 texCoord;
@@ -51,6 +38,11 @@ enum struct TextureWrap {
     CLAMP_TO_EDGE,
     CLAMP_TO_BORDER,
     REPEAT
+};
+
+enum struct TextureFiltering {
+    NEAREST,
+    LINEAR
 };
 
 enum class FramebufferTextureFormat {

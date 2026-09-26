@@ -57,6 +57,8 @@ struct GraphTextureDesc {
     TextureFormat format = TextureFormat::RGBA;
     std::uint32_t arrayLayers = 0;
 
+    TextureFiltering filter = TextureFiltering::LINEAR;
+
     TextureWrap wrapS = TextureWrap::REPEAT;
     TextureWrap wrapT = TextureWrap::REPEAT;
 

@@ -141,6 +141,7 @@ Frontend::Frontend(Backend& backend)
     lightingDesc.inputTextures.push_back({normalTexId, "normalBuffer"});
     lightingDesc.inputTextures.push_back({materialTexId, "materialBuffer"});
     lightingDesc.inputTextures.push_back({hardwareDepthId, "depthBuffer"});
+    lightingDesc.inputTextures.push_back({shadowTextureId, "shadowMaps"});
     lightingDesc.state.clear = true;
 
 

@@ -165,7 +165,7 @@ void main()
 
 
     if (depth >= 0.999999) {
-        color = vec4(0.0);
+        color = vec4(albedo, 1.0);
         return;
     }
 

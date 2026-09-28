@@ -107,6 +107,7 @@ add_library(galaxy-engine
 	src/engine/resource/Environment.cpp
 
 	src/engine/common/YamlTranslation.cpp
+	src/engine/common/geometry/Collision.cpp
 )
 
 target_compile_definitions(galaxy-engine PUBLIC

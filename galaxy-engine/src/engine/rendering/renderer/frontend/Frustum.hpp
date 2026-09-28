@@ -5,9 +5,12 @@
 #include "types/Math.hpp"
 #include "data/Transform.hpp"
 #include "data/Camera.hpp"
+
 #include "common/geometry/Shapes.hpp"
+#include "common/geometry/Collision.hpp"
 
 using namespace math;
+using namespace Galaxy::geometry;
 
 namespace Galaxy
 {
@@ -44,12 +47,12 @@ namespace Galaxy
             const vec3 globalCenter{ transform.getGlobalModelMatrix() * vec4(sphere.center, 1.0f)};
             const float maxScale = std::max(std::max(globalScale.x, globalScale.y), globalScale.z);
 
-            return  sphere.isOnOrForwardPlane(frustum.leftFace, transform.getGlobalPosition(), maxScale) &&
-                    sphere.isOnOrForwardPlane(frustum.rightFace, transform.getGlobalPosition(), maxScale) &&
-                    sphere.isOnOrForwardPlane(frustum.nearFace, transform.getGlobalPosition(), maxScale) &&
-                    sphere.isOnOrForwardPlane(frustum.farFace, transform.getGlobalPosition(), maxScale) &&
-                    sphere.isOnOrForwardPlane(frustum.topFace, transform.getGlobalPosition(), maxScale) &&
-                    sphere.isOnOrForwardPlane(frustum.bottomFace, transform.getGlobalPosition(), maxScale);
+            return  collision::isOnOrForwardPlane(sphere,frustum.leftFace, transform.getGlobalPosition(), maxScale) &&
+                    collision::isOnOrForwardPlane(sphere,frustum.rightFace, transform.getGlobalPosition(), maxScale) &&
+                    collision::isOnOrForwardPlane(sphere,frustum.nearFace, transform.getGlobalPosition(), maxScale) &&
+                    collision::isOnOrForwardPlane(sphere,frustum.farFace, transform.getGlobalPosition(), maxScale) &&
+                    collision::isOnOrForwardPlane(sphere,frustum.topFace, transform.getGlobalPosition(), maxScale) &&
+                    collision::isOnOrForwardPlane(sphere,frustum.bottomFace, transform.getGlobalPosition(), maxScale);
         }
     };
 } // namespace Galaxy

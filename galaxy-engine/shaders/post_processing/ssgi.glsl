@@ -195,6 +195,6 @@ void main()
     }
 
     // Combiner la couleur de base avec l'illumination indirecte
-    color.rgb = normal;
+    color.rgb = baseColor + indirectLight;
     color.a   = 1.0;
 }

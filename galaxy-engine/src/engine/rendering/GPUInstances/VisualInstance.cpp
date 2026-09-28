@@ -6,6 +6,8 @@
 
 #include <utility>
 
+using namespace Galaxy::geometry;
+
 namespace Galaxy {
 CullMode VisualInstance::s_cullMode = FRONT_CULLING;
 

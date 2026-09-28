@@ -2,12 +2,34 @@
 
 #include "core/Helper.hpp"
 #include "Log.hpp"
-#include "rendering/renderer/Backend.hpp"
+#include "rendering/renderer/Renderer.hpp"
+
+#include <variant>
 
 namespace Galaxy {
+void Frontend::setEnvironment(ResourceHandle<Environment> environment)
+{
+    environment.getResource().onLoaded([this, environment] {
+        auto& skyboxPass = m_renderGraph.getRenderPass(m_passPostprocessId);
+        const GraphTextureHandle skyboxTexture = skyboxPass.findInputTexture("skybox");
+
+        std::visit(
+            [environment](const auto& typedHandle) {
+                using Handle = std::decay_t<decltype(typedHandle)>;
+                if constexpr (std::is_same_v<Handle, CubemapHandle>) {
+                    Renderer::getInstance().getBackend().setCubemapData(typedHandle, environment.getResource().getSkybox());
+                } else {
+                    GLX_CORE_WARN("Wrong texturehandle for skybox cubemap data");
+                }
+            },
+            skyboxTexture);
+    });
+}
+
 Frontend::Frontend(Backend& backend)
 {
     m_postProcessingQuad = backend.generateQuad(vec2(2, 2), [] {});
+    m_skyboxCube = backend.generateCube(2.0f, true, [] {});
 
     RenderGraphDeclaration renderGraphDeclaration;
 
@@ -15,6 +37,7 @@ Frontend::Frontend(Backend& backend)
     GraphTextureDesc shadowTexture;
     shadowTexture.format = TextureFormat::DEPTH;
     shadowTexture.name = "shadow_maps";
+    shadowTexture.dimension = TextureDimension::Texture2DArray;
     shadowTexture.arrayLayers = maxLightCount;
     shadowTexture.wrapS = TextureWrap::CLAMP_TO_BORDER;
     shadowTexture.wrapT = TextureWrap::CLAMP_TO_BORDER;
@@ -37,22 +60,18 @@ Frontend::Frontend(Backend& backend)
     GraphTextureDesc opaqueColor;
     opaqueColor.format = TextureFormat::RGBA;
     opaqueColor.name = "gAlbedo";
-    opaqueColor.imported = true;
 
     GraphTextureDesc opaqueNormal;
     opaqueNormal.format = TextureFormat::RGBA;
     opaqueNormal.name = "gNormal";
-    opaqueNormal.imported = true;
-    
+
     GraphTextureDesc opaqueDepth;
     opaqueDepth.format = TextureFormat::RGBA;
     opaqueDepth.name = "gDepth";
-    opaqueDepth.imported = true;
     
     GraphTextureDesc opaqueMaterial;
     opaqueMaterial.format = TextureFormat::RGBA;
     opaqueMaterial.name = "gMaterial";
-    opaqueMaterial.imported = true;
 
     GraphTextureDesc hardwareDepth;
     hardwareDepth.name = "hardwareDepth";
@@ -94,11 +113,6 @@ Frontend::Frontend(Backend& backend)
     transparentDesc.state.supportPBR = true;
     transparentDesc.state.blend = BlendMode::Alpha;
     
-    RenderPassDesc skyboxDesc(opaquePBRDesc);
-    skyboxDesc.associatedProgram = backend.loadShader(engineRes("shaders/skybox.glsl"));
-    skyboxDesc.name = "skybox";
-    skyboxDesc.state.clear = false;
-    
     RenderPassDesc textureDesc(opaquePBRDesc);
     textureDesc.associatedProgram = backend.loadShader(engineRes("shaders/texture.glsl"));
     textureDesc.name = "texture";
@@ -109,16 +123,11 @@ Frontend::Frontend(Backend& backend)
     unicolorDesc.name = "unicolor";
     unicolorDesc.state.clear = false;
 
-    opaquePBRDesc.inputTextures.push_back({shadowTextureId, "shadowMaps"});
-    transparentDesc.inputTextures.push_back({shadowTextureId, "shadowMaps"});
-
-
     // Lighting step
     GraphTextureDesc lightingColor;
     lightingColor.format = TextureFormat::RGBA;
     // lightingColor.filter = TextureFiltering::NEAREST;
     lightingColor.name = "lighting";
-    lightingColor.imported = true;
     auto lightingColorTexId = renderGraphDeclaration.addTexture(lightingColor);
     RenderTargetDesc lightingStepTarget;
     lightingStepTarget.colorAttachments.push_back(lightingColorTexId);
@@ -141,18 +150,29 @@ Frontend::Frontend(Backend& backend)
     GraphTextureDesc finalColor;
     finalColor.format = TextureFormat::RGBA;
     finalColor.name = "color";
-    finalColor.imported = true;
     auto finalColorTexId = renderGraphDeclaration.addTexture(finalColor);
     RenderTargetDesc finalStepTarget;
     finalStepTarget.colorAttachments.push_back(finalColorTexId);
     TargetId finalStepTargetId = renderGraphDeclaration.addTarget(finalStepTarget);
 
+
+    GraphTextureDesc environmentTexture;
+    environmentTexture.name = "environment";
+    environmentTexture.dimension = TextureDimension::Cubemap;
+    environmentTexture.wrapS = TextureWrap::CLAMP_TO_EDGE;
+    environmentTexture.wrapT = TextureWrap::CLAMP_TO_EDGE;
+    environmentTexture.wrapR = TextureWrap::CLAMP_TO_EDGE;
+    auto envTexId = renderGraphDeclaration.addTexture(environmentTexture);
+
+
     RenderPassDesc noPostProcessingDesc;
     noPostProcessingDesc.targetId = finalStepTargetId;
     noPostProcessingDesc.associatedProgram = backend.loadShader(engineRes("shaders/post_processing/none.glsl"));
     noPostProcessingDesc.name = "post_processing_no";
-    noPostProcessingDesc.inputTextures.push_back({lightingColorTexId, "sceneBuffer"});
     noPostProcessingDesc.state.clear = true;
+    noPostProcessingDesc.inputTextures.push_back({lightingColorTexId, "sceneBuffer"});
+    noPostProcessingDesc.inputTextures.push_back({envTexId, "skybox"});
+    noPostProcessingDesc.inputTextures.push_back({hardwareDepthId, "depthBuffer"});
     
     RenderPassDesc postProcessingDesc;
     postProcessingDesc.targetId = finalStepTargetId;
@@ -176,7 +196,6 @@ Frontend::Frontend(Backend& backend)
     
     m_passOpaquePBRId = renderGraphDeclaration.addPass(opaquePBRDesc);
     m_passTransparentPBRId = renderGraphDeclaration.addPass(transparentDesc);
-    m_passSkyboxId = renderGraphDeclaration.addPass(skyboxDesc);
     m_passTextureId = renderGraphDeclaration.addPass(textureDesc);
     m_passUnicolorId = renderGraphDeclaration.addPass(unicolorDesc);
     m_passLightingId = renderGraphDeclaration.addPass(lightingDesc);
@@ -195,9 +214,6 @@ Frontend::Frontend(Backend& backend)
     
     RenderPassDesc computeOcahedralDesc;
     computeOcahedralDesc.associatedProgram = backend.loadShader(engineRes("shaders/compute_octahedral.glsl"));
-    
-    
-    
 }
 
 void Frontend::drawDebug()
@@ -288,8 +304,7 @@ RenderGraphExecution Frontend::buildFrameExecution()
         auto& transparentInvocation = execution.addInvocation(m_passTransparentPBRId);
         configureView(transparentInvocation);
         transparentInvocation.items = std::move(transparents);
-        
-        
+
         auto& lightInvocation = execution.addInvocation(m_passLightingId);
         if(m_lightManager.isDirty()){
             auto updateCommand = m_lightManager.getLightUboUpdate();
@@ -320,7 +335,14 @@ RenderGraphExecution Frontend::buildFrameExecution()
 
 FramebufferHandle Frontend::getFinalFramebuffer()
 {
-    return m_renderGraph.getRenderPass(m_passPostprocessId).targetFramebufferHandle;
+    const GraphFramebufferHandle& framebuffer =
+        m_renderGraph.getRenderPass(m_passPostprocessId).targetFramebufferHandle;
+    const auto* texture2DFramebuffer = std::get_if<FramebufferHandle>(&framebuffer);
+    if (texture2DFramebuffer == nullptr) {
+        GLX_CORE_ERROR("The final render target is a cubemap framebuffer");
+        return {};
+    }
+    return *texture2DFramebuffer;
 }
 
 } // namespace Galaxy

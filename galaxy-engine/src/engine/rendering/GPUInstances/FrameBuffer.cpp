@@ -342,9 +342,7 @@ CubemapFrameBuffer::CubemapFrameBuffer()
 void CubemapFrameBuffer::CubemapAttachment::makeOwned(TextureFormat format, unsigned int size)
 {
     borrowed = nullptr;
-    owned    = std::make_unique<Cubemap>();
-    owned->setFormat(format);
-    owned->resize(size);
+    owned = std::make_unique<Cubemap>(format, size);
 }
 
 void CubemapFrameBuffer::CubemapAttachment::borrow(Cubemap& cubemap)
@@ -397,7 +395,6 @@ CubemapFrameBuffer& CubemapFrameBuffer::operator=(CubemapFrameBuffer&& other) no
 
 bool CubemapFrameBuffer::attachDepthCubemap(Cubemap& cubemap)
 {
-    cubemap.setFormat(TextureFormat::DEPTH);
     cubemap.resize(m_size);
     m_depthCubemap.borrow(cubemap);
     return true;
@@ -410,7 +407,6 @@ bool CubemapFrameBuffer::attachColorCubemap(Cubemap& cubemap, int idx)
     if (idx >= static_cast<int>(m_colorCubemaps.size()))
         m_colorCubemaps.resize(idx + 1);
 
-    cubemap.setFormat(TextureFormat::RGB);
     cubemap.resize(m_size);
     m_colorCubemaps[idx].borrow(cubemap);
     return true;
@@ -431,6 +427,11 @@ void CubemapFrameBuffer::setAsCubemapUniform(unsigned int uniLocation, int textu
 
 void CubemapFrameBuffer::bind(int idx)
 {
+    if (idx < 0 || idx >= 6) {
+        GLX_CORE_ERROR("Invalid cubemap face index: {0}", idx);
+        return;
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     // TODO: Depend on cubemap mode: color, depth or both
     std::vector<GLenum> attachments(m_colorCubemaps.size());
@@ -442,7 +443,11 @@ void CubemapFrameBuffer::bind(int idx)
     if (m_depthCubemap.get() != nullptr && m_depthCubemap.get()->getId() != 0) {
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_depthCubemap.get()->getId(), 0);
+        const unsigned int attachment = m_depthCubemap.get()->getFormat() == TextureFormat::DEPTH24STENCIL8
+            ? GL_DEPTH_STENCIL_ATTACHMENT
+            : GL_DEPTH_ATTACHMENT;
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment,
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, m_depthCubemap.get()->getId(), 0);
     }
 
     if (attachments.empty()) {

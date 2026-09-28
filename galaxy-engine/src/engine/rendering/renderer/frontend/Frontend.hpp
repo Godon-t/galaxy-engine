@@ -2,6 +2,7 @@
 
 #include "pch.hpp"
 
+#include "resource/Environment.hpp"
 #include "SceneContext.hpp"
 #include "rendering/renderer/commands/RenderCommand.hpp"
 #include "data/Transform.hpp"
@@ -24,6 +25,7 @@ class Backend;
 class Frontend {
 public:
     void addRenderDevice(std::unique_ptr<RenderDevice> renderDevice){ m_frameDevices.push_back(std::move(renderDevice)); }
+    void setEnvironment(ResourceHandle<Environment> environment);
 
     explicit Frontend(Backend& backend);
 
@@ -59,6 +61,9 @@ private:
 
     GeometryHandle m_postProcessingQuad;
 
+    GeometryHandle m_skyboxCube;
+    CubemapHandle m_environment;
+
     LightManager m_lightManager;
     SceneContext m_frameContext;
     std::vector<std::unique_ptr<RenderDevice>> m_frameDevices;
@@ -72,7 +77,6 @@ private:
     RenderPassId m_passTransparentPBRId;
     RenderPassId m_passTextureId;
     RenderPassId m_passUnicolorId;
-    RenderPassId m_passSkyboxId;
     RenderPassId m_passLightingId;
     RenderPassId m_passPostprocessId;
 };

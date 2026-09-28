@@ -52,18 +52,23 @@ using GraphTextureId = GenericId;
 using RenderPassId = GenericId;
 using TargetId = GenericId;
 
+enum class TextureDimension {
+    Texture2D,
+    Texture2DArray,
+    Cubemap
+};
+
 struct GraphTextureDesc {
     std::string name;
     TextureFormat format = TextureFormat::RGBA;
+    TextureDimension dimension = TextureDimension::Texture2D;
     std::uint32_t arrayLayers = 0;
 
     TextureFiltering filter = TextureFiltering::LINEAR;
 
     TextureWrap wrapS = TextureWrap::REPEAT;
     TextureWrap wrapT = TextureWrap::REPEAT;
-
-    // GLX-TODO: should describe state like wrap, filtering, etc ?
-    bool imported = false;
+    TextureWrap wrapR = TextureWrap::CLAMP_TO_EDGE;
 
     [[nodiscard]] bool hasDepth() const
     {

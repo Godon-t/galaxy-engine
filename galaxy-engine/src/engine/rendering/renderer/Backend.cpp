@@ -170,7 +170,32 @@ void Backend::execute(RenderGraphExecution& execution){
     const auto& passes = compiledGraph.passes;
     const size_t passesCount = passes.size();
 
-    FramebufferHandle currentFramebuffer;
+    GraphFramebufferHandle currentFramebuffer;
+
+    auto unbind = [this](const GraphFramebufferHandle& framebuffer) {
+        std::visit([this](const auto& typedHandle) {
+            if (typedHandle)
+                unbindFramebuffer(typedHandle);
+        }, framebuffer);
+    };
+    auto resize = [this](const GraphFramebufferHandle& framebuffer, const ivec2& viewportSize) {
+        std::visit([this, &viewportSize](const auto& typedHandle) {
+            using Handle = std::decay_t<decltype(typedHandle)>;
+            if constexpr (std::is_same_v<Handle, FramebufferHandle>) {
+                resizeFrameBuffer(typedHandle, viewportSize.x, viewportSize.y);
+            } else {
+                if (viewportSize.x != viewportSize.y)
+                    GLX_CORE_WARN("A cubemap framebuffer requires a square viewport; using width {0}", viewportSize.x);
+                resizeCubemapFrameBuffer(typedHandle, viewportSize.x);
+            }
+        }, framebuffer);
+    };
+    auto bind = [this](const GraphFramebufferHandle& framebuffer, int targetLayer) {
+        std::visit([this, targetLayer](const auto& typedHandle) {
+            bindFramebuffer(typedHandle, targetLayer);
+        }, framebuffer);
+    };
+
     for(size_t passIdx = 0; passIdx < passesCount; passIdx++){
         const auto& compiledPass = passes[passIdx];
         const auto& pass = execution.graph.getRenderPassAt(passIdx);
@@ -181,14 +206,11 @@ void Backend::execute(RenderGraphExecution& execution){
 
         for (auto& invocation : passExecution.invocations) {
             const bool framebufferChanged = currentFramebuffer != pass.targetFramebufferHandle;
-            if(currentFramebuffer && framebufferChanged)
-                unbindFramebuffer(currentFramebuffer);
+            if(RenderGraph::hasFramebuffer(currentFramebuffer) && framebufferChanged)
+                unbind(currentFramebuffer);
 
-            resizeFrameBuffer(
-                pass.targetFramebufferHandle,
-                invocation.viewportSize.x,
-                invocation.viewportSize.y);
-            bindFramebuffer(pass.targetFramebufferHandle, invocation.targetLayer);
+            resize(pass.targetFramebufferHandle, invocation.viewportSize);
+            bind(pass.targetFramebufferHandle, invocation.targetLayer);
             currentFramebuffer = pass.targetFramebufferHandle;
 
             glClearColor(
@@ -222,15 +244,26 @@ void Backend::execute(RenderGraphExecution& execution){
 
             for(size_t i = 0; i<pass.inputTextures.size(); i++)
             {
-                const TextureHandle textureHandle = pass.inputTextures[i];
-
-                Texture* texture = m_textureInstances.tryGet(textureHandle);
-                if (texture == nullptr) {
-                    GLX_CORE_ERROR("Cannot bind an invalid texture handle (slot={0}, generation={1})",
-                        textureHandle.index(), textureHandle.generation());
-                    return;
-                }
-                texture->activate(pass.inputTexturesLocations[i]);
+                std::visit([this, &pass, i](const auto& textureHandle) {
+                    using Handle = std::decay_t<decltype(textureHandle)>;
+                    if constexpr (std::is_same_v<Handle, TextureHandle>) {
+                        Texture* texture = m_textureInstances.tryGet(textureHandle);
+                        if (texture == nullptr) {
+                            GLX_CORE_ERROR("Cannot bind an invalid texture handle (slot={0}, generation={1})",
+                                textureHandle.index(), textureHandle.generation());
+                            return;
+                        }
+                        texture->activate(static_cast<int>(pass.inputTexturesLocations[i]));
+                    } else {
+                        Cubemap* cubemap = m_cubemapInstances.tryGet(textureHandle);
+                        if (cubemap == nullptr) {
+                            GLX_CORE_ERROR("Cannot bind an invalid cubemap handle (slot={0}, generation={1})",
+                                textureHandle.index(), textureHandle.generation());
+                            return;
+                        }
+                        cubemap->activate(static_cast<int>(pass.inputTexturesLocations[i]));
+                    }
+                }, pass.inputTextures[i]);
             }
 
             const bool supportPBR = renderState.supportPBR;
@@ -243,8 +276,8 @@ void Backend::execute(RenderGraphExecution& execution){
             }
         }
     }
-    if(currentFramebuffer)
-        unbindFramebuffer(currentFramebuffer);
+    if(RenderGraph::hasFramebuffer(currentFramebuffer))
+        unbind(currentFramebuffer);
 }
 
 void Backend::bindFramebuffer(FramebufferHandle fb, int targetLayer){
@@ -257,10 +290,33 @@ void Backend::bindFramebuffer(FramebufferHandle fb, int targetLayer){
 
     framebufferInstance->bind(targetLayer < 0 ? 0 : targetLayer);
 }
+
+void Backend::bindFramebuffer(CubemapFramebufferHandle fb, int targetFace)
+{
+    auto* framebufferInstance = m_cubemapFrameBufferInstances.tryGet(fb);
+    if (framebufferInstance == nullptr) {
+        GLX_CORE_ERROR("Cannot bind an unknown cubemap framebuffer");
+        return;
+    }
+
+    framebufferInstance->bind(targetFace < 0 ? 0 : targetFace);
+}
+
 void Backend::unbindFramebuffer(FramebufferHandle fb){
     auto* framebufferInstance = m_frameBufferInstances.tryGet(fb);
     if (framebufferInstance == nullptr) {
         GLX_CORE_ERROR("Cannot attach texture to inexistent framebuffer");
+        return;
+    }
+
+    framebufferInstance->unbind();
+}
+
+void Backend::unbindFramebuffer(CubemapFramebufferHandle fb)
+{
+    auto* framebufferInstance = m_cubemapFrameBufferInstances.tryGet(fb);
+    if (framebufferInstance == nullptr) {
+        GLX_CORE_ERROR("Cannot unbind an unknown cubemap framebuffer");
         return;
     }
 
@@ -319,12 +375,12 @@ GeometryHandle Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vect
     return meshID;
 }
 
-Sphere Backend::getMeshBoundingVolume(GeometryHandle meshID)
+geometry::Sphere Backend::getMeshBoundingVolume(GeometryHandle meshID)
 {
     auto* geometry = m_visualInstances.tryGet(meshID);
     if (geometry == nullptr) {
         GLX_CORE_ERROR("Cannot inspect an invalid geometry handle");
-        return Sphere { 0.0f, vec3(0.0f) };
+        return geometry::Sphere { 0.0f, vec3(0.0f) };
     }
     return geometry->getBoundingVolume();
 }
@@ -381,12 +437,7 @@ TextureHandle Backend::instantiateTexture(ResourceHandle<Image> image)
 {
     TextureHandle existingID = image.getResource().getGpuTextureHandle();
     if (existingID) {
-        if (m_textureInstances.contains(existingID)) {
-            m_textureInstances.retain(existingID);
-            return existingID;
-        }
-        GLX_WARN("Unvalid texture handle on image {0}", image.getResource().getPath());
-        image.getResource().notifyGpuInstanceDestroyed(existingID);
+        return existingID;
     }
     if (!m_textureInstances.canCreate())
         return {};
@@ -412,6 +463,33 @@ TextureHandle Backend::instantiateTexture(ResourceHandle<Image> image)
     return textureID;
 }
 
+void Backend::setTextureData(TextureHandle textureHandle,  ResourceHandle<Image> image)
+{
+    auto* texture  = m_textureInstances.get(textureHandle);
+    if(texture == nullptr){
+        GLX_ERROR("texture not found when loading data");
+        return;
+    }
+    
+
+    image.getResource().setGpuTextureHandle(textureHandle);
+    const std::weak_ptr<int> backendLifetime = m_lifetimeToken;
+
+    image.getResource().onLoaded([this, backendLifetime, image, textureHandle] {
+        if (backendLifetime.expired() || image.getResource().getGpuTextureHandle() != textureHandle)
+            return;
+
+        auto& imgRes = image.getResource();
+        auto* texture = m_textureInstances.tryGet(textureHandle);
+        if (texture == nullptr)
+            return;
+        texture->init(imgRes.getData(), imgRes.getWidth(), imgRes.getHeight(), imgRes.getNbChannels());
+        imgRes.freeCpuData();
+    });
+
+    m_textureDestroyNotifications[textureHandle] = [image, textureHandle] { image.getResource().notifyGpuInstanceDestroyed(textureHandle); };
+}
+
 void Backend::setTextureWrap(TextureHandle textureHandle, TextureWrap wrapS, TextureWrap wrapT)
 {
     auto* texture  = m_textureInstances.get(textureHandle);
@@ -421,6 +499,17 @@ void Backend::setTextureWrap(TextureHandle textureHandle, TextureWrap wrapS, Tex
     } else {
         texture->setWrap(wrapS, wrapT);
     }
+}
+
+void Backend::setTextureWrap(CubemapHandle cubemapHandle, TextureWrap wrapS, TextureWrap wrapT, TextureWrap wrapR)
+{
+    auto* cubemap = m_cubemapInstances.tryGet(cubemapHandle);
+    if (cubemap == nullptr) {
+        GLX_ERROR("Cubemap not found when changing wrap");
+        return;
+    }
+
+    cubemap->setWrap(wrapS, wrapT, wrapR);
 }
 
 TextureHandle Backend::instantiateTexture(TextureFormat format, vec2 size, TextureFiltering filter, size_t layerCount)
@@ -455,6 +544,9 @@ void Backend::frameReset()
     for(auto texture : texturesPtrs){
         texture->resetActivationInt();
     }
+
+    for (Cubemap* cubemap : m_cubemapInstances.getAll())
+        cubemap->resetActivationInt();
 }
 
 MaterialHandle Backend::instanciateMaterial(ResourceHandle<Material> material)
@@ -880,11 +972,12 @@ void Backend::initDebugCallback()
         nullptr);
 }
 
-CubemapHandle Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces)
+CubemapHandle Backend::instantiateCubemap(std::array<ResourceHandle<Image>, 6> faces)
 {
-    CubemapHandle cubemapID = instanciateCubemap();
-    if (!cubemapID)
+    if (!m_cubemapInstances.canCreate())
         return {};
+
+    CubemapHandle cubemapID = m_cubemapInstances.create();
     auto uploadLifetime = std::make_shared<int>(0);
     m_cubemapUploadLifetimes[cubemapID] = uploadLifetime;
     const std::weak_ptr<int> weakUploadLifetime = uploadLifetime;
@@ -898,30 +991,64 @@ CubemapHandle Backend::instanciateCubemap(std::array<ResourceHandle<Image>, 6> f
             auto* cubemapInstance = m_cubemapInstances.tryGet(cubemapID);
             if (cubemapInstance == nullptr)
                 return;
-            int w = faces[0].getResource().getWidth();
-            int h = faces[0].getResource().getHeight();
-            cubemapInstance->resize(w);
-
             auto& faceResource = faces[i].getResource();
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapInstance->getId());
-
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                0, GL_RGB, w, w, 0, GL_RGB, GL_UNSIGNED_BYTE, faceResource.getData());
-            glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+            cubemapInstance->initFace(
+                static_cast<unsigned int>(i),
+                faceResource.getData(),
+                faceResource.getWidth(),
+                faceResource.getHeight(),
+                faceResource.getNbChannels());
         });
     }
 
     return cubemapID;
 }
 
-CubemapHandle Backend::instanciateCubemap(int resolution)
+CubemapHandle Backend::instantiateCubemap(int resolution, TextureFormat format,
+    TextureFiltering filtering, TextureWrap wrap)
 {
-    if (!m_cubemapInstances.canCreate())
+    if (!m_cubemapInstances.canCreate() || resolution <= 0)
         return {};
 
-    CubemapHandle cubemapID = m_cubemapInstances.create();
-    m_cubemapInstances.get(cubemapID)->resize(resolution);
+    CubemapHandle cubemapID = m_cubemapInstances.create(
+        format, static_cast<unsigned int>(resolution), filtering, wrap);
+
     return cubemapID;
+}
+
+void Backend::setCubemapData(CubemapHandle cubemapID, std::array<ResourceHandle<Image>, 6> faces)
+{
+    auto* cubemapTexture  = m_cubemapInstances.get(cubemapID);
+    if(cubemapTexture == nullptr){
+        GLX_ERROR("cubemap not found when loading data");
+        return;
+    }
+    cubemapTexture->beginFaceUpload();
+    
+    auto uploadLifetime = std::make_shared<int>(0);
+    m_cubemapUploadLifetimes[cubemapID] = uploadLifetime;
+    const std::weak_ptr<int> weakUploadLifetime = uploadLifetime;
+    const std::weak_ptr<int> backendLifetime = m_lifetimeToken;
+
+    for (int i = 0; i < 6; i++) {
+        faces[i].getResource().onLoaded([this, backendLifetime, weakUploadLifetime, faces, cubemapID, i] {
+            if (backendLifetime.expired() || weakUploadLifetime.expired())
+                return;
+
+            auto* cubemapInstance = m_cubemapInstances.tryGet(cubemapID);
+            if (cubemapInstance == nullptr){
+                GLX_ERROR("cubemap not found when loading data");
+                return;
+            }
+            auto& faceResource = faces[i].getResource();
+            cubemapInstance->initFace(
+                static_cast<unsigned int>(i),
+                faceResource.getData(),
+                faceResource.getWidth(),
+                faceResource.getHeight(),
+                faceResource.getNbChannels());
+        });
+    }
 }
 
 void Backend::setProjectionMatrix(const mat4& projectionMatrix)
@@ -974,133 +1101,64 @@ void Backend::draw(const GeometryHandle geometryH)
     ++m_drawCount;
 }
 
-// void Backend::processCommand(const UseTextureCommand& command)
-// {
-//     Program* program = getActiveProgram();
-//     if (program == nullptr) {
-//         GLX_CORE_ERROR("Cannot bind a texture because no valid program is active");
-//         return;
-//     }
-
-//     const int uniformLocation = program->getUniformLocation(command.uniformName);
-//     if (uniformLocation < 0) {
-//         GLX_CORE_ERROR("Program does not expose texture uniform '{0}'", command.uniformName);
-//         return;
-//     }
-
-//     Texture* texture = m_textureInstances.tryGet(command.texture);
-//     if (texture == nullptr) {
-//         GLX_CORE_ERROR("Cannot bind an invalid texture handle (slot={0}, generation={1})",
-//             command.texture.index(), command.texture.generation());
-//         return;
-//     }
-//     texture->activate(uniformLocation);
-//     if(command.important)
-//         texture->reserveActivationInt();
-//     checkOpenGLErrors("Bind texture");
-// }
-
-// void Backend::processCommand(const UseCubemapCommand& command)
-// {
-//     Program* program = getActiveProgram();
-//     if (program == nullptr) {
-//         GLX_CORE_ERROR("Cannot bind a cubemap because no valid program is active");
-//         return;
-//     }
-
-//     const int uniformLocation = program->getUniformLocation(command.uniformName);
-//     if (uniformLocation < 0) {
-//         GLX_CORE_ERROR("Program does not expose cubemap uniform '{0}'", command.uniformName);
-//         return;
-//     }
-
-//     auto* cubemap = m_cubemapInstances.tryGet(command.cubemap);
-//     if (cubemap == nullptr) {
-//         GLX_CORE_ERROR("Cannot bind an invalid cubemap handle (slot={0}, generation={1})",
-//             command.cubemap.index(), command.cubemap.generation());
-//         return;
-//     }
-//     cubemap->activate(uniformLocation);
-//     checkOpenGLErrors("Bind cubemap");
-// }
-
-// void Backend::processCommand(const AttachTextureToFramebufferCommand& command)
-// {
-//     // GLX-TODO: ensure it works correctly
-//     auto* framebuffer = m_frameBufferInstances.tryGet(command.framebuffer);
-//     auto* texture = m_textureInstances.tryGet(command.texture);
-//     if (framebuffer == nullptr || texture == nullptr) {
-//         GLX_CORE_ERROR("Cannot attach invalid texture/framebuffer GPU handles");
-//         return;
-//     }
-//     auto& attachments = m_framebufferAttachments[command.framebuffer];
-//     TextureHandle* destination = nullptr;
-//     if (command.attachmentIdx < 0) {
-//         destination = &attachments.depth;
-//     } else {
-//         if (attachments.colors.size() <= static_cast<size_t>(command.attachmentIdx))
-//             attachments.colors.resize(static_cast<size_t>(command.attachmentIdx) + 1);
-//         destination = &attachments.colors[command.attachmentIdx];
-//     }
-
-//     const TextureHandle previous = *destination;
-//     if (previous != command.texture)
-//         m_textureInstances.retain(command.texture);
-
-//     const bool attached = command.attachmentIdx < 0
-//         ? framebuffer->attachDepthTexture(*texture)
-//         : framebuffer->attachColorTexture(*texture, command.attachmentIdx);
-
-//     if (!attached) {
-//         if (previous != command.texture)
-//             clearTexture(command.texture);
-//         return;
-//     }
-
-//     *destination = command.texture;
-//     if (previous && previous != command.texture)
-//         clearTexture(previous);
-
-//     checkOpenGLErrors("Attach texture to framebuffer");
-// }
-
-void Backend::attachCubemapToFramebuffer(const CubemapFramebufferHandle fbHandle, const CubemapHandle cubemapHandle, const size_t colorIdx)
+bool Backend::attachColorCubemapToFramebuffer(CubemapHandle cubemapHandle,
+    CubemapFramebufferHandle fbHandle, int colorAttachmentIdx)
 {
-    // GLX-TODO: ensure it works correctly
     auto* framebuffer = m_cubemapFrameBufferInstances.tryGet(fbHandle);
     auto* cubemap = m_cubemapInstances.tryGet(cubemapHandle);
-    if (framebuffer == nullptr || cubemap == nullptr) {
+    if (framebuffer == nullptr || cubemap == nullptr || colorAttachmentIdx < 0) {
         GLX_CORE_ERROR("Cannot attach invalid cubemap/framebuffer GPU handles");
-        return;
+        return false;
     }
 
     auto& attachments = m_cubemapFramebufferAttachments[fbHandle];
-    CubemapHandle* destination = nullptr;
-    if (colorIdx < 0) {
-        destination = &attachments.depth;
-    } else {
-        if (attachments.colors.size() <= colorIdx)
-            attachments.colors.resize(colorIdx + 1);
-        destination = &attachments.colors[colorIdx];
-    }
+    if (attachments.colors.size() <= static_cast<std::size_t>(colorAttachmentIdx))
+        attachments.colors.resize(static_cast<std::size_t>(colorAttachmentIdx) + 1);
+    CubemapHandle& destination = attachments.colors[colorAttachmentIdx];
 
-    const CubemapHandle previous = *destination;
+    const CubemapHandle previous = destination;
     if (previous != cubemapHandle)
         m_cubemapInstances.retain(cubemapHandle);
 
-    const bool attached = colorIdx < 0
-        ? framebuffer->attachDepthCubemap(*cubemap)
-        : framebuffer->attachColorCubemap(*cubemap, colorIdx);
+    const bool attached = framebuffer->attachColorCubemap(*cubemap, colorAttachmentIdx);
 
     if (!attached) {
         if (previous != cubemapHandle)
             clearCubemap(cubemapHandle);
-        return;
+        return false;
     }
 
-    *destination = cubemapHandle;
+    destination = cubemapHandle;
     if (previous && previous != cubemapHandle)
         clearCubemap(previous);
+    return true;
+}
+
+bool Backend::attachDepthCubemapToFramebuffer(CubemapHandle cubemapHandle,
+    CubemapFramebufferHandle fbHandle)
+{
+    auto* framebuffer = m_cubemapFrameBufferInstances.tryGet(fbHandle);
+    auto* cubemap = m_cubemapInstances.tryGet(cubemapHandle);
+    if (framebuffer == nullptr || cubemap == nullptr) {
+        GLX_CORE_ERROR("Cannot attach invalid cubemap/framebuffer GPU handles");
+        return false;
+    }
+
+    auto& destination = m_cubemapFramebufferAttachments[fbHandle].depth;
+    const CubemapHandle previous = destination;
+    if (previous != cubemapHandle)
+        m_cubemapInstances.retain(cubemapHandle);
+
+    if (!framebuffer->attachDepthCubemap(*cubemap)) {
+        if (previous != cubemapHandle)
+            clearCubemap(cubemapHandle);
+        return false;
+    }
+
+    destination = cubemapHandle;
+    if (previous && previous != cubemapHandle)
+        clearCubemap(previous);
+    return true;
 }
 
 void Backend::bindMaterial(const MaterialHandle materialHandle)

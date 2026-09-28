@@ -5,7 +5,7 @@
 
 using namespace math;
 
-namespace Galaxy
+namespace Galaxy::geometry
 {
     struct Plane {
         vec3 normal = {0,1,0};
@@ -26,9 +26,26 @@ namespace Galaxy
     struct Sphere {
         float radius;
         vec3 center;
+    };
+    
+    struct AxisAlignedBoundingBox {
+        vec3 center;
+        vec3 halfSize;
 
-        bool isOnOrForwardPlane(const Plane& plane, const vec3& offset, float scale) const{
-            return plane.getSignedDistanceToPlane(center * scale + offset) > -radius * scale * 2.f;
+        float sqDistPoint(const vec3& p) const
+        {
+            vec3 min = center - halfSize;
+            vec3 max = center + halfSize;
+
+            float sqDist = 0.0f;
+            for( int i = 0; i < 3; i++ ){
+                float v = p[i];
+                if( v < min[i] ) 
+                    sqDist += (min[i] - v) * (min[i] - v);
+                if( v > max[i] ) 
+                    sqDist += (v - max[i]) * (v - max[i]);
+            }
+            return sqDist;
         }
     };
 } // namespace Galaxy

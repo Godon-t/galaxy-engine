@@ -6,12 +6,12 @@
 
 #include <optional>
 
+using namespace Galaxy::geometry;
+
 namespace Galaxy {
 
 // Frontend description of something that may be rendered. It is not a GPU
-// resource and it is not a backend command. Culling/sorting turns RenderItems
-// into the current draw commands; a later pipeline refactor can add a pipeline
-// override without changing GPU resource ownership.
+// resource.
 struct RenderItem {
     GeometryHandle geometry;
     std::optional<MaterialHandle> material;

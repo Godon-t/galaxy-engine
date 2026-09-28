@@ -42,11 +42,5 @@ protected:
 
 private:
     ResourceHandle<Environment> m_env;
-    CubemapHandle m_skyboxCubemap;
-    CubemapHandle m_irradianceCubemap;
-    GeometryHandle m_cubeGeometry;
-    CubemapHandle m_renderingCubemap;
-
-    Transform m_transform;
 };
 } // namespace Galaxy

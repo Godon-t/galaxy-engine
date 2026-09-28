@@ -4,7 +4,10 @@
 #include "RenderGraphCompilation.hpp"
 
 #include <cstddef>
+#include <optional>
 #include <string>
+#include <string_view>
+#include <variant>
 #include <vector>
 
 
@@ -12,14 +15,22 @@ namespace Galaxy
 {
     class Backend;
 
+    // GLX-TODO: the use of variant doesnt seem to be the right choice
+    using GraphTextureHandle = std::variant<TextureHandle, CubemapHandle>;
+    using GraphFramebufferHandle = std::variant<FramebufferHandle, CubemapFramebufferHandle>;
+
     struct RenderPassResources {
         std::string passName;
-        std::vector<TextureHandle> inputTextures;
+        std::vector<GraphTextureHandle> inputTextures;
+        std::vector<std::string> inputTextureNames;
         std::vector<size_t> inputTexturesLocations;
         ProgramHandle program;
 
+        const GraphTextureHandle findInputTexture(
+            std::string_view samplerName) const;
+
         // GLX-TODO: put target handling outside of renderPass
-        FramebufferHandle targetFramebufferHandle;
+        GraphFramebufferHandle targetFramebufferHandle;
     };
 
     // Runtime graph: owns the compiled schedule and its allocated GPU resources.
@@ -29,29 +40,31 @@ namespace Galaxy
 
         void build(const CompiledRenderGraph& compiledGraph, Backend& backend);
 
-        [[nodiscard]] std::size_t getPassIndex(RenderPassId id) const {
+        std::size_t getPassIndex(RenderPassId id) const {
             return compilation.executionIndexByPass.at(id.index);
         }
 
-        [[nodiscard]] const RenderPassResources& getRenderPass(RenderPassId id) const {
+        const RenderPassResources& getRenderPass(RenderPassId id) const {
             return m_passes.at(getPassIndex(id));
         }
 
-        [[nodiscard]] const RenderPassResources& getRenderPassAt(std::size_t executionIndex) const {
+        const RenderPassResources& getRenderPassAt(std::size_t executionIndex) const {
             return m_passes.at(executionIndex);
         }
 
-        [[nodiscard]] TextureHandle getTextureHandle(GraphTextureId id) const {
+        const GraphTextureHandle& getTextureHandle(GraphTextureId id) const {
             return m_graphTextureHandles.at(id.index);
         }
 
-        [[nodiscard]] std::size_t getPassCount() const {
+        std::size_t getPassCount() const {
             return m_passes.size();
         }
+
+        static bool hasFramebuffer(const GraphFramebufferHandle& handle);
         
     private:
         std::vector<RenderPassResources> m_passes;
-        std::vector<TextureHandle> m_graphTextureHandles;
+        std::vector<GraphTextureHandle> m_graphTextureHandles;
     };
 } // namespace Galaxy
 

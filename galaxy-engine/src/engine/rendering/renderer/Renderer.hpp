@@ -1,11 +1,13 @@
 #pragma once
 
 #include "Backend.hpp"
-#include "frontend/Frontend.hpp"
 
 #include "data/Transform.hpp"
 #include "nodes/Node.hpp"
 #include "types/Render.hpp"
+#include "rendering/CameraManager.hpp"
+#include "LightManager.hpp"
+#include "frontend/Frontend.hpp"
 
 #include <optional>
 
@@ -13,6 +15,8 @@ namespace Galaxy {
 enum FilterEnum {
     IRRADIANCE
 };
+
+class Frontend;
 
 class Renderer {
 public:

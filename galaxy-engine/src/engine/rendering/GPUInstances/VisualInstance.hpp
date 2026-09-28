@@ -5,6 +5,7 @@
 #include "common/geometry/Shapes.hpp"
 
 using namespace math;
+using namespace Galaxy::geometry;
 
 namespace Galaxy {
 class VisualInstance {

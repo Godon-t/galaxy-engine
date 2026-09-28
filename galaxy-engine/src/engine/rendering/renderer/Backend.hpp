@@ -34,12 +34,14 @@ public:
 
     GeometryHandle instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx);
     GeometryHandle instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices, std::function<void()> destroyCallback = nullptr);
-    Sphere getMeshBoundingVolume(GeometryHandle mesh);
+    geometry::Sphere getMeshBoundingVolume(GeometryHandle mesh);
     void clearMesh(GeometryHandle mesh);
 
     TextureHandle instantiateTexture(TextureFormat format, vec2 size, TextureFiltering filter = TextureFiltering::LINEAR, size_t layerCount = 0);
     TextureHandle instantiateTexture(ResourceHandle<Image> image);
+    void setTextureData(TextureHandle textureHandle, ResourceHandle<Image> image);
     void setTextureWrap(TextureHandle texture, TextureWrap wrapS, TextureWrap wrapT);
+    void setTextureWrap(CubemapHandle cubemap, TextureWrap wrapS, TextureWrap wrapT, TextureWrap wrapR);
     void clearTexture(TextureHandle texture);
     
     
@@ -59,8 +61,12 @@ public:
     GeometryHandle generateQuad(vec2 dimmensions, std::function<void()> destroyCallback);
     GeometryHandle generatePyramid(float baseSize, float height, std::function<void()> destroyCallback);
 
-    CubemapHandle instanciateCubemap(std::array<ResourceHandle<Image>, 6> faces);
-    CubemapHandle instanciateCubemap(int resolution = 1024);
+    CubemapHandle instantiateCubemap(std::array<ResourceHandle<Image>, 6> faces);
+    CubemapHandle instantiateCubemap(int resolution = 1024,
+        TextureFormat format = TextureFormat::RGBA,
+        TextureFiltering filtering = TextureFiltering::LINEAR,
+        TextureWrap wrap = TextureWrap::CLAMP_TO_EDGE);
+    void setCubemapData(CubemapHandle cubemap, std::array<ResourceHandle<Image>, 6> faces);
     void clearCubemap(CubemapHandle cubemap);
 
     FramebufferHandle instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1, unsigned int depthLayerCount = 0);
@@ -96,9 +102,13 @@ public:
     
     
     void bindFramebuffer(FramebufferHandle fb, int targetLayer = -1);
+    void bindFramebuffer(CubemapFramebufferHandle fb, int targetFace = 0);
     void unbindFramebuffer(FramebufferHandle fb);
+    void unbindFramebuffer(CubemapFramebufferHandle fb);
     bool attachColorTextureToFramebuffer(TextureHandle texture, FramebufferHandle framebuffer, int colorattachmentIdx);
     bool attachDepthTextureToFramebuffer(TextureHandle texture, FramebufferHandle framebuffer);
+    bool attachColorCubemapToFramebuffer(CubemapHandle cubemap, CubemapFramebufferHandle framebuffer, int colorAttachmentIdx);
+    bool attachDepthCubemapToFramebuffer(CubemapHandle cubemap, CubemapFramebufferHandle framebuffer);
     
     void execute(RenderGraphExecution& execution);
     
@@ -118,7 +128,6 @@ private:
 
     void draw(const GeometryHandle geometryH, const mat4 model);
     void draw(const GeometryHandle geometryH);
-    void attachCubemapToFramebuffer(const CubemapFramebufferHandle fbHandle, const CubemapHandle cubemapHandle, const size_t colorIdx);
     void bindMaterial(const MaterialHandle handle);
     void processCommand(const SetUniformCommand& command);
     void processCommand(const UpdateTextureCommand& command);

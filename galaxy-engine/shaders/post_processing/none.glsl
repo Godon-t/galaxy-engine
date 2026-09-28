@@ -47,6 +47,9 @@ uniform sampler2D normalBuffer;
 uniform sampler2D depthBuffer;
 uniform sampler2D roughnessBuffer;
 uniform sampler2D directBuffer;
+uniform samplerCube skybox;
+
+
 uniform mat4 view;
 uniform float zNear     = 0.1;
 uniform float zFar      = 9999.0;
@@ -95,7 +98,33 @@ float IGN(vec2 pixelCoord, int frameCount)
     return fract(magic.z * fract(dot(pixelCoord.xy + float(frameCount) * vec2(47.0, 17.0) * 0.695, magic.xy)));
 }
 
+
+vec3 getSkyDirection(vec2 uv)
+{
+    vec2 ndc = uv * 2.0 - 1.0;
+
+    vec4 viewPosition =
+        inverseProjection * vec4(ndc, 1.0, 1.0);
+
+    vec3 viewDirection =
+        normalize(viewPosition.xyz / viewPosition.w);
+
+    return normalize(
+        (inverseView * vec4(viewDirection, 0.0)).xyz
+    );
+}
+
+
 void main()
 {
     color = texture(sceneBuffer, TexCoords);
+
+    float depth = texture(depthBuffer, TexCoords).r;
+
+    if (depth >= 0.999999) {
+        vec3 direction = getSkyDirection(TexCoords);
+        color = vec4(texture(skybox, direction).rgb, 1.0);
+        return;
+    }
+
 }

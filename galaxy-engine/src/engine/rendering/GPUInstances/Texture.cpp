@@ -1,51 +1,253 @@
 #include "Texture.hpp"
 
 #include "Log.hpp"
+#include "gl_headers.hpp"
 #include "rendering/OpenglHelper.hpp"
 
-#include "gl_headers.hpp"
-
+#include <algorithm>
 #include <utility>
 
 namespace Galaxy {
-int Texture::s_currentFreeActivationInt = 0;
-std::array<bool, Texture::s_maxActivationInt> Texture::s_reservedActivationInt = std::array<bool, Texture::s_maxActivationInt>();
+namespace detail {
 
-Texture::Texture(unsigned char* data, int width, int height, int nbChannels, int depthLayerCount)
-{
-    init(data, width, height, nbChannels, depthLayerCount);
-}
+int TextureObject::s_currentFreeActivationUnit = 0;
+std::array<bool, TextureObject::MaxActivationUnits> TextureObject::s_reservedActivationUnits {};
 
-Texture::Texture(TextureFormat format, int width, int height, int depthLayerCount)
-    : m_format(format)
-    , m_layerCount(depthLayerCount)
-    , m_width(width)
-    , m_height(height)
-{
-    regenerate();
-}
-
-Texture::Texture(TextureFormat format, int width, int height, TextureFiltering filter, int depthLayerCount) 
-    : m_format(format)
-    , m_layerCount(depthLayerCount)
-    , m_width(width)
-    , m_height(height)
-    , m_filter(filter)
-{
-    regenerate();
-}
-
-Texture::~Texture()
+TextureObject::~TextureObject()
 {
     destroy();
 }
 
-Texture::Texture(Texture&& other) noexcept
+TextureObject::TextureObject(TextureObject&& other) noexcept
     : m_id(std::exchange(other.m_id, 0))
+    , m_activationUnit(std::exchange(other.m_activationUnit, -1))
+{
+}
+
+TextureObject& TextureObject::operator=(TextureObject&& other) noexcept
+{
+    if (this == &other)
+        return *this;
+
+    destroy();
+    m_id = std::exchange(other.m_id, 0);
+    m_activationUnit = std::exchange(other.m_activationUnit, -1);
+    return *this;
+}
+
+void TextureObject::create(unsigned int target)
+{
+    destroy();
+    glCreateTextures(target, 1, &m_id);
+}
+
+void TextureObject::destroy()
+{
+    resetActivationUnit();
+    if (m_id != 0)
+        glDeleteTextures(1, &m_id);
+    m_id = 0;
+}
+
+void TextureObject::activate(unsigned int target, int uniformLocation)
+{
+    if (m_activationUnit < 0)
+        m_activationUnit = getAvailableActivationUnit();
+
+    glActiveTexture(GL_TEXTURE0 + m_activationUnit);
+    glBindTexture(target, m_id);
+    glUniform1i(uniformLocation, m_activationUnit);
+}
+
+void TextureObject::resetActivationUnit()
+{
+    if (m_activationUnit >= 0 && m_activationUnit < MaxActivationUnits)
+        s_reservedActivationUnits[m_activationUnit] = false;
+    m_activationUnit = -1;
+}
+
+void TextureObject::reserveActivationUnit()
+{
+    if (m_activationUnit >= 0 && m_activationUnit < MaxActivationUnits)
+        s_reservedActivationUnits[m_activationUnit] = true;
+}
+
+void TextureObject::activate(unsigned int id, unsigned int target, int uniformLocation)
+{
+    const int activationUnit = getAvailableActivationUnit();
+    glActiveTexture(GL_TEXTURE0 + activationUnit);
+    glBindTexture(target, id);
+    glUniform1i(uniformLocation, activationUnit);
+    s_reservedActivationUnits[activationUnit] = true;
+}
+
+void TextureObject::resetActivationUnits()
+{
+    s_currentFreeActivationUnit = 0;
+}
+
+void TextureObject::clearReservedActivationUnits()
+{
+    std::fill(s_reservedActivationUnits.begin(), s_reservedActivationUnits.end(), false);
+}
+
+int TextureObject::getAvailableActivationUnit()
+{
+    for (int attempt = 0; attempt < MaxActivationUnits; ++attempt) {
+        const int index = s_currentFreeActivationUnit;
+        s_currentFreeActivationUnit = (s_currentFreeActivationUnit + 1) % MaxActivationUnits;
+        if (!s_reservedActivationUnits[index])
+            return index;
+    }
+
+    GLX_CORE_ASSERT(false, "No texture unit available");
+    return 0;
+}
+
+unsigned int toOpenGLInternalFormat(TextureFormat format)
+{
+    switch (format) {
+    case TextureFormat::RED:
+        return GL_R8;
+    case TextureFormat::RG:
+        return GL_RG8;
+    case TextureFormat::RGB:
+        return GL_RGB8;
+    case TextureFormat::RGBA:
+        return GL_RGBA8;
+    case TextureFormat::DEPTH:
+        return GL_DEPTH_COMPONENT24;
+    case TextureFormat::DEPTH24STENCIL8:
+        return GL_DEPTH24_STENCIL8;
+    case TextureFormat::NONE:
+        return 0;
+    }
+    return 0;
+}
+
+unsigned int toOpenGLExternalFormat(TextureFormat format)
+{
+    switch (format) {
+    case TextureFormat::RED:
+        return GL_RED;
+    case TextureFormat::RG:
+        return GL_RG;
+    case TextureFormat::RGB:
+        return GL_RGB;
+    case TextureFormat::RGBA:
+        return GL_RGBA;
+    case TextureFormat::DEPTH:
+        return GL_DEPTH_COMPONENT;
+    case TextureFormat::DEPTH24STENCIL8:
+        return GL_DEPTH_STENCIL;
+    case TextureFormat::NONE:
+        return 0;
+    }
+    return 0;
+}
+
+unsigned int toOpenGLType(TextureFormat format)
+{
+    switch (format) {
+    case TextureFormat::RED:
+    case TextureFormat::RG:
+    case TextureFormat::RGB:
+    case TextureFormat::RGBA:
+        return GL_UNSIGNED_BYTE;
+    case TextureFormat::DEPTH:
+        return GL_FLOAT;
+    case TextureFormat::DEPTH24STENCIL8:
+        return GL_UNSIGNED_INT_24_8;
+    case TextureFormat::NONE:
+        return 0;
+    }
+    return 0;
+}
+
+unsigned int toOpenGLWrap(TextureWrap wrap)
+{
+    switch (wrap) {
+    case TextureWrap::CLAMP_TO_EDGE:
+        return GL_CLAMP_TO_EDGE;
+    case TextureWrap::CLAMP_TO_BORDER:
+        return GL_CLAMP_TO_BORDER;
+    case TextureWrap::REPEAT:
+        return GL_REPEAT;
+    }
+    return GL_REPEAT;
+}
+
+unsigned int toOpenGLFilter(TextureFiltering filtering)
+{
+    switch (filtering) {
+    case TextureFiltering::NEAREST:
+        return GL_NEAREST;
+    case TextureFiltering::LINEAR:
+        return GL_LINEAR;
+    }
+    return GL_LINEAR;
+}
+
+} // namespace detail
+
+TextureFormat formatFromChannelCount(int channelCount)
+{
+    switch (channelCount) {
+    case 1:
+        return TextureFormat::RED;
+    case 2:
+        return TextureFormat::RG;
+    case 3:
+        return TextureFormat::RGB;
+    case 4:
+        return TextureFormat::RGBA;
+    default:
+        GLX_CORE_ERROR("Unsupported texture channel count: {0}", channelCount);
+        return TextureFormat::RGBA;
+    }
+}
+
+void setDepthBorderColor(unsigned int id, TextureFormat format)
+{
+    if (format != TextureFormat::DEPTH && format != TextureFormat::DEPTH24STENCIL8)
+        return;
+
+    constexpr float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTextureParameterfv(id, GL_TEXTURE_BORDER_COLOR, borderColor);
+}
+
+Texture::Texture(unsigned char* data, unsigned int width, unsigned int height, unsigned int nbChannels, unsigned int depthLayerCount)
+{
+    init(data, width, height, nbChannels, depthLayerCount);
+}
+
+Texture::Texture(TextureFormat format, unsigned int width, unsigned int height, unsigned int depthLayerCount)
+    : m_format(format)
+    , m_layerCount(depthLayerCount)
+    , m_width(width)
+    , m_height(height)
+{
+    regenerate();
+}
+
+Texture::Texture(TextureFormat format, unsigned int width, unsigned int height, TextureFiltering filter, unsigned int depthLayerCount)
+    : m_format(format)
+    , m_filter(filter)
+    , m_layerCount(depthLayerCount)
+    , m_width(width)
+    , m_height(height)
+{
+    regenerate();
+}
+
+Texture::Texture(Texture&& other) noexcept
+    : m_object(std::move(other.m_object))
     , m_format(other.m_format)
+    , m_filter(other.m_filter)
+    , m_wrapS(other.m_wrapS)
+    , m_wrapT(other.m_wrapT)
     , m_width(std::exchange(other.m_width, 0))
     , m_height(std::exchange(other.m_height, 0))
-    , m_activationInt(std::exchange(other.m_activationInt, -1))
     , m_layerCount(std::exchange(other.m_layerCount, 0))
 {
 }
@@ -55,276 +257,191 @@ Texture& Texture::operator=(Texture&& other) noexcept
     if (this == &other)
         return *this;
 
-    destroy();
-    m_id            = std::exchange(other.m_id, 0);
-    m_format        = other.m_format;
-    m_width         = std::exchange(other.m_width, 0);
-    m_height        = std::exchange(other.m_height, 0);
-    m_activationInt = std::exchange(other.m_activationInt, -1);
-    m_layerCount    = std::exchange(other.m_layerCount, 0);
+    m_object = std::move(other.m_object);
+    m_format = other.m_format;
+    m_filter = other.m_filter;
+    m_wrapS = other.m_wrapS;
+    m_wrapT = other.m_wrapT;
+    m_width = std::exchange(other.m_width, 0);
+    m_height = std::exchange(other.m_height, 0);
+    m_layerCount = std::exchange(other.m_layerCount, 0);
     return *this;
 }
 
-void setOpenglWrap(GLuint id, bool horizontal, TextureWrap wrap){
-    GLenum glWrap;
+unsigned int Texture::target() const
+{
+    return m_layerCount > 0 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
+}
 
-    if(wrap == TextureWrap::REPEAT)
-        glWrap = GL_REPEAT;
-    else if(wrap == TextureWrap::CLAMP_TO_BORDER)
-        glWrap = GL_CLAMP_TO_BORDER;
-    else if(wrap == TextureWrap::CLAMP_TO_EDGE)
-        glWrap = GL_CLAMP_TO_EDGE;
-    
-    if(horizontal)
-        glTextureParameteri(id, GL_TEXTURE_WRAP_T, glWrap);
-    else
-        glTextureParameteri(id, GL_TEXTURE_WRAP_S, glWrap);
+void Texture::applySamplerState()
+{
+    if (getId() == 0)
+        return;
+
+    glTextureParameteri(getId(), GL_TEXTURE_WRAP_S, detail::toOpenGLWrap(m_wrapS));
+    glTextureParameteri(getId(), GL_TEXTURE_WRAP_T, detail::toOpenGLWrap(m_wrapT));
+    if (m_layerCount > 0)
+        glTextureParameteri(getId(), GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    const unsigned int glFilter = detail::toOpenGLFilter(m_filter);
+    glTextureParameteri(getId(), GL_TEXTURE_MIN_FILTER, glFilter);
+    glTextureParameteri(getId(), GL_TEXTURE_MAG_FILTER, glFilter);
 }
 
 void Texture::regenerate()
 {
-    destroy();
-
-    if (m_width <= 0 || m_height <= 0) {
+    if (m_width == 0 || m_height == 0) {
+        m_object.destroy();
         return;
     }
 
-    unsigned int internalFormat = getInternalFormat(m_format);
-
-    const GLenum target = m_layerCount > 0 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
-    glCreateTextures(target, 1, &m_id);
-    
-    setOpenglWrap(m_id, true, m_wrapS);
-    setOpenglWrap(m_id, false, m_wrapT);
-
-    if (m_layerCount > 0)
-        glTextureParameteri(m_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    
-    GLenum GlFilter;
-    if(m_filter == TextureFiltering::LINEAR) GlFilter = GL_LINEAR; 
-    else if(m_filter == TextureFiltering::NEAREST) GlFilter = GL_NEAREST; 
-    glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GlFilter);
-    glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GlFilter);
-
-    if (m_format == TextureFormat::DEPTH24STENCIL8 || m_format == TextureFormat::DEPTH) {
-        float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        glTextureParameterfv(m_id, GL_TEXTURE_BORDER_COLOR, borderColor);
+    const unsigned int internalFormat = detail::toOpenGLInternalFormat(m_format);
+    if (internalFormat == 0) {
+        GLX_CORE_ERROR("Cannot allocate a texture with an unsupported format");
+        m_object.destroy();
+        return;
     }
 
+    m_object.create(target());
+    applySamplerState();
+    setDepthBorderColor(getId(), m_format);
+
     if (m_layerCount > 0)
-        glTextureStorage3D(m_id, 1, internalFormat, m_width, m_height, m_layerCount);
+        glTextureStorage3D(getId(), 1, internalFormat, m_width, m_height, m_layerCount);
     else
-        glTextureStorage2D(m_id, 1, internalFormat, m_width, m_height);
-    checkOpenGLErrors("Texture resize");
+        glTextureStorage2D(getId(), 1, internalFormat, m_width, m_height);
+
+    checkOpenGLErrors("Texture regeneration");
 }
 
-void Texture::resize(int width, int height)
+void Texture::resize(unsigned int width, unsigned int height)
 {
-    if (width <= 0 || height <= 0) {
+    resize(width, height, m_layerCount);
+}
+
+void Texture::resize(unsigned int width, unsigned int height, unsigned int depthLayerCount)
+{
+    if (width <= 0 || height <= 0 || depthLayerCount < 0)
+        return;
+
+    if (getId() != 0
+        && width == m_width
+        && height == m_height
+        && depthLayerCount == m_layerCount) {
         return;
     }
-
-    if (m_id != 0 && width == m_width && height == m_height)
-        return;
-
-    m_width  = width;
-    m_height = height;
-
-    regenerate();
-}
-
-void Texture::resize(int width, int height, int depthLayerCount)
-{
-    if (
-        m_id != 0 && 
-        width == m_width && 
-        height == m_height &&
-        depthLayerCount == static_cast<int>(m_layerCount))
-        return;
 
     m_width = width;
     m_height = height;
-    m_layerCount = depthLayerCount;
+    m_layerCount =  depthLayerCount;
     regenerate();
 }
 
 void Texture::setFormat(TextureFormat format)
 {
-    if (format != m_format) {
-        m_format = format;
-        regenerate();
-        checkOpenGLErrors("Texture set format");
-    }
+    if (format == m_format)
+        return;
+
+    m_format = format;
+    regenerate();
+}
+
+void Texture::setFiltering(TextureFiltering filtering)
+{
+    if (filtering == m_filter)
+        return;
+
+    m_filter = filtering;
+    applySamplerState();
 }
 
 void Texture::setWrap(TextureWrap wrapS, TextureWrap wrapT)
 {
-    if(m_wrapS != wrapS || m_wrapT != wrapT){
-        m_wrapS = wrapS;
-        m_wrapT = wrapT;
-        regenerate();
-    }
+    if (wrapS == m_wrapS && wrapT == m_wrapT)
+        return;
+
+    m_wrapS = wrapS;
+    m_wrapT = wrapT;
+    applySamplerState();
 }
 
-void Texture::init(unsigned char* data, int width, int height, int nbChannels, int depthLayerCount)
+void Texture::init(unsigned char* data, unsigned int width, unsigned int height, unsigned int nbChannels, unsigned int depthLayerCount)
 {
-    destroy();
-
-    switch (nbChannels) {
-    case 1:
-        m_format = TextureFormat::RED;
-        break;
-    case 2:
-        m_format = TextureFormat::RG;
-        break;
-    case 3:
-        m_format = TextureFormat::RGB;
-        break;
-    case 4:
-        m_format = TextureFormat::RGBA;
-        break;
-    default:
-        GLX_CORE_ERROR("Warning: Unsupported texture format, defaulting to GL_RGBA\n");
-        m_format = TextureFormat::RGBA;
+    if (width <= 0 || height <= 0 || depthLayerCount < 0) {
+        GLX_CORE_ERROR("Cannot initialize a texture with invalid dimensions");
+        return;
     }
 
-    GLenum format         = getExternalFormat(m_format);
-    unsigned int type     = getType(m_format);
-
-    m_layerCount = depthLayerCount;
+    m_format = formatFromChannelCount(nbChannels);
     m_width = width;
     m_height = height;
+    m_layerCount = depthLayerCount;
     regenerate();
 
-    if(data != nullptr && depthLayerCount > 0){
-        glTextureSubImage3D(m_id, 0, 0, 0, 0, width, height, depthLayerCount, format, type, data);
-    }
-    else if (data != nullptr) {
-        glTextureSubImage2D(m_id, 0, 0, 0, width, height, format, type, data);
+    if (data == nullptr || getId() == 0)
+        return;
+
+    const unsigned int externalFormat = detail::toOpenGLExternalFormat(m_format);
+    const unsigned int type = detail::toOpenGLType(m_format);
+    if (m_layerCount > 0) {
+        glTextureSubImage3D(getId(), 0, 0, 0, 0,
+            m_width, m_height, m_layerCount, externalFormat, type, data);
+    } else {
+        glTextureSubImage2D(getId(), 0, 0, 0,
+            m_width, m_height, externalFormat, type, data);
     }
 
-    checkOpenGLErrors("Texture load");
+    checkOpenGLErrors("Texture upload");
 }
 
 void Texture::resetActivationInt()
 {
-    m_activationInt = -1;
+    m_object.resetActivationUnit();
 }
 
 void Texture::reserveActivationInt()
 {
-    if (m_activationInt >= 0)
-        s_reservedActivationInt[m_activationInt] = true;
-}
-
-void Texture::clearReservedActivationInts()
-{
-    for(int i=0; i<s_maxActivationInt; i++){
-        s_reservedActivationInt[i] = false;
-    }
-}
-
-int Texture::getAvailableActivationInt()
-{
-    //TODO: brute force way of checking available int
-    for (int attempt = 0; attempt < s_maxActivationInt; ++attempt) {
-        const int idx = s_currentFreeActivationInt;
-        s_currentFreeActivationInt = (s_currentFreeActivationInt + 1) % s_maxActivationInt;
-        if (!s_reservedActivationInt[idx])
-            return idx;
-    }
-
-    GLX_CORE_ASSERT(false, "No texture unit available");
-    return 0;
+    m_object.reserveActivationUnit();
 }
 
 void Texture::activate(int textureLocation)
 {
-    if(m_activationInt == -1)
-        m_activationInt = getAvailableActivationInt();
-    glActiveTexture(GL_TEXTURE0 + m_activationInt);
-    if(m_layerCount > 0)
-        glBindTexture(GL_TEXTURE_2D_ARRAY, m_id);
-    else
-        glBindTexture(GL_TEXTURE_2D, m_id);
-    glUniform1i(textureLocation, m_activationInt);
-    bool check = checkOpenGLErrors("Texture activation");
-    if(check)
-        GLX_CORE_ERROR("eror");
+    m_object.activate(target(), textureLocation);
+    checkOpenGLErrors("Texture activation");
 }
 
 void Texture::activate(unsigned int id, int layerCount, int textureLocation)
 {
-    const int activationInt = getAvailableActivationInt();
-    glActiveTexture(GL_TEXTURE0 + activationInt);
-    glBindTexture(layerCount > 0 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, id);
-    glUniform1i(textureLocation, activationInt);
-    s_reservedActivationInt[activationInt] = true;
+    const unsigned int textureTarget = layerCount > 0 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
+    detail::TextureObject::activate(id, textureTarget, textureLocation);
 }
 
 void Texture::destroy()
 {
-    if (m_activationInt >= 0 && m_activationInt < s_maxActivationInt)
-        s_reservedActivationInt[m_activationInt] = false;
-    if (m_id != 0)
-        glDeleteTextures(1, &m_id);
-    m_id = 0;
-    m_activationInt = -1;
+    m_object.destroy();
 }
 
-unsigned int Texture::getInternalFormat(TextureFormat format)
+Cubemap::Cubemap(TextureFormat format, unsigned int resolution,
+    TextureFiltering filtering, TextureWrap wrap)
+    : m_resolution(resolution)
+    , m_format(format)
+    , m_filter(filtering)
+    , m_wrapS(wrap)
+    , m_wrapT(wrap)
+    , m_wrapR(wrap)
 {
-    if (format == TextureFormat::RGBA)
-        return GL_RGBA8;
-    if (format == TextureFormat::RED)
-        return GL_R8;
-    if (format == TextureFormat::RGB)
-        return GL_RGB8;
-    if (format == TextureFormat::DEPTH)
-        return GL_DEPTH_COMPONENT24;
-    if (format == TextureFormat::DEPTH24STENCIL8)
-        return GL_DEPTH24_STENCIL8;
-    return 0;
-}
-
-unsigned int Texture::getExternalFormat(TextureFormat format)
-{
-    if (format == TextureFormat::RED)
-        return GL_RED;
-    if (format == TextureFormat::RG)
-        return GL_RG;
-    if (format == TextureFormat::RGB)
-        return GL_RGB;
-    if (format == TextureFormat::RGBA)
-        return GL_RGBA;
-    
-    if (format == TextureFormat::DEPTH)
-        return GL_DEPTH_COMPONENT;
-    if (format == TextureFormat::DEPTH24STENCIL8)
-        return GL_DEPTH_STENCIL;
-    return 0;
-}
-
-unsigned int Texture::getType(TextureFormat format)
-{
-    if (format == TextureFormat::RED || format == TextureFormat::RG || format == TextureFormat::RGB || format == TextureFormat::RGBA)
-        return GL_UNSIGNED_BYTE;
-    if (format == TextureFormat::DEPTH)
-        return GL_FLOAT;
-    if (format == TextureFormat::DEPTH24STENCIL8)
-        return GL_UNSIGNED_INT_24_8;
-    return 0;
-}
-
-Cubemap::~Cubemap()
-{
-    destroy();
+    regenerate();
 }
 
 Cubemap::Cubemap(Cubemap&& other) noexcept
-    : m_id(std::exchange(other.m_id, 0))
+    : m_object(std::move(other.m_object))
     , m_resolution(std::exchange(other.m_resolution, 0))
     , m_format(other.m_format)
+    , m_filter(other.m_filter)
+    , m_wrapS(other.m_wrapS)
+    , m_wrapT(other.m_wrapT)
+    , m_wrapR(other.m_wrapR)
+    , m_initializedFaces(std::exchange(other.m_initializedFaces, std::array<bool, 6> {}))
 {
 }
 
@@ -333,78 +450,161 @@ Cubemap& Cubemap::operator=(Cubemap&& other) noexcept
     if (this == &other)
         return *this;
 
-    destroy();
-    m_id         = std::exchange(other.m_id, 0);
+    m_object = std::move(other.m_object);
     m_resolution = std::exchange(other.m_resolution, 0);
-    m_format     = other.m_format;
+    m_format = other.m_format;
+    m_filter = other.m_filter;
+    m_wrapS = other.m_wrapS;
+    m_wrapT = other.m_wrapT;
+    m_wrapR = other.m_wrapR;
+    m_initializedFaces = std::exchange(other.m_initializedFaces, std::array<bool, 6> {});
     return *this;
 }
 
-void Cubemap::activate(unsigned int uniLoc)
+void Cubemap::applySamplerState()
 {
-    int actInt = Texture::getAvailableActivationInt();
-    glActiveTexture(GL_TEXTURE0 + actInt);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_id);
-    glUniform1i(uniLoc, actInt);
-    checkOpenGLErrors("activate cubemap");
+    if (getId() == 0)
+        return;
+
+    glTextureParameteri(getId(), GL_TEXTURE_WRAP_S, detail::toOpenGLWrap(m_wrapS));
+    glTextureParameteri(getId(), GL_TEXTURE_WRAP_T, detail::toOpenGLWrap(m_wrapT));
+    glTextureParameteri(getId(), GL_TEXTURE_WRAP_R, detail::toOpenGLWrap(m_wrapR));
+
+    const unsigned int glFilter = detail::toOpenGLFilter(m_filter);
+    glTextureParameteri(getId(), GL_TEXTURE_MIN_FILTER, glFilter);
+    glTextureParameteri(getId(), GL_TEXTURE_MAG_FILTER, glFilter);
 }
 
-void Cubemap::destroy()
+void Cubemap::regenerate()
 {
-    if (m_id) {
-        glDeleteTextures(1, &m_id);
-        m_id = 0;
+    m_initializedFaces.fill(false);
+
+    if (m_resolution == 0) {
+        m_object.destroy();
+        return;
     }
-    m_resolution = 0;
+
+    const unsigned int internalFormat = detail::toOpenGLInternalFormat(m_format);
+    if (internalFormat == 0) {
+        GLX_CORE_ERROR("Cannot allocate a cubemap with an unsupported format");
+        m_object.destroy();
+        return;
+    }
+
+    m_object.create(GL_TEXTURE_CUBE_MAP);
+    applySamplerState();
+    setDepthBorderColor(getId(), m_format);
+    glTextureStorage2D(getId(), 1, internalFormat, m_resolution, m_resolution);
+    checkOpenGLErrors("Cubemap regeneration");
 }
 
 void Cubemap::allocateFaces()
 {
-    if (m_id == 0)
-        glGenTextures(1, &m_id);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_id);
-
-    for (int i = 0; i < 6; i++) {
-        if (m_format == TextureFormat::RGB) {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB8,
-                m_resolution, m_resolution, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-
-        } else if (m_format == TextureFormat::RGBA) {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA8,
-                m_resolution, m_resolution, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-
-        } else if (m_format == TextureFormat::DEPTH) {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT24,
-                m_resolution, m_resolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-        } else
-            GLX_CORE_ERROR("(cubemap) unsupported texture format");
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-    checkOpenGLErrors("Allocate faces");
+    regenerate();
 }
 
-void Cubemap::resize(unsigned int res)
+void Cubemap::beginFaceUpload()
 {
-    if (res != m_resolution || m_id == 0) {
-        m_resolution = res;
-        allocateFaces();
-    }
+    m_initializedFaces.fill(false);
 }
 
-void Cubemap::setFormat(TextureFormat newFormat)
+void Cubemap::initFace(unsigned int face, unsigned char* data,
+    int width, int height, int nbChannels)
 {
-    if (newFormat != m_format) {
-        m_format = newFormat;
-        if (m_resolution > 0)
-            allocateFaces();
+    if (face >= 6 || width <= 0 || height <= 0 || width != height) {
+        GLX_CORE_ERROR("Cannot upload cubemap face {0} with dimensions {1}x{2}", face, width, height);
+        return;
     }
+
+    const TextureFormat format = formatFromChannelCount(nbChannels);
+    const bool hasInitializedFace = std::any_of(
+        m_initializedFaces.begin(), m_initializedFaces.end(), [](bool initialized) { return initialized; });
+    const bool storageDoesNotMatch =
+        m_resolution != static_cast<unsigned int>(width) || m_format != format;
+
+    if (hasInitializedFace && storageDoesNotMatch) {
+        GLX_CORE_ERROR("Cubemap faces must share the same resolution and format");
+        return;
+    }
+
+    if (getId() == 0 || storageDoesNotMatch) {
+        m_resolution = static_cast<unsigned int>(width);
+        m_format = format;
+        regenerate();
+    }
+
+    if (data == nullptr || getId() == 0)
+        return;
+
+    glTextureSubImage3D(getId(), 0, 0, 0, face,
+        width, height, 1,
+        detail::toOpenGLExternalFormat(m_format),
+        detail::toOpenGLType(m_format), data);
+    m_initializedFaces[face] = true;
+    checkOpenGLErrors("Cubemap face upload");
+}
+
+void Cubemap::resize(unsigned int resolution)
+{
+    if (resolution == 0)
+        return;
+    if (getId() != 0 && resolution == m_resolution)
+        return;
+
+    m_resolution = resolution;
+    regenerate();
+}
+
+void Cubemap::setFormat(TextureFormat format)
+{
+    if (format == m_format)
+        return;
+
+    m_format = format;
+    if (m_resolution > 0)
+        regenerate();
+}
+
+void Cubemap::setFiltering(TextureFiltering filtering)
+{
+    if (filtering == m_filter)
+        return;
+
+    m_filter = filtering;
+    applySamplerState();
+}
+
+void Cubemap::setWrap(TextureWrap wrapS, TextureWrap wrapT, TextureWrap wrapR)
+{
+    if (wrapS == m_wrapS && wrapT == m_wrapT && wrapR == m_wrapR)
+        return;
+
+    m_wrapS = wrapS;
+    m_wrapT = wrapT;
+    m_wrapR = wrapR;
+    applySamplerState();
+}
+
+void Cubemap::activate(int uniformLocation)
+{
+    m_object.activate(GL_TEXTURE_CUBE_MAP, uniformLocation);
+    checkOpenGLErrors("Cubemap activation");
+}
+
+void Cubemap::resetActivationInt()
+{
+    m_object.resetActivationUnit();
+}
+
+void Cubemap::reserveActivationInt()
+{
+    m_object.reserveActivationUnit();
+}
+
+void Cubemap::destroy()
+{
+    m_initializedFaces.fill(false);
+    m_object.destroy();
 }
 
 } // namespace Galaxy

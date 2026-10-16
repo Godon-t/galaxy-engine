@@ -317,6 +317,7 @@ RenderGraphExecution Frontend::buildFrameExecution()
         lightInvocation.parameters.emplace("inverseView", inverse(view));
         lightInvocation.parameters.emplace("inverseProjection", inverse(projection));
         lightInvocation.parameters.emplace("cameraPos", cameraDevice->camera->position);
+        lightInvocation.viewportSize = device->viewportDimmension;
 
 
         auto& postProcessInvocation = execution.addInvocation(m_passPostprocessId);

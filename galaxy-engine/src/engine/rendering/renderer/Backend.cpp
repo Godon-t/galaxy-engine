@@ -167,8 +167,6 @@ void applyState(const RenderState& state){
 
 void Backend::execute(RenderGraphExecution& execution){
     const auto& compiledGraph = execution.graph.compilation;
-    const auto& passes = compiledGraph.passes;
-    const size_t passesCount = passes.size();
 
     GraphFramebufferHandle currentFramebuffer;
 
@@ -196,84 +194,90 @@ void Backend::execute(RenderGraphExecution& execution){
         }, framebuffer);
     };
 
-    for(size_t passIdx = 0; passIdx < passesCount; passIdx++){
-        const auto& compiledPass = passes[passIdx];
-        const auto& pass = execution.graph.getRenderPassAt(passIdx);
-        auto& passExecution = execution.passes[passIdx];
+    for (const auto& entry : execution.invocationOrder) {
+        const auto& pass = execution.graph.getRenderPass(entry.pass);
+        auto& invocation = execution.getPass(entry.pass).invocations[entry.invocationIndex];
+        const auto& targetFramebuffer = invocation.targetFramebuffer.value_or(pass.targetFramebufferHandle);
 
         setActiveProgram(pass.program);
-        const auto& renderState = compiledGraph.getPassDescription(compiledPass.id).state;
+        const auto& renderState = compiledGraph.getPassDescription(entry.pass).state;
 
-        for (auto& invocation : passExecution.invocations) {
-            const bool framebufferChanged = currentFramebuffer != pass.targetFramebufferHandle;
-            if(RenderGraph::hasFramebuffer(currentFramebuffer) && framebufferChanged)
-                unbind(currentFramebuffer);
+        const bool framebufferChanged = currentFramebuffer != targetFramebuffer;
+        if(RenderGraph::hasFramebuffer(currentFramebuffer) && framebufferChanged)
+            unbind(currentFramebuffer);
 
-            resize(pass.targetFramebufferHandle, invocation.viewportSize);
-            bind(pass.targetFramebufferHandle, invocation.targetLayer);
-            currentFramebuffer = pass.targetFramebufferHandle;
+        resize(targetFramebuffer, invocation.viewportSize);
+        bind(targetFramebuffer, invocation.targetLayer);
+        currentFramebuffer = targetFramebuffer;
 
-            glClearColor(
-                invocation.clearColor.r,
-                invocation.clearColor.g,
-                invocation.clearColor.b,
-                invocation.clearColor.a);
-            glViewport(
-                invocation.viewportPosition.x,
-                invocation.viewportPosition.y,
-                invocation.viewportSize.x,
-                invocation.viewportSize.y);
-            applyState(renderState);
+        glClearColor(
+            invocation.clearColor.r,
+            invocation.clearColor.g,
+            invocation.clearColor.b,
+            invocation.clearColor.a);
+        glViewport(
+            invocation.viewportPosition.x,
+            invocation.viewportPosition.y,
+            invocation.viewportSize.x,
+            invocation.viewportSize.y);
+        applyState(renderState);
 
-            Program& currentProg = *getActiveProgram();
-            // GLX-TODO: no diff between viewParameters and parameters
-            for(auto& setParameter : invocation.viewParameters)
-                applyShaderParameter(currentProg, setParameter.first, setParameter.second);
+        Program& currentProg = *getActiveProgram();
+        // GLX-TODO: no diff between viewParameters and parameters
+        for(auto& setParameter : invocation.viewParameters)
+            applyShaderParameter(currentProg, setParameter.first, setParameter.second);
 
-            for(auto& setParameter : invocation.parameters)
-                applyShaderParameter(currentProg, setParameter.first, setParameter.second);
+        for(auto& setParameter : invocation.parameters)
+            applyShaderParameter(currentProg, setParameter.first, setParameter.second);
 
-            for (const auto& update : invocation.updates)
-                processCommand(update);
+        for (const auto& update : invocation.updates)
+            processCommand(update);
 
-            for(auto& binding : invocation.uniformBindings){
-                auto* ubo = m_uboInstances.get(binding.buffer);
-                if(ubo != nullptr)
-                    ubo->bind(binding.bindingPoint);
-            }
+        for(auto& binding : invocation.uniformBindings){
+            auto* ubo = m_uboInstances.get(binding.buffer);
+            if(ubo != nullptr)
+                ubo->bind(binding.bindingPoint);
+        }
 
-            for(size_t i = 0; i<pass.inputTextures.size(); i++)
-            {
-                std::visit([this, &pass, i](const auto& textureHandle) {
-                    using Handle = std::decay_t<decltype(textureHandle)>;
-                    if constexpr (std::is_same_v<Handle, TextureHandle>) {
-                        Texture* texture = m_textureInstances.tryGet(textureHandle);
-                        if (texture == nullptr) {
-                            GLX_CORE_ERROR("Cannot bind an invalid texture handle (slot={0}, generation={1})",
-                                textureHandle.index(), textureHandle.generation());
-                            return;
-                        }
-                        texture->activate(static_cast<int>(pass.inputTexturesLocations[i]));
-                    } else {
-                        Cubemap* cubemap = m_cubemapInstances.tryGet(textureHandle);
-                        if (cubemap == nullptr) {
-                            GLX_CORE_ERROR("Cannot bind an invalid cubemap handle (slot={0}, generation={1})",
-                                textureHandle.index(), textureHandle.generation());
-                            return;
-                        }
-                        cubemap->activate(static_cast<int>(pass.inputTexturesLocations[i]));
+        for(size_t i = 0; i<pass.inputTextures.size(); i++)
+        {
+            std::visit([this, &pass, i](const auto& textureHandle) {
+                using Handle = std::decay_t<decltype(textureHandle)>;
+                if constexpr (std::is_same_v<Handle, TextureHandle>) {
+                    Texture* texture = m_textureInstances.tryGet(textureHandle);
+                    if (texture == nullptr) {
+                        GLX_CORE_ERROR("Cannot bind an invalid texture handle (slot={0}, generation={1})",
+                            textureHandle.index(), textureHandle.generation());
+                        return;
                     }
-                }, pass.inputTextures[i]);
-            }
-
-            const bool supportPBR = renderState.supportPBR;
-            for (const RenderItem& item : invocation.items) {
-                // GLX-TODO: need to fix material usage (should work with other thing than PBR ?)
-                if(supportPBR && item.material){
-                    bindMaterial(item.material.value());
+                    texture->activate(static_cast<int>(pass.inputTexturesLocations[i]));
+                } else {
+                    Cubemap* cubemap = m_cubemapInstances.tryGet(textureHandle);
+                    if (cubemap == nullptr) {
+                        GLX_CORE_ERROR("Cannot bind an invalid cubemap handle (slot={0}, generation={1})",
+                            textureHandle.index(), textureHandle.generation());
+                        return;
+                    }
+                    cubemap->activate(static_cast<int>(pass.inputTexturesLocations[i]));
                 }
-                draw(item.geometry, item.transform.getGlobalModelMatrix());
-            }
+            }, pass.inputTextures[i]);
+        }
+
+        for (const auto& binding : invocation.textureBindings) {
+            const int location = currentProg.getUniformLocation(binding.samplerName);
+            std::visit([this, location](const auto& textureHandle) {
+                using Handle = std::decay_t<decltype(textureHandle)>;
+                if constexpr (std::is_same_v<Handle, TextureHandle>)
+                    m_textureInstances.get(textureHandle)->activate(location);
+                else
+                    m_cubemapInstances.get(textureHandle)->activate(location);
+            }, binding.texture);
+        }
+
+        for (const RenderItem& item : invocation.items) {
+            if (renderState.supportPBR && item.material)
+                bindMaterial(*item.material);
+            draw(item.geometry, item.transform.getGlobalModelMatrix());
         }
     }
     if(RenderGraph::hasFramebuffer(currentFramebuffer))

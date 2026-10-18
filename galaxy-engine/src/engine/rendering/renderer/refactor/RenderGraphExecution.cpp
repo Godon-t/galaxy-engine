@@ -37,6 +37,7 @@ RenderPassInvocation& RenderGraphExecution::addInvocation(RenderPassId pass)
 {
     auto& invocations = getPass(pass).invocations;
     invocations.emplace_back();
+    invocationOrder.push_back({ pass, invocations.size() - 1 });
     return invocations.back();
 }
 

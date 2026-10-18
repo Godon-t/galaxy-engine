@@ -98,8 +98,9 @@ bool Image::hasTransparency()
 {
     if (m_nbChannels <= 3)
         return false;
+    const unsigned char* data = getData();
     for (int i = 0; i < m_width * m_height; ++i) {
-        unsigned char alpha = m_data[i * 4 + 3];
+        unsigned char alpha = data[i * 4 + 3];
         if (alpha < 255) {
             return true;
         }

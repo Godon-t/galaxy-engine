@@ -113,11 +113,6 @@ Frontend::Frontend(Backend& backend)
     transparentDesc.state.bindMaterials = true;
     transparentDesc.state.blend = BlendMode::Alpha;
     
-    RenderPassDesc textureDesc(opaquePBRDesc);
-    textureDesc.associatedProgram = backend.loadShader(engineRes("shaders/texture.glsl"));
-    textureDesc.name = "texture";
-    textureDesc.state.clear = false;
-    
     RenderPassDesc unicolorDesc(opaquePBRDesc);
     unicolorDesc.associatedProgram = backend.loadShader(engineRes("shaders/unicolor.glsl"));
     unicolorDesc.name = "unicolor";
@@ -144,6 +139,8 @@ Frontend::Frontend(Backend& backend)
     lightingDesc.inputTextures.push_back({shadowTextureId, "shadowMaps"});
     lightingDesc.state.clear = true;
     lightingDesc.state.bindMaterials = false;
+    lightingDesc.state.depthTest = false;
+    lightingDesc.state.depthWrite = false;
 
 
 
@@ -153,8 +150,13 @@ Frontend::Frontend(Backend& backend)
     finalColor.format = TextureFormat::RGBA;
     finalColor.name = "color";
     auto finalColorTexId = renderGraphDeclaration.addTexture(finalColor);
+    GraphTextureDesc finalDepth;
+    finalDepth.name = "finalDepth";
+    finalDepth.format = TextureFormat::DEPTH24STENCIL8;
+    auto finalDepthTexId = renderGraphDeclaration.addTexture(finalDepth);
     RenderTargetDesc finalStepTarget;
     finalStepTarget.colorAttachments.push_back(finalColorTexId);
+    finalStepTarget.depthAttachment = finalDepthTexId;
     TargetId finalStepTargetId = renderGraphDeclaration.addTarget(finalStepTarget);
 
 
@@ -198,14 +200,37 @@ Frontend::Frontend(Backend& backend)
     
     m_passOpaquePBRId = renderGraphDeclaration.addPass(opaquePBRDesc);
     m_passTransparentPBRId = renderGraphDeclaration.addPass(transparentDesc);
-    m_passTextureId = renderGraphDeclaration.addPass(textureDesc);
     m_passUnicolorId = renderGraphDeclaration.addPass(unicolorDesc);
     m_passLightingId = renderGraphDeclaration.addPass(lightingDesc);
     // renderGraphDeclaration.addPass(postProcessingDesc);
     // m_passPostprocessId = renderGraphDeclaration.addPass(postProcessingSSGIDesc);
     m_passPostprocessId = renderGraphDeclaration.addPass(noPostProcessingDesc);
-    
-    
+
+    RenderPassDesc textureDesc;
+    textureDesc.name = "texture";
+    textureDesc.associatedProgram = backend.loadShader(engineRes("shaders/texture.glsl"));
+    textureDesc.targetId = finalStepTargetId;
+    textureDesc.state.clear = false;
+    textureDesc.state.bindMaterials = true;
+    m_passTextureId = renderGraphDeclaration.addPass(textureDesc);
+
+    RenderPassDesc transparentTextureDesc(textureDesc);
+    transparentTextureDesc.name = "transparent_texture";
+    transparentTextureDesc.state.blend = BlendMode::Alpha;
+    transparentTextureDesc.state.depthWrite = false;
+    m_passTransparentTextureId = renderGraphDeclaration.addPass(transparentTextureDesc);
+
+    RenderPassDesc cubemapRenderDesc(textureDesc);
+    cubemapRenderDesc.name = "cubemap_render";
+    cubemapRenderDesc.associatedProgram = backend.loadShader(engineRes("shaders/debug/cubemap_render.glsl"));
+    m_passCubemapRenderId = renderGraphDeclaration.addPass(cubemapRenderDesc);
+
+    RenderPassDesc transparentCubemapDesc(cubemapRenderDesc);
+    transparentCubemapDesc.name = "transparent_cubemap";
+    transparentCubemapDesc.state.blend = BlendMode::Alpha;
+    transparentCubemapDesc.state.depthWrite = false;
+    m_passTransparentCubemapId = renderGraphDeclaration.addPass(transparentCubemapDesc);
+
     CompiledRenderGraph compiledRenderGraph(renderGraphDeclaration);
     m_renderGraph.build(compiledRenderGraph, backend);
 
@@ -315,11 +340,17 @@ void Frontend::addSceneView(RenderGraphExecution& execution, const RenderDevice&
 {
     auto& opaqueInvocation = execution.addInvocation(m_passOpaquePBRId);
     configureView(opaqueInvocation, device, projection, view);
-    opaqueInvocation.items = std::move(opaques);
+    for (const auto& item : opaques) {
+        if (m_frameContext.getMaterialInfo(item.material).type == MaterialType::PBR)
+            opaqueInvocation.items.push_back(item);
+    }
 
     auto& transparentInvocation = execution.addInvocation(m_passTransparentPBRId);
     configureView(transparentInvocation, device, projection, view);
-    transparentInvocation.items = std::move(transparents);
+    for (const auto& item : transparents) {
+        if (m_frameContext.getMaterialInfo(item.material).type == MaterialType::PBR)
+            transparentInvocation.items.push_back(item);
+    }
 
     auto& lightInvocation = execution.addInvocation(m_passLightingId);
     if(m_lightManager.isDirty()){
@@ -347,6 +378,8 @@ void Frontend::addSceneView(RenderGraphExecution& execution, const RenderDevice&
     postProcessInvocation.parameters.emplace("inverseProjection", inverse(projection));
     postProcessInvocation.parameters.emplace("cameraPos", position);
 
+    addTextureViews(execution, device, projection, view, opaques, false, targetFramebuffer, targetFace);
+    addTextureViews(execution, device, projection, view, transparents, true, targetFramebuffer, targetFace);
 }
 
 void Frontend::addPointViews(RenderGraphExecution& execution, RenderPoint& device)
@@ -377,6 +410,27 @@ void Frontend::addCameraView(RenderGraphExecution& execution, RenderCamera& devi
 
     addSceneView(execution, device, device.getProjection(), device.getView(), device.camera->position,
         std::move(opaques), std::move(transparents), device.targetFramebuffer);
+}
+
+void Frontend::addTextureViews(RenderGraphExecution& execution, const RenderDevice& device,
+    const mat4& projection, const mat4& view, const std::vector<RenderItem>& items,
+    bool transparent, std::optional<RenderTargetHandle> targetFramebuffer, int targetFace)
+{
+    // Preserve the sorted order across 2D textures and cubemaps when blending.
+    for (const auto& item : items) {
+        const auto& info = m_frameContext.getMaterialInfo(item.material);
+        if (info.type != MaterialType::Texture)
+            continue;
+
+        const auto pass = info.isCubemap
+            ? (transparent ? m_passTransparentCubemapId : m_passCubemapRenderId)
+            : (transparent ? m_passTransparentTextureId : m_passTextureId);
+        auto& invocation = execution.addInvocation(pass);
+        configureView(invocation, device, projection, view);
+        invocation.targetFramebuffer = targetFramebuffer;
+        invocation.targetLayer = targetFace;
+        invocation.items.push_back(item);
+    }
 }
 
 FramebufferHandle Frontend::getFinalFramebuffer()

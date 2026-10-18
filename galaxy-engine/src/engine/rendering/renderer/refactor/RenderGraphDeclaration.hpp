@@ -88,6 +88,7 @@ enum class BlendMode {
 
 struct RenderState {
     bool depthTest = true;
+    bool depthWrite = true;
     BlendMode blend = BlendMode::Disabled;
     bool clear = true;
 

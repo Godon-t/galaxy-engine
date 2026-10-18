@@ -147,6 +147,7 @@ const Program* Backend::getActiveProgram() const
 
 
 void applyState(const RenderState& state){
+    glDepthMask(state.depthWrite ? GL_TRUE : GL_FALSE);
     if(state.clear)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     

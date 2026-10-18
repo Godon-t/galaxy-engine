@@ -120,6 +120,7 @@ void main()
     color = texture(sceneBuffer, TexCoords);
 
     float depth = texture(depthBuffer, TexCoords).r;
+    gl_FragDepth = depth;
 
     if (depth >= 0.999999) {
         vec3 direction = getSkyDirection(TexCoords);

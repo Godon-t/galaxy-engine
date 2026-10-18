@@ -7,48 +7,58 @@ namespace Galaxy {
 Sprite3D::~Sprite3D()
 {
     if (m_initialized) {
-        Renderer::getInstance().getBackend().clearTexture(m_texture);
+        auto& backend = Renderer::getInstance().getBackend();
+        backend.clearMaterial(m_materialHandle);
+        backend.clearMesh(m_rect);
     }
 }
+
 void Sprite3D::draw()
 {
-    // if (m_initialized) {
-    //     // TODO: integrate in sceneContext
-    //     Renderer::getInstance().getFrontend().changeUsedProgram(TEXTURE);
-    //     Renderer::getInstance().getFrontend().bindTexture(m_texture, "sampledTexture");
-    //     Renderer::getInstance().getFrontend().submit(m_rect, m_transform);
-    // }
+    if (m_initialized)
+        Renderer::getInstance().addObjectToScene(m_rect, m_materialHandle, getTransform(), m_visibilityLayer);
+    Node3D::draw();
 }
+
 void Sprite3D::lightPassDraw()
 {
-    // if (m_initialized)
-    //     Renderer::getInstance().getFrontend().submit(m_rect, m_transform);
+    Node3D::lightPassDraw();
 }
+
 void Sprite3D::accept(Galaxy::NodeVisitor& visitor)
 {
     visitor.visit(*this);
 }
+
 void Sprite3D::loadTexture(std::string path)
 {
+    loadTexture(ResourceManager::getInstance().load<Image>(path));
+}
+
+void Sprite3D::loadTexture(ResourceHandle<Image> image)
+{
     if (m_initialized) {
-        Renderer::getInstance().getBackend().clearTexture(m_texture);
+        auto& backend = Renderer::getInstance().getBackend();
+        backend.clearMaterial(m_materialHandle);
+        backend.clearMesh(m_rect);
+        m_initialized = false;
     }
-
-    auto resource = ResourceManager::getInstance().load<Image>(path);
-    m_imageID     = resource.getResource().getResourceID();
-    m_texture     = Renderer::getInstance().getBackend().instantiateTexture(resource);
-
-    resource.getResource().onLoaded([this, path] {
-        auto res      = ResourceManager::getInstance().load<Image>(path);
-        float max     = (float)std::max(res.getResource().getWidth(), res.getResource().getHeight());
-        
-        vec2 rectDimension(res.getResource().getWidth() / max, res.getResource().getHeight() / max);
-        m_rect = Renderer::getInstance().getBackend().generateQuad(rectDimension, [] {});
+    m_imageID = image.getResource().getResourceID();
+    image.getResource().onLoaded([this, image] {
+        auto& backend = Renderer::getInstance().getBackend();
+        auto& resource = image.getResource();
+        const float maxDimension = static_cast<float>(std::max(resource.getWidth(), resource.getHeight()));
+        const vec2 dimensions(resource.getWidth() / maxDimension, resource.getHeight() / maxDimension);
+        m_rect = backend.generateQuad(dimensions, [] {});
+        m_materialResource = ResourceManager::getInstance().createInternalResource<TextureMaterial>();
+        m_materialResource.getResource().setTexture(image);
+        m_materialResource.getResource().setUseTransparency(resource.hasTransparency());
+        m_materialHandle = backend.instantiateMaterial(m_materialResource);
         m_initialized = true;
     });
 }
+
 void Sprite3D::enteredRoot()
 {
-    // loadTexture(std::string("Cube_BaseColor.gres"));
 }
 } // namespace Galaxy

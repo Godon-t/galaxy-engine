@@ -57,6 +57,9 @@ private:
     void addShadowViews(RenderGraphExecution& execution);
     void addPointViews(RenderGraphExecution& execution, RenderPoint& device);
     void addCameraView(RenderGraphExecution& execution, RenderCamera& device);
+    void addTextureViews(RenderGraphExecution& execution, const RenderDevice& device,
+        const mat4& projection, const mat4& view, const std::vector<RenderItem>& items,
+        bool transparent, std::optional<RenderTargetHandle> targetFramebuffer, int targetFace);
     void addSceneView(RenderGraphExecution& execution, const RenderDevice& device,
         const mat4& projection, const mat4& view, const vec3& position,
         std::vector<RenderItem> opaques, std::vector<RenderItem> transparents,
@@ -89,8 +92,11 @@ private:
     RenderPassId m_passOpaquePBRId;
     RenderPassId m_passTransparentPBRId;
     RenderPassId m_passTextureId;
+    RenderPassId m_passTransparentTextureId;
     RenderPassId m_passUnicolorId;
     RenderPassId m_passLightingId;
     RenderPassId m_passPostprocessId;
+    RenderPassId m_passCubemapRenderId;
+    RenderPassId m_passTransparentCubemapId;
 };
 } // namespace Galaxy

@@ -55,94 +55,10 @@ struct ResourceImporter {
         return res;
     }
 
-    static uuid importMaterial(const std::string& externPath, int idx)
+    static uuid importMaterial(const std::string&, int)
     {
-        auto& rmInstance = ResourceManager::getInstance();
-        auto makerIt     = rmInstance.m_makers.find(typeid(Material).hash_code());
-        GLX_CORE_ASSERT(makerIt != rmInstance.m_makers.end(), "No resource maker for file: '{0}'", externPath);
-
-        std::string gltfPath, extension;
-        Project::extractExtension(externPath, gltfPath, extension);
-        std::string resPath = gltfPath + "_material_" + std::to_string(idx) + ".gres";
-
-        if (Project::doesPathExist(resPath)) {
-            return Project::getPathId(resPath);
-        }
-
-        uuid resourceID = Project::registerNewPath(ProjectPathTypes::RESOURCE, resPath);
-
-        std::shared_ptr<Material> resource = std::static_pointer_cast<Material>(makerIt->second->createResourcePtr());
-        resource->m_resourceID             = resourceID;
-        resource->m_resourcePath           = resPath;
-
-        Assimp::Importer importer;
-
-        const aiScene* scene = importer.ReadFile((Project::getProjectRootPath() + externPath).c_str(),
-            aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_FlipUVs);
-
-        if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-            GLX_CORE_ERROR("Assimp error: {0}", importer.GetErrorString());
-            return false;
-        }
-
-        std::string folderPath = Project::getFolderPath(externPath);
-        aiMaterial* material   = scene->mMaterials[idx];
-        auto tryImport         = [&resource, &material, &folderPath, &rmInstance](aiTextureType aiType, TextureType glxType) {
-            std::string texturePath = getTexturePath(material, aiType);
-            if (texturePath[0] != '*' && texturePath != "") {
-                uuid imageID                  = importImage(folderPath + "/" + texturePath);
-                resource->m_images[glxType]   = rmInstance.load<Image>(Project::getPath(ProjectPathTypes::RESOURCE, imageID));
-                resource->m_useImage[glxType] = true;
-                return true;
-            } else {
-                return false;
-            }
-        };
-
-        if (!tryImport(aiTextureType_BASE_COLOR, ALBEDO)) {
-            tryImport(aiTextureType_AMBIENT, ALBEDO);
-        } else {
-            tryImport(aiTextureType_AMBIENT, AO);
-        }
-
-        if (resource->m_useImage[ALBEDO])
-            resource->m_images[ALBEDO].getResource().onLoaded([resource] {
-                resource->m_useTransparency = resource->m_images[ALBEDO].getResource().hasTransparency();
-                resource->save();
-            });
-
-        aiColor3D color(0.f, 0.f, 0.f);
-        if (material->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) {
-            resource->m_albedo = vec3(color.r, color.g, color.b);
-        }
-
-        float value = 0.f;
-        tryImport(aiTextureType_SPECULAR, METALLIC);
-        if (material->Get(AI_MATKEY_METALLIC_FACTOR, value) == AI_SUCCESS) {
-            resource->m_metallic = value;
-        }
-
-        tryImport(aiTextureType_NORMALS, NORMAL);
-
-        tryImport(aiTextureType_SHININESS, ROUGHNESS);
-        if (material->Get(AI_MATKEY_ROUGHNESS_FACTOR, value) == AI_SUCCESS) {
-            resource->m_roughness = value;
-        }
-
-        // TODO: Height map not imported
-
-        float opacity;
-        material->Get(AI_MATKEY_OPACITY, opacity);
-        resource->m_transparency = opacity;
-        material->Get(AI_MATKEY_TRANSPARENCYFACTOR, opacity);
-        if (opacity < resource->m_transparency)
-            resource->m_transparency = opacity;
-
-        if (resource->save(false)) {
-            return resourceID;
-        } else {
-            return 0;
-        }
+        // Material import depends on the temporarily disabled serialization.
+        return 0;
     }
 
     static uuid importGltf(const std::string& externPath)
@@ -186,11 +102,6 @@ struct ResourceImporter {
         resource->m_subMeshes.resize(scene->mNumMeshes);
         for (int i = 0; i < scene->mNumMeshes; i++) {
             resource->extractSubMesh(scene, i);
-            uuid materialID = importMaterial(externPath, scene->mMeshes[i]->mMaterialIndex);
-            if (materialID != 0) {
-                resource->m_subMeshes[i].hasMaterial = true;
-                resource->m_subMeshes[i].material    = rmInstance.load<Material>(Project::getPath(ProjectPathTypes::RESOURCE, materialID));
-            }
         }
 
         if (resource->save(false)) {

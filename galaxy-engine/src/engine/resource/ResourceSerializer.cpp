@@ -47,42 +47,12 @@ bool ResourceSerializer::serialize(Environment& env)
     fout << yaml.c_str();
     return true;
 }
-bool ResourceSerializer::serialize(Material& material)
+bool ResourceSerializer::serialize(Material&)
 {
-    GLX_CORE_INFO("Serializing: {0}", material.getPath());
-
-    YAML::Emitter yaml;
-    yaml << YAML::BeginMap;
-    yaml << YAML::Key << "Type" << YAML::Value << "Material";
-
-    yaml << YAML::Key << "HasTransparency" << YAML::Value << material.isUsingTransparency();
-
-    yaml << YAML::Key << "Images" << YAML::BeginMap;
-    std::unordered_map<TextureType, std::string> textureTypeToStr;
-    textureTypeToStr[ALBEDO]    = "Albedo";
-    textureTypeToStr[ROUGHNESS] = "Roughness";
-    textureTypeToStr[METALLIC]  = "Metallic";
-    textureTypeToStr[NORMAL]    = "Normal";
-    textureTypeToStr[AO]        = "Ao";
-    for (auto& keyVal : textureTypeToStr) {
-        if (material.canUseImage(keyVal.first)) {
-            yaml << YAML::Key << keyVal.second << YAML::Value << material.getImage(keyVal.first).getResource().getResourceID();
-        }
-    }
-    yaml << YAML::EndMap;
-
-    yaml << YAML::Key << "Constants" << YAML::BeginMap;
-    yaml << YAML::Key << "Albedo" << YAML::Value << material.m_albedo;
-    yaml << YAML::Key << "Ambient" << YAML::Value << material.m_ambient;
-    yaml << YAML::Key << "Roughness" << YAML::Value << material.m_roughness;
-    yaml << YAML::Key << "Metallic" << YAML::Value << material.m_metallic;
-    yaml << YAML::Key << "Transparency" << YAML::Value << material.m_transparency;
-    yaml << YAML::EndMap;
-
-    std::ofstream fout(Project::getProjectRootPath() + Project::getPath(ProjectPathTypes::RESOURCE, material.getResourceID()));
-    fout << yaml.c_str();
-    return true;
+    // Material persistence is temporarily disabled.
+    return false;
 }
+
 bool ResourceSerializer::serialize(Mesh& mesh)
 {
     GLX_CORE_INFO("Serializing: {0}", mesh.getPath());
@@ -98,10 +68,8 @@ bool ResourceSerializer::serialize(Mesh& mesh)
     yaml << YAML::Key << "SubMeshes" << YAML::BeginSeq;
     for (int i = 0; i < mesh.getSubMeshesCount(); i++) {
         yaml << YAML::BeginMap;
-        yaml << YAML::Key << "HasMaterial" << YAML::Value << mesh.hasMaterial(i);
-        if (mesh.hasMaterial(i)) {
-            yaml << YAML::Key << "MaterialID" << YAML::Value << mesh.getMaterial(i).getResource().m_resourceID;
-        }
+        // Material bindings are omitted while their persistence is disabled.
+        yaml << YAML::Key << "HasMaterial" << YAML::Value << false;
         yaml << YAML::EndMap;
     }
 

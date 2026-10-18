@@ -56,16 +56,7 @@ bool Mesh::load(YAML::Node& data)
             return false;
     }
 
-    if (data["SubMeshes"]) {
-        for (int i = 0; i < data["SubMeshes"].size(); i++) {
-            auto subMesh               = data["SubMeshes"][i];
-            m_subMeshes[i].hasMaterial = subMesh["HasMaterial"].as<bool>();
-            if (hasMaterial(i)) {
-                uuid materialID         = subMesh["MaterialID"].as<uint64_t>();
-                m_subMeshes[i].material = ResourceManager::getInstance().load<Material>(Project::getPath(ProjectPathTypes::RESOURCE, materialID));
-            }
-        }
-    }
+    // Material loading is temporarily disabled; geometry can still be loaded.
     return true;
 }
 

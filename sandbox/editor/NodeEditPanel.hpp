@@ -9,6 +9,7 @@ using namespace math;
 
 namespace Galaxy {
     const BitMask editorVisibility {2};
+
 class NodeEditPanel : public NodeVisitor {
 public:
     void selectNode(Node& node)
@@ -37,12 +38,7 @@ public:
         if (m_resourceAccess.display())
             node.loadMesh(m_resourceAccess.selectedResourcePath);
 
-        auto mathandle = node.getMaterial();
-        if (mathandle && materialEdit(mathandle.getResource())) {
-            Renderer::getInstance().getBackend().updateMaterial(node.getMaterialId(), mathandle);
-        }
-        if (ImGui::Button("Save resource"))
-            mathandle.getResource().save();
+        // Material editing is temporarily disabled.
     }
 
     void visit(Sprite3D& node)
@@ -174,22 +170,6 @@ public:
         if (ImGui::DragFloat3("Scale", &scale[0])) {
             transform.setLocalScale(scale);
         }
-    }
-
-    bool materialEdit(Material& material)
-    {
-        ImGui::SeparatorText("Material");
-        float transparencyVal = material.getTransparency();
-        if (ImGui::SliderFloat("Transparency", &transparencyVal, 0.f, 1.f)) {
-            material.setTransparency(transparencyVal);
-            return true;
-        }
-        bool useTransparency = material.isUsingTransparency();
-        if (ImGui::Checkbox("Use transparency", &useTransparency)) {
-            material.setUseTransparency(useTransparency);
-            return true;
-        }
-        return false;
     }
 
     ResourceAccess m_resourceAccess;

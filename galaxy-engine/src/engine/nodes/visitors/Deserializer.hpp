@@ -23,6 +23,7 @@ public:
     void visit(SpotLight& node) override;
     void visit(PointLight& node) override;
     void visit(GINode& node) override;
+    void visit(ProbeNode& node) override;
 
 private:
     YAML::Node m_data;

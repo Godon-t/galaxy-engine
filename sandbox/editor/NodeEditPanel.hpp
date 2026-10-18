@@ -153,6 +153,17 @@ public:
         ImGui::Checkbox("Debug", &node.debugMode);
     }
 
+    void visit(ProbeNode& node) override
+    {
+        visit(static_cast<Node3D&>(node));
+
+        ImGui::SeparatorText("Probe");
+        if (ImGui::Button("Capture cubemap"))
+            node.capture();
+
+        // Cubemap visualization will be connected to the editor's material view later.
+    }
+
     void transformEdit(Transform& transform)
     {
         ImGui::SeparatorText("Transform");

@@ -11,6 +11,7 @@ class Light;
 class SpotLight;
 class PointLight;
 class GINode;
+class ProbeNode;
 
 class NodeVisitor {
 public:
@@ -23,5 +24,6 @@ public:
     virtual void visit(SpotLight& node) {};
     virtual void visit(PointLight& node) {};
     virtual void visit(GINode& node) {};
+    virtual void visit(ProbeNode& node) {};
 };
 }

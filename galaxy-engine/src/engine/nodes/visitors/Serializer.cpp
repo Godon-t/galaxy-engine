@@ -11,6 +11,7 @@
 #include "nodes/rendering/Sprite3D.hpp"
 #include "nodes/rendering/lighting/GINode.hpp"
 #include "nodes/rendering/lighting/PointLight.hpp"
+#include "nodes/rendering/lighting/ProbeNode.hpp"
 #include "nodes/rendering/lighting/SpotLight.hpp"
 #include "types/Math.hpp"
 
@@ -116,6 +117,11 @@ void SceneSerializer::visit(GINode& node)
     m_yaml << YAML::Key << "Grid" << YAML::Value << node.getGrid();
     m_yaml << YAML::Key << "SpaceBetween" << YAML::Value << node.getSpaceBetween();
     m_yaml << YAML::Key << "ProbeResolution" << YAML::Value << node.getProbeResolution();
+}
+
+void SceneSerializer::visit(ProbeNode& node)
+{
+    visit(static_cast<Node3D&>(node));
 }
 
 }

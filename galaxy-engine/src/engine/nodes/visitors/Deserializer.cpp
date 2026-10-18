@@ -14,6 +14,7 @@
 #include "nodes/rendering/Sprite3D.hpp"
 #include "nodes/rendering/lighting/GINode.hpp"
 #include "nodes/rendering/lighting/PointLight.hpp"
+#include "nodes/rendering/lighting/ProbeNode.hpp"
 #include "nodes/rendering/lighting/SpotLight.hpp"
 #include "project/Project.hpp"
 #include "types/Math.hpp"
@@ -161,6 +162,11 @@ void SceneDeSerializer::visit(GINode& node)
     if (m_currentYAMLNode["ProbeResolution"]) {
         node.setProbeResolution(m_currentYAMLNode["ProbeResolution"].as<unsigned int>());
     }
+}
+
+void SceneDeSerializer::visit(ProbeNode& node)
+{
+    visit(static_cast<Node3D&>(node));
 }
 
 } // namespace Galaxy

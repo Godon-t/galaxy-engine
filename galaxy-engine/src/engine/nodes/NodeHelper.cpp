@@ -7,6 +7,7 @@
 #include "rendering/Sprite3D.hpp"
 #include "rendering/lighting/GINode.hpp"
 #include "rendering/lighting/PointLight.hpp"
+#include "rendering/lighting/ProbeNode.hpp"
 #include "rendering/lighting/SpotLight.hpp"
 
 #define NODE_CASE(nodeType) \
@@ -26,6 +27,7 @@ std::unique_ptr<Node> constructNode(std::string& type)
     NODE_CASE(SpotLight)
     NODE_CASE(PointLight)
     NODE_CASE(GINode)
+    NODE_CASE(ProbeNode)
 
     GLX_CORE_ERROR("Unknown type '{0}'", type);
     return nullptr;

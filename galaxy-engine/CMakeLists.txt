@@ -83,6 +83,7 @@ add_library(galaxy-engine
 	src/engine/nodes/rendering/lighting/SpotLight.cpp
 	src/engine/nodes/rendering/lighting/PointLight.cpp
 	src/engine/nodes/rendering/lighting/GINode.cpp
+	src/engine/nodes/rendering/lighting/ProbeNode.cpp
 
 	src/engine/rendering/OpenglHelper.cpp
 	src/engine/rendering/Program.cpp

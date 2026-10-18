@@ -441,8 +441,6 @@ void CubemapFrameBuffer::bind(int idx)
     }
 
     if (m_depthCubemap.get() != nullptr && m_depthCubemap.get()->getId() != 0) {
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
         const unsigned int attachment = m_depthCubemap.get()->getFormat() == TextureFormat::DEPTH24STENCIL8
             ? GL_DEPTH_STENCIL_ATTACHMENT
             : GL_DEPTH_ATTACHMENT;

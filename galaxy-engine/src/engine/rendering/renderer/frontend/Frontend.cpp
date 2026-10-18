@@ -252,8 +252,15 @@ RenderGraphExecution Frontend::buildFrameExecution()
     RenderGraphExecution execution(m_renderGraph);
     addShadowViews(execution);
 
+    // Complete captures before other views sample their cubemaps.
     for (auto& device : m_frameDevices) {
-        if (!device->renderScene)
+        auto* pointDevice = dynamic_cast<RenderPoint*>(device.get());
+        if (pointDevice && pointDevice->renderScene)
+            addPointViews(execution, *pointDevice);
+    }
+
+    for (auto& device : m_frameDevices) {
+        if (!device->renderScene || dynamic_cast<RenderPoint*>(device.get()))
             continue;
 
         auto* cameraDevice = dynamic_cast<RenderCamera*>(device.get());
@@ -339,6 +346,19 @@ void Frontend::addSceneView(RenderGraphExecution& execution, const RenderDevice&
 
 }
 
+void Frontend::addPointViews(RenderGraphExecution& execution, RenderPoint& device)
+{
+    const mat4 projection = device.getProjection();
+    const auto views = device.getViews();
+    for (int face = 0; face < 6; ++face) {
+        // Frustum currently assumes a 45 degree camera; cubemap faces use 90 degrees.
+        addSceneView(execution, device, projection, views[face], device.camera->position,
+            m_frameContext.retrieveOpaqueRenders(),
+            m_frameContext.retrieveTransparentRenders(device.camera->position),
+            device.targetCubemapFramebuffer, face);
+    }
+}
+
 void Frontend::addCameraView(RenderGraphExecution& execution, RenderCamera& device)
 {
     std::vector<RenderItem> opaques;
@@ -353,7 +373,7 @@ void Frontend::addCameraView(RenderGraphExecution& execution, RenderCamera& devi
     }
 
     addSceneView(execution, device, device.getProjection(), device.getView(), device.camera->position,
-        std::move(opaques), std::move(transparents));
+        std::move(opaques), std::move(transparents), device.targetFramebuffer);
 }
 
 FramebufferHandle Frontend::getFinalFramebuffer()

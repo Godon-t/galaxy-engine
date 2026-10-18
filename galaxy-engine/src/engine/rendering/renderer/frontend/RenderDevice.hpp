@@ -12,6 +12,8 @@ using namespace math;
 namespace Galaxy
 {
     struct RenderDevice {
+        virtual ~RenderDevice() = default;
+
         bool renderScene = false;
         int targetDepthLayer = -1;
         vec2 viewportPosition = vec2(0);
@@ -20,6 +22,7 @@ namespace Galaxy
         // GLX-TODO: render graph already fullfill this role (in render pass)
         bool noClear = false;
         bool frustumCulling = true;
+        std::optional<RenderTargetHandle> targetFramebuffer;
 
 
         std::vector<RenderCommand> customPostCommands;
@@ -68,6 +71,11 @@ namespace Galaxy
 
     struct RenderPoint: public RenderDevice {
         std::shared_ptr<Camera> camera = std::make_shared<Camera>();
+        CubemapFramebufferHandle targetCubemapFramebuffer;
+
+        mat4 getProjection() override {
+            return perspective(radians(90.0f), 1.0f, camera->zNear, camera->zFar);
+        }
 
         std::vector<mat4> getViews() {
             static vec3 s_cubemap_orientations[6] = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
@@ -83,4 +91,5 @@ namespace Galaxy
             return res;
         }
     };
+
 } // namespace Galaxy

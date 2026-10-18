@@ -54,6 +54,7 @@ public:
     
 private:
     void addShadowViews(RenderGraphExecution& execution);
+    void addPointViews(RenderGraphExecution& execution, RenderPoint& device);
     void addCameraView(RenderGraphExecution& execution, RenderCamera& device);
     void addSceneView(RenderGraphExecution& execution, const RenderDevice& device,
         const mat4& projection, const mat4& view, const vec3& position,

@@ -17,8 +17,11 @@ Renderer::Renderer()
 {
     m_backend.initDebugCallback();
 
-    m_backend.onMaterialUpdated([this](MaterialHandle material, bool isTransparent) {
-        m_frontend.notifyMaterialUpdated(material, isTransparent);
+    m_backend.onMaterialUpdated([this](MaterialHandle material, const MaterialRenderInfo& info) {
+        m_frontend.notifyMaterialUpdated(material, info);
+    });
+    m_backend.onMaterialDestroyed([this](MaterialHandle material) {
+        m_frontend.removeMaterialID(material);
     });
     
 

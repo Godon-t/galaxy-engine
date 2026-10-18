@@ -91,7 +91,7 @@ void main()
     vec3 albedo, normal;
     float metallic, roughness, ao;
 
-    float transparency = useAlbedoMap ? texture(albedoMap, v_texCoords).a : transparencyVal;
+    float transparency = transparencyVal * (useAlbedoMap ? texture(albedoMap, v_texCoords).a : 1.0);
     albedo             = useAlbedoMap ? texture(albedoMap, v_texCoords).rgb : albedoVal;
     normal             = useNormalMap ? getNormalFromNormalMap() : v_normal;
     metallic           = useMetallicMap ? texture(metallicMap, v_texCoords).r : metallicVal;

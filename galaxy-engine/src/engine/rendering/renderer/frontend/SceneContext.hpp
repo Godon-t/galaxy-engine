@@ -8,6 +8,7 @@
 
 #include "types/Math.hpp"
 #include "types/Render.hpp"
+#include "types/Material.hpp"
 
 #include "queue"
 
@@ -18,7 +19,7 @@ namespace Galaxy
     struct SceneContext
     {
         std::vector<RenderItem> renderItems;
-        std::unordered_map<MaterialHandle, bool, GpuResourceHandleHash> materialsTransparency;
+        std::unordered_map<MaterialHandle, MaterialRenderInfo, GpuResourceHandleHash> materials;
 
         std::vector<RenderItem> retrieveOpaqueRenders(const BitMask& mask);
         std::vector<RenderItem> retrieveTransparentRenders(math::vec3 camPosition, const BitMask& mask);
@@ -29,7 +30,8 @@ namespace Galaxy
         void push(RenderItem item);
         void removeMaterial(MaterialHandle material);
         
-        void onMaterialUpdated(MaterialHandle material, bool isTransparent);
+        void onMaterialUpdated(MaterialHandle material, const MaterialRenderInfo& info);
+        const MaterialRenderInfo& getMaterialInfo(std::optional<MaterialHandle> material) const;
 
         void clear();
 

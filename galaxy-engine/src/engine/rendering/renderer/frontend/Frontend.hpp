@@ -44,7 +44,7 @@ public:
         const Transform& transform, const BitMask& layer = BitMask {});
 
     inline void removeMaterialID(MaterialHandle material) { m_frameContext.removeMaterial(material); }
-    void notifyMaterialUpdated(MaterialHandle material, bool isTransparent);
+    void notifyMaterialUpdated(MaterialHandle material, const MaterialRenderInfo& info);
     inline void clearContext(){m_frameContext.clear();}
 
     RenderGraphExecution buildFrameExecution();

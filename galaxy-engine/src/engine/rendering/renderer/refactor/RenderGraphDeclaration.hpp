@@ -91,8 +91,7 @@ struct RenderState {
     BlendMode blend = BlendMode::Disabled;
     bool clear = true;
 
-    // GLX-TODO: handle it the right way, the material should have the info or something else
-    bool supportPBR = false;
+    bool bindMaterials = false;
 };
 
 struct SampledTextureInputDesc {

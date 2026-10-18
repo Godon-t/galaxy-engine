@@ -275,8 +275,12 @@ void Backend::execute(RenderGraphExecution& execution){
         }
 
         for (const RenderItem& item : invocation.items) {
-            if (renderState.supportPBR && item.material)
-                bindMaterial(*item.material);
+            if (renderState.bindMaterials) {
+                if (item.material)
+                    bindMaterial(*item.material);
+                else
+                    bindPBRMaterial(MaterialInstance {});
+            }
             draw(item.geometry, item.transform.getGlobalModelMatrix());
         }
     }
@@ -441,6 +445,7 @@ TextureHandle Backend::instantiateTexture(ResourceHandle<Image> image)
 {
     TextureHandle existingID = image.getResource().getGpuTextureHandle();
     if (existingID) {
+        m_textureInstances.retain(existingID);
         return existingID;
     }
     if (!m_textureInstances.canCreate())
@@ -553,18 +558,14 @@ void Backend::frameReset()
         cubemap->resetActivationInt();
 }
 
-MaterialHandle Backend::instanciateMaterial(ResourceHandle<Material> material)
+MaterialHandle Backend::instantiateMaterial(ResourceHandle<BaseMaterial> material)
 {
-
     MaterialHandle existingID = material.getResource().getGpuMaterialHandle();
     if (existingID) {
-        if (m_materialInstances.contains(existingID)) {
-            m_materialInstances.retain(existingID);
-            return existingID;
-        }
-        GLX_WARN("Unvalid material handle on material {0}", material.getResource().getPath());
-        material.getResource().notifyGpuInstanceDestroyed(existingID);
+        m_materialInstances.retain(existingID);
+        return existingID;
     }
+
     if (!m_materialInstances.canCreate())
         return {};
 
@@ -574,68 +575,95 @@ MaterialHandle Backend::instanciateMaterial(ResourceHandle<Material> material)
         material.getResource().notifyGpuInstanceDestroyed(materialID);
     };
     const std::weak_ptr<int> backendLifetime = m_lifetimeToken;
-
     material.getResource().onLoaded([this, backendLifetime, material, materialID] {
         if (backendLifetime.expired() || material.getResource().getGpuMaterialHandle() != materialID)
             return;
-
-        auto matInstance = m_materialInstances.tryGet(materialID);
-        if (matInstance == nullptr)
-            return;
-        const auto& matResource = material.getResource();
-
-        auto setupTexture = [this, &matInstance, &matResource](TextureType type) {
-            matInstance->useImage[type] = matResource.canUseImage(type);
-            if (matInstance->useImage[type]) {
-                matInstance->images[type] = instantiateTexture(matResource.getImage(type));
-            }
-        };
-
-        setupTexture(ALBEDO);
-        setupTexture(METALLIC);
-        setupTexture(ROUGHNESS);
-        setupTexture(NORMAL);
-        setupTexture(AO);
-
-        matInstance->albedo       = matResource.getAlbedo();
-        matInstance->metallic     = matResource.getMetallic();
-        matInstance->ambient      = matResource.getAmbient();
-        matInstance->roughness    = matResource.getRoughness();
-        matInstance->transparency = matResource.getTransparency();
-
         updateMaterial(materialID, material);
     });
-
     return materialID;
 }
 
-void Backend::updateMaterial(MaterialHandle materialID, ResourceHandle<Material> material)
+void Backend::updateMaterial(MaterialHandle materialID, ResourceHandle<BaseMaterial> material)
 {
-    auto* materialInstance = m_materialInstances.tryGet(materialID);
-    if (materialInstance == nullptr) {
-        GLX_CORE_ERROR("Cannot update an invalid material handle");
-        return;
+    auto& resource = material.getResource();
+    MaterialInstance updated;
+    updated.type = resource.getType();
+    updated.transparency = resource.getTransparency();
+
+    switch (updated.type) {
+    case MaterialType::PBR: {
+        auto& pbr = static_cast<PBRMaterial&>(resource);
+        updated.albedo = pbr.getAlbedo();
+        updated.metallic = pbr.getMetallic();
+        updated.roughness = pbr.getRoughness();
+        updated.ambient = pbr.getAmbient();
+        for (int type = 0; type < TextureType::COUNT; ++type) {
+            auto textureType = static_cast<TextureType>(type);
+            updated.useImage[type] = pbr.canUseImage(textureType);
+            if (updated.useImage[type])
+                updated.images[type] = instantiateTexture(pbr.getImage(textureType));
+        }
+        break;
+    }
+    case MaterialType::Texture: {
+        auto& textured = static_cast<TextureMaterial&>(resource);
+        updated.hasTexture = textured.hasTexture();
+        if (updated.hasTexture) {
+            const auto& source = textured.getTexture();
+            if (const auto* image = std::get_if<ResourceHandle<Image>>(&source)) {
+                updated.texture = instantiateTexture(*image);
+            } else if (const auto* texture = std::get_if<TextureHandle>(&source)) {
+                m_textureInstances.retain(*texture);
+                updated.texture = *texture;
+            } else {
+                const auto cubemap = std::get<CubemapHandle>(source);
+                m_cubemapInstances.retain(cubemap);
+                updated.texture = cubemap;
+            }
+        }
+        break;
+    }
     }
 
-    auto& matResource = material.getResource();
-    materialInstance->transparency = matResource.getTransparency();
-    
+    auto& instance = *m_materialInstances.get(materialID);
+    // Acquire the new references before releasing the previous material data.
+    releaseMaterialTextures(instance);
+    instance = std::move(updated);
+
     if (m_materialUpdateCallback) {
-        m_materialUpdateCallback(materialID, matResource.isUsingTransparency());
+        MaterialRenderInfo info;
+        info.type = instance.type;
+        info.isTransparent = resource.isUsingTransparency();
+        info.isCubemap = instance.hasTexture && std::holds_alternative<CubemapHandle>(instance.texture);
+        m_materialUpdateCallback(materialID, info);
+    }
+}
+
+void Backend::releaseMaterialTextures(const MaterialInstance& material)
+{
+    if (material.type == MaterialType::PBR) {
+        for (int type = 0; type < TextureType::COUNT; ++type) {
+            if (material.useImage[type])
+                clearTexture(material.images[type]);
+        }
+    } else if (material.hasTexture) {
+        if (const auto* texture = std::get_if<TextureHandle>(&material.texture))
+            clearTexture(*texture);
+        else
+            clearCubemap(std::get<CubemapHandle>(material.texture));
     }
 }
 
 void Backend::clearMaterial(MaterialHandle materialID)
 {
-    const bool removed = m_materialInstances.release(materialID, [this](MaterialInstance& materialInstance) {
-        for (size_t type = 0; type < TextureType::COUNT; ++type) {
-            if (materialInstance.useImage[type] && materialInstance.images[type])
-                clearTexture(materialInstance.images[type]);
-        }
+    const bool removed = m_materialInstances.release(materialID, [this](MaterialInstance& material) {
+        releaseMaterialTextures(material);
     });
-
     if (!removed)
         return;
+
+    if (m_materialDestroyCallback)
+        m_materialDestroyCallback(materialID);
 
     auto notification = m_materialDestroyNotifications.find(materialID);
     if (notification != m_materialDestroyNotifications.end()) {
@@ -1165,56 +1193,46 @@ bool Backend::attachDepthCubemapToFramebuffer(CubemapHandle cubemapHandle,
     return true;
 }
 
-void Backend::bindMaterial(const MaterialHandle materialHandle)
+void Backend::bindMaterial(MaterialHandle materialHandle)
 {
-    Program* program = getActiveProgram();
-    if (program == nullptr)
-        return;
-
-    MaterialInstance* material = m_materialInstances.tryGet(materialHandle);
-    if (material == nullptr) {
-        GLX_CORE_ERROR("Cannot bind an invalid material handle (slot={0}, generation={1})",
-            materialHandle.index(), materialHandle.generation());
+    const auto& material = *m_materialInstances.get(materialHandle);
+    if (material.type == MaterialType::PBR) {
+        bindPBRMaterial(material);
         return;
     }
 
-    std::array<Texture*, TextureType::COUNT> materialTextures {};
-    auto addTexture = [material, &materialTextures, this](TextureType type) {
-        if (material->useImage[type]) {
-            materialTextures[type] = m_textureInstances.tryGet(material->images[type]);
-        }
+    auto& program = *getActiveProgram();
+    program.setUniform("transparencyVal", material.transparency);
+    program.setUniform("useTexture", material.hasTexture);
+    if (material.hasTexture) {
+        const int location = program.getUniformLocation("sampledTexture");
+        if (const auto* texture = std::get_if<TextureHandle>(&material.texture))
+            m_textureInstances.get(*texture)->activate(location);
+        else
+            m_cubemapInstances.get(std::get<CubemapHandle>(material.texture))->activate(location);
+    }
+}
+
+void Backend::bindPBRMaterial(const MaterialInstance& material)
+{
+    auto& program = *getActiveProgram();
+    program.setUniform("metallicVal", material.metallic);
+    program.setUniform("roughnessVal", material.roughness);
+    program.setUniform("aoVal", material.ambient);
+    program.setUniform("albedoVal", material.albedo);
+    program.setUniform("transparencyVal", material.transparency);
+
+    static const std::array<const char*, TextureType::COUNT> useUniforms {
+        "useAlbedoMap", "useNormalMap", "useMetallicMap", "useRoughnessMap", "useAoMap"
     };
-    addTexture(ALBEDO);
-    addTexture(NORMAL);
-    addTexture(METALLIC);
-    addTexture(ROUGHNESS);
-    addTexture(AO);
-
-    program->setUniform("metallicVal", material->metallic);
-    program->setUniform("roughnessVal", material->roughness);
-    program->setUniform("aoVal", material->ambient);
-    program->setUniform("albedoVal", material->albedo);
-    program->setUniform("transparencyVal", material->transparency);
-
-    auto activateTexture = [program, material, &materialTextures](
-                               TextureType type,
-                               const std::string& useUniform,
-                               const std::string& samplerUniform) {
-        program->setUniform(useUniform, material->useImage[type]);
-        if (!material->useImage[type] || materialTextures[type] == nullptr)
-            return;
-
-        const int location = program->getUniformLocation(samplerUniform);
-        if (location >= 0)
-            materialTextures[type]->activate(location);
+    static const std::array<const char*, TextureType::COUNT> samplerUniforms {
+        "albedoMap", "normalMap", "metallicMap", "roughnessMap", "aoMap"
     };
-
-    activateTexture(ALBEDO, "useAlbedoMap", "albedoMap");
-    activateTexture(METALLIC, "useMetallicMap", "metallicMap");
-    activateTexture(ROUGHNESS, "useRoughnessMap", "roughnessMap");
-    activateTexture(NORMAL, "useNormalMap", "normalMap");
-    activateTexture(AO, "useAoMap", "aoMap");
-    checkOpenGLErrors("Binding material");
+    for (int type = 0; type < TextureType::COUNT; ++type) {
+        program.setUniform(useUniforms[type], material.useImage[type]);
+        if (material.useImage[type])
+            m_textureInstances.get(material.images[type])->activate(program.getUniformLocation(samplerUniforms[type]));
+    }
 }
 
 void Backend::processCommand(const SetUniformCommand& command)

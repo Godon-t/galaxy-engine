@@ -100,7 +100,7 @@ Frontend::Frontend(Backend& backend)
     opaquePBRDesc.name = "opaque_pbr";
     opaquePBRDesc.targetId = step1Id;
     opaquePBRDesc.state.clear = true;
-    opaquePBRDesc.state.supportPBR = true;
+    opaquePBRDesc.state.bindMaterials = true;
 
     
     
@@ -110,7 +110,7 @@ Frontend::Frontend(Backend& backend)
     transparentDesc.name = "transparent_pbr";
     // transparentDesc.state.depthTest = false;
     transparentDesc.state.clear = false;
-    transparentDesc.state.supportPBR = true;
+    transparentDesc.state.bindMaterials = true;
     transparentDesc.state.blend = BlendMode::Alpha;
     
     RenderPassDesc textureDesc(opaquePBRDesc);
@@ -143,6 +143,7 @@ Frontend::Frontend(Backend& backend)
     lightingDesc.inputTextures.push_back({hardwareDepthId, "depthBuffer"});
     lightingDesc.inputTextures.push_back({shadowTextureId, "shadowMaps"});
     lightingDesc.state.clear = true;
+    lightingDesc.state.bindMaterials = false;
 
 
 
@@ -243,9 +244,9 @@ void Frontend::addObjectToScene(GeometryHandle geometry, const Sphere& boundingV
 }
 
 
-void Frontend::notifyMaterialUpdated(MaterialHandle material, bool isTransparent)
+void Frontend::notifyMaterialUpdated(MaterialHandle material, const MaterialRenderInfo& info)
 {
-    m_frameContext.onMaterialUpdated(material, isTransparent);
+    m_frameContext.onMaterialUpdated(material, info);
 }
 
 

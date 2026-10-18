@@ -11,6 +11,7 @@
 #include "rendering/Program.hpp"
 #include "resources/GpuResourceRegistry.hpp"
 #include "resource/Image.hpp"
+#include "resource/Material.hpp"
 #include "resource/Mesh.hpp"
 #include "resource/ResourceHandle.hpp"
 #include "types/Render.hpp"
@@ -48,12 +49,13 @@ public:
     void frameReset();
     [[nodiscard]] std::size_t getDrawCallsCount() const noexcept { return m_drawCount; }
 
-    MaterialHandle instanciateMaterial(ResourceHandle<Material> material);
-    void updateMaterial(MaterialHandle materialHandle, ResourceHandle<Material> material);
+    MaterialHandle instantiateMaterial(ResourceHandle<BaseMaterial> material);
+    void updateMaterial(MaterialHandle materialHandle, ResourceHandle<BaseMaterial> material);
     void clearMaterial(MaterialHandle material);
 
-    using MaterialUpdateCallback = std::function<void(MaterialHandle material, bool isTransparent)>;
+    using MaterialUpdateCallback = std::function<void(MaterialHandle material, const MaterialRenderInfo& info)>;
     void onMaterialUpdated(MaterialUpdateCallback callback) { m_materialUpdateCallback = callback; }
+    void onMaterialDestroyed(std::function<void(MaterialHandle)> callback) { m_materialDestroyCallback = callback; }
 
     void processCommands(const std::vector<RenderCommand>& commands);
 
@@ -129,6 +131,8 @@ private:
     void draw(const GeometryHandle geometryH, const mat4 model);
     void draw(const GeometryHandle geometryH);
     void bindMaterial(const MaterialHandle handle);
+    void bindPBRMaterial(const MaterialInstance& material);
+    void releaseMaterialTextures(const MaterialInstance& material);
     void processCommand(const SetUniformCommand& command);
     void processCommand(const UpdateTextureCommand& command);
     void processCommand(const UpdateUBOCommand& command);
@@ -157,6 +161,7 @@ private:
     std::shared_ptr<int> m_lifetimeToken = std::make_shared<int>(0);
 
     MaterialUpdateCallback m_materialUpdateCallback;
+    std::function<void(MaterialHandle)> m_materialDestroyCallback;
 
     ProgramHandle m_activeProgram;
     std::size_t m_drawCount = 0;

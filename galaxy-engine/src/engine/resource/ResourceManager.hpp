@@ -5,6 +5,7 @@
 #include "Material.hpp"
 #include "Mesh.hpp"
 #include "ResourceMaker.hpp"
+#include "Log.hpp"
 #include "ThreadPool.hpp"
 #include "project/Project.hpp"
 
@@ -108,6 +109,15 @@ public:
         return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(resource));
     }
 
+    template <typename ResourceType, typename... Args>
+    ResourceHandle<ResourceType> createInternalResource(Args&&... args)
+    {
+        auto resource = std::make_shared<ResourceType>(std::forward<Args>(args)...);
+        resource->m_isInternal = true;
+        resource->m_state = ResourceState::LOADED;
+        return ResourceHandle<ResourceType>(std::move(resource));
+    }
+
     inline int getResourceCount() { return cache.size(); }
 
 private:
@@ -118,7 +128,8 @@ private:
     {
         registerMaker<Image>();
         registerMaker<Mesh>();
-        registerMaker<Material>();
+        registerMaker<PBRMaterial>();
+        registerMaker<TextureMaterial>();
         registerMaker<Environment>();
     }
     ThreadPool m_threadPool;

@@ -23,12 +23,13 @@ public:
     void accept(NodeVisitor& visitor) override;
     void loadMesh(std::string path);
     void loadMesh(ResourceHandle<Mesh> mesh, int surfaceIdx);
+    void setMaterial(ResourceHandle<BaseMaterial> material);
 
     inline int getSurfaceIdx() const { return m_meshSurfaceIdx; }
 
     inline ResourceHandle<Mesh> getMeshResource() const { return m_meshResource; }
 
-    inline ResourceHandle<Material> getMaterial() const { return m_materialResource; }
+    inline ResourceHandle<BaseMaterial> getMaterial() const { return m_materialResource; }
     inline MaterialHandle getMaterialId() const { return m_materialHandle; }
 
     BitMask getVisibilityLayer() const { return m_visibilityLayer; }
@@ -39,7 +40,7 @@ private:
     MaterialHandle m_materialHandle;
 
     ResourceHandle<Mesh> m_meshResource;
-    ResourceHandle<Material> m_materialResource;
+    ResourceHandle<BaseMaterial> m_materialResource;
 
     int m_meshSurfaceIdx;
     BitMask m_visibilityLayer;

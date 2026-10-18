@@ -13,7 +13,6 @@ MeshInstance::~MeshInstance()
     if (m_geometry)
         Renderer::getInstance().getBackend().clearMesh(m_geometry);
     if (m_materialHandle) {
-        Renderer::getInstance().getFrontend().removeMaterialID(m_materialHandle);
         Renderer::getInstance().getBackend().clearMaterial(m_materialHandle);
     }
 }
@@ -96,14 +95,21 @@ void MeshInstance::loadMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
         if (!mesh.getResource().hasMaterial(surfaceIdx))
             return;
 
-        ResourceHandle<Material> mat = mesh.getResource().getMaterial(surfaceIdx);
-        m_materialResource           = mat;
-        mat.getResource().onLoaded([this, mat] {
-            m_materialHandle = Renderer::getInstance().getBackend().instanciateMaterial(mat);
-        });
+        setMaterial(mesh.getResource().getMaterial(surfaceIdx));
     });
 
     m_meshResource   = mesh;
     m_meshSurfaceIdx = surfaceIdx;
+}
+
+void MeshInstance::setMaterial(ResourceHandle<BaseMaterial> material)
+{
+    if (m_materialHandle)
+        Renderer::getInstance().getBackend().clearMaterial(m_materialHandle);
+    m_materialHandle = {};
+    m_materialResource = material;
+    material.getResource().onLoaded([this, material] {
+        m_materialHandle = Renderer::getInstance().getBackend().instantiateMaterial(material);
+    });
 }
 } // namespace Galaxy

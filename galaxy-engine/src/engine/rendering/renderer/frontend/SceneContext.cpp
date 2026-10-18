@@ -17,17 +17,16 @@ bool SceneContext::DistCompare::operator()(
     return (camPosition - aPosition).length() - a.bounds.radius < (camPosition - bPosition).length() - b.bounds.radius;
 }
 
-namespace {
-
-bool isTransparent(
-    const std::unordered_map<MaterialHandle, bool, GpuResourceHandleHash>& transparencies,
-    MaterialHandle material)
+const MaterialRenderInfo& SceneContext::getMaterialInfo(std::optional<MaterialHandle> material) const
 {
-    const auto found = transparencies.find(material);
-    return found != transparencies.end() && found->second;
+    static const MaterialRenderInfo defaultMaterial;
+    if (material) {
+        const auto found = materials.find(*material);
+        if (found != materials.end())
+            return found->second;
+    }
+    return defaultMaterial;
 }
-
-} // namespace
 
 std::vector<RenderItem> SceneContext::retrieveOpaqueRenders(const BitMask& mask)
 {
@@ -38,7 +37,7 @@ std::vector<RenderItem> SceneContext::retrieveOpaqueRenders(const BitMask& mask)
         if(!inMask)
             continue;
 
-        if (!item.material || !isTransparent(materialsTransparency, *item.material)) {
+        if (!getMaterialInfo(item.material).isTransparent) {
             items.push_back(item);
         }
     }
@@ -60,7 +59,7 @@ std::vector<RenderItem> SceneContext::retrieveTransparentRenders(math::vec3 camP
         if(!inMask)
             continue;
 
-        if (!item.material || !isTransparent(materialsTransparency, *item.material))
+        if (!getMaterialInfo(item.material).isTransparent)
             continue;
 
         transparentItems.emplace(item);
@@ -85,7 +84,7 @@ std::vector<RenderItem> SceneContext::retrieveOpaqueRenders(const Frustum& frust
         if (!Frustum::isSphereInFrustum(item.bounds, frustum, item.transform))
             continue;
 
-        if (!item.material || !isTransparent(materialsTransparency, *item.material)) {
+        if (!getMaterialInfo(item.material).isTransparent) {
             items.push_back(item);
         }
     }
@@ -107,8 +106,9 @@ std::vector<RenderItem> SceneContext::retrieveTransparentRenders(const Frustum& 
         if(!inMask)
             continue;
 
-        if (!item.material || !isTransparent(materialsTransparency, *item.material))
+        if (!getMaterialInfo(item.material).isTransparent)
             continue;
+
         if (!Frustum::isSphereInFrustum(item.bounds, frustum, item.transform))
             continue;
 
@@ -130,7 +130,7 @@ void SceneContext::push(RenderItem item)
 
 void SceneContext::removeMaterial(MaterialHandle material)
 {
-    materialsTransparency.erase(material);
+    materials.erase(material);
     renderItems.erase(
         std::remove_if(renderItems.begin(), renderItems.end(), [material](const RenderItem& item) {
             return item.material && *item.material == material;
@@ -138,9 +138,9 @@ void SceneContext::removeMaterial(MaterialHandle material)
         renderItems.end());
 }
 
-void SceneContext::onMaterialUpdated(MaterialHandle material, bool transparent)
+void SceneContext::onMaterialUpdated(MaterialHandle material, const MaterialRenderInfo& info)
 {
-    materialsTransparency[material] = transparent;
+    materials[material] = info;
 }
 
 void SceneContext::clear()

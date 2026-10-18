@@ -25,7 +25,7 @@ struct SubMesh {
     std::vector<Vertex> vertices;
     std::vector<unsigned short> indices;
     bool hasMaterial = false;
-    ResourceHandle<Material> material;
+    ResourceHandle<BaseMaterial> material;
     GeometryHandle geometry;
 };
 
@@ -41,7 +41,7 @@ public:
     inline const std::vector<unsigned short>& getIndices(int surface = 0) const { return m_subMeshes[surface].indices; }
 
     inline bool hasMaterial(int surface = 0) const { return m_subMeshes[surface].hasMaterial; }
-    inline const ResourceHandle<Material> getMaterial(int surface = 0) const { return m_subMeshes[surface].material; }
+    inline const ResourceHandle<BaseMaterial> getMaterial(int surface = 0) const { return m_subMeshes[surface].material; }
 
     inline GeometryHandle getGpuGeometryHandle(int surface = 0) const { return m_subMeshes[surface].geometry; }
 

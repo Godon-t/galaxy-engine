@@ -47,7 +47,7 @@ bool ResourceSerializer::serialize(Environment& env)
     fout << yaml.c_str();
     return true;
 }
-bool ResourceSerializer::serialize(Material&)
+bool ResourceSerializer::serialize(BaseMaterial&)
 {
     // Material persistence is temporarily disabled.
     return false;

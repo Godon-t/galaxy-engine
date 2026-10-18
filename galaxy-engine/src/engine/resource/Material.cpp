@@ -1,30 +1,46 @@
 #include "Material.hpp"
 
-#include "ResourceManager.hpp"
-#include "common/YamlTranslation.hpp"
-#include "project/Project.hpp"
-
 namespace Galaxy {
-Material::Material()
+
+BaseMaterial::BaseMaterial(BaseMaterial&& other) noexcept
+    : m_useTransparency(other.m_useTransparency)
+    , m_transparency(other.m_transparency)
+    , m_materialHandle(std::exchange(other.m_materialHandle, {}))
 {
-    m_useImage.fill(false);
 }
 
-bool Material::save(bool)
-{
-    // Material persistence is temporarily disabled.
-    return false;
-}
-
-bool Material::load(YAML::Node&)
+bool BaseMaterial::save(bool)
 {
     return false;
 }
 
-void Material::setImage(TextureType type, ResourceHandle<Image> image)
+bool BaseMaterial::load(YAML::Node&)
+{
+    return false;
+}
+
+void PBRMaterial::setImage(TextureType type, ResourceHandle<Image> image)
 {
     m_useImage[type] = true;
-    m_images[type]   = image;
+    m_images[type] = image;
+}
+
+void TextureMaterial::setTexture(ResourceHandle<Image> image)
+{
+    m_texture = image;
+    m_hasTexture = true;
+}
+
+void TextureMaterial::setTexture(TextureHandle texture)
+{
+    m_texture = texture;
+    m_hasTexture = true;
+}
+
+void TextureMaterial::setTexture(CubemapHandle cubemap)
+{
+    m_texture = cubemap;
+    m_hasTexture = true;
 }
 
 } // namespace Galaxy

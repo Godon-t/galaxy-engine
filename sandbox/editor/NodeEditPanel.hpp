@@ -8,6 +8,7 @@
 using namespace math;
 
 namespace Galaxy {
+    const BitMask editorVisibility {2};
 class NodeEditPanel : public NodeVisitor {
 public:
     void selectNode(Node& node)

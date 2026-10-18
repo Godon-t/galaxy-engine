@@ -29,11 +29,15 @@ bool isTransparent(
 
 } // namespace
 
-std::vector<RenderItem> SceneContext::retrieveOpaqueRenders()
+std::vector<RenderItem> SceneContext::retrieveOpaqueRenders(const BitMask& mask)
 {
     std::vector<RenderItem> items;
 
     for (const RenderItem& item : renderItems) {
+        bool inMask = BitMask::overlap(mask, item.visibilityLayer);
+        if(!inMask)
+            continue;
+
         if (!item.material || !isTransparent(materialsTransparency, *item.material)) {
             items.push_back(item);
         }
@@ -42,7 +46,7 @@ std::vector<RenderItem> SceneContext::retrieveOpaqueRenders()
     return items;
 }
 
-std::vector<RenderItem> SceneContext::retrieveTransparentRenders(math::vec3 camPosition)
+std::vector<RenderItem> SceneContext::retrieveTransparentRenders(math::vec3 camPosition, const BitMask& mask)
 {
     DistCompare::camPosition = camPosition;
     std::priority_queue<
@@ -52,6 +56,10 @@ std::vector<RenderItem> SceneContext::retrieveTransparentRenders(math::vec3 camP
         transparentItems;
 
     for (const RenderItem& item : renderItems) {
+        bool inMask = BitMask::overlap(mask, item.visibilityLayer);
+        if(!inMask)
+            continue;
+
         if (!item.material || !isTransparent(materialsTransparency, *item.material))
             continue;
 
@@ -66,10 +74,14 @@ std::vector<RenderItem> SceneContext::retrieveTransparentRenders(math::vec3 camP
     return items;
 }
 
-std::vector<RenderItem> SceneContext::retrieveOpaqueRenders(const Frustum& frustum)
+std::vector<RenderItem> SceneContext::retrieveOpaqueRenders(const Frustum& frustum, const BitMask& mask)
 {
     std::vector<RenderItem> items;
     for (const RenderItem& item : renderItems) {
+        bool inMask = BitMask::overlap(mask, item.visibilityLayer);
+        if(!inMask)
+            continue;
+
         if (!Frustum::isSphereInFrustum(item.bounds, frustum, item.transform))
             continue;
 
@@ -81,7 +93,7 @@ std::vector<RenderItem> SceneContext::retrieveOpaqueRenders(const Frustum& frust
     return items;
 }
 
-std::vector<RenderItem> SceneContext::retrieveTransparentRenders(const Frustum& frustum)
+std::vector<RenderItem> SceneContext::retrieveTransparentRenders(const Frustum& frustum, const BitMask& mask)
 {
     DistCompare::camPosition = frustum.nearFace.position;
     std::priority_queue<
@@ -91,6 +103,10 @@ std::vector<RenderItem> SceneContext::retrieveTransparentRenders(const Frustum& 
         transparentItems;
 
     for (const RenderItem& item : renderItems) {
+        bool inMask = BitMask::overlap(mask, item.visibilityLayer);
+        if(!inMask)
+            continue;
+
         if (!item.material || !isTransparent(materialsTransparency, *item.material))
             continue;
         if (!Frustum::isSphereInFrustum(item.bounds, frustum, item.transform))

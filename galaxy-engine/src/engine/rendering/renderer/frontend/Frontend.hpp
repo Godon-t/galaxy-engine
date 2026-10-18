@@ -40,7 +40,8 @@ public:
     void addDebugMsg(std::string message);
     void drawDebug();
 
-    void addObjectToScene(GeometryHandle geometry, const Sphere& boundingVolume, std::optional<MaterialHandle> material, const Transform& transform);
+    void addObjectToScene(GeometryHandle geometry, const Sphere& boundingVolume, std::optional<MaterialHandle> material,
+        const Transform& transform, const BitMask& layer = BitMask {});
 
     inline void removeMaterialID(MaterialHandle material) { m_frameContext.removeMaterial(material); }
     void notifyMaterialUpdated(MaterialHandle material, bool isTransparent);

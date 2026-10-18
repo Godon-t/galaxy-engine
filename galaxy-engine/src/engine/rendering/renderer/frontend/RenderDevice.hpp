@@ -22,6 +22,7 @@ namespace Galaxy
         // GLX-TODO: render graph already fullfill this role (in render pass)
         bool noClear = false;
         bool frustumCulling = true;
+        BitMask visibilityMask;
         std::optional<RenderTargetHandle> targetFramebuffer;
 
 

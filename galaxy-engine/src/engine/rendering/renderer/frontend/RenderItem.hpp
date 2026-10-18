@@ -3,6 +3,7 @@
 #include "common/geometry/Shapes.hpp"
 #include "data/Transform.hpp"
 #include "rendering/renderer/resources/GpuResourceHandle.hpp"
+#include "common/BitMask.hpp"
 
 #include <optional>
 
@@ -15,6 +16,7 @@ namespace Galaxy {
 struct RenderItem {
     GeometryHandle geometry;
     std::optional<MaterialHandle> material;
+    BitMask visibilityLayer;
     Sphere bounds;
     Transform transform;
 };

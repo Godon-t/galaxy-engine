@@ -230,11 +230,13 @@ void Frontend::drawDebug()
 }
 
 
-void Frontend::addObjectToScene(GeometryHandle geometry, const Sphere& boundingVolume, std::optional<MaterialHandle> material, const Transform& transform)
+void Frontend::addObjectToScene(GeometryHandle geometry, const Sphere& boundingVolume, std::optional<MaterialHandle> material,
+    const Transform& transform, const BitMask& layer)
 {
     RenderItem item;
     item.geometry = geometry;
     item.material = material;
+    item.visibilityLayer = layer;
     item.bounds = boundingVolume;
     item.transform = transform;
     m_frameContext.push(std::move(item));
@@ -291,7 +293,7 @@ void Frontend::addShadowViews(RenderGraphExecution& execution)
         invocation.targetLayer = light.shadowMapLayer;
         auto proj = light.getProjection(viewportDimmension);
         invocation.viewParameters["lightSpaceMatrix"] = proj * CameraManager::getInstance().processViewMatrix(light.transformationMatrix);
-        invocation.items = m_frameContext.retrieveOpaqueRenders();
+        invocation.items = m_frameContext.retrieveOpaqueRenders(BitMask{1});
     }
 }
 
@@ -353,8 +355,8 @@ void Frontend::addPointViews(RenderGraphExecution& execution, RenderPoint& devic
     for (int face = 0; face < 6; ++face) {
         // Frustum currently assumes a 45 degree camera; cubemap faces use 90 degrees.
         addSceneView(execution, device, projection, views[face], device.camera->position,
-            m_frameContext.retrieveOpaqueRenders(),
-            m_frameContext.retrieveTransparentRenders(device.camera->position),
+            m_frameContext.retrieveOpaqueRenders(device.visibilityMask),
+            m_frameContext.retrieveTransparentRenders(device.camera->position, device.visibilityMask),
             device.targetCubemapFramebuffer, face);
     }
 }
@@ -365,11 +367,11 @@ void Frontend::addCameraView(RenderGraphExecution& execution, RenderCamera& devi
     std::vector<RenderItem> transparents;
     if (device.frustumCulling) {
         Frustum cameraFrustum(device.camera.get());
-        opaques = m_frameContext.retrieveOpaqueRenders(cameraFrustum);
-        transparents = m_frameContext.retrieveTransparentRenders(cameraFrustum);
+        opaques = m_frameContext.retrieveOpaqueRenders(cameraFrustum, device.visibilityMask);
+        transparents = m_frameContext.retrieveTransparentRenders(cameraFrustum, device.visibilityMask);
     } else {
-        opaques = m_frameContext.retrieveOpaqueRenders();
-        transparents = m_frameContext.retrieveTransparentRenders(device.camera->position);
+        opaques = m_frameContext.retrieveOpaqueRenders(device.visibilityMask);
+        transparents = m_frameContext.retrieveTransparentRenders(device.camera->position, device.visibilityMask);
     }
 
     addSceneView(execution, device, device.getProjection(), device.getView(), device.camera->position,

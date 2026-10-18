@@ -5,6 +5,7 @@
 #include "resource/ResourceManager.hpp"
 #include "rendering/renderer/resources/GpuResourceHandle.hpp"
 #include "types/Render.hpp"
+#include "common/BitMask.hpp"
 
 namespace Galaxy {
 class MeshInstance : public Node3D {
@@ -30,6 +31,9 @@ public:
     inline ResourceHandle<Material> getMaterial() const { return m_materialResource; }
     inline MaterialHandle getMaterialId() const { return m_materialHandle; }
 
+    BitMask getVisibilityLayer() const { return m_visibilityLayer; }
+    void setVisibilityLayer(const BitMask& layer) { m_visibilityLayer = layer; }
+
 private:
     GeometryHandle m_geometry;
     MaterialHandle m_materialHandle;
@@ -38,5 +42,6 @@ private:
     ResourceHandle<Material> m_materialResource;
 
     int m_meshSurfaceIdx;
+    BitMask m_visibilityLayer;
 };
 }

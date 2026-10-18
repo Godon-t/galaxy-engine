@@ -20,6 +20,8 @@
 #include <optional>
 
 namespace Galaxy {
+
+// GLX-TODO: rename WorldRender
 class Backend;
 
 class Frontend {
@@ -51,6 +53,15 @@ public:
     
     
 private:
+    void addShadowViews(RenderGraphExecution& execution);
+    void addCameraView(RenderGraphExecution& execution, RenderCamera& device);
+    void addSceneView(RenderGraphExecution& execution, const RenderDevice& device,
+        const mat4& projection, const mat4& view, const vec3& position,
+        std::vector<RenderItem> opaques, std::vector<RenderItem> transparents,
+        std::optional<RenderTargetHandle> targetFramebuffer = std::nullopt, int targetFace = -1);
+    static void configureView(RenderPassInvocation& invocation, const RenderDevice& device,
+        const mat4& projection, const mat4& view);
+
     // TODO: Create cameraFrustum object
     // void setViewMatrix(const math::mat4& view);
     // void setProjectionMatrix(const math::mat4& projection);

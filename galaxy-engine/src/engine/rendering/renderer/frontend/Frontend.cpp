@@ -250,7 +250,27 @@ void Frontend::notifyMaterialUpdated(MaterialHandle material, bool isTransparent
 RenderGraphExecution Frontend::buildFrameExecution()
 {
     RenderGraphExecution execution(m_renderGraph);
+    addShadowViews(execution);
 
+    for (auto& device : m_frameDevices) {
+        if (!device->renderScene)
+            continue;
+
+        auto* cameraDevice = dynamic_cast<RenderCamera*>(device.get());
+        if (cameraDevice == nullptr) {
+            GLX_CORE_ERROR("CameraDevice type not supported !");
+            continue;
+        }
+
+        addCameraView(execution, *cameraDevice);
+    }
+
+    m_frameDevices.clear();
+    return execution;
+}
+
+void Frontend::addShadowViews(RenderGraphExecution& execution)
+{
     // A single compiled shadow pass is invoked once for every light view.
     auto lightsData = m_lightManager.getLightsData();
     vec2 viewportDimmension = vec2(1024, 1024);
@@ -266,73 +286,74 @@ RenderGraphExecution Frontend::buildFrameExecution()
         invocation.viewParameters["lightSpaceMatrix"] = proj * CameraManager::getInstance().processViewMatrix(light.transformationMatrix);
         invocation.items = m_frameContext.retrieveOpaqueRenders();
     }
+}
 
-    for (auto& device : m_frameDevices) {
-        if (!device->renderScene)
-            continue;
+void Frontend::configureView(RenderPassInvocation& invocation, const RenderDevice& device,
+    const mat4& projection, const mat4& view)
+{
+    invocation.clearColor = vec4(0.2, 0.2, 0.25, 1.0);
+    invocation.viewportPosition = device.viewportPosition;
+    invocation.viewportSize = device.viewportDimmension;
+    invocation.viewParameters["projection"] = projection;
+    invocation.viewParameters["view"] = view;
+}
 
-        auto* cameraDevice = dynamic_cast<RenderCamera*>(device.get());
-        if (cameraDevice == nullptr) {
-            GLX_CORE_ERROR("CameraDevice type not supported !");
-            continue;
-        }
+void Frontend::addSceneView(RenderGraphExecution& execution, const RenderDevice& device,
+    const mat4& projection, const mat4& view, const vec3& position,
+    std::vector<RenderItem> opaques, std::vector<RenderItem> transparents,
+    std::optional<RenderTargetHandle> targetFramebuffer, int targetFace)
+{
+    auto& opaqueInvocation = execution.addInvocation(m_passOpaquePBRId);
+    configureView(opaqueInvocation, device, projection, view);
+    opaqueInvocation.items = std::move(opaques);
 
-        std::vector<RenderItem> opaques;
-        std::vector<RenderItem> transparents;
-        if (device->frustumCulling) {
-            Frustum cameraFrustum(cameraDevice->camera.get());
-            opaques = m_frameContext.retrieveOpaqueRenders(cameraFrustum);
-            transparents = m_frameContext.retrieveTransparentRenders(cameraFrustum);
-        } else {
-            opaques = m_frameContext.retrieveOpaqueRenders();
-            transparents = m_frameContext.retrieveTransparentRenders(cameraDevice->camera->position);
-        }
+    auto& transparentInvocation = execution.addInvocation(m_passTransparentPBRId);
+    configureView(transparentInvocation, device, projection, view);
+    transparentInvocation.items = std::move(transparents);
 
-        const mat4 projection = device->getProjection();
-        const mat4 view = device->getView();
-        auto configureView = [&](RenderPassInvocation& invocation) {
-            invocation.clearColor = vec4(0.2, 0.2, 0.25, 1.0);
-            invocation.viewportPosition = device->viewportPosition;
-            invocation.viewportSize = device->viewportDimmension;
-            invocation.viewParameters["projection"] = projection;
-            invocation.viewParameters["view"] = view;
-        };
-
-        auto& opaqueInvocation = execution.addInvocation(m_passOpaquePBRId);
-        configureView(opaqueInvocation);
-        opaqueInvocation.items = std::move(opaques);
-        
-        auto& transparentInvocation = execution.addInvocation(m_passTransparentPBRId);
-        configureView(transparentInvocation);
-        transparentInvocation.items = std::move(transparents);
-
-        auto& lightInvocation = execution.addInvocation(m_passLightingId);
-        if(m_lightManager.isDirty()){
-            auto updateCommand = m_lightManager.getLightUboUpdate();
-            lightInvocation.updates.push_back(updateCommand);
-        }
-        lightInvocation.items.push_back(RenderItem { m_postProcessingQuad });
-        lightInvocation.uniformBindings.push_back({m_lightManager.getLightUboHandle(), 0});
-        lightInvocation.parameters.emplace("lightCount", static_cast<int>(m_lightManager.getLightCount()));
-        lightInvocation.parameters.emplace("inverseView", inverse(view));
-        lightInvocation.parameters.emplace("inverseProjection", inverse(projection));
-        lightInvocation.parameters.emplace("cameraPos", cameraDevice->camera->position);
-        lightInvocation.viewportSize = device->viewportDimmension;
+    auto& lightInvocation = execution.addInvocation(m_passLightingId);
+    if(m_lightManager.isDirty()){
+        auto updateCommand = m_lightManager.getLightUboUpdate();
+        lightInvocation.updates.push_back(updateCommand);
+    }
+    lightInvocation.items.push_back(RenderItem { m_postProcessingQuad });
+    lightInvocation.uniformBindings.push_back({m_lightManager.getLightUboHandle(), 0});
+    lightInvocation.parameters.emplace("lightCount", static_cast<int>(m_lightManager.getLightCount()));
+    lightInvocation.parameters.emplace("inverseView", inverse(view));
+    lightInvocation.parameters.emplace("inverseProjection", inverse(projection));
+    lightInvocation.parameters.emplace("cameraPos", position);
+    lightInvocation.viewportSize = device.viewportDimmension;
 
 
-        auto& postProcessInvocation = execution.addInvocation(m_passPostprocessId);
-        configureView(postProcessInvocation);
-        postProcessInvocation.items.push_back(RenderItem { m_postProcessingQuad });
+    auto& postProcessInvocation = execution.addInvocation(m_passPostprocessId);
+    configureView(postProcessInvocation, device, projection, view);
+    postProcessInvocation.targetFramebuffer = targetFramebuffer;
+    postProcessInvocation.targetLayer = targetFace;
+    postProcessInvocation.items.push_back(RenderItem { m_postProcessingQuad });
 
-        postProcessInvocation.parameters.emplace("view", view);
-        postProcessInvocation.parameters.emplace("projection", projection);
-        postProcessInvocation.parameters.emplace("inverseView", inverse(view));
-        postProcessInvocation.parameters.emplace("inverseProjection", inverse(projection));
-        postProcessInvocation.parameters.emplace("cameraPos", cameraDevice->camera->position);
+    postProcessInvocation.parameters.emplace("view", view);
+    postProcessInvocation.parameters.emplace("projection", projection);
+    postProcessInvocation.parameters.emplace("inverseView", inverse(view));
+    postProcessInvocation.parameters.emplace("inverseProjection", inverse(projection));
+    postProcessInvocation.parameters.emplace("cameraPos", position);
+
+}
+
+void Frontend::addCameraView(RenderGraphExecution& execution, RenderCamera& device)
+{
+    std::vector<RenderItem> opaques;
+    std::vector<RenderItem> transparents;
+    if (device.frustumCulling) {
+        Frustum cameraFrustum(device.camera.get());
+        opaques = m_frameContext.retrieveOpaqueRenders(cameraFrustum);
+        transparents = m_frameContext.retrieveTransparentRenders(cameraFrustum);
+    } else {
+        opaques = m_frameContext.retrieveOpaqueRenders();
+        transparents = m_frameContext.retrieveTransparentRenders(device.camera->position);
     }
 
-    m_frameDevices.clear();
-    return execution;
+    addSceneView(execution, device, device.getProjection(), device.getView(), device.camera->position,
+        std::move(opaques), std::move(transparents));
 }
 
 FramebufferHandle Frontend::getFinalFramebuffer()

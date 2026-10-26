@@ -68,6 +68,8 @@ void ImGuiLayer::end()
     // io.DisplaySize  = windowSize;
 
     ImGui::Render();
+    // The main viewport always renders to the window, independently of offscreen work.
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {

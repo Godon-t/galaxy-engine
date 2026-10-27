@@ -1,0 +1,10 @@
+Type: PBRMaterial
+HasTransparency: true
+Transparency: 1
+Images:
+  Albedo: 13319564497513279057
+Constants:
+  Albedo: [1, 1, 1]
+  Ambient: 1
+  Roughness: 0.5
+  Metallic: 0.5

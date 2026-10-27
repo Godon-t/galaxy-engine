@@ -221,7 +221,6 @@ void EditorLayer::displayViewport(bool validScene)
         ImVec2 pannelSize = ImGui::GetContentRegionAvail();
         if (pannelSize.x > 0.0f && pannelSize.y > 0.0f
             && (m_viewportSize.x != pannelSize.x || m_viewportSize.y != pannelSize.y)) {
-            // TODO: resize here and on resize event ?
             m_viewportSize = { pannelSize.x, pannelSize.y };
 
             Renderer::getInstance().resize(m_viewportSize.x, m_viewportSize.y);

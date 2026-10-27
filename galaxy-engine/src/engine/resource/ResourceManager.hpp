@@ -23,21 +23,33 @@ public:
     }
 
     template <typename ResourceType>
-    void registerMaker()
+    void registerMaker(std::string type)
     {
         size_t id    = typeid(ResourceType).hash_code();
-        m_makers[id] = std::make_unique<ResourceMaker<ResourceType>>();
+        m_makers[id] = std::make_unique<ResourceMaker<ResourceType>>(type);
     }
 
     template <typename ResourceType>
-    ResourceHandle<ResourceType> load(const std::string& path)
+    ResourceHandle<ResourceType> load(const std::string& path, bool readTypeFromFile = false)
     {
+        std::lock_guard<std::mutex> lock(m_cacheMutex);
         auto it = cache.find(path);
         if (it != cache.end()) {
             return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(it->second));
         }
+        auto makerIt = m_makers.end();
+        if (readTypeFromFile) {
+            auto type = IResourceMaker::readType(Project::getProjectRootPath() + path);
+            // Material was the original name of PBRMaterial in resource files.
+            if (type == "Material")
+                type = "PBRMaterial";
+            makerIt = m_makers.begin();
+            while (makerIt != m_makers.end() && makerIt->second->getType() != type)
+                ++makerIt;
+        } else {
+            makerIt = m_makers.find(typeid(ResourceType).hash_code());
+        }
 
-        auto makerIt = m_makers.find(typeid(ResourceType).hash_code());
         GLX_CORE_ASSERT(makerIt != m_makers.end(), "No resource maker for file: '{0}'", path);
 
         std::shared_ptr<ResourceBase> resource = makerIt->second->createResourcePtr();
@@ -65,6 +77,7 @@ public:
 
     void clearUnusedResources()
     {
+        std::lock_guard<std::mutex> lock(m_cacheMutex);
         for (auto it = cache.begin(); it != cache.end();) {
             if (it->second.use_count() == 1) {
                 it = cache.erase(it);
@@ -118,7 +131,11 @@ public:
         return ResourceHandle<ResourceType>(std::move(resource));
     }
 
-    inline int getResourceCount() { return cache.size(); }
+    inline int getResourceCount()
+    {
+        std::lock_guard<std::mutex> lock(m_cacheMutex);
+        return cache.size();
+    }
 
 private:
     friend class ResourceImporter;
@@ -126,14 +143,15 @@ private:
     ResourceManager()
         : m_threadPool(resourcePoolSize)
     {
-        registerMaker<Image>();
-        registerMaker<Mesh>();
-        registerMaker<PBRMaterial>();
-        registerMaker<TextureMaterial>();
-        registerMaker<Environment>();
+        registerMaker<Image>("Image");
+        registerMaker<Mesh>("Mesh");
+        registerMaker<PBRMaterial>("PBRMaterial");
+        registerMaker<TextureMaterial>("TextureMaterial");
+        registerMaker<Environment>("Environment");
     }
     ThreadPool m_threadPool;
     std::mutex m_pendingLoadMutex;
+    std::mutex m_cacheMutex;
 
     std::unordered_map<size_t, std::unique_ptr<IResourceMaker>> m_makers;
     std::unordered_map<std::string, std::shared_ptr<ResourceBase>> cache;

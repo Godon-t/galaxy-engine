@@ -38,7 +38,12 @@ public:
         if (m_resourceAccess.display())
             node.loadMesh(m_resourceAccess.selectedResourcePath);
 
-        // Material editing is temporarily disabled.
+        auto mathandle = node.getMaterial();
+        if (mathandle && materialEdit(mathandle.getResource())) {
+            Renderer::getInstance().getBackend().updateMaterial(node.getMaterialId(), mathandle);
+        }
+        if (ImGui::Button("Save resource"))
+            mathandle.getResource().save();
     }
 
     void visit(Sprite3D& node)
@@ -183,6 +188,68 @@ public:
         }
     }
 
+    bool materialEdit(BaseMaterial& material)
+    {
+        ImGui::SeparatorText("Material");
+        bool changed = false;
+        float transparencyVal = material.getTransparency();
+        if (ImGui::SliderFloat("Transparency", &transparencyVal, 0.f, 1.f)) {
+            material.setTransparency(transparencyVal);
+            changed = true;
+        }
+        bool useTransparency = material.isUsingTransparency();
+        if (ImGui::Checkbox("Use transparency", &useTransparency)) {
+            material.setUseTransparency(useTransparency);
+            changed = true;
+        }
+
+        if (auto* pbrMaterial = dynamic_cast<PBRMaterial*>(&material)) {
+            ImGui::SeparatorText("PBR");
+            vec3 albedo = pbrMaterial->getAlbedo();
+            if (ImGui::ColorEdit3("Albedo", &albedo[0])) {
+                pbrMaterial->setAlbedo(albedo);
+                changed = true;
+            }
+            float metallic = pbrMaterial->getMetallic();
+            if (ImGui::SliderFloat("Metallic", &metallic, 0.f, 1.f)) {
+                pbrMaterial->setMetallic(metallic);
+                changed = true;
+            }
+            float roughness = pbrMaterial->getRoughness();
+            if (ImGui::SliderFloat("Roughness", &roughness, 0.f, 1.f)) {
+                pbrMaterial->setRoughness(roughness);
+                changed = true;
+            }
+            float ambient = pbrMaterial->getAmbient();
+            if (ImGui::SliderFloat("Ambient", &ambient, 0.f, 1.f)) {
+                pbrMaterial->setAmbient(ambient);
+                changed = true;
+            }
+        } else if (auto* textureMaterial = dynamic_cast<TextureMaterial*>(&material)) {
+            ImGui::SeparatorText("Texture");
+            const auto& source = textureMaterial->getTexture();
+            if (!textureMaterial->hasTexture()) {
+                ImGui::TextUnformatted("No texture");
+            } else if (const auto* image = std::get_if<ResourceHandle<Image>>(&source)) {
+                ImGui::Text("Image: %s", image->getResource().getPath().c_str());
+            } else if (std::holds_alternative<CubemapHandle>(source)) {
+                ImGui::TextUnformatted("Cubemap");
+            } else {
+                ImGui::TextUnformatted("Texture 2D");
+            }
+
+            if (ImGui::Button("Load image"))
+                m_textureResourceAccess.show();
+            if (m_textureResourceAccess.display()) {
+                textureMaterial->setTexture(ResourceManager::getInstance().load<Image>(m_textureResourceAccess.selectedResourcePath));
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
     ResourceAccess m_resourceAccess;
+    ResourceAccess m_textureResourceAccess {};
 };
 }

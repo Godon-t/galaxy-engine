@@ -37,9 +37,8 @@ public:
             m_materialHandle = {};
     }
 
-    // Material persistence is temporarily disabled for both concrete types.
     bool save(bool recursive = true) final;
-    bool load(YAML::Node& data) final;
+    bool load(YAML::Node& data) override;
 
 private:
     bool m_useTransparency = false;
@@ -67,6 +66,8 @@ public:
     float getAmbient() const { return m_ambient; }
     void setAmbient(float value) { m_ambient = value; }
 
+    bool load(YAML::Node& data) override;
+
 private:
     math::vec3 m_albedo = { 1.0f, 0.7f, 0.77f };
     float m_metallic = 0.5f;
@@ -90,6 +91,8 @@ public:
     void setTexture(CubemapHandle cubemap);
     const TextureSource& getTexture() const { return m_texture; }
     bool hasTexture() const { return m_hasTexture; }
+
+    bool load(YAML::Node& data) override;
 
 private:
     TextureSource m_texture;

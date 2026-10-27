@@ -49,6 +49,8 @@ private:
 
     float m_cameraSpeed   = 0.15f;
     bool m_rightClickDown = false;
+    bool m_leftClickDown = false;
+    vec2 m_mouseDelta { 0.0f };
 
     void updateCamera();
     void displayMenuBar(bool validScene);

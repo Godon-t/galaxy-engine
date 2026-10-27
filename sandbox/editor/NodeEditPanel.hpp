@@ -28,8 +28,9 @@ public:
         backend.clearMesh(m_invertedCube);
         backend.clearFrameBuffer(m_visualBuffer);
     }
-    void selectNode(Node& node)
+    void selectNode(Node& node, const vec2& mouseDelta = vec2(0.0f))
     {
+        m_mouseDelta = mouseDelta;
         ImGui::Begin("Node edit");
         node.accept(*this);
         ImGui::End();
@@ -193,17 +194,29 @@ public:
             renderer.getBackend().updateMaterial(m_cubemapMaterial, m_cubemapMaterialResource);
         }
 
-        auto camera = std::make_unique<RenderCamera>();
+        const ImVec2 imagePosition = ImGui::GetCursorScreenPos();
+        const ImVec2 imageSize(256, 256);
+        ImGui::Image(reinterpret_cast<void*>(renderer.getBackend().getFrameBufferTextureID(m_visualBuffer)),
+            imageSize, ImVec2 { 1, 1 }, ImVec2 { 0, 0 });
+        ImGui::SetCursorScreenPos(imagePosition);
+        ImGui::InvisibleButton("##CubemapRotation", imageSize, ImGuiButtonFlags_MouseButtonLeft);
+        if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+        if (ImGui::IsItemActive()) {
+            m_cubemapTransform.localRotateY(m_mouseDelta.x * -0.005f);
+            m_cubemapTransform.globalRotateX(m_mouseDelta.y * 0.005f);
+            m_cubemapTransform.computeModelMatrix();
+        }
+
+        auto camera = std::make_unique<RenderCameraTransform>();
         camera->renderScene = true;
         camera->visibilityMask = editorVisibility;
         camera->targetFramebuffer = m_visualBuffer;
         camera->camera->dimmensions = camera->viewportDimmension;
+        camera->transform = translate(vec3(0,0,2.5));
         renderer.getFrontend().addRenderDevice(std::move(camera));
 
-        renderer.getFrontend().addObjectToScene(m_invertedCube, m_cubemapMaterial, {}, editorVisibility);
-
-        ImGui::Image(reinterpret_cast<void*>(renderer.getBackend().getFrameBufferTextureID(m_visualBuffer)),
-            ImVec2(256, 256), ImVec2 { 1, 1 }, ImVec2 { 0, 0 });
+        renderer.getFrontend().addObjectToScene(m_invertedCube, m_cubemapMaterial, m_cubemapTransform, editorVisibility);
     }
 
     void transformEdit(Transform& transform)
@@ -292,5 +305,7 @@ public:
     GeometryHandle m_invertedCube;
     ResourceHandle<TextureMaterial> m_cubemapMaterialResource;
     MaterialHandle m_cubemapMaterial;
+    Transform m_cubemapTransform;
+    vec2 m_mouseDelta { 0.0f };
 };
 }

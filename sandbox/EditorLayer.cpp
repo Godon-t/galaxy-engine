@@ -320,9 +320,10 @@ void EditorLayer::onImGuiRender()
     else if (validScene)
         m_nodeList.listNodes(*m_selectedScene->getNodePtr().get());
     if (Node::nodeExists(m_nodeList.selectedNodeId)) {
-        m_editNode.selectNode(*Node::getNode(m_nodeList.selectedNodeId).lock().get());
+        m_editNode.selectNode(*Node::getNode(m_nodeList.selectedNodeId).lock().get(), m_mouseDelta);
     }
     ImGui::End();
+    m_mouseDelta = vec2(0.0f);
 }
 
 void EditorLayer::onEvent(Event& evt)
@@ -335,14 +336,21 @@ void EditorLayer::onEvent(Event& evt)
         MouseScrollEvent& scrollEvt = (MouseScrollEvent&)evt;
         m_cameraSpeed += scrollEvt.getYOffset() * 0.1;
         m_cameraSpeed = m_cameraSpeed <= 0 ? 0.0001 : m_cameraSpeed;
-    } else if (evt.getEventType() == EventType::MouseMotion && m_rightClickDown) {
+    } else if (evt.getEventType() == EventType::MouseMotion) {
         MouseMotionEvent& mouseMotion = (MouseMotionEvent&)evt;
-        m_editorCamera->getTransform().globalRotateY(mouseMotion.getDeltaX() * 0.001);
-        m_editorCamera->getTransform().localRotateX(mouseMotion.getDeltaY() * 0.001);
+        if (m_rightClickDown) {
+            m_editorCamera->getTransform().globalRotateY(mouseMotion.getDeltaX() * 0.001);
+            m_editorCamera->getTransform().localRotateX(mouseMotion.getDeltaY() * 0.001);
+        }
+        if (m_leftClickDown)
+            m_mouseDelta += vec2(mouseMotion.getDeltaX(), mouseMotion.getDeltaY());
     } else if (evt.getEventType() == EventType::MouseButtonInteract) {
         MouseButtonEvent& mouseBtn = (MouseButtonEvent&)evt;
-        if (mouseBtn.getButton() == 1) {
+        if (mouseBtn.getButton() == MOUSE_RIGHT) {
             m_rightClickDown = mouseBtn.isPressed();
+        } else if (mouseBtn.getButton() == MOUSE_LEFT) {
+            m_leftClickDown = mouseBtn.isPressed();
+            m_mouseDelta = vec2(0.0f);
         }
     }
 }

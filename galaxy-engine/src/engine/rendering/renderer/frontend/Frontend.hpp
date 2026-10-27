@@ -33,15 +33,10 @@ public:
 
     // void storeCanvaResult(std::string& path);
 
-    void submit(GeometryHandle geometry);
-    void submit(GeometryHandle geometry, const Transform& transform);
-    void clear(vec4& color);
-
-    void addDebugMsg(std::string message);
-    void drawDebug();
-
+    void addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material,
+        const Transform& transform = Transform {}, const BitMask& layer = BitMask {});
     void addObjectToScene(GeometryHandle geometry, const Sphere& boundingVolume, std::optional<MaterialHandle> material,
-        const Transform& transform, const BitMask& layer = BitMask {});
+        const Transform& transform = Transform {}, const BitMask& layer = BitMask {});
 
     inline void removeMaterialID(MaterialHandle material) { m_frameContext.removeMaterial(material); }
     void notifyMaterialUpdated(MaterialHandle material, const MaterialRenderInfo& info);
@@ -54,6 +49,8 @@ public:
     
     
 private:
+    Backend& m_backend;
+
     void addShadowViews(RenderGraphExecution& execution);
     void addPointViews(RenderGraphExecution& execution, RenderPoint& device);
     void addCameraView(RenderGraphExecution& execution, RenderCamera& device);

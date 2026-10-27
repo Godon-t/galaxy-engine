@@ -73,6 +73,7 @@ void EditorLayer::onAttach()
     auto& renderer = Renderer::getInstance();
     renderer.init();
     renderer.resize(width, height);
+    m_editNode.init();
 
     InputManager::addAction(Action(GLX_KEY_ESCAPE, "editor_exit"));
     InputManager::addAction(Action(GLX_KEY_W, "editor_forward"));
@@ -86,6 +87,7 @@ void EditorLayer::onAttach()
 
 void EditorLayer::onDetach()
 {
+    m_editNode.destroy();
 }
 
 void EditorLayer::onUpdate()

@@ -12,6 +12,22 @@ namespace Galaxy {
 
 class NodeEditPanel : public NodeVisitor {
 public:
+    void init()
+    {
+        auto& backend = Renderer::getInstance().getBackend();
+        m_visualBuffer = backend.instanciateFrameBuffer(512, 512, FramebufferTextureFormat::DEPTH24RGBA8);
+        m_invertedCube = backend.generateCube(1, true, [] {});
+        m_cubemapMaterialResource = ResourceManager::getInstance().createInternalResource<TextureMaterial>();
+        m_cubemapMaterial = backend.instantiateMaterial(m_cubemapMaterialResource);
+    }
+
+    void destroy()
+    {
+        auto& backend = Renderer::getInstance().getBackend();
+        backend.clearMaterial(m_cubemapMaterial);
+        backend.clearMesh(m_invertedCube);
+        backend.clearFrameBuffer(m_visualBuffer);
+    }
     void selectNode(Node& node)
     {
         ImGui::Begin("Node edit");
@@ -166,7 +182,28 @@ public:
         if (ImGui::Button("Capture cubemap"))
             node.capture();
 
-        // Cubemap visualization will be connected to the editor's material view later.
+        if (!node.hasCapture())
+            return;
+
+        auto& renderer = Renderer::getInstance();
+        auto& material = m_cubemapMaterialResource.getResource();
+        const auto* cubemap = std::get_if<CubemapHandle>(&material.getTexture());
+        if (!cubemap || *cubemap != node.getCubemapHandle()) {
+            material.setTexture(node.getCubemapHandle());
+            renderer.getBackend().updateMaterial(m_cubemapMaterial, m_cubemapMaterialResource);
+        }
+
+        auto camera = std::make_unique<RenderCamera>();
+        camera->renderScene = true;
+        camera->visibilityMask = editorVisibility;
+        camera->targetFramebuffer = m_visualBuffer;
+        camera->camera->dimmensions = camera->viewportDimmension;
+        renderer.getFrontend().addRenderDevice(std::move(camera));
+
+        renderer.getFrontend().addObjectToScene(m_invertedCube, m_cubemapMaterial, {}, editorVisibility);
+
+        ImGui::Image(reinterpret_cast<void*>(renderer.getBackend().getFrameBufferTextureID(m_visualBuffer)),
+            ImVec2(256, 256), ImVec2 { 1, 1 }, ImVec2 { 0, 0 });
     }
 
     void transformEdit(Transform& transform)
@@ -251,5 +288,9 @@ public:
 
     ResourceAccess m_resourceAccess;
     ResourceAccess m_textureResourceAccess {};
+    FramebufferHandle m_visualBuffer;
+    GeometryHandle m_invertedCube;
+    ResourceHandle<TextureMaterial> m_cubemapMaterialResource;
+    MaterialHandle m_cubemapMaterial;
 };
 }

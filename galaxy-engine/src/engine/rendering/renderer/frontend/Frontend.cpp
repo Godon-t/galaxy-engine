@@ -27,6 +27,7 @@ void Frontend::setEnvironment(ResourceHandle<Environment> environment)
 }
 
 Frontend::Frontend(Backend& backend)
+    : m_backend(backend)
 {
     m_postProcessingQuad = backend.generateQuad(vec2(2, 2), [] {});
     m_skyboxCube = backend.generateCube(2.0f, true, [] {});
@@ -243,18 +244,11 @@ Frontend::Frontend(Backend& backend)
     computeOcahedralDesc.associatedProgram = backend.loadShader(engineRes("shaders/compute_octahedral.glsl"));
 }
 
-void Frontend::drawDebug()
+void Frontend::addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material,
+    const Transform& transform, const BitMask& layer)
 {
-    // RenderCommand command;
-    // command.type = RenderCommandType::executeDebugCommands;
-
-    // pushCommand(command);
-
-    // GLX_CORE_ERROR("Not working frontend render command drawDebug");
-
-    // TODO : COMPLETE
+    addObjectToScene(geometry, m_backend.getMeshBoundingVolume(geometry), material, transform, layer);
 }
-
 
 void Frontend::addObjectToScene(GeometryHandle geometry, const Sphere& boundingVolume, std::optional<MaterialHandle> material,
     const Transform& transform, const BitMask& layer)

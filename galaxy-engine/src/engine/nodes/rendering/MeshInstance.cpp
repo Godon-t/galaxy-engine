@@ -25,7 +25,7 @@ void MeshInstance::draw()
     std::optional<MaterialHandle> material;
     if (m_materialHandle)
         material = m_materialHandle;
-    Renderer::getInstance().addObjectToScene(m_geometry, material, getTransform(), m_visibilityLayer);
+    Renderer::getInstance().getFrontend().addObjectToScene(m_geometry, material, getTransform(), m_visibilityLayer);
 }
 
 void MeshInstance::lightPassDraw()

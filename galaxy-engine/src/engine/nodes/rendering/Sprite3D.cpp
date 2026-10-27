@@ -16,7 +16,7 @@ Sprite3D::~Sprite3D()
 void Sprite3D::draw()
 {
     if (m_initialized)
-        Renderer::getInstance().addObjectToScene(m_rect, m_materialHandle, getTransform(), m_visibilityLayer);
+        Renderer::getInstance().getFrontend().addObjectToScene(m_rect, m_materialHandle, getTransform(), m_visibilityLayer);
     Node3D::draw();
 }
 

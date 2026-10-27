@@ -75,12 +75,6 @@ void Renderer::renderFrame()
     m_frontend.clearContext();
 }
 
-void Renderer::addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material, const Transform& transform,
-    const BitMask& layer)
-{
-    m_frontend.addObjectToScene(geometry, m_backend.getMeshBoundingVolume(geometry), material, transform, layer);
-}
-
 // void Renderer::applyFilterOnCubemap(GeometryHandle skyboxMesh, CubemapHandle source, CubemapHandle target, FilterEnum filter)
 // {
 //     // switchCommandBuffer();

@@ -29,7 +29,7 @@ public:
     void renderFrame();
     [[nodiscard]] std::size_t getDrawCallsCount() const noexcept { return m_backend.getDrawCallsCount(); }
 
-    void addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material, const Transform& transform,
+    void addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material, const Transform& transform = Transform {},
         const BitMask& layer = BitMask {});
 
     Backend& getBackend(){return m_backend;}

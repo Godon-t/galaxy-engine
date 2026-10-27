@@ -10,6 +10,7 @@
 
 #include <utility>
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
@@ -26,7 +27,11 @@ bool closeResourceWriting(YAML::Emitter& emitter, uuid resourceID)
 {
     emitter << YAML::EndMap;
 
-    std::ofstream fout(Project::getProjectRootPath() + Project::getPath(ProjectPathTypes::RESOURCE, resourceID));
+    const std::filesystem::path path = Project::getProjectRootPath() + Project::getPath(ProjectPathTypes::RESOURCE, resourceID);
+    if (path.has_parent_path())
+        std::filesystem::create_directories(path.parent_path());
+
+    std::ofstream fout(path);
     fout << emitter.c_str();
     return fout.good();
 }

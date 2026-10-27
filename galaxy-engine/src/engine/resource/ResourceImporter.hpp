@@ -7,12 +7,11 @@
 
 namespace Galaxy {
 struct ResourceImporter {
-    static std::string convertExternPathToGres(const std::string& externPath)
+    static std::string convertExternPathToGres(const std::string& externPath, const std::string& suffix = "")
     {
-        std::string path, extension;
-        Project::extractExtension(externPath, path, extension);
-        path += std::string(".gres");
-        return path;
+        std::string path, filename, extension;
+        Project::extractExtension(externPath, path, filename, extension);
+        return ".res/" + path + "/" + filename + suffix + ".gres";
     }
     static uuid importImage(const std::string& externPath)
     {
@@ -61,9 +60,7 @@ struct ResourceImporter {
         auto makerIt     = rmInstance.m_makers.find(typeid(PBRMaterial).hash_code());
         GLX_CORE_ASSERT(makerIt != rmInstance.m_makers.end(), "No resource maker for file: '{0}'", externPath);
 
-        std::string gltfPath, extension;
-        Project::extractExtension(externPath, gltfPath, extension);
-        std::string resPath = gltfPath + "_material_" + std::to_string(idx) + ".gres";
+        std::string resPath = convertExternPathToGres(externPath, "_material_" + std::to_string(idx));
 
         if (Project::doesPathExist(resPath)) {
             return Project::getPathId(resPath);
@@ -202,8 +199,8 @@ struct ResourceImporter {
 
     static bool import(const std::string& file)
     {
-        std::string path, extension;
-        Project::extractExtension(file, path, extension);
+        std::string path, filename, extension;
+        Project::extractExtension(file, path, filename, extension);
 
         if (extension == ".jpg" || extension == ".png") {
             importImage(file);

@@ -27,7 +27,7 @@ public:
     inline static bool deletePath(ProjectPathTypes type, uuid pathId) { return getInstance()._deletePath(type, pathId); }
     inline static void savePaths() { getInstance()._savePaths(); }
 
-    static void extractExtension(const std::string& input, std::string& filePath, std::string& fileExtension);
+    static void extractExtension(const std::string& input, std::string& filePath, std::string& fileName, std::string& fileExtension);
     static std::string getFolderPath(const std::string& filePath);
 
     inline static void setName(const std::string& name) { getInstance().m_name = name; }

@@ -186,12 +186,13 @@ bool Project::_save()
     return true;
 }
 
-void Project::extractExtension(const std::string& input, std::string& filePath, std::string& fileExtension)
+void Project::extractExtension(const std::string& input, std::string& filePath, std::string& fileName, std::string& fileExtension)
 {
     std::filesystem::path path(input.c_str());
 
     fileExtension = path.extension().string();
-    filePath      = path.stem().string();
+    filePath      = path.parent_path().string();
+    fileName      = path.stem().string();
 }
 
 std::string Project::getFolderPath(const std::string& filePath)

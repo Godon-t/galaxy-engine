@@ -5,11 +5,11 @@
 #include "engine/data/Transform.hpp"
 #include "engine/nodes/Node.hpp"
 #include "engine/nodes/rendering/lighting/SpotLight.hpp"
-
 #include "engine/types/Math.hpp"
 #include "engine/types/Render.hpp"
 #include "rendering/renderer/resources/GpuResourceHandle.hpp"
-#include "rendering/renderer/commands/RenderCommand.hpp"
+#include "rendering/Commands.hpp"
+
 
 namespace Galaxy {
 struct RenderCameraTransform;
@@ -92,7 +92,6 @@ public:
     void updateLightCastShadow(lightID id, bool state);
 
     void unregisterLight(int id);
-    void shadowPass(Node* sceneRoot);
     unsigned int getShadowMapLayer(lightID light) { return m_lights[light].shadowMapLayer; }
 
     unsigned int getProbesRadianceTexture();

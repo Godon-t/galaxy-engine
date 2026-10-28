@@ -24,16 +24,6 @@ public:
     void accept(Galaxy::NodeVisitor& visitor) override;
 
     inline virtual void draw() override;
-    void testingFunc()
-    {
-        // auto& rendererInstance = Renderer::getInstance();
-        // rendererInstance.renderFromPoint(vec3(0), *Application::getInstance().getRootNodePtr().get(), m_renderingCubemap, m_depthRenderingCubemap);
-
-        // Renderer::getInstance().applyFilterOnCubemap(m_cubeMeshID, provisoryCubemap, m_irradianceCubemapID, FilterEnum::IRRADIANCE);
-
-        // Renderer::getInstance().bindCubemap(m_irradianceCubemapID, "irradianceMap");
-        // Renderer::getInstance().setUniform("useIrradianceMap", true);
-    }
     void loadEnv(ResourceHandle<Environment> env);
     inline uuid getEnvResourceID() const { return m_env.getResource().getResourceID(); }
 

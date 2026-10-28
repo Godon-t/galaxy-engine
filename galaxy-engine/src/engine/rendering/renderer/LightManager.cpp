@@ -116,7 +116,6 @@ void LightManager::unregisterLight(int id)
     m_dirty = true;
 }
 
-
 void LightManager::debugDraw()
 {
     // auto& frontend = Renderer::getInstance().getFrontend();

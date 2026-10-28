@@ -6,10 +6,6 @@
 
 namespace Galaxy {
 
-// TODO: Change to use Texture object directly
-// TODO: Add option for border
-//    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-//    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 class FrameBuffer {
 public:
     FrameBuffer();
@@ -28,8 +24,6 @@ public:
 
     unsigned int getColorTextureID(int idx = 0) const;
     unsigned int getDepthTextureID() const;
-
-    void setAsTextureUniform(unsigned int uniLocation, int textureIdx = -1);
 
     void resize(unsigned int newWidth, unsigned int newHeight, int depthLayerCount = -1);
 
@@ -85,9 +79,6 @@ public:
     // Borrowed cubemaps must outlive this framebuffer.
     bool attachDepthCubemap(Cubemap& cubemap);
     bool attachColorCubemap(Cubemap& cubemap, int idx);
-
-    void setAsCubemapUniform(unsigned int uniLocation, int textureIdx);
-
 
     void bind(int idx);
     void unbind();

@@ -4,7 +4,6 @@
 
 #include "resource/Environment.hpp"
 #include "SceneContext.hpp"
-#include "rendering/renderer/commands/RenderCommand.hpp"
 #include "data/Transform.hpp"
 #include "types/Render.hpp"
 #include "RenderDevice.hpp"
@@ -21,7 +20,6 @@
 
 namespace Galaxy {
 
-// GLX-TODO: rename WorldRender
 class Backend;
 
 class Frontend {
@@ -30,8 +28,6 @@ public:
     void setEnvironment(ResourceHandle<Environment> environment);
 
     explicit Frontend(Backend& backend);
-
-    // void storeCanvaResult(std::string& path);
 
     void addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material,
         const Transform& transform = Transform {}, const BitMask& layer = BitMask {});
@@ -64,24 +60,12 @@ private:
     static void configureView(RenderPassInvocation& invocation, const RenderDevice& device,
         const mat4& projection, const mat4& view);
 
-    // TODO: Create cameraFrustum object
-    // void setViewMatrix(const math::mat4& view);
-    // void setProjectionMatrix(const math::mat4& projection);
-    // void pushCommand(RenderCommand command);
-    void saveFrameBuffer(FramebufferHandle framebuffer, std::string path);
-
-    bool m_addCommandsToDevice = false;
-
     GeometryHandle m_postProcessingQuad;
-
     GeometryHandle m_skyboxCube;
-    CubemapHandle m_environment;
 
     LightManager m_lightManager;
     SceneContext m_frameContext;
     std::vector<std::unique_ptr<RenderDevice>> m_frameDevices;
-
-    FramebufferTextureFormat m_currentFramebufferFormat = FramebufferTextureFormat::None;
 
     RenderGraph m_renderGraph;
 

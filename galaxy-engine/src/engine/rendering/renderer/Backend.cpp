@@ -673,17 +673,7 @@ void Backend::clearMaterial(MaterialHandle materialID)
     }
 }
 
-void Backend::processCommands(const std::vector<RenderCommand>& commands)
-{
-    for (const auto& command : commands) {
-        std::visit([this](auto&& cmd) {
-            processCommand(cmd);
-        },
-            command);
-        checkOpenGLErrors("Process command");
-    }
-}
-
+// GLX-TODO move geometry generation functions into a helper
 GeometryHandle Backend::generateCube(float dimmension, bool inward, std::function<void()> destroyCallback)
 {
     std::vector<Vertex> vertices;
@@ -1084,19 +1074,6 @@ void Backend::setCubemapData(CubemapHandle cubemapID, std::array<ResourceHandle<
     }
 }
 
-void Backend::setProjectionMatrix(const mat4& projectionMatrix)
-{
-    const mat4 inverseProjection = inverse(projectionMatrix);
-    for (Program* program : m_programInstances.getAll()) {
-        program->use();
-        program->setUniform("projection", projectionMatrix);
-        program->setUniform("inverseProjection", inverseProjection);
-    }
-
-    if (Program* activeProgram = getActiveProgram())
-        activeProgram->use();
-}
-
 void Backend::draw(const GeometryHandle geometryH, const mat4 model)
 {
     auto* geometry = m_visualInstances.tryGet(geometryH);
@@ -1113,23 +1090,6 @@ void Backend::draw(const GeometryHandle geometryH, const mat4 model)
     }
 
     program->setUniform("model", model);
-    geometry->draw();
-    ++m_drawCount;
-}
-
-void Backend::draw(const GeometryHandle geometryH)
-{
-    if (getActiveProgram() == nullptr) {
-        GLX_CORE_ERROR("Skipping draw because no valid program is active");
-        return;
-    }
-
-    auto* geometry = m_visualInstances.tryGet(geometryH);
-    if (geometry == nullptr) {
-        GLX_CORE_ERROR("Skipping draw with an invalid geometry handle (slot={0}, generation={1})",
-            geometryH.index(), geometryH.generation());
-        return;
-    }
     geometry->draw();
     ++m_drawCount;
 }
@@ -1236,55 +1196,6 @@ void Backend::bindPBRMaterial(const MaterialInstance& material)
     }
 }
 
-void Backend::processCommand(const SetUniformCommand& command)
-{
-    Program* program = getActiveProgram();
-    if (program == nullptr) {
-        GLX_CORE_ERROR("Cannot set uniform '{0}' because no valid program is active", command.uniformName);
-        return;
-    }
-
-    bool updated = false;
-    if (command.type == SetValueTypes::BOOL) {
-        updated = program->setUniform(command.uniformName, command.valueBool);
-    } else if (command.type == SetValueTypes::FLOAT) {
-        updated = program->setUniform(command.uniformName, command.valueFloat);
-    } else if (command.type == SetValueTypes::INT) {
-        updated = program->setUniform(command.uniformName, command.valueInt);
-    } else if (command.type == SetValueTypes::VEC3) {
-        updated = program->setUniform(command.uniformName,
-            vec3(command.valueVec3.x, command.valueVec3.y, command.valueVec3.z));
-    } else if (command.type == SetValueTypes::IVEC3) {
-        updated = program->setUniform(command.uniformName,
-            ivec3(command.valueIVec3.x, command.valueIVec3.y, command.valueIVec3.z));
-    } else if (command.type == SetValueTypes::VEC2) {
-        updated = program->setUniform(command.uniformName,
-            vec2(command.valueVec2.x, command.valueVec2.y));
-    } else if (command.type == SetValueTypes::MAT4) {
-        updated = program->setUniform(command.uniformName, command.matrixValue);
-    }
-
-    if (!updated)
-        GLX_CORE_ERROR("Active program does not expose uniform '{0}'", command.uniformName);
-
-    checkOpenGLErrors("Set uniform");
-}
-
-void Backend::processCommand(const UpdateTextureCommand& command)
-{
-    auto* texture = m_textureInstances.tryGet(command.texture);
-    if (texture == nullptr) {
-        GLX_CORE_ERROR("Cannot update an invalid texture handle");
-        return;
-    }
-    if (command.newFormat == TextureFormat::NONE)
-        texture->resize(command.width, command.height);
-    else
-        texture->setFormat(command.newFormat);
-
-    checkOpenGLErrors("Update texture");
-}
-
 void Backend::processCommand(const UpdateUBOCommand& command)
 {
     auto* ubo = m_uboInstances.tryGet(command.ubo);
@@ -1294,25 +1205,4 @@ void Backend::processCommand(const UpdateUBOCommand& command)
     }
     ubo->update(command.data.data(), command.data.size());
 }
-
-void Backend::processCommand(const BindUBOCommand& command)
-{
-    auto* ubo = m_uboInstances.tryGet(command.ubo);
-    if (ubo == nullptr) {
-        GLX_CORE_ERROR("Cannot bind an invalid uniform buffer handle");
-        return;
-    }
-    ubo->bind(command.idx);
-}
-
-void Backend::processCommand(const SaveFrameBufferCommand& command)
-{
-    auto* framebuffer = m_frameBufferInstances.tryGet(command.framebuffer);
-    if (framebuffer == nullptr) {
-        GLX_CORE_ERROR("Cannot save an invalid framebuffer handle");
-        return;
-    }
-    framebuffer->savePPM(command.path);
-}
-
 } // namespace Galaxy

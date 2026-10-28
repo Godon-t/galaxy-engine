@@ -208,20 +208,6 @@ bool FrameBuffer::attachDepthTexture(Texture& texture)
     return true;
 }
 
-// TODO: Should work with texture bound
-void FrameBuffer::setAsTextureUniform(unsigned int uniLocation, int textureIdx)
-{
-    if (textureIdx >= 0) {
-        if (textureIdx >= static_cast<int>(m_colorAttachments.size())) {
-            GLX_CORE_ERROR("Unknown framebuffer color attachment: {0}", textureIdx);
-            return;
-        }
-        Texture::activate(getColorTextureID(textureIdx), 0, uniLocation);
-    } else {
-        Texture::activate(getDepthTextureID(), m_depthLayerCount, uniLocation);
-    }
-}
-
 void FrameBuffer::invalidate()
 {
     destroyFramebuffer();
@@ -420,19 +406,6 @@ bool CubemapFrameBuffer::attachColorCubemap(Cubemap& cubemap, int idx)
     cubemap.resize(m_size);
     m_colorCubemaps[idx].borrow(cubemap);
     return true;
-}
-
-void CubemapFrameBuffer::setAsCubemapUniform(unsigned int uniLocation, int textureIdx)
-{
-    if (textureIdx >= 0) {
-        if (textureIdx >= static_cast<int>(m_colorCubemaps.size()) || m_colorCubemaps[textureIdx].get() == nullptr) {
-            GLX_CORE_ERROR("Unknown cubemap framebuffer color attachment: {0}", textureIdx);
-            return;
-        }
-        m_colorCubemaps[textureIdx].get()->activate(uniLocation);
-    }
-    else if (m_depthCubemap.get() != nullptr)
-        m_depthCubemap.get()->activate(uniLocation);
 }
 
 void CubemapFrameBuffer::bind(int idx)

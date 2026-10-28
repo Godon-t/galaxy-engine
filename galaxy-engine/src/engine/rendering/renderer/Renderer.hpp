@@ -12,9 +12,6 @@
 #include <optional>
 
 namespace Galaxy {
-enum FilterEnum {
-    IRRADIANCE
-};
 
 class Frontend;
 
@@ -28,9 +25,6 @@ public:
     void updateGI();
     void renderFrame();
     [[nodiscard]] std::size_t getDrawCallsCount() const noexcept { return m_backend.getDrawCallsCount(); }
-
-    void addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material, const Transform& transform = Transform {},
-        const BitMask& layer = BitMask {});
 
     Backend& getBackend(){return m_backend;}
     Frontend& getFrontend(){return m_frontend;}

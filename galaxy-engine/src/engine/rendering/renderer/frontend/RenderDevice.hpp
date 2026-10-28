@@ -2,7 +2,7 @@
 
 #include "types/Math.hpp"
 #include "pch.hpp"
-#include "rendering/renderer/commands/RenderCommand.hpp"
+#include "rendering/Commands.hpp"
 #include "rendering/renderer/resources/GpuResourceHandle.hpp"
 #include "SceneContext.hpp"
 #include "rendering/CameraManager.hpp"
@@ -15,18 +15,13 @@ namespace Galaxy
         virtual ~RenderDevice() = default;
 
         bool renderScene = false;
-        int targetDepthLayer = -1;
         vec2 viewportPosition = vec2(0);
         vec2 viewportDimmension = vec2(512);
 
-        // GLX-TODO: render graph already fullfill this role (in render pass)
-        bool noClear = false;
         bool frustumCulling = true;
         BitMask visibilityMask;
+        // GLX-TODO: having a target here is ok with render graph final framebuffer ?
         std::optional<RenderTargetHandle> targetFramebuffer;
-
-
-        std::vector<RenderCommand> customPostCommands;
 
         virtual mat4 getView(){
             vec3 pos = vec3(0,0,0);
@@ -38,16 +33,6 @@ namespace Galaxy
         virtual mat4 getProjection(){
             return CameraManager::processProjectionMatrix(viewportDimmension);
         }
-        // virtual void fillCommandBuffer(std::vector<RenderCommand>& buffer, SceneContext& context){
-        //     if(renderScene){
-        //         auto opaques = context.retrieveOpaqueRenders();
-        //         auto transparents = context.retrieveTransparentRenders(vec3(transform[3]));
-
-        //         buffer.insert(buffer.end(), opaques.begin(), opaques.end());
-        //         buffer.insert(buffer.end(), transparents.begin(), transparents.end());
-        //     }
-        //     buffer.insert(buffer.end(), customPostCommands.begin(), customPostCommands.end());
-        // }
     };
 
     struct RenderCamera: public RenderDevice {

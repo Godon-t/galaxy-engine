@@ -1,8 +1,7 @@
 #pragma once
 
-#include "commands/RenderCommand.hpp"
 #include "core/Log.hpp"
-#include "rendering/GPUInstances/DebugLines.hpp"
+#include "rendering/Commands.hpp"
 #include "rendering/GPUInstances/FrameBuffer.hpp"
 #include "rendering/GPUInstances/MaterialInstance.hpp"
 #include "rendering/GPUInstances/Texture.hpp"
@@ -57,8 +56,6 @@ public:
     void onMaterialUpdated(MaterialUpdateCallback callback) { m_materialUpdateCallback = callback; }
     void onMaterialDestroyed(std::function<void(MaterialHandle)> callback) { m_materialDestroyCallback = callback; }
 
-    void processCommands(const std::vector<RenderCommand>& commands);
-
     GeometryHandle generateCube(float dimmension, bool inward, std::function<void()> destroyCallback);
     GeometryHandle generateQuad(vec2 dimmensions, std::function<void()> destroyCallback);
     GeometryHandle generatePyramid(float baseSize, float height, std::function<void()> destroyCallback);
@@ -81,7 +78,6 @@ public:
     // TODO: Wrong way ?
     FramebufferTextureFormat getFramebufferFormat(FramebufferHandle framebuffer);
 
-    void setProjectionMatrix(const mat4& projectionMatrix);
     unsigned int getFrameBufferTextureID(FramebufferHandle framebuffer);
     unsigned int getFrameBufferDepthTextureID(FramebufferHandle framebuffer);
 
@@ -129,16 +125,10 @@ private:
     void releaseAttachments(CubemapFramebufferHandle framebuffer);
 
     void draw(const GeometryHandle geometryH, const mat4 model);
-    void draw(const GeometryHandle geometryH);
     void bindMaterial(const MaterialHandle handle);
     void bindPBRMaterial(const MaterialInstance& material);
     void releaseMaterialTextures(const MaterialInstance& material);
-    void processCommand(const SetUniformCommand& command);
-    void processCommand(const UpdateTextureCommand& command);
     void processCommand(const UpdateUBOCommand& command);
-    void processCommand(const BindUBOCommand& command);
-
-    void processCommand(const SaveFrameBufferCommand& command);
 
     Program* getActiveProgram();
     const Program* getActiveProgram() const;

@@ -102,10 +102,6 @@ public:
         if (ImGui::Button("Load env")) {
             node.loadEnv(ResourceManager::getInstance().load<Environment>("env.gres"));
         }
-        ImGui::SeparatorText("Testing");
-        if (ImGui::Button("Render from center")) {
-            node.testingFunc();
-        }
     }
     void visit(Light& node)
     {

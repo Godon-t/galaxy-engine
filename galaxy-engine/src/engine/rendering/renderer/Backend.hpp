@@ -33,8 +33,8 @@ public:
     ProgramHandle loadShader(std::string path);
     void clearProgram(ProgramHandle program);
 
-    GeometryHandle instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx);
-    GeometryHandle instanciateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices, std::function<void()> destroyCallback = nullptr);
+    GeometryHandle instantiateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx);
+    GeometryHandle instantiateMesh(std::vector<Vertex>& vertices, std::vector<unsigned short>& indices, std::function<void()> destroyCallback = nullptr);
     geometry::Sphere getMeshBoundingVolume(GeometryHandle mesh);
     void clearMesh(GeometryHandle mesh);
 
@@ -71,7 +71,7 @@ public:
     void setCubemapData(CubemapHandle cubemap, std::array<ResourceHandle<Image>, 6> faces);
     void clearCubemap(CubemapHandle cubemap);
 
-    FramebufferHandle instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1, unsigned int depthLayerCount = 0);
+    FramebufferHandle instantiateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount = 1, unsigned int depthLayerCount = 0);
     CubemapFramebufferHandle instantiateCubemapFrameBuffer(unsigned int resolution, unsigned int colorCount = 1);
 
     void clearFrameBuffer(FramebufferHandle framebuffer);

@@ -90,7 +90,7 @@ void MeshInstance::loadMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
     }
 
     mesh.getResource().onLoaded([this, mesh, surfaceIdx] {
-        m_geometry = Renderer::getInstance().getBackend().instanciateMesh(mesh, surfaceIdx);
+        m_geometry = Renderer::getInstance().getBackend().instantiateMesh(mesh, surfaceIdx);
 
         if (!mesh.getResource().hasMaterial(surfaceIdx))
             return;

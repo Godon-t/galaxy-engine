@@ -369,7 +369,7 @@ bool Backend::attachDepthTextureToFramebuffer(TextureHandle texture, Framebuffer
 
 
 
-GeometryHandle Backend::instanciateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices, std::function<void()> destroyCallback)
+GeometryHandle Backend::instantiateMesh(std::vector<Vertex>& vertices, std::vector<short unsigned int>& indices, std::function<void()> destroyCallback)
 {
     if (!m_visualInstances.canCreate())
         return {};
@@ -394,7 +394,7 @@ geometry::Sphere Backend::getMeshBoundingVolume(GeometryHandle meshID)
     return geometry->getBoundingVolume();
 }
 
-GeometryHandle Backend::instanciateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
+GeometryHandle Backend::instantiateMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 {
     GeometryHandle subMeshID = mesh.getResource().getGpuGeometryHandle(surfaceIdx);
     if (subMeshID) {
@@ -728,7 +728,7 @@ GeometryHandle Backend::generateCube(float dimmension, bool inward, std::functio
         }
     }
 
-    return instanciateMesh(vertices, indices, destroyCallback);
+    return instantiateMesh(vertices, indices, destroyCallback);
 }
 
 GeometryHandle Backend::generateQuad(vec2 dimmensions, std::function<void()> destroyCallback)
@@ -763,7 +763,7 @@ GeometryHandle Backend::generateQuad(vec2 dimmensions, std::function<void()> des
     indices.push_back(1);
     indices.push_back(2);
 
-    return instanciateMesh(vertices, indices, destroyCallback);
+    return instantiateMesh(vertices, indices, destroyCallback);
 }
 
 GeometryHandle Backend::generatePyramid(float baseSize, float height, std::function<void()> destroyCallback)
@@ -828,7 +828,7 @@ GeometryHandle Backend::generatePyramid(float baseSize, float height, std::funct
     indices.push_back(3);
     indices.push_back(2);
 
-    return instanciateMesh(vertices, indices, destroyCallback);
+    return instantiateMesh(vertices, indices, destroyCallback);
 }
 
 void Backend::clearCubemap(CubemapHandle cubemapID)
@@ -837,7 +837,7 @@ void Backend::clearCubemap(CubemapHandle cubemapID)
         m_cubemapUploadLifetimes.erase(cubemapID);
 }
 
-FramebufferHandle Backend::instanciateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount, unsigned int depthLayerCount)
+FramebufferHandle Backend::instantiateFrameBuffer(unsigned int width, unsigned int height, FramebufferTextureFormat format, unsigned int colorCount, unsigned int depthLayerCount)
 {
     if (!m_frameBufferInstances.canCreate())
         return {};

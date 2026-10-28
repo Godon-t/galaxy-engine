@@ -97,7 +97,7 @@ void RenderGraph::build(const CompiledRenderGraph& compiledGraph, Backend& backe
                     ? FramebufferTextureFormat::DEPTH24RGBA8
                     : hasDepth ? FramebufferTextureFormat::DEPTH24STENCIL8 : FramebufferTextureFormat::RGBA8;
 
-                targetFramebuffer = backend.instanciateFrameBuffer(
+                targetFramebuffer = backend.instantiateFrameBuffer(
                     temporarySize,
                     temporarySize,
                     format,

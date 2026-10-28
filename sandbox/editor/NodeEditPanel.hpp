@@ -15,7 +15,7 @@ public:
     void init()
     {
         auto& backend = Renderer::getInstance().getBackend();
-        m_visualBuffer = backend.instanciateFrameBuffer(512, 512, FramebufferTextureFormat::DEPTH24RGBA8);
+        m_visualBuffer = backend.instantiateFrameBuffer(512, 512, FramebufferTextureFormat::DEPTH24RGBA8);
         m_invertedCube = backend.generateCube(1, true, [] {});
         m_cubemapMaterialResource = ResourceManager::getInstance().createInternalResource<TextureMaterial>();
         m_cubemapMaterial = backend.instantiateMaterial(m_cubemapMaterialResource);
@@ -81,7 +81,7 @@ public:
         if(ImGui::Checkbox("current", &state))
             node.setCurrent(state);
         
-        static FramebufferHandle cameraFramebuffer = Renderer::getInstance().getBackend().instanciateFrameBuffer(512, 256, FramebufferTextureFormat::DEPTH24RGBA8);
+        static FramebufferHandle cameraFramebuffer = Renderer::getInstance().getBackend().instantiateFrameBuffer(512, 256, FramebufferTextureFormat::DEPTH24RGBA8);
         
         std::unique_ptr<RenderCamera> cam = std::make_unique<RenderCamera>();
         

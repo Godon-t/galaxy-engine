@@ -27,14 +27,14 @@ LightManager::~LightManager()
 void LightManager::init()
 {
     auto& backend = Renderer::getInstance().getBackend();
-    // m_shadowMapFramebuffer = backend.instanciateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH, 0, maxLightCount);
+    // m_shadowMapFramebuffer = backend.instantiateFrameBuffer(1024, 1024, FramebufferTextureFormat::DEPTH, 0, maxLightCount);
     
     // m_fullQuad = backend.generateQuad(vec2(2, 2), []() {});
     
     // // frontend.resizeCubemap(m_colorRenderingCubemap, m_probeResolution);
     
     // // TODO: pass to a format for normals in addition to colors and depths
-    // m_probesFramebuffer = backend.instanciateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8, 4);
+    // m_probesFramebuffer = backend.instantiateFrameBuffer(m_textureWidth, m_textureHeight, FramebufferTextureFormat::DEPTH24RGBA8, 4);
     // m_cubemapFramebuffer = backend.instantiateCubemapFrameBuffer(1024, 3);
 
     // m_debugStartGeometry = backend.generateCube(1.f, false, []() {});

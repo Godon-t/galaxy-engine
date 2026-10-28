@@ -27,7 +27,6 @@ public:
 
     static mat4 processProjectionMatrix(vec2 viewPortDimmensions, float zNear = 0.1f, float zFar = 9999.0f, float outerCutoffAngle = 22.5f);
     static mat4 processViewMatrix(const mat4& transform);
-    static mat4 processViewMatrix(std::shared_ptr<Camera> camera);
     static inline CameraManager& getInstance() { return *s_instance; }
 };
 }

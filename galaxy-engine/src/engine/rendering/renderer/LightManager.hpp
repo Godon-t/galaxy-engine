@@ -12,8 +12,6 @@
 
 
 namespace Galaxy {
-struct RenderCameraTransform;
-
 const unsigned int maxLightCount = 32;
 
 enum LightType {

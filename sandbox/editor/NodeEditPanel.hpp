@@ -83,11 +83,10 @@ public:
         
         static FramebufferHandle cameraFramebuffer = Renderer::getInstance().getBackend().instantiateFrameBuffer(512, 256, FramebufferTextureFormat::DEPTH24RGBA8);
         
-        std::unique_ptr<RenderCamera> cam = std::make_unique<RenderCamera>();
-        
-        cam->camera = node.getCamera();
-        cam->renderScene = true;
-        Renderer::getInstance().getFrontend().addRenderDevice(std::move(cam));
+        Camera camera = *node.getCamera();
+        camera.viewportSize = vec2(512, 256);
+        camera.targetFramebuffer = cameraFramebuffer;
+        Renderer::getInstance().getFrontend().addCamera(std::move(camera));
         
         
         auto textureID = Renderer::getInstance().getBackend().getFrameBufferTextureID(cameraFramebuffer);
@@ -204,13 +203,14 @@ public:
             m_cubemapTransform.computeModelMatrix();
         }
 
-        auto camera = std::make_unique<RenderCameraTransform>();
-        camera->renderScene = true;
-        camera->visibilityMask = editorVisibility;
-        camera->targetFramebuffer = m_visualBuffer;
-        camera->camera->dimmensions = camera->viewportDimmension;
-        camera->transform = translate(vec3(0,0,2.5));
-        renderer.getFrontend().addRenderDevice(std::move(camera));
+        Camera camera;
+        camera.position = vec3(0, 0, 2.5f);
+        camera.forward = vec3(0, 0, -1);
+        camera.right = vec3(-1, 0, 0);
+        camera.viewportSize = vec2(512);
+        camera.visibilityMask = editorVisibility;
+        camera.targetFramebuffer = m_visualBuffer;
+        renderer.getFrontend().addCamera(std::move(camera));
 
         renderer.getFrontend().addObjectToScene(m_invertedCube, m_cubemapMaterial, m_cubemapTransform, editorVisibility);
     }

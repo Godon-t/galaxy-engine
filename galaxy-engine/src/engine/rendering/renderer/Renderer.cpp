@@ -49,15 +49,13 @@ void Renderer::init()
     m_frontend.getLightManager().init();
 }
 
-void Renderer::addMainCameraDevice(std::shared_ptr<Camera> camera)
+void Renderer::addMainCamera(const Camera& camera)
 {
-    auto mainCamera = std::make_unique<RenderCamera>();
-
-    mainCamera->camera = camera;
-    mainCamera->viewportDimmension = m_mainViewportSize;
-    mainCamera->renderScene = true;
-    // mainCamera->frustumCulling = false;
-    m_frontend.addRenderDevice(std::move(mainCamera));
+    Camera mainCamera = camera;
+    mainCamera.viewportSize = m_mainViewportSize;
+    mainCamera.viewportPosition = vec2(0);
+    mainCamera.targetFramebuffer.reset();
+    m_frontend.addCamera(std::move(mainCamera));
 }
 
 void Renderer::resize(unsigned int width, unsigned int height)

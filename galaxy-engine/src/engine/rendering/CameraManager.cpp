@@ -76,8 +76,4 @@ mat4 CameraManager::processViewMatrix(const mat4& transform)
     return lookAt(position, target, vec3(0, 1, 0));
 }
 
-mat4 CameraManager::processViewMatrix(std::shared_ptr<Camera> camera)
-{
-    return lookAt(camera->position, camera->position + camera->forward, camera->up);
-}
 }

@@ -123,7 +123,7 @@ void EditorLayer::onUpdate()
         //     Application::getInstance().getRootNodePtr()->draw();
         //     renderer.endShadowPass();
         // }
-        renderer.addMainCameraDevice(camera);
+        renderer.addMainCamera(*camera);
 
         Application::getInstance().getRootNodePtr()->draw();
 

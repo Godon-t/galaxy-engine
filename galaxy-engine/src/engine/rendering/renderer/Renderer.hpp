@@ -21,7 +21,7 @@ public:
     void init();
     void shutdown();
     
-    void addMainCameraDevice(std::shared_ptr<Camera> camera);
+    void addMainCamera(const Camera& camera);
     void updateGI();
     void renderFrame();
     [[nodiscard]] std::size_t getDrawCallsCount() const noexcept { return m_backend.getDrawCallsCount(); }

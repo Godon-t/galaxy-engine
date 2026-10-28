@@ -31,13 +31,12 @@ void ProbeNode::capture()
 void ProbeNode::draw()
 {
     if (m_capturePending) {
-        auto capture = std::make_unique<RenderPoint>();
-        capture->camera->position = getTransform().getGlobalPosition();
-        capture->viewportDimmension = vec2(512);
-        capture->targetCubemapFramebuffer = m_captureFramebuffer;
-        capture->renderScene = true;
-        capture->frustumCulling = false;
-        Renderer::getInstance().getFrontend().addRenderDevice(std::move(capture));
+        Camera capture;
+        capture.position = getTransform().getGlobalPosition();
+        capture.viewportSize = vec2(512);
+        capture.targetFramebuffer = m_captureFramebuffer;
+        capture.frustumCulling = false;
+        Renderer::getInstance().getFrontend().addCamera(std::move(capture));
         m_capturePending = false;
         m_hasCapture = true;
     }

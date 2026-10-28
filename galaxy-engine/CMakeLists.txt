@@ -65,6 +65,7 @@ add_library(galaxy-engine
 	src/engine/ImGui/ImGuiLayer.cpp
 
 	src/engine/data/Transform.cpp
+	src/engine/data/Camera.cpp
 
 	src/engine/project/Project.cpp
 	src/engine/project/UUID.cpp
@@ -92,8 +93,8 @@ add_library(galaxy-engine
 	src/engine/rendering/renderer/LightManager.cpp
 	src/engine/rendering/renderer/frontend/Frontend.cpp
 	src/engine/rendering/renderer/frontend/SceneContext.cpp
-	src/engine/rendering/renderer/refactor/RenderGraphExecution.cpp
-	src/engine/rendering/renderer/refactor/RenderGraph.cpp
+	src/engine/rendering/renderer/RenderGraph/RenderGraphExecution.cpp
+	src/engine/rendering/renderer/RenderGraph/RenderGraph.cpp
 	src/engine/rendering/CameraManager.cpp
 	src/engine/rendering/GPUInstances/VisualInstance.cpp
 	src/engine/rendering/GPUInstances/Texture.cpp

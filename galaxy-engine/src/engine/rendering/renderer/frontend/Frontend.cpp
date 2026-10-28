@@ -274,27 +274,12 @@ RenderGraphExecution Frontend::buildFrameExecution()
     RenderGraphExecution execution(m_renderGraph);
     addShadowViews(execution);
 
-    // Complete captures before other views sample their cubemaps.
-    for (auto& device : m_frameDevices) {
-        auto* pointDevice = dynamic_cast<RenderPoint*>(device.get());
-        if (pointDevice && pointDevice->renderScene)
-            addPointViews(execution, *pointDevice);
+    for (const auto& camera : m_frameCameras) {
+        for (const auto& view : camera.getViews())
+            addSceneView(execution, view);
     }
 
-    for (auto& device : m_frameDevices) {
-        if (!device->renderScene || dynamic_cast<RenderPoint*>(device.get()))
-            continue;
-
-        auto* cameraDevice = dynamic_cast<RenderCamera*>(device.get());
-        if (cameraDevice == nullptr) {
-            GLX_CORE_ERROR("CameraDevice type not supported !");
-            continue;
-        }
-
-        addCameraView(execution, *cameraDevice);
-    }
-
-    m_frameDevices.clear();
+    m_frameCameras.clear();
     return execution;
 }
 
@@ -317,30 +302,37 @@ void Frontend::addShadowViews(RenderGraphExecution& execution)
     }
 }
 
-void Frontend::configureView(RenderPassInvocation& invocation, const RenderDevice& device,
-    const mat4& projection, const mat4& view)
+void Frontend::configureView(RenderPassInvocation& invocation, const RenderView& view)
 {
     invocation.clearColor = vec4(0.2, 0.2, 0.25, 1.0);
-    invocation.viewportPosition = device.viewportPosition;
-    invocation.viewportSize = device.viewportDimmension;
-    invocation.viewParameters["projection"] = projection;
-    invocation.viewParameters["view"] = view;
+    invocation.viewportPosition = view.viewportPosition;
+    invocation.viewportSize = view.viewportSize;
+    invocation.viewParameters["projection"] = view.projectionMatrix;
+    invocation.viewParameters["view"] = view.viewMatrix;
 }
 
-void Frontend::addSceneView(RenderGraphExecution& execution, const RenderDevice& device,
-    const mat4& projection, const mat4& view, const vec3& position,
-    std::vector<RenderItem> opaques, std::vector<RenderItem> transparents,
-    std::optional<RenderTargetHandle> targetFramebuffer, int targetFace)
+void Frontend::addSceneView(RenderGraphExecution& execution, const RenderView& view)
 {
+    std::vector<RenderItem> opaques;
+    std::vector<RenderItem> transparents;
+    if (view.frustumCulling) {
+        const Frustum frustum(view);
+        opaques = m_frameContext.retrieveOpaqueRenders(frustum, view.visibilityMask);
+        transparents = m_frameContext.retrieveTransparentRenders(frustum, view.visibilityMask);
+    } else {
+        opaques = m_frameContext.retrieveOpaqueRenders(view.visibilityMask);
+        transparents = m_frameContext.retrieveTransparentRenders(view.position, view.visibilityMask);
+    }
+
     auto& opaqueInvocation = execution.addInvocation(m_passOpaquePBRId);
-    configureView(opaqueInvocation, device, projection, view);
+    configureView(opaqueInvocation, view);
     for (const auto& item : opaques) {
         if (m_frameContext.getMaterialInfo(item.material).type == MaterialType::PBR)
             opaqueInvocation.items.push_back(item);
     }
 
     auto& transparentInvocation = execution.addInvocation(m_passTransparentPBRId);
-    configureView(transparentInvocation, device, projection, view);
+    configureView(transparentInvocation, view);
     for (const auto& item : transparents) {
         if (m_frameContext.getMaterialInfo(item.material).type == MaterialType::PBR)
             transparentInvocation.items.push_back(item);
@@ -354,61 +346,29 @@ void Frontend::addSceneView(RenderGraphExecution& execution, const RenderDevice&
     lightInvocation.items.push_back(RenderItem { m_postProcessingQuad });
     lightInvocation.uniformBindings.push_back({m_lightManager.getLightUboHandle(), 0});
     lightInvocation.parameters.emplace("lightCount", static_cast<int>(m_lightManager.getLightCount()));
-    lightInvocation.parameters.emplace("inverseView", inverse(view));
-    lightInvocation.parameters.emplace("inverseProjection", inverse(projection));
-    lightInvocation.parameters.emplace("cameraPos", position);
-    lightInvocation.viewportSize = device.viewportDimmension;
+    lightInvocation.parameters.emplace("inverseView", inverse(view.viewMatrix));
+    lightInvocation.parameters.emplace("inverseProjection", inverse(view.projectionMatrix));
+    lightInvocation.parameters.emplace("cameraPos", view.position);
+    lightInvocation.viewportPosition = view.viewportPosition;
+    lightInvocation.viewportSize = view.viewportSize;
 
 
     auto& postProcessInvocation = execution.addInvocation(m_passPostprocessId);
-    configureView(postProcessInvocation, device, projection, view);
-    postProcessInvocation.targetFramebuffer = targetFramebuffer;
-    postProcessInvocation.targetLayer = targetFace;
+    configureView(postProcessInvocation, view);
+    postProcessInvocation.targetFramebuffer = view.targetFramebuffer;
+    postProcessInvocation.targetLayer = view.targetLayer;
     postProcessInvocation.items.push_back(RenderItem { m_postProcessingQuad });
 
-    postProcessInvocation.parameters.emplace("view", view);
-    postProcessInvocation.parameters.emplace("projection", projection);
-    postProcessInvocation.parameters.emplace("inverseView", inverse(view));
-    postProcessInvocation.parameters.emplace("inverseProjection", inverse(projection));
-    postProcessInvocation.parameters.emplace("cameraPos", position);
+    postProcessInvocation.parameters.emplace("inverseView", inverse(view.viewMatrix));
+    postProcessInvocation.parameters.emplace("inverseProjection", inverse(view.projectionMatrix));
+    postProcessInvocation.parameters.emplace("cameraPos", view.position);
 
-    addTextureViews(execution, device, projection, view, opaques, false, targetFramebuffer, targetFace);
-    addTextureViews(execution, device, projection, view, transparents, true, targetFramebuffer, targetFace);
+    addTextureViews(execution, view, opaques, false);
+    addTextureViews(execution, view, transparents, true);
 }
 
-void Frontend::addPointViews(RenderGraphExecution& execution, RenderPoint& device)
-{
-    const mat4 projection = device.getProjection();
-    const auto views = device.getViews();
-    for (int face = 0; face < 6; ++face) {
-        // Frustum currently assumes a 45 degree camera; cubemap faces use 90 degrees.
-        addSceneView(execution, device, projection, views[face], device.camera->position,
-            m_frameContext.retrieveOpaqueRenders(device.visibilityMask),
-            m_frameContext.retrieveTransparentRenders(device.camera->position, device.visibilityMask),
-            device.targetCubemapFramebuffer, face);
-    }
-}
-
-void Frontend::addCameraView(RenderGraphExecution& execution, RenderCamera& device)
-{
-    std::vector<RenderItem> opaques;
-    std::vector<RenderItem> transparents;
-    if (device.frustumCulling) {
-        Frustum cameraFrustum(device.camera.get());
-        opaques = m_frameContext.retrieveOpaqueRenders(cameraFrustum, device.visibilityMask);
-        transparents = m_frameContext.retrieveTransparentRenders(cameraFrustum, device.visibilityMask);
-    } else {
-        opaques = m_frameContext.retrieveOpaqueRenders(device.visibilityMask);
-        transparents = m_frameContext.retrieveTransparentRenders(device.camera->position, device.visibilityMask);
-    }
-
-    addSceneView(execution, device, device.getProjection(), device.getView(), device.camera->position,
-        std::move(opaques), std::move(transparents), device.targetFramebuffer);
-}
-
-void Frontend::addTextureViews(RenderGraphExecution& execution, const RenderDevice& device,
-    const mat4& projection, const mat4& view, const std::vector<RenderItem>& items,
-    bool transparent, std::optional<RenderTargetHandle> targetFramebuffer, int targetFace)
+void Frontend::addTextureViews(RenderGraphExecution& execution, const RenderView& view,
+    const std::vector<RenderItem>& items, bool transparent)
 {
     // Preserve the sorted order across 2D textures and cubemaps when blending.
     for (const auto& item : items) {
@@ -420,9 +380,9 @@ void Frontend::addTextureViews(RenderGraphExecution& execution, const RenderDevi
             ? (transparent ? m_passTransparentCubemapId : m_passCubemapRenderId)
             : (transparent ? m_passTransparentTextureId : m_passTextureId);
         auto& invocation = execution.addInvocation(pass);
-        configureView(invocation, device, projection, view);
-        invocation.targetFramebuffer = targetFramebuffer;
-        invocation.targetLayer = targetFace;
+        configureView(invocation, view);
+        invocation.targetFramebuffer = view.targetFramebuffer;
+        invocation.targetLayer = view.targetLayer;
         invocation.items.push_back(item);
     }
 }

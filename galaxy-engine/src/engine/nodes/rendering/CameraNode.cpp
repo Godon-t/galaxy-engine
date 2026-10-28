@@ -14,10 +14,10 @@ CameraNode::CameraNode(std::string name)
     : Node3D(name)
 {
     m_current = true;
+    m_cameraData = std::make_shared<Camera>();
+    m_cameraData->viewportSize = Renderer::getInstance().getRenderingWindowSize();
     id        = CameraManager::getInstance().registerCam(m_cameraData);
     CameraManager::getInstance().updateCurrent(id, m_current);
-    m_cameraData = std::make_shared<Camera>();
-    m_cameraData->dimmensions = Renderer::getInstance().getRenderingWindowSize();
 }
 
 CameraNode::~CameraNode()
@@ -71,10 +71,10 @@ void CameraNode::handleInput(const Event& event)
 {
     Node3D::handleInput(event);
 
-    m_cameraData->dimmensions = Renderer::getInstance().getRenderingWindowSize();
+    m_cameraData->viewportSize = Renderer::getInstance().getRenderingWindowSize();
     // if(event.getEventType() == EventType::WindowResize){
     //     // WindowResizeEvent& windowResize = (WindowResizeEvent&)event;
-    //     // m_cameraData->dimmensions = vec2(windowResize.getWidth(), windowResize.getHeight());
+    //     // m_cameraData->viewportSize = vec2(windowResize.getWidth(), windowResize.getHeight());
     // }
 }
 }

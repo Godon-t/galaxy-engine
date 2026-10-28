@@ -6,17 +6,17 @@
 #include "SceneContext.hpp"
 #include "data/Transform.hpp"
 #include "types/Render.hpp"
-#include "RenderDevice.hpp"
+#include "data/Camera.hpp"
 #include "common/geometry/Shapes.hpp"
-#include "engine/rendering/renderer/refactor/RenderGraphDeclaration.hpp"
-#include "engine/rendering/renderer/refactor/RenderGraphCompilation.hpp"
-#include "engine/rendering/renderer/refactor/RenderGraph.hpp"
-#include "engine/rendering/renderer/refactor/RenderGraphExecution.hpp"
+#include "engine/rendering/renderer/RenderGraph/RenderGraphDeclaration.hpp"
+#include "engine/rendering/renderer/RenderGraph/RenderGraphCompilation.hpp"
+#include "engine/rendering/renderer/RenderGraph/RenderGraph.hpp"
+#include "engine/rendering/renderer/RenderGraph/RenderGraphExecution.hpp"
 #include "engine/rendering/renderer/LightManager.hpp"
 
-#include "queue"
-#include <memory>
 #include <optional>
+#include <utility>
+#include <vector>
 
 namespace Galaxy {
 
@@ -24,7 +24,7 @@ class Backend;
 
 class Frontend {
 public:
-    void addRenderDevice(std::unique_ptr<RenderDevice> renderDevice){ m_frameDevices.push_back(std::move(renderDevice)); }
+    void addCamera(Camera camera) { m_frameCameras.push_back(std::move(camera)); }
     void setEnvironment(ResourceHandle<Environment> environment);
 
     explicit Frontend(Backend& backend);
@@ -48,24 +48,17 @@ private:
     Backend& m_backend;
 
     void addShadowViews(RenderGraphExecution& execution);
-    void addPointViews(RenderGraphExecution& execution, RenderPoint& device);
-    void addCameraView(RenderGraphExecution& execution, RenderCamera& device);
-    void addTextureViews(RenderGraphExecution& execution, const RenderDevice& device,
-        const mat4& projection, const mat4& view, const std::vector<RenderItem>& items,
-        bool transparent, std::optional<RenderTargetHandle> targetFramebuffer, int targetFace);
-    void addSceneView(RenderGraphExecution& execution, const RenderDevice& device,
-        const mat4& projection, const mat4& view, const vec3& position,
-        std::vector<RenderItem> opaques, std::vector<RenderItem> transparents,
-        std::optional<RenderTargetHandle> targetFramebuffer = std::nullopt, int targetFace = -1);
-    static void configureView(RenderPassInvocation& invocation, const RenderDevice& device,
-        const mat4& projection, const mat4& view);
+    void addTextureViews(RenderGraphExecution& execution, const RenderView& view,
+        const std::vector<RenderItem>& items, bool transparent);
+    void addSceneView(RenderGraphExecution& execution, const RenderView& view);
+    static void configureView(RenderPassInvocation& invocation, const RenderView& view);
 
     GeometryHandle m_postProcessingQuad;
     GeometryHandle m_skyboxCube;
 
     LightManager m_lightManager;
     SceneContext m_frameContext;
-    std::vector<std::unique_ptr<RenderDevice>> m_frameDevices;
+    std::vector<Camera> m_frameCameras;
 
     RenderGraph m_renderGraph;
 

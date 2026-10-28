@@ -24,23 +24,22 @@ namespace Galaxy
         Plane farFace;
         Plane nearFace;
 
-        Frustum(const vec3& position, const vec3& direction, const vec3& right, const vec3& up, const vec2& dimmensions, float zNear, float zFar){
-            vec2 halfSize;
-            halfSize.y = zFar * tanf(radians(45.f) * 0.5f);
-            halfSize.x = halfSize.y * (dimmensions.x / dimmensions.y);
-            const vec3 frontMultFar = zFar * direction;
+        explicit Frustum(const RenderView& view){
+            const mat4 rows = glm::transpose(view.projectionMatrix * view.viewMatrix);
+            auto makePlane = [&view](const vec4& coefficients) {
+                const float normalLength = length(vec3(coefficients));
+                const vec3 normal = vec3(coefficients) / normalLength;
+                const float distance = glm::dot(normal, view.position) + coefficients.w / normalLength;
+                return Plane { view.position - normal * distance, normal };
+            };
 
-            nearFace = {position + zNear * direction, direction};
-            farFace = {position + frontMultFar, -direction};
-            
-            rightFace  = {position, normalize(cross(frontMultFar + right * halfSize.x, up))};
-            leftFace   = {position, normalize(cross(up, frontMultFar - right * halfSize.x))};
-
-            topFace    = {position, normalize(cross(right, frontMultFar + up * halfSize.y))};
-            bottomFace = {position, normalize(cross(frontMultFar - up * halfSize.y, right))};
+            leftFace = makePlane(rows[3] + rows[0]);
+            rightFace = makePlane(rows[3] - rows[0]);
+            bottomFace = makePlane(rows[3] + rows[1]);
+            topFace = makePlane(rows[3] - rows[1]);
+            nearFace = makePlane(rows[3] + rows[2]);
+            farFace = makePlane(rows[3] - rows[2]);
         }
-
-        Frustum(Camera* camera): Frustum(camera->position, camera->forward, camera->right, camera->up, camera->dimmensions, camera->zNear, camera->zFar){}
         
         static bool isSphereInFrustum(const Sphere& sphere, const Frustum& frustum, const Transform& transform) {
             const vec3 globalScale = transform.getGlobalScale();

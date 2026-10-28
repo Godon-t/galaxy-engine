@@ -87,15 +87,15 @@ add_library(galaxy-engine
 	src/engine/nodes/rendering/lighting/ProbeNode.cpp
 
 	src/engine/rendering/OpenglHelper.cpp
-	src/engine/rendering/Program.cpp
-	src/engine/rendering/renderer/Renderer.cpp
-	src/engine/rendering/renderer/Backend.cpp
-	src/engine/rendering/renderer/LightManager.cpp
-	src/engine/rendering/renderer/frontend/Frontend.cpp
-	src/engine/rendering/renderer/frontend/SceneContext.cpp
-	src/engine/rendering/renderer/RenderGraph/RenderGraphExecution.cpp
-	src/engine/rendering/renderer/RenderGraph/RenderGraph.cpp
-	src/engine/rendering/CameraManager.cpp
+	src/engine/rendering/GPUInstances/Program.cpp
+	src/engine/rendering/Renderer.cpp
+	src/engine/rendering/backend/Backend.cpp
+	src/engine/rendering/frontend/LightManager.cpp
+	src/engine/rendering/frontend/Frontend.cpp
+	src/engine/rendering/frontend/SceneContext.cpp
+	src/engine/rendering/RenderGraph/RenderGraphExecution.cpp
+	src/engine/rendering/RenderGraph/RenderGraph.cpp
+	src/engine/rendering/frontend/CameraManager.cpp
 	src/engine/rendering/GPUInstances/VisualInstance.cpp
 	src/engine/rendering/GPUInstances/Texture.cpp
 	src/engine/rendering/GPUInstances/FrameBuffer.cpp

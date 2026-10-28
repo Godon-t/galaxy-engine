@@ -3,7 +3,7 @@
 #include "Material.hpp"
 #include "Resource.hpp"
 #include "ResourceHandle.hpp"
-#include "rendering/renderer/resources/GpuResourceHandle.hpp"
+#include "rendering/GPUInstances/GpuResourceHandle.hpp"
 #include "pch.hpp"
 #include "types/Math.hpp"
 #include "types/Render.hpp"

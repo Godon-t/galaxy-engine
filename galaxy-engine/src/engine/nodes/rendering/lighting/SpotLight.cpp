@@ -2,8 +2,8 @@
 
 #include "Application.hpp"
 #include "SpotLight.hpp"
-#include "rendering/renderer/LightManager.hpp"
-#include "rendering/renderer/Renderer.hpp"
+#include "rendering/frontend/LightManager.hpp"
+#include "rendering/Renderer.hpp"
 
 namespace Galaxy {
 

@@ -1,6 +1,6 @@
 #include "ProbeNode.hpp"
 
-#include "rendering/renderer/Renderer.hpp"
+#include "rendering/Renderer.hpp"
 
 namespace Galaxy {
 ProbeNode::ProbeNode(std::string name)

@@ -8,11 +8,11 @@
 #include "types/Render.hpp"
 #include "data/Camera.hpp"
 #include "common/geometry/Shapes.hpp"
-#include "engine/rendering/renderer/RenderGraph/RenderGraphDeclaration.hpp"
-#include "engine/rendering/renderer/RenderGraph/RenderGraphCompilation.hpp"
-#include "engine/rendering/renderer/RenderGraph/RenderGraph.hpp"
-#include "engine/rendering/renderer/RenderGraph/RenderGraphExecution.hpp"
-#include "engine/rendering/renderer/LightManager.hpp"
+#include "engine/rendering/RenderGraph/RenderGraphDeclaration.hpp"
+#include "engine/rendering/RenderGraph/RenderGraphCompilation.hpp"
+#include "engine/rendering/RenderGraph/RenderGraph.hpp"
+#include "engine/rendering/RenderGraph/RenderGraphExecution.hpp"
+#include "engine/rendering/frontend/LightManager.hpp"
 
 #include <optional>
 #include <utility>

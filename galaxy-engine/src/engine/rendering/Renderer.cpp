@@ -5,7 +5,7 @@
 #include "Application.hpp"
 #include "Core.hpp"
 #include "gl_headers.hpp"
-#include "rendering/CameraManager.hpp"
+#include "rendering/frontend/CameraManager.hpp"
 #include "rendering/GPUInstances/FrameBuffer.hpp"
 #include "rendering/OpenglHelper.hpp"
 

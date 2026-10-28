@@ -1,7 +1,7 @@
 #pragma once
 
 #include "types/Material.hpp"
-#include "rendering/renderer/resources/GpuResourceHandle.hpp"
+#include "rendering/GPUInstances/GpuResourceHandle.hpp"
 #include "types/Math.hpp"
 
 #include <array>

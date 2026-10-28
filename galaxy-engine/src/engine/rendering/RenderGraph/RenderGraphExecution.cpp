@@ -1,7 +1,7 @@
 #include "RenderGraphExecution.hpp"
 
 #include "RenderGraph.hpp"
-#include "engine/rendering/Program.hpp"
+#include "engine/rendering/GPUInstances/Program.hpp"
 
 namespace Galaxy {
 

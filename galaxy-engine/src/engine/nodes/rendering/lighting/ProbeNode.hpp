@@ -1,7 +1,7 @@
 #pragma once
 
 #include "nodes/Node3D.hpp"
-#include "rendering/renderer/resources/GpuResourceHandle.hpp"
+#include "rendering/GPUInstances/GpuResourceHandle.hpp"
 
 namespace Galaxy {
 class ProbeNode : public Node3D {

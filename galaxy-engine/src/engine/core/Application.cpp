@@ -13,7 +13,7 @@
 #include "nodes/rendering/CameraNode.hpp"
 #include "nodes/rendering/MeshInstance.hpp"
 #include "project/Project.hpp"
-#include "rendering/renderer/Renderer.hpp"
+#include "rendering/Renderer.hpp"
 #include "resource/ResourceManager.hpp"
 
 namespace Galaxy {

@@ -2,7 +2,7 @@
 
 #include "nodes/Node3D.hpp"
 #include "types/Render.hpp"
-#include "rendering/renderer/resources/GpuResourceHandle.hpp"
+#include "rendering/GPUInstances/GpuResourceHandle.hpp"
 
 namespace Galaxy {
 class GINode : public Node3D {

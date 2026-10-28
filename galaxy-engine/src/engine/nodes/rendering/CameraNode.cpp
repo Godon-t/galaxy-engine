@@ -2,8 +2,8 @@
 
 #include "CameraNode.hpp"
 
-#include "rendering/CameraManager.hpp"
-#include "rendering/renderer/Renderer.hpp"
+#include "rendering/frontend/CameraManager.hpp"
+#include "rendering/Renderer.hpp"
 #include "event/WindowEvent.hpp"
 
 #include "data/Camera.hpp"

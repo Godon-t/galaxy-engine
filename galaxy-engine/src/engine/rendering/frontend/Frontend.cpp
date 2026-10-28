@@ -2,7 +2,7 @@
 
 #include "core/Helper.hpp"
 #include "Log.hpp"
-#include "rendering/renderer/Renderer.hpp"
+#include "rendering/Renderer.hpp"
 
 #include <variant>
 

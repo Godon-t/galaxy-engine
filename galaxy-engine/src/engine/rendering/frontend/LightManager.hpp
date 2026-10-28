@@ -7,7 +7,7 @@
 #include "engine/nodes/rendering/lighting/SpotLight.hpp"
 #include "engine/types/Math.hpp"
 #include "engine/types/Render.hpp"
-#include "rendering/renderer/resources/GpuResourceHandle.hpp"
+#include "rendering/GPUInstances/GpuResourceHandle.hpp"
 #include "rendering/Commands.hpp"
 
 

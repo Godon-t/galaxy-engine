@@ -2,7 +2,7 @@
 
 #include "Helper.hpp"
 #include "Log.hpp"
-#include "OpenglHelper.hpp"
+#include "rendering/OpenglHelper.hpp"
 #include "gl_headers.hpp"
 
 #include <fstream>

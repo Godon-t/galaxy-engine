@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rendering/renderer/resources/GpuResourceHandle.hpp"
+#include "rendering/GPUInstances/GpuResourceHandle.hpp"
 
 #include <cstddef>
 #include <cstring>

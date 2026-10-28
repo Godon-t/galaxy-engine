@@ -2,7 +2,7 @@
 
 #include "nodes/Node3D.hpp"
 #include "project/UUID.hpp"
-#include "rendering/renderer/resources/GpuResourceHandle.hpp"
+#include "rendering/GPUInstances/GpuResourceHandle.hpp"
 #include "types/Render.hpp"
 #include "resource/Material.hpp"
 #include "common/BitMask.hpp"

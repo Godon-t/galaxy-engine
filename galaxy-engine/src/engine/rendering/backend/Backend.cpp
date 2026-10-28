@@ -5,8 +5,8 @@
 #include "gl_headers.hpp"
 #include "pch.hpp"
 #include "rendering/OpenglHelper.hpp"
-#include "rendering/renderer/RenderGraph/RenderGraphExecution.hpp"
-#include "rendering/renderer/RenderGraph/RenderGraph.hpp"
+#include "rendering/RenderGraph/RenderGraphExecution.hpp"
+#include "rendering/RenderGraph/RenderGraph.hpp"
 
 namespace Galaxy {
 Backend::Backend(size_t maxSize)

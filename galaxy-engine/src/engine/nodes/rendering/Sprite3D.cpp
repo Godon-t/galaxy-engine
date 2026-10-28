@@ -1,6 +1,6 @@
 #include "Sprite3D.hpp"
 
-#include "rendering/renderer/Renderer.hpp"
+#include "rendering/Renderer.hpp"
 #include "resource/ResourceManager.hpp"
 
 namespace Galaxy {

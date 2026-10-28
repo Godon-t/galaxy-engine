@@ -1,6 +1,6 @@
 
 #include "GINode.hpp"
-#include "rendering/renderer/Renderer.hpp"
+#include "rendering/Renderer.hpp"
 
 namespace Galaxy {
 GINode::GINode(std::string name)

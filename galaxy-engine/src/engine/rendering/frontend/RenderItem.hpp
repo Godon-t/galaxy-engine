@@ -2,7 +2,7 @@
 
 #include "common/geometry/Shapes.hpp"
 #include "data/Transform.hpp"
-#include "rendering/renderer/resources/GpuResourceHandle.hpp"
+#include "rendering/GPUInstances/GpuResourceHandle.hpp"
 #include "common/BitMask.hpp"
 
 #include <optional>

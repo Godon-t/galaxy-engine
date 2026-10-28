@@ -1,8 +1,8 @@
 #pragma once
 
 #include "rendering/Commands.hpp"
-#include "rendering/renderer/RenderGraph/RenderGraphDeclaration.hpp"
-#include "rendering/renderer/frontend/RenderItem.hpp"
+#include "rendering/RenderGraph/RenderGraphDeclaration.hpp"
+#include "rendering/frontend/RenderItem.hpp"
 #include "engine/types/Math.hpp"
 
 #include <cstddef>

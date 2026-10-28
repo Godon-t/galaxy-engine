@@ -1,6 +1,6 @@
 #include "PointLight.hpp"
 
-#include "engine/rendering/renderer/Renderer.hpp"
+#include "engine/rendering/Renderer.hpp"
 
 
 namespace Galaxy {

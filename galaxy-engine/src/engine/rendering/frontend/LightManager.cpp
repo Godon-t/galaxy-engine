@@ -1,7 +1,7 @@
 #include "LightManager.hpp"
 #include "core/Application.hpp"
-#include "engine/rendering/CameraManager.hpp"
-#include "engine/rendering/renderer/Renderer.hpp"
+#include "engine/rendering/frontend/CameraManager.hpp"
+#include "engine/rendering/Renderer.hpp"
 
 namespace Galaxy {
 LightManager::LightManager()

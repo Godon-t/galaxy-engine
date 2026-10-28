@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Resource.hpp"
-#include "rendering/renderer/resources/GpuResourceHandle.hpp"
+#include "rendering/GPUInstances/GpuResourceHandle.hpp"
 #include "types/Render.hpp"
 
 namespace Galaxy {

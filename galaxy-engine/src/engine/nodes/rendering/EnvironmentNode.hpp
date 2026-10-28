@@ -3,8 +3,8 @@
 #include "Application.hpp"
 #include "data/Transform.hpp"
 #include "nodes/Node.hpp"
-#include "rendering/renderer/Renderer.hpp"
-#include "rendering/renderer/resources/GpuResourceHandle.hpp"
+#include "rendering/Renderer.hpp"
+#include "rendering/GPUInstances/GpuResourceHandle.hpp"
 #include "resource/Environment.hpp"
 #include "resource/ResourceHandle.hpp"
 

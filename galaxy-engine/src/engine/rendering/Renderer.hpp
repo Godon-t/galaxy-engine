@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Backend.hpp"
+#include "backend/Backend.hpp"
 
 #include "data/Transform.hpp"
 #include "nodes/Node.hpp"
 #include "types/Render.hpp"
-#include "rendering/CameraManager.hpp"
-#include "LightManager.hpp"
+#include "rendering/frontend/CameraManager.hpp"
+#include "frontend/LightManager.hpp"
 #include "frontend/Frontend.hpp"
 
 #include <optional>

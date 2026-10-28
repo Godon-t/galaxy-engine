@@ -29,10 +29,10 @@
 #include "resource/ResourceImporter.hpp"
 #include "resource/ResourceManager.hpp"
 
-#include "rendering/CameraManager.hpp"
-#include "rendering/renderer/Renderer.hpp"
-#include "rendering/renderer/frontend/RenderItem.hpp"
-#include "rendering/renderer/resources/GpuResourceHandle.hpp"
+#include "rendering/frontend/CameraManager.hpp"
+#include "rendering/Renderer.hpp"
+#include "rendering/frontend/RenderItem.hpp"
+#include "rendering/GPUInstances/GpuResourceHandle.hpp"
 
 #include "core/KeyCodes.hpp"
 #include "event/ActionEvent.hpp"

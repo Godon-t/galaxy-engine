@@ -1,7 +1,7 @@
 #include "Light.hpp"
 
-#include "engine/rendering/renderer/LightManager.hpp"
-#include "engine/rendering/renderer/Renderer.hpp"
+#include "engine/rendering/frontend/LightManager.hpp"
+#include "engine/rendering/Renderer.hpp"
 
 namespace Galaxy
 {

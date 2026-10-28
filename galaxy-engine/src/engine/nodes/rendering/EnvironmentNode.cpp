@@ -1,7 +1,7 @@
 #include "EnvironmentNode.hpp"
 
 #include "project/Project.hpp"
-#include "rendering/renderer/Renderer.hpp"
+#include "rendering/Renderer.hpp"
 #include "resource/ResourceManager.hpp"
 
 namespace Galaxy {

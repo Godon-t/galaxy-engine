@@ -1,9 +1,9 @@
 #pragma once
 
+#include "rendering/Commands.hpp"
 #include "rendering/renderer/refactor/RenderGraphDeclaration.hpp"
 #include "rendering/renderer/frontend/RenderItem.hpp"
 #include "engine/types/Math.hpp"
-#include "rendering/renderer/commands/RenderCommand.hpp"
 
 #include <cstddef>
 #include <optional>

@@ -25,6 +25,11 @@ if(BUILD_SANDBOX)
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         USES_TERMINAL
     )
+
+    file(COPY_FILE 
+        ${CMAKE_SOURCE_DIR}/sandbox/imgui.ini.template
+        ${CMAKE_SOURCE_DIR}/imgui.ini
+    )
 endif()
 
 

@@ -77,7 +77,7 @@ bool saveTextureSlice(GLuint texture, unsigned int width, unsigned int height,
     const auto count = static_cast<std::size_t>(width) * height * channels;
     // Export only depth from a packed depth/stencil texture.
     const GLenum format = textureFormat == TextureFormat::DEPTH24STENCIL8
-        ? GL_DEPTH_COMPONENT : toOpenGLExternalFormat(textureFormat);
+        ? GL_DEPTH_COMPONENT : detail::toOpenGLExternalFormat(textureFormat);
     Image image(static_cast<int>(width), static_cast<int>(height), channels);
     std::vector<float> pixels(count);
     glGetTextureSubImage(texture, 0, 0, 0, static_cast<GLint>(layer), width, height, 1,

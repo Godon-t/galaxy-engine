@@ -3,191 +3,270 @@
 #include "Log.hpp"
 #include "gl_headers.hpp"
 #include "rendering/OpenglHelper.hpp"
+#include "resource/Image.hpp"
 
 #include <algorithm>
+#include <limits>
 #include <utility>
 
 namespace Galaxy {
+namespace {
+class ScopedPixelPack {
+public:
+    ScopedPixelPack()
+    {
+        glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING, &m_previousBuffer);
+        for (std::size_t i = 0; i < Parameters.size(); ++i) {
+            glGetIntegerv(Parameters[i], &m_previousValues[i]);
+            glPixelStorei(Parameters[i], Parameters[i] == GL_PACK_ALIGNMENT ? 1 : 0);
+        }
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    }
+
+    ~ScopedPixelPack()
+    {
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, m_previousBuffer);
+        for (std::size_t i = 0; i < Parameters.size(); ++i)
+            glPixelStorei(Parameters[i], m_previousValues[i]);
+    }
+
+    ScopedPixelPack(const ScopedPixelPack&) = delete;
+    ScopedPixelPack& operator=(const ScopedPixelPack&) = delete;
+
+private:
+    inline static constexpr std::array<GLenum, 7> Parameters {
+        GL_PACK_ALIGNMENT, GL_PACK_ROW_LENGTH, GL_PACK_SKIP_ROWS, GL_PACK_SKIP_PIXELS,
+        GL_PACK_SWAP_BYTES, GL_PACK_IMAGE_HEIGHT, GL_PACK_SKIP_IMAGES
+    };
+    GLint m_previousBuffer = 0;
+    std::array<GLint, Parameters.size()> m_previousValues {};
+};
+
+bool saveTextureSlice(GLuint texture, unsigned int width, unsigned int height,
+    TextureFormat textureFormat, unsigned int layer, const std::string& path)
+{
+    int channels = 0;
+    switch (textureFormat) {
+    case TextureFormat::RED:
+    case TextureFormat::DEPTH:
+    case TextureFormat::DEPTH24STENCIL8:
+        channels = 1;
+        break;
+    case TextureFormat::RG:
+        channels = 2;
+        break;
+    case TextureFormat::RGB:
+        channels = 3;
+        break;
+    case TextureFormat::RGBA:
+        channels = 4;
+        break;
+    default:
+        GLX_CORE_ERROR("Cannot save an unsupported texture format: '{0}'", path);
+        return false;
+    }
+
+    const auto maxBytes = static_cast<std::size_t>((std::numeric_limits<GLsizei>::max)());
+    const auto maxComponents = maxBytes / sizeof(float);
+    if (width == 0 || height == 0 || width > maxComponents / height / channels
+        || layer > static_cast<unsigned int>((std::numeric_limits<GLint>::max)())) {
+        GLX_CORE_ERROR("Texture readback dimensions exceed the supported buffer size: '{0}'", path);
+        return false;
+    }
+
+    const auto count = static_cast<std::size_t>(width) * height * channels;
+    // Export only depth from a packed depth/stencil texture.
+    const GLenum format = textureFormat == TextureFormat::DEPTH24STENCIL8
+        ? GL_DEPTH_COMPONENT : toOpenGLExternalFormat(textureFormat);
+    Image image(static_cast<int>(width), static_cast<int>(height), channels);
+    std::vector<float> pixels(count);
+    glGetTextureSubImage(texture, 0, 0, 0, static_cast<GLint>(layer), width, height, 1,
+        format, GL_FLOAT, static_cast<GLsizei>(count * sizeof(float)), pixels.data());
+    if (checkOpenGLErrors("Texture readback") || !image.loadIntern(pixels.data()))
+        return false;
+    return image.save(path);
+}
+} // namespace
+
 namespace detail {
 
-int TextureObject::s_currentFreeActivationUnit = 0;
-std::array<bool, TextureObject::MaxActivationUnits> TextureObject::s_reservedActivationUnits {};
+    int TextureObject::s_currentFreeActivationUnit = 0;
+    std::array<bool, TextureObject::MaxActivationUnits> TextureObject::s_reservedActivationUnits { };
 
-TextureObject::~TextureObject()
-{
-    destroy();
-}
+    TextureObject::~TextureObject()
+    {
+        destroy();
+    }
 
-TextureObject::TextureObject(TextureObject&& other) noexcept
-    : m_id(std::exchange(other.m_id, 0))
-    , m_activationUnit(std::exchange(other.m_activationUnit, -1))
-{
-}
+    TextureObject::TextureObject(TextureObject&& other) noexcept
+        : m_id(std::exchange(other.m_id, 0))
+        , m_activationUnit(std::exchange(other.m_activationUnit, -1))
+    {
+    }
 
-TextureObject& TextureObject::operator=(TextureObject&& other) noexcept
-{
-    if (this == &other)
+    TextureObject& TextureObject::operator=(TextureObject&& other) noexcept
+    {
+        if (this == &other)
+            return *this;
+
+        destroy();
+        m_id             = std::exchange(other.m_id, 0);
+        m_activationUnit = std::exchange(other.m_activationUnit, -1);
         return *this;
-
-    destroy();
-    m_id = std::exchange(other.m_id, 0);
-    m_activationUnit = std::exchange(other.m_activationUnit, -1);
-    return *this;
-}
-
-void TextureObject::create(unsigned int target)
-{
-    destroy();
-    glCreateTextures(target, 1, &m_id);
-}
-
-void TextureObject::destroy()
-{
-    resetActivationUnit();
-    if (m_id != 0)
-        glDeleteTextures(1, &m_id);
-    m_id = 0;
-}
-
-void TextureObject::activate(unsigned int target, int uniformLocation)
-{
-    if (m_activationUnit < 0)
-        m_activationUnit = getAvailableActivationUnit();
-
-    glActiveTexture(GL_TEXTURE0 + m_activationUnit);
-    glBindTexture(target, m_id);
-    glUniform1i(uniformLocation, m_activationUnit);
-}
-
-void TextureObject::resetActivationUnit()
-{
-    if (m_activationUnit >= 0 && m_activationUnit < MaxActivationUnits)
-        s_reservedActivationUnits[m_activationUnit] = false;
-    m_activationUnit = -1;
-}
-
-void TextureObject::reserveActivationUnit()
-{
-    if (m_activationUnit >= 0 && m_activationUnit < MaxActivationUnits)
-        s_reservedActivationUnits[m_activationUnit] = true;
-}
-
-void TextureObject::activate(unsigned int id, unsigned int target, int uniformLocation)
-{
-    const int activationUnit = getAvailableActivationUnit();
-    glActiveTexture(GL_TEXTURE0 + activationUnit);
-    glBindTexture(target, id);
-    glUniform1i(uniformLocation, activationUnit);
-    s_reservedActivationUnits[activationUnit] = true;
-}
-
-void TextureObject::resetActivationUnits()
-{
-    s_currentFreeActivationUnit = 0;
-}
-
-void TextureObject::clearReservedActivationUnits()
-{
-    std::fill(s_reservedActivationUnits.begin(), s_reservedActivationUnits.end(), false);
-}
-
-int TextureObject::getAvailableActivationUnit()
-{
-    for (int attempt = 0; attempt < MaxActivationUnits; ++attempt) {
-        const int index = s_currentFreeActivationUnit;
-        s_currentFreeActivationUnit = (s_currentFreeActivationUnit + 1) % MaxActivationUnits;
-        if (!s_reservedActivationUnits[index])
-            return index;
     }
 
-    GLX_CORE_ASSERT(false, "No texture unit available");
-    return 0;
-}
+    void TextureObject::create(unsigned int target)
+    {
+        destroy();
+        glCreateTextures(target, 1, &m_id);
+    }
 
-unsigned int toOpenGLInternalFormat(TextureFormat format)
-{
-    switch (format) {
-    case TextureFormat::RED:
-        return GL_R8;
-    case TextureFormat::RG:
-        return GL_RG8;
-    case TextureFormat::RGB:
-        return GL_RGB8;
-    case TextureFormat::RGBA:
-        return GL_RGBA8;
-    case TextureFormat::DEPTH:
-        return GL_DEPTH_COMPONENT24;
-    case TextureFormat::DEPTH24STENCIL8:
-        return GL_DEPTH24_STENCIL8;
-    case TextureFormat::NONE:
+    void TextureObject::destroy()
+    {
+        resetActivationUnit();
+        if (m_id != 0)
+            glDeleteTextures(1, &m_id);
+        m_id = 0;
+    }
+
+    void TextureObject::activate(unsigned int target, int uniformLocation)
+    {
+        if (m_activationUnit < 0)
+            m_activationUnit = getAvailableActivationUnit();
+
+        glActiveTexture(GL_TEXTURE0 + m_activationUnit);
+        glBindTexture(target, m_id);
+        glUniform1i(uniformLocation, m_activationUnit);
+    }
+
+    void TextureObject::resetActivationUnit()
+    {
+        if (m_activationUnit >= 0 && m_activationUnit < MaxActivationUnits)
+            s_reservedActivationUnits[m_activationUnit] = false;
+        m_activationUnit = -1;
+    }
+
+    void TextureObject::reserveActivationUnit()
+    {
+        if (m_activationUnit >= 0 && m_activationUnit < MaxActivationUnits)
+            s_reservedActivationUnits[m_activationUnit] = true;
+    }
+
+    void TextureObject::activate(unsigned int id, unsigned int target, int uniformLocation)
+    {
+        const int activationUnit = getAvailableActivationUnit();
+        glActiveTexture(GL_TEXTURE0 + activationUnit);
+        glBindTexture(target, id);
+        glUniform1i(uniformLocation, activationUnit);
+        s_reservedActivationUnits[activationUnit] = true;
+    }
+
+    void TextureObject::resetActivationUnits()
+    {
+        s_currentFreeActivationUnit = 0;
+    }
+
+    void TextureObject::clearReservedActivationUnits()
+    {
+        std::fill(s_reservedActivationUnits.begin(), s_reservedActivationUnits.end(), false);
+    }
+
+    int TextureObject::getAvailableActivationUnit()
+    {
+        for (int attempt = 0; attempt < MaxActivationUnits; ++attempt) {
+            const int index             = s_currentFreeActivationUnit;
+            s_currentFreeActivationUnit = (s_currentFreeActivationUnit + 1) % MaxActivationUnits;
+            if (!s_reservedActivationUnits[index])
+                return index;
+        }
+
+        GLX_CORE_ASSERT(false, "No texture unit available");
         return 0;
     }
-    return 0;
-}
 
-unsigned int toOpenGLExternalFormat(TextureFormat format)
-{
-    switch (format) {
-    case TextureFormat::RED:
-        return GL_RED;
-    case TextureFormat::RG:
-        return GL_RG;
-    case TextureFormat::RGB:
-        return GL_RGB;
-    case TextureFormat::RGBA:
-        return GL_RGBA;
-    case TextureFormat::DEPTH:
-        return GL_DEPTH_COMPONENT;
-    case TextureFormat::DEPTH24STENCIL8:
-        return GL_DEPTH_STENCIL;
-    case TextureFormat::NONE:
+    unsigned int toOpenGLInternalFormat(TextureFormat format)
+    {
+        switch (format) {
+        case TextureFormat::RED:
+            return GL_R8;
+        case TextureFormat::RG:
+            return GL_RG8;
+        case TextureFormat::RGB:
+            return GL_RGB8;
+        case TextureFormat::RGBA:
+            return GL_RGBA8;
+        case TextureFormat::DEPTH:
+            return GL_DEPTH_COMPONENT24;
+        case TextureFormat::DEPTH24STENCIL8:
+            return GL_DEPTH24_STENCIL8;
+        case TextureFormat::NONE:
+            return 0;
+        }
         return 0;
     }
-    return 0;
-}
 
-unsigned int toOpenGLType(TextureFormat format)
-{
-    switch (format) {
-    case TextureFormat::RED:
-    case TextureFormat::RG:
-    case TextureFormat::RGB:
-    case TextureFormat::RGBA:
-        return GL_UNSIGNED_BYTE;
-    case TextureFormat::DEPTH:
-        return GL_FLOAT;
-    case TextureFormat::DEPTH24STENCIL8:
-        return GL_UNSIGNED_INT_24_8;
-    case TextureFormat::NONE:
+    unsigned int toOpenGLExternalFormat(TextureFormat format)
+    {
+        switch (format) {
+        case TextureFormat::RED:
+            return GL_RED;
+        case TextureFormat::RG:
+            return GL_RG;
+        case TextureFormat::RGB:
+            return GL_RGB;
+        case TextureFormat::RGBA:
+            return GL_RGBA;
+        case TextureFormat::DEPTH:
+            return GL_DEPTH_COMPONENT;
+        case TextureFormat::DEPTH24STENCIL8:
+            return GL_DEPTH_STENCIL;
+        case TextureFormat::NONE:
+            return 0;
+        }
         return 0;
     }
-    return 0;
-}
 
-unsigned int toOpenGLWrap(TextureWrap wrap)
-{
-    switch (wrap) {
-    case TextureWrap::CLAMP_TO_EDGE:
-        return GL_CLAMP_TO_EDGE;
-    case TextureWrap::CLAMP_TO_BORDER:
-        return GL_CLAMP_TO_BORDER;
-    case TextureWrap::REPEAT:
+    unsigned int toOpenGLType(TextureFormat format)
+    {
+        switch (format) {
+        case TextureFormat::RED:
+        case TextureFormat::RG:
+        case TextureFormat::RGB:
+        case TextureFormat::RGBA:
+            return GL_UNSIGNED_BYTE;
+        case TextureFormat::DEPTH:
+            return GL_FLOAT;
+        case TextureFormat::DEPTH24STENCIL8:
+            return GL_UNSIGNED_INT_24_8;
+        case TextureFormat::NONE:
+            return 0;
+        }
+        return 0;
+    }
+
+    unsigned int toOpenGLWrap(TextureWrap wrap)
+    {
+        switch (wrap) {
+        case TextureWrap::CLAMP_TO_EDGE:
+            return GL_CLAMP_TO_EDGE;
+        case TextureWrap::CLAMP_TO_BORDER:
+            return GL_CLAMP_TO_BORDER;
+        case TextureWrap::REPEAT:
+            return GL_REPEAT;
+        }
         return GL_REPEAT;
     }
-    return GL_REPEAT;
-}
 
-unsigned int toOpenGLFilter(TextureFiltering filtering)
-{
-    switch (filtering) {
-    case TextureFiltering::NEAREST:
-        return GL_NEAREST;
-    case TextureFiltering::LINEAR:
+    unsigned int toOpenGLFilter(TextureFiltering filtering)
+    {
+        switch (filtering) {
+        case TextureFiltering::NEAREST:
+            return GL_NEAREST;
+        case TextureFiltering::LINEAR:
+            return GL_LINEAR;
+        }
         return GL_LINEAR;
     }
-    return GL_LINEAR;
-}
-
 } // namespace detail
 
 TextureFormat formatFromChannelCount(int channelCount)
@@ -216,7 +295,7 @@ void setDepthBorderColor(unsigned int id, TextureFormat format)
     glTextureParameterfv(id, GL_TEXTURE_BORDER_COLOR, borderColor);
 }
 
-Texture::Texture(unsigned char* data, unsigned int width, unsigned int height, unsigned int nbChannels, unsigned int depthLayerCount)
+Texture::Texture(const float* data, unsigned int width, unsigned int height, unsigned int nbChannels, unsigned int depthLayerCount)
 {
     init(data, width, height, nbChannels, depthLayerCount);
 }
@@ -365,7 +444,7 @@ void Texture::setWrap(TextureWrap wrapS, TextureWrap wrapT)
     applySamplerState();
 }
 
-void Texture::init(unsigned char* data, unsigned int width, unsigned int height, unsigned int nbChannels, unsigned int depthLayerCount)
+void Texture::init(const float* data, unsigned int width, unsigned int height, unsigned int nbChannels, unsigned int depthLayerCount)
 {
     if (width <= 0 || height <= 0 || depthLayerCount < 0) {
         GLX_CORE_ERROR("Cannot initialize a texture with invalid dimensions");
@@ -382,13 +461,12 @@ void Texture::init(unsigned char* data, unsigned int width, unsigned int height,
         return;
 
     const unsigned int externalFormat = detail::toOpenGLExternalFormat(m_format);
-    const unsigned int type = detail::toOpenGLType(m_format);
     if (m_layerCount > 0) {
         glTextureSubImage3D(getId(), 0, 0, 0, 0,
-            m_width, m_height, m_layerCount, externalFormat, type, data);
+            m_width, m_height, m_layerCount, externalFormat, GL_FLOAT, data);
     } else {
         glTextureSubImage2D(getId(), 0, 0, 0,
-            m_width, m_height, externalFormat, type, data);
+            m_width, m_height, externalFormat, GL_FLOAT, data);
     }
 
     checkOpenGLErrors("Texture upload");
@@ -397,6 +475,25 @@ void Texture::init(unsigned char* data, unsigned int width, unsigned int height,
 void Texture::resetActivationInt()
 {
     m_object.resetActivationUnit();
+}
+
+bool Texture::save(const std::string& prefix, bool hdr) const
+{
+    if (getId() == 0) {
+        GLX_CORE_ERROR("Cannot save an uninitialized texture");
+        return false;
+    }
+
+    ScopedPixelPack pack;
+    const std::string extension = hdr ? ".hdr" : ".png";
+    const unsigned int layers = m_layerCount == 0 ? 1 : m_layerCount;
+    for (unsigned int layer = 0; layer < layers; ++layer) {
+        const std::string suffix = m_layerCount == 0 ? "" : "_layer_" + std::to_string(layer);
+        if (!saveTextureSlice(getId(), m_width, m_height, m_format, layer,
+                prefix + suffix + extension))
+            return false;
+    }
+    return true;
 }
 
 void Texture::reserveActivationInt()
@@ -508,7 +605,7 @@ void Cubemap::beginFaceUpload()
     m_initializedFaces.fill(false);
 }
 
-void Cubemap::initFace(unsigned int face, unsigned char* data,
+void Cubemap::initFace(unsigned int face, const float* data,
     int width, int height, int nbChannels)
 {
     if (face >= 6 || width <= 0 || height <= 0 || width != height) {
@@ -539,7 +636,7 @@ void Cubemap::initFace(unsigned int face, unsigned char* data,
     glTextureSubImage3D(getId(), 0, 0, 0, face,
         width, height, 1,
         detail::toOpenGLExternalFormat(m_format),
-        detail::toOpenGLType(m_format), data);
+        GL_FLOAT, data);
     m_initializedFaces[face] = true;
     checkOpenGLErrors("Cubemap face upload");
 }
@@ -594,6 +691,24 @@ void Cubemap::activate(int uniformLocation)
 void Cubemap::resetActivationInt()
 {
     m_object.resetActivationUnit();
+}
+
+bool Cubemap::save(const std::string& prefix, bool hdr) const
+{
+    if (getId() == 0) {
+        GLX_CORE_ERROR("Cannot save an uninitialized cubemap");
+        return false;
+    }
+
+    ScopedPixelPack pack;
+    static constexpr std::array<const char*, 6> faceNames { "px", "nx", "py", "ny", "pz", "nz" };
+    const std::string extension = hdr ? ".hdr" : ".png";
+    for (unsigned int face = 0; face < faceNames.size(); ++face) {
+        if (!saveTextureSlice(getId(), m_resolution, m_resolution, m_format, face,
+                prefix + "_" + faceNames[face] + extension))
+            return false;
+    }
+    return true;
 }
 
 void Cubemap::reserveActivationInt()

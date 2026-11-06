@@ -4,8 +4,8 @@
 #include "gl_headers.hpp"
 #include "rendering/OpenglHelper.hpp"
 #include "core/Log.hpp"
+#include "rendering/GPUInstances/Texture.hpp"
 
-#include <fstream>
 #include <utility>
 
 namespace Galaxy {
@@ -105,55 +105,6 @@ void FrameBuffer::resize(unsigned int newWidth, unsigned int newHeight, int dept
     invalidate();
 }
 
-void FrameBuffer::savePPM(const std::string& filename)
-{
-    for (int i = 0; i < m_colorsCount; i++) {
-        std::string outputPath = filename + "_c" + std::to_string(i) + ".ppm";
-        std::ofstream output_image(outputPath.c_str());
-
-        /// READ THE CONTENT FROM THE FBO
-        glReadBuffer(GL_COLOR_ATTACHMENT0 + i);
-        std::vector<float> pixels(static_cast<size_t>(m_width) * m_height * 4);
-        glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_FLOAT, pixels.data());
-
-        output_image << "P3" << std::endl;
-        output_image << m_width << " " << m_height << std::endl;
-        output_image << "255" << std::endl;
-
-        int k = 0;
-        for (int i = 0; i < m_width; i++) {
-            for (int j = 0; j < m_height; j++) {
-                output_image << (unsigned int)(255 * pixels[k]) << " " << (unsigned int)(255 * pixels[k + 1]) << " " << (unsigned int)(255 * pixels[k + 2]) << " ";
-                k = k + 4;
-            }
-            output_image << std::endl;
-        }
-    }
-
-    // If we have a depth component alongside color, save a _d.pgm file
-    if (usesDepth() && getDepthTextureID() != 0) {
-        std::string outputPath = filename + "_d.pgm";
-        std::ofstream outputImage(outputPath.c_str());
-
-        /// READ THE DEPTH CONTENT FROM THE FBO
-        std::vector<float> depthPixels(static_cast<size_t>(m_width) * m_height);
-        glReadPixels(0, 0, m_width, m_height, GL_DEPTH_COMPONENT, GL_FLOAT, depthPixels.data());
-
-        outputImage << "P2" << std::endl;
-        outputImage << m_width << " " << m_height << std::endl;
-        outputImage << "255" << std::endl;
-
-        for (int y = 0; y < m_height; ++y) {
-            for (int x = 0; x < m_width; ++x) {
-                int k            = y * m_width + x;
-                unsigned int val = (unsigned int)(255.0f * depthPixels[k]);
-                outputImage << val << " ";
-            }
-            outputImage << std::endl;
-        }
-    }
-}
-
 bool FrameBuffer::attachColorTexture(Texture& texture, int idx)
 {
     if (idx < 0 || idx >= static_cast<int>(m_colorsCount)) {
@@ -161,10 +112,7 @@ bool FrameBuffer::attachColorTexture(Texture& texture, int idx)
         return false;
     }
 
-    GLint previousDrawFramebuffer = 0;
-    GLint previousReadFramebuffer = 0;
-    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previousDrawFramebuffer);
-    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &previousReadFramebuffer);
+    capturePreviousFB();
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     texture.resize(m_width, m_height);
@@ -174,17 +122,13 @@ bool FrameBuffer::attachColorTexture(Texture& texture, int idx)
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
 
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(previousDrawFramebuffer));
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(previousReadFramebuffer));
+    restorePreviousFB();
     return true;
 }
 
 bool FrameBuffer::attachDepthTexture(Texture& texture)
 {
-    GLint previousDrawFramebuffer = 0;
-    GLint previousReadFramebuffer = 0;
-    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previousDrawFramebuffer);
-    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &previousReadFramebuffer);
+    capturePreviousFB();
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     texture.setFormat(depthFormat());
@@ -203,8 +147,7 @@ bool FrameBuffer::attachDepthTexture(Texture& texture)
 
     bool complete = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
     GLX_CORE_ASSERT(complete, "Framebuffer not complete after texture attach");
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(previousDrawFramebuffer));
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(previousReadFramebuffer));
+    restorePreviousFB();
     return true;
 }
 
@@ -329,6 +272,22 @@ unsigned int FrameBuffer::depthAttachmentPoint() const
 {
     return depthFormat() == TextureFormat::DEPTH24STENCIL8 ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT;
 }
+
+
+GLint previousDrawFramebuffer = 0;
+GLint previousReadFramebuffer = 0;
+
+void FrameBuffer::capturePreviousFB()
+{
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previousDrawFramebuffer);
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &previousReadFramebuffer);
+}
+void FrameBuffer::restorePreviousFB()
+{
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(previousDrawFramebuffer));
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(previousReadFramebuffer));
+}
+
 
 CubemapFrameBuffer::CubemapFrameBuffer()
     : CubemapFrameBuffer(512)

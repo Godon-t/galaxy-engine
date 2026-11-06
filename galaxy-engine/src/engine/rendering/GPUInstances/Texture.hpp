@@ -3,6 +3,7 @@
 #include "types/Render.hpp"
 
 #include <array>
+#include <string>
 
 namespace Galaxy {
 namespace detail {
@@ -43,18 +44,19 @@ private:
     static std::array<bool, MaxActivationUnits> s_reservedActivationUnits;
 };
 
-[[nodiscard]] unsigned int toOpenGLInternalFormat(TextureFormat format);
-[[nodiscard]] unsigned int toOpenGLExternalFormat(TextureFormat format);
-[[nodiscard]] unsigned int toOpenGLType(TextureFormat format);
-[[nodiscard]] unsigned int toOpenGLWrap(TextureWrap wrap);
-[[nodiscard]] unsigned int toOpenGLFilter(TextureFiltering filtering);
+unsigned int toOpenGLInternalFormat(TextureFormat format);
+unsigned int toOpenGLExternalFormat(TextureFormat format);
+unsigned int toOpenGLType(TextureFormat format);
+unsigned int toOpenGLWrap(TextureWrap wrap);
+unsigned int toOpenGLFilter(TextureFiltering filtering);
 
 } // namespace detail
+TextureFormat formatFromChannelCount(int channelCount);
 
 class Texture {
 public:
     Texture() = default;
-    Texture(unsigned char* data, unsigned int width, unsigned int height, unsigned int nbChannels, unsigned int depthLayerCount = 0);
+    Texture(const float* data, unsigned int width, unsigned int height, unsigned int nbChannels, unsigned int depthLayerCount = 0);
     Texture(TextureFormat format, unsigned int width, unsigned int height, unsigned int depthLayerCount = 0);
     Texture(TextureFormat format, unsigned int width, unsigned int height, TextureFiltering filter, unsigned int depthLayerCount = 0);
     ~Texture() = default;
@@ -72,7 +74,8 @@ public:
     void setFiltering(TextureFiltering filtering);
     void setWrap(TextureWrap wrapS, TextureWrap wrapT);
 
-    void init(unsigned char* data, unsigned int width, unsigned int height, unsigned int nbChannels, unsigned int depthLayerCount = 0);
+    void init(const float* data, unsigned int width, unsigned int height, unsigned int nbChannels, unsigned int depthLayerCount = 0);
+    bool save(const std::string& prefix, bool hdr = false) const;
     void resetActivationInt();
     void reserveActivationInt();
 
@@ -123,7 +126,9 @@ public:
     void regenerate();
     void allocateFaces();
     void beginFaceUpload();
-    void initFace(unsigned int face, unsigned char* data, int width, int height, int nbChannels);
+    void initFace(unsigned int face, const float* data, int width, int height, int nbChannels);
+    // Exports mip 0 to prefix_px, _nx, _py, _ny, _pz, _nz as PNG or HDR.
+    bool save(const std::string& prefix, bool hdr = false) const;
 
     void resize(unsigned int resolution);
     void setFormat(TextureFormat format);

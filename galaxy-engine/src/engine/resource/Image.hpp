@@ -4,21 +4,26 @@
 #include "rendering/GPUInstances/GpuResourceHandle.hpp"
 #include "types/Render.hpp"
 
+#include <vector>
+
 namespace Galaxy {
 struct Image : public ResourceBase {
-    Image() {};
+    Image() = default;
 
     Image(int width, int height, int nbChannels);
 
     bool load(YAML::Node& data) override;
     bool save(bool recursive = true) override;
+    bool save(const std::string& path);
+    bool save(const char* path) { return path != nullptr && save(std::string(path)); }
 
     bool loadExtern(const std::string& path);
+    bool loadIntern(const float* data);
 
     inline int getWidth() const { return m_width; }
     inline int getHeight() const { return m_height; }
     inline int getNbChannels() const { return m_nbChannels; }
-    unsigned char* getData();
+    float* getData();
 
     inline void notifyGpuInstanceDestroyed(TextureHandle expectedHandle)
     {
@@ -37,15 +42,16 @@ struct Image : public ResourceBase {
     void freeCpuData();
 
 private:
-    int m_width;
-    int m_height;
-    unsigned char* m_data;
-    int m_nbChannels;
+    std::size_t componentCount() const;
+    bool ensureCpuData();
+
+    int m_width = 0;
+    int m_height = 0;
+    int m_nbChannels = 0;
+    std::vector<float> m_data;
 
     std::string m_relativeExternalFilePath;
 
     TextureHandle m_textureHandle;
-
-    bool m_freed = true;
 };
 }

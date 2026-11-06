@@ -1154,6 +1154,28 @@ bool Backend::attachDepthCubemapToFramebuffer(CubemapHandle cubemapHandle,
     return true;
 }
 
+bool Backend::saveTexture(TextureHandle texture, const std::string& prefix, bool hdr)
+{
+    const auto* instance = m_textureInstances.tryGet(texture);
+    if (instance == nullptr) {
+        GLX_CORE_ERROR("Cannot save an invalid texture handle");
+        return false;
+    }
+
+    return instance->save(prefix, hdr);
+}
+
+bool Backend::saveCubemap(CubemapHandle cubemap, const std::string& prefix, bool hdr)
+{
+    const auto* instance = m_cubemapInstances.tryGet(cubemap);
+    if (instance == nullptr) {
+        GLX_CORE_ERROR("Cannot save an invalid cubemap handle");
+        return false;
+    }
+
+    return instance->save(prefix, hdr);
+}
+
 void Backend::bindMaterial(MaterialHandle materialHandle)
 {
     const auto& material = *m_materialInstances.get(materialHandle);

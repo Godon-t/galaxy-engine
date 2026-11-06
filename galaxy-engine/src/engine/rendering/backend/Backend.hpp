@@ -107,6 +107,9 @@ public:
     bool attachDepthTextureToFramebuffer(TextureHandle texture, FramebufferHandle framebuffer);
     bool attachColorCubemapToFramebuffer(CubemapHandle cubemap, CubemapFramebufferHandle framebuffer, int colorAttachmentIdx);
     bool attachDepthCubemapToFramebuffer(CubemapHandle cubemap, CubemapFramebufferHandle framebuffer);
+
+    bool saveTexture(TextureHandle texture, const std::string& prefix, bool hdr = false);
+    bool saveCubemap(CubemapHandle cubemap, const std::string& prefix, bool hdr = false);
     
     void execute(RenderGraphExecution& execution);
     

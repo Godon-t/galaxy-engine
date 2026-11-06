@@ -189,6 +189,11 @@ public:
             renderer.getBackend().updateMaterial(m_cubemapMaterial, m_cubemapMaterialResource);
         }
 
+        if (ImGui::Button("Save cubemap")) {
+            const auto handle = node.getCubemapHandle();
+            renderer.getBackend().saveCubemap(handle, "probe_" + std::to_string(handle.index()));
+        }
+
         const ImVec2 imagePosition = ImGui::GetCursorScreenPos();
         const ImVec2 imageSize(256, 256);
         ImGui::Image(reinterpret_cast<void*>(renderer.getBackend().getFrameBufferTextureID(m_visualBuffer)),

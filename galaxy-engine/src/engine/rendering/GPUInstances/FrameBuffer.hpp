@@ -33,7 +33,6 @@ public:
     // Attached textures are borrowed and must outlive this framebuffer.
     bool attachColorTexture(Texture& texture, int idx);
     bool attachDepthTexture(Texture& texture);
-    void savePPM(const std::string& filename);
 
 private:
     struct TextureAttachment {
@@ -63,6 +62,9 @@ private:
     bool usesDepth() const;
     TextureFormat depthFormat() const;
     unsigned int depthAttachmentPoint() const;
+
+    void capturePreviousFB();
+    void restorePreviousFB();
 };
 
 class CubemapFrameBuffer {

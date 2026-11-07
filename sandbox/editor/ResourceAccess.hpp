@@ -22,7 +22,7 @@ struct ResourceAccess {
             m_showResourceMenu = false;
             return false;
         }
-        for (auto& path : paths) {
+        for (auto& path : m_visiblePaths) {
             if (ImGui::MenuItem(path.second.c_str())) {
                 selectedResourceID   = path.first;
                 selectedResourcePath = path.second;
@@ -35,12 +35,19 @@ struct ResourceAccess {
         return false;
     }
 
-    void show()
+    void show(const std::string& resourceType = "")
     {
+        m_visiblePaths.clear();
+        for (const auto& path : Project::getPaths(ProjectPathTypes::RESOURCE)) {
+            if (resourceType.empty() || IResourceMaker::readType(
+                    (std::filesystem::path(Project::getProjectRootPath()) / path.second).string()) == resourceType)
+                m_visiblePaths.insert(path);
+        }
         m_showResourceMenu = true;
     }
 
 private:
-    bool m_showResourceMenu;
+    std::unordered_map<uuid, std::string> m_visiblePaths;
+    bool m_showResourceMenu = false;
 };
 } // namespace Galaxy

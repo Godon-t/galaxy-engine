@@ -1,8 +1,6 @@
 #include "EnvironmentNode.hpp"
 
-#include "project/Project.hpp"
 #include "rendering/Renderer.hpp"
-#include "resource/ResourceManager.hpp"
 
 namespace Galaxy {
 EnvironmentNode::~EnvironmentNode()
@@ -18,10 +16,10 @@ inline void EnvironmentNode::draw()
 {
 }
 
-void EnvironmentNode::loadEnv(ResourceHandle<Environment> env)
+void EnvironmentNode::setSkybox(ResourceHandle<CubemapResource> skybox)
 {
-    m_env = std::move(env);
-    Renderer::getInstance().getFrontend().setEnvironment(m_env);
+    m_skybox = std::move(skybox);
+    Renderer::getInstance().getFrontend().setSkybox(m_skybox);
 }
 
 void EnvironmentNode::enteredRoot()

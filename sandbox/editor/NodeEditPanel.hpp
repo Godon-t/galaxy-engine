@@ -102,9 +102,14 @@ public:
     {
         visit(static_cast<Node&>(node));
 
-        if (ImGui::Button("Load env")) {
-            node.loadEnv(ResourceManager::getInstance().load<Environment>("env.gres"));
-        }
+        ImGui::SeparatorText("Environment");
+        if (ImGui::Button("Load skybox"))
+            m_resourceAccess.show("CubemapResource");
+        if (m_resourceAccess.display())
+            node.setSkybox(ResourceManager::getInstance().load<CubemapResource>(m_resourceAccess.selectedResourcePath));
+        const auto& skybox = node.getSkybox();
+        if (skybox.hasResource())
+            ImGui::Text("Skybox: %s", skybox.getResource().getPath().c_str());
     }
     void visit(Light& node)
     {

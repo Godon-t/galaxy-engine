@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Environment.hpp"
 #include "CubemapResource.hpp"
 #include "Image.hpp"
 #include "Material.hpp"
@@ -159,7 +158,6 @@ private:
         registerMaker<Mesh>("Mesh");
         registerMaker<PBRMaterial>("PBRMaterial");
         registerMaker<TextureMaterial>("TextureMaterial");
-        registerMaker<Environment>("Environment");
     }
     ThreadPool m_threadPool;
     std::mutex m_pendingLoadMutex;

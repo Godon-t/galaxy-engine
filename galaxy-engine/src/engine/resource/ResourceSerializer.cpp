@@ -1,6 +1,5 @@
 #include "ResourceSerializer.hpp"
 
-#include "Environment.hpp"
 #include "CubemapResource.hpp"
 #include "Image.hpp"
 #include "Log.hpp"
@@ -48,20 +47,6 @@ bool ResourceSerializer::serialize(Image& image)
     }
 
     return closeResourceWriting(yaml, image.getResourceID());
-}
-
-bool ResourceSerializer::serialize(Environment& env)
-{
-    YAML::Emitter yaml;
-    openResourceWriting(yaml, env.getPath(), "Environment");
-
-    yaml << YAML::Key << "Skybox" << YAML::BeginSeq;
-    for (auto& image : env.m_skybox) {
-        yaml << image.getResource().getResourceID();
-    }
-    yaml << YAML::EndSeq;
-
-    return closeResourceWriting(yaml, env.getResourceID());
 }
 
 bool ResourceSerializer::serialize(CubemapResource& cubemap)

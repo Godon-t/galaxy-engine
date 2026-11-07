@@ -7,22 +7,18 @@
 #include <variant>
 
 namespace Galaxy {
-void Frontend::setEnvironment(ResourceHandle<Environment> environment)
+void Frontend::setSkybox(ResourceHandle<CubemapResource> skybox)
 {
-    environment.getResource().onLoaded([this, environment] {
-        auto& skyboxPass = m_renderGraph.getRenderPass(m_passPostprocessId);
-        const GraphTextureHandle skyboxTexture = skyboxPass.findInputTexture("skybox");
+    const auto request = ++m_skyboxRequest;
+    skybox.getResource().onLoaded([this, skybox, request] {
+        if (request != m_skyboxRequest)
+            return;
 
-        std::visit(
-            [environment](const auto& typedHandle) {
-                using Handle = std::decay_t<decltype(typedHandle)>;
-                if constexpr (std::is_same_v<Handle, CubemapHandle>) {
-                    Renderer::getInstance().getBackend().setCubemapData(typedHandle, environment.getResource().getSkybox());
-                } else {
-                    GLX_CORE_WARN("Wrong texturehandle for skybox cubemap data");
-                }
-            },
-            skyboxTexture);
+        const auto skyboxTexture = m_renderGraph.getRenderPass(m_passPostprocessId).findInputTexture("skybox");
+        if (const auto* cubemap = std::get_if<CubemapHandle>(&skyboxTexture))
+            m_backend.setCubemapData(*cubemap, skybox.getResource().getFaces());
+        else
+            GLX_CORE_WARN("Wrong texture handle for skybox cubemap data");
     });
 }
 

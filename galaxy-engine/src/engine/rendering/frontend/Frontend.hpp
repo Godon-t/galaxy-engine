@@ -2,7 +2,7 @@
 
 #include "pch.hpp"
 
-#include "resource/Environment.hpp"
+#include "resource/CubemapResource.hpp"
 #include "SceneContext.hpp"
 #include "data/Transform.hpp"
 #include "types/Render.hpp"
@@ -25,7 +25,7 @@ class Backend;
 class Frontend {
 public:
     void addCamera(Camera camera) { m_frameCameras.push_back(std::move(camera)); }
-    void setEnvironment(ResourceHandle<Environment> environment);
+    void setSkybox(ResourceHandle<CubemapResource> skybox);
 
     explicit Frontend(Backend& backend);
 
@@ -46,6 +46,7 @@ public:
     
 private:
     Backend& m_backend;
+    std::size_t m_skyboxRequest = 0;
 
     void addShadowViews(RenderGraphExecution& execution);
     void addTextureViews(RenderGraphExecution& execution, const RenderView& view,

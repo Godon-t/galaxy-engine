@@ -158,17 +158,20 @@ void EditorLayer::displayMenuBar(bool validScene)
         }
         if (ImGui::MenuItem("Import file"))
             m_fileDialog.Open();
-        if (ImGui::MenuItem("Create resource"))
-            m_environmentCreation.show();
+        if (ImGui::BeginMenu("Create resource")) {
+            if (ImGui::MenuItem("Cubemap"))
+                m_cubemapCreation.show();
+            ImGui::EndMenu();
+        }
         ImGui::EndMenu();
     }
     ImGui::EndMenuBar();
 
     m_fileDialog.Display();
 
-    if (m_environmentCreation.display()) {
-        Project::savePaths();
+    if (m_cubemapCreation.display()) {
         ResourceAccess::paths = Project::getPaths(ProjectPathTypes::RESOURCE);
+        GLX_INFO("Cubemap imported");
     }
 
     if (m_fileDialog.HasSelected()) {

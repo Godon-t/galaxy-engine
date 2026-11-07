@@ -1,15 +1,8 @@
 #pragma once
 
-#include "Application.hpp"
-#include "data/Transform.hpp"
 #include "nodes/Node.hpp"
-#include "rendering/Renderer.hpp"
-#include "rendering/GPUInstances/GpuResourceHandle.hpp"
-#include "resource/Environment.hpp"
+#include "resource/CubemapResource.hpp"
 #include "resource/ResourceHandle.hpp"
-
-
-// GLX-TODO: crash when saving (maybe when without resource attached)
 
 namespace Galaxy {
 class EnvironmentNode : public Node {
@@ -24,13 +17,14 @@ public:
     void accept(Galaxy::NodeVisitor& visitor) override;
 
     inline virtual void draw() override;
-    void loadEnv(ResourceHandle<Environment> env);
-    inline uuid getEnvResourceID() const { return m_env.getResource().getResourceID(); }
+    void setSkybox(ResourceHandle<CubemapResource> skybox);
+    const ResourceHandle<CubemapResource>& getSkybox() const { return m_skybox; }
+    uuid getSkyboxResourceID() const { return m_skybox.hasResource() ? m_skybox.getResource().getResourceID() : uuid(0); }
 
 protected:
     virtual void enteredRoot() override;
 
 private:
-    ResourceHandle<Environment> m_env;
+    ResourceHandle<CubemapResource> m_skybox;
 };
 } // namespace Galaxy

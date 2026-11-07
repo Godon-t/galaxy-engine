@@ -37,6 +37,41 @@ struct ResourceImporter {
         }
     }
 
+    static uuid importCubemap(const CubemapResource::FacePaths& faces, const std::string& resourcePath)
+    {
+        namespace fs = std::filesystem;
+        const std::string path = fs::path(resourcePath).lexically_normal().generic_string();
+        if (resourcePath.empty() || fs::path(path).is_absolute() || fs::path(path).extension() != ".gres") {
+            GLX_CORE_ERROR("Cubemap resource path must be a project-relative .gres file: '{0}'", resourcePath);
+            return 0;
+        }
+        if (Project::doesPathExist(path)) {
+            GLX_CORE_ERROR("Resource path is already registered: '{0}'", path);
+            return 0;
+        }
+
+        CubemapResource cubemap;
+        if (!cubemap.loadFaces(faces))
+            return 0;
+
+        auto& manager = ResourceManager::getInstance();
+        auto resource = manager.registerNewResource(cubemap, path, true);
+        const uuid id = resource.getResource().getResourceID();
+        try {
+            if (!resource.getResource().save(false)) {
+                Project::deletePath(ProjectPathTypes::RESOURCE, id);
+                return 0;
+            }
+        } catch (const fs::filesystem_error& error) {
+            Project::deletePath(ProjectPathTypes::RESOURCE, id);
+            GLX_CORE_ERROR("Cannot import cubemap: {0}", error.what());
+            return 0;
+        }
+        manager.setResourcePath(resource, path);
+        Project::savePaths();
+        return id;
+    }
+
     static std::string getTexturePath(aiMaterial* material, aiTextureType textureType)
     {
         std::string res = "";

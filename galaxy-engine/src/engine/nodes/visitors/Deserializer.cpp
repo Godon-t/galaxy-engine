@@ -120,11 +120,10 @@ void SceneDeSerializer::visit(Sprite3D& node)
 }
 void SceneDeSerializer::visit(EnvironmentNode& node)
 {
+    const uuid skyboxID(m_currentYAMLNode["SkyboxID"] ? m_currentYAMLNode["SkyboxID"].as<uint64_t>() : 0);
     visit(static_cast<Node&>(node));
-    if (m_currentYAMLNode["EnvID"]) {
-        uuid envID          = m_currentYAMLNode["EnvID"].as<uint64_t>();
-        std::string envPath = Project::getPath(ProjectPathTypes::RESOURCE, envID);
-        node.loadEnv(ResourceManager::getInstance().load<Environment>(envPath));
+    if (skyboxID != 0) {
+        node.setSkybox(ResourceManager::getInstance().load<CubemapResource>(Project::getPath(ProjectPathTypes::RESOURCE, skyboxID)));
     }
 }
 

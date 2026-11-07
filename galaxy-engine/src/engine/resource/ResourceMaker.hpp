@@ -45,7 +45,7 @@ public:
     {
         YAML::Node data;
 
-        std::ifstream stream(Project::getProjectRootPath() + path);
+        std::ifstream stream(std::filesystem::path(Project::getProjectRootPath()) / path);
         std::stringstream strStream;
         strStream << stream.rdbuf();
 

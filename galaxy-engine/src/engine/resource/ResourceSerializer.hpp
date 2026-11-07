@@ -7,11 +7,13 @@ class BaseMaterial;
 class PBRMaterial;
 class TextureMaterial;
 class Environment;
+class CubemapResource;
 
 class ResourceSerializer {
 public:
     static bool serialize(Image& image);
     static bool serialize(Environment& env);
+    static bool serialize(CubemapResource& cubemap);
     static bool serialize(BaseMaterial& material);
     static bool serialize(PBRMaterial& material);
     static bool serialize(TextureMaterial& material);

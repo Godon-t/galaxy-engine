@@ -166,7 +166,12 @@ void SceneDeSerializer::visit(GINode& node)
 
 void SceneDeSerializer::visit(ProbeNode& node)
 {
+    const auto probeData = m_currentYAMLNode;
     visit(static_cast<Node3D&>(node));
+    if (probeData["CubemapID"]) {
+        const uuid resourceID(probeData["CubemapID"].as<uint64_t>());
+        node.loadCubemap(Project::getPath(ProjectPathTypes::RESOURCE, resourceID));
+    }
 }
 
 } // namespace Galaxy

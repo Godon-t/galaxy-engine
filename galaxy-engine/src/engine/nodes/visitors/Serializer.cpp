@@ -122,6 +122,8 @@ void SceneSerializer::visit(GINode& node)
 void SceneSerializer::visit(ProbeNode& node)
 {
     visit(static_cast<Node3D&>(node));
+    if (node.getCubemapResourceID() != 0)
+        m_yaml << YAML::Key << "CubemapID" << YAML::Value << node.getCubemapResourceID();
 }
 
 }

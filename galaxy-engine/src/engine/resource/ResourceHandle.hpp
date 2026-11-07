@@ -17,6 +17,9 @@ public:
     }
     ~ResourceHandleBase() = default;
 
+    // A resource may exist before its asynchronous loading has completed.
+    bool hasResource() const { return m_resource != nullptr; }
+
     // bool isReady();
     // bool isLoaded();
     // bool isLoading();

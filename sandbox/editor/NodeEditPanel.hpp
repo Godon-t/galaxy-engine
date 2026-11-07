@@ -5,6 +5,10 @@
 
 #include <imgui.h>
 
+#include <array>
+#include <cstdio>
+#include <optional>
+
 using namespace math;
 
 namespace Galaxy {
@@ -178,9 +182,6 @@ public:
         if (ImGui::Button("Capture cubemap"))
             node.capture();
 
-        if (!node.hasCapture())
-            return;
-
         auto& renderer = Renderer::getInstance();
         auto& material = m_cubemapMaterialResource.getResource();
         const auto* cubemap = std::get_if<CubemapHandle>(&material.getTexture());
@@ -189,10 +190,18 @@ public:
             renderer.getBackend().updateMaterial(m_cubemapMaterial, m_cubemapMaterialResource);
         }
 
-        if (ImGui::Button("Save cubemap")) {
-            const auto handle = node.getCubemapHandle();
-            renderer.getBackend().saveCubemap(handle, "probe_" + std::to_string(handle.index()));
+        if (!m_probeSaveNode || *m_probeSaveNode != node.id) {
+            m_probeSaveNode = node.id;
+            const std::string folder = node.getCubemapResourcePath().empty()
+                ? ".res/bakes/probe_" + std::to_string(node.id)
+                : std::filesystem::path(node.getCubemapResourcePath()).parent_path().generic_string();
+            std::snprintf(m_probeSaveFolder.data(), m_probeSaveFolder.size(), "%s", folder.c_str());
+            m_probeSaveFailed = false;
         }
+        if (ImGui::Button("Save cubemap"))
+            m_probeSaveFailed = !node.saveCapture(m_probeSaveFolder.data());
+        if (!node.getCubemapResourcePath().empty())
+            ImGui::Text("Saved cubemap: %s", node.getCubemapResourcePath().c_str());
 
         const ImVec2 imagePosition = ImGui::GetCursorScreenPos();
         const ImVec2 imageSize(256, 256);
@@ -308,5 +317,8 @@ public:
     MaterialHandle m_cubemapMaterial;
     Transform m_cubemapTransform;
     vec2 m_mouseDelta { 0.0f };
+    std::optional<size_t> m_probeSaveNode;
+    std::array<char, 1024> m_probeSaveFolder {};
+    bool m_probeSaveFailed = false;
 };
 }

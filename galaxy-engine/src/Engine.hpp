@@ -27,6 +27,7 @@
 #include "project/Scene.hpp"
 
 #include "resource/ResourceImporter.hpp"
+#include "resource/CubemapResource.hpp"
 #include "resource/ResourceManager.hpp"
 
 #include "rendering/frontend/CameraManager.hpp"

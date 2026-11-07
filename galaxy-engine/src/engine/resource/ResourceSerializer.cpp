@@ -1,6 +1,7 @@
 #include "ResourceSerializer.hpp"
 
 #include "Environment.hpp"
+#include "CubemapResource.hpp"
 #include "Image.hpp"
 #include "Log.hpp"
 #include "Material.hpp"
@@ -27,7 +28,8 @@ bool closeResourceWriting(YAML::Emitter& emitter, uuid resourceID)
 {
     emitter << YAML::EndMap;
 
-    const std::filesystem::path path = Project::getProjectRootPath() + Project::getPath(ProjectPathTypes::RESOURCE, resourceID);
+    const std::filesystem::path path = std::filesystem::path(Project::getProjectRootPath())
+        / Project::getPath(ProjectPathTypes::RESOURCE, resourceID);
     if (path.has_parent_path())
         std::filesystem::create_directories(path.parent_path());
 
@@ -60,6 +62,18 @@ bool ResourceSerializer::serialize(Environment& env)
     yaml << YAML::EndSeq;
 
     return closeResourceWriting(yaml, env.getResourceID());
+}
+
+bool ResourceSerializer::serialize(CubemapResource& cubemap)
+{
+    YAML::Emitter yaml;
+    openResourceWriting(yaml, cubemap.getPath(), "CubemapResource");
+    yaml << YAML::Key << "Resolution" << YAML::Value << cubemap.getResolution();
+    yaml << YAML::Key << "Faces" << YAML::BeginMap;
+    for (std::size_t i = 0; i < CubemapResource::FaceNames.size(); ++i)
+        yaml << YAML::Key << CubemapResource::FaceNames[i] << YAML::Value << cubemap.getFacePaths()[i];
+    yaml << YAML::EndMap;
+    return closeResourceWriting(yaml, cubemap.getResourceID());
 }
 
 bool ResourceSerializer::serialize(BaseMaterial& material)

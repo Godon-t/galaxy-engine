@@ -103,6 +103,7 @@ add_library(galaxy-engine
 	
 	src/engine/resource/ResourceSerializer.cpp
 	src/engine/resource/Image.cpp
+	src/engine/resource/CubemapResource.cpp
 	src/engine/resource/Mesh.cpp
 	src/engine/resource/Material.cpp
 	src/engine/resource/Environment.cpp

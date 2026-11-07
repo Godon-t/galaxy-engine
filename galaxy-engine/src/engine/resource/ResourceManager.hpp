@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Environment.hpp"
+#include "CubemapResource.hpp"
 #include "Image.hpp"
 #include "Material.hpp"
 #include "Mesh.hpp"
@@ -39,7 +40,7 @@ public:
         }
         auto makerIt = m_makers.end();
         if (readTypeFromFile) {
-            auto type = IResourceMaker::readType(Project::getProjectRootPath() + path);
+            auto type = IResourceMaker::readType((std::filesystem::path(Project::getProjectRootPath()) / path).string());
             // Material was the original name of PBRMaterial in resource files.
             if (type == "Material")
                 type = "PBRMaterial";
@@ -122,6 +123,16 @@ public:
         return ResourceHandle<ResourceType>(std::static_pointer_cast<ResourceType>(resource));
     }
 
+    void setResourcePath(const ResourceHandleBase& handle, const std::string& path)
+    {
+        std::lock_guard<std::mutex> lock(m_cacheMutex);
+        auto& resource = *handle.m_resource;
+        cache.erase(resource.m_resourcePath);
+        Project::updatePath(ProjectPathTypes::RESOURCE, resource.m_resourceID, path);
+        resource.m_resourcePath = path;
+        cache[path] = handle.m_resource;
+    }
+
     template <typename ResourceType, typename... Args>
     ResourceHandle<ResourceType> createInternalResource(Args&&... args)
     {
@@ -144,6 +155,7 @@ private:
         : m_threadPool(resourcePoolSize)
     {
         registerMaker<Image>("Image");
+        registerMaker<CubemapResource>("CubemapResource");
         registerMaker<Mesh>("Mesh");
         registerMaker<PBRMaterial>("PBRMaterial");
         registerMaker<TextureMaterial>("TextureMaterial");

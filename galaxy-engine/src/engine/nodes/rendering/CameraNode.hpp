@@ -7,14 +7,6 @@
 
 namespace Galaxy {
 class CameraNode : public Node3D {
-private:
-    bool m_current;
-    std::shared_ptr<Camera> m_cameraData;
-
-protected:
-    virtual void enteringRoot() override {};
-    virtual void enteredRoot() override {};
-
 public:
     camID id;
     CameraNode(std::string name = "CameraNode");
@@ -34,5 +26,13 @@ public:
     const std::shared_ptr<Camera> getCamera();
 
     void handleInput(const Event& event) override;
+
+protected:
+    virtual void enteringRoot() override {};
+    virtual void enteredRoot() override {};
+
+private:
+    bool m_current;
+    std::shared_ptr<Camera> m_cameraData;
 };
 }

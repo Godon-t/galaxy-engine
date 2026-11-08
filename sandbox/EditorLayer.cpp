@@ -318,6 +318,35 @@ void EditorLayer::onImGuiRender()
 
     ImGui::Begin("Scene");
 
+    if(ImGui::Button("Generate pbr test")){
+        m_resourceAccess.show("Mesh", "testing");
+    }
+    if(m_resourceAccess.display("testing")){
+        auto testRoot = std::make_shared<Node3D>();
+        m_selectedScene->getNodePtr()->addChild(testRoot);
+        
+        int nbMetal = 5;
+        int nbRough = 5;
+        for(int i=0; i<nbMetal; i++){
+            auto row = std::make_shared<Node3D>();
+            row->translate({0, i * 5, 0});
+            testRoot->addChild(row);
+            for(int j=0; j<nbRough; j++){
+                auto meshMat = ResourceManager::getInstance().createInternalResource<PBRMaterial>();
+                meshMat.getResource().setAlbedo({0.8, 0.6, 0.65});
+                meshMat.getResource().setMetallic((float) i / (float) (nbMetal - 1));
+                meshMat.getResource().setRoughness((float) j / (float) (nbRough - 1));
+                
+                auto meshRes = ResourceManager::getInstance().load<Mesh>(m_resourceAccess.selectedResourcePath);
+                auto testInstance = std::make_shared<MeshInstance>();
+                testInstance->loadMesh(meshRes, 0);
+                testInstance->translate({j * 5, 0, 0});
+                testInstance->setMaterial(meshMat);
+                row->addChild(testInstance);
+            }
+        }
+    }
+
     if (m_showAllNodes)
         m_nodeList.listNodes(*Application::getInstance().getRootNodePtr());
     else if (validScene)

@@ -55,8 +55,8 @@ public:
         ImGui::SeparatorText("Mesh resource");
 
         if (ImGui::Button("Load mesh"))
-            m_resourceAccess.show();
-        if (m_resourceAccess.display())
+            m_resourceAccess.show("Mesh", "mesh");
+        if (m_resourceAccess.display("mesh"))
             node.loadMesh(m_resourceAccess.selectedResourcePath);
 
         auto mathandle = node.getMaterial();
@@ -73,8 +73,8 @@ public:
 
         ImGui::SeparatorText("Image");
         if (ImGui::Button("Load image"))
-            m_resourceAccess.show();
-        if (m_resourceAccess.display())
+            m_resourceAccess.show("Image", "sprite");
+        if (m_resourceAccess.display("sprite"))
             node.loadTexture(m_resourceAccess.selectedResourcePath);
     }
     void visit(CameraNode& node)
@@ -304,8 +304,8 @@ public:
             }
 
             if (ImGui::Button("Load image"))
-                m_textureResourceAccess.show();
-            if (m_textureResourceAccess.display()) {
+                m_textureResourceAccess.show("Image", "material texture");
+            if (m_textureResourceAccess.display("material texture")) {
                 textureMaterial->setTexture(ResourceManager::getInstance().load<Image>(m_textureResourceAccess.selectedResourcePath));
                 changed = true;
             }

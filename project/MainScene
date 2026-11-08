@@ -6,6 +6,7 @@ Root:
     - Type: EnvironmentNode
       Childs:
         []
+      EnvironmentMapID: 9731669312543324129
       DirectionalLight:
         Direction: [-0.28221625, -0.94072086, -0.18814416]
         Color: [1, 1, 1]

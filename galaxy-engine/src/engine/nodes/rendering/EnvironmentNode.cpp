@@ -1,6 +1,7 @@
 #include "EnvironmentNode.hpp"
 
 #include "rendering/Renderer.hpp"
+#include "resource/ResourceManager.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -19,12 +20,6 @@ void EnvironmentNode::accept(Galaxy::NodeVisitor& visitor)
 
 inline void EnvironmentNode::draw()
 {
-}
-
-void EnvironmentNode::setSkybox(ResourceHandle<CubemapResource> skybox)
-{
-    m_skybox = std::move(skybox);
-    Renderer::getInstance().getFrontend().setSkybox(m_skybox);
 }
 
 void EnvironmentNode::enteredRoot()
@@ -59,6 +54,42 @@ void EnvironmentNode::setIntensity(float intensity)
     m_intensity = std::max(0.0f, intensity);
     if (m_directionalLightID >= 0)
         Renderer::getInstance().getLightManager().updateLightIntensity(m_directionalLightID, m_intensity);
+}
+
+void EnvironmentNode::setEnvironmentMap(EnvironmentMapSource environmentMap)
+{
+    const auto current = getEnvironmentMapResource();
+    const auto next = Galaxy::getEnvironmentMapResource(environmentMap);
+    if (current.hasResource() == next.hasResource()
+        && (!next.hasResource() || &current.getResource() == &next.getResource()))
+        return;
+
+    m_environmentMap = std::move(environmentMap);
+    Renderer::getInstance().getFrontend().setEnvironmentMap(m_environmentMap);
+}
+
+bool EnvironmentNode::loadEnvironmentMap(const std::string& path)
+{
+    if (path.empty() || !Project::doesPathExist(path)) {
+        GLX_CORE_WARN("Environment map resource is not registered: '{0}'", path);
+        return false;
+    }
+    try {
+        const auto type = IResourceMaker::readType((std::filesystem::path(Project::getProjectRootPath()) / path).string());
+        auto& manager = ResourceManager::getInstance();
+        if (type == "Image") {
+            setEnvironmentMap(manager.load<Image>(path));
+            return true;
+        }
+        if (type == "CubemapResource") {
+            setEnvironmentMap(manager.load<CubemapResource>(path));
+            return true;
+        }
+        GLX_CORE_WARN("Environment map must be an Image or CubemapResource: '{0}'", path);
+    } catch (const YAML::Exception& error) {
+        GLX_CORE_WARN("Cannot read environment map '{0}': {1}", path, error.what());
+    }
+    return false;
 }
 
 } // namespace Galaxy

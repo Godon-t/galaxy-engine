@@ -1,8 +1,7 @@
 #pragma once
 
 #include "nodes/Node.hpp"
-#include "resource/CubemapResource.hpp"
-#include "resource/ResourceHandle.hpp"
+#include "resource/EnvironmentMap.hpp"
 
 namespace Galaxy {
 class EnvironmentNode : public Node {
@@ -17,9 +16,14 @@ public:
     void accept(Galaxy::NodeVisitor& visitor) override;
 
     inline virtual void draw() override;
-    void setSkybox(ResourceHandle<CubemapResource> skybox);
-    const ResourceHandle<CubemapResource>& getSkybox() const { return m_skybox; }
-    uuid getSkyboxResourceID() const { return m_skybox.hasResource() ? m_skybox.getResource().getResourceID() : uuid(0); }
+    void setEnvironmentMap(EnvironmentMapSource environmentMap);
+    bool loadEnvironmentMap(const std::string& path);
+    const EnvironmentMapSource& getEnvironmentMap() const { return m_environmentMap; }
+    ResourceHandle<ResourceBase> getEnvironmentMapResource() const { return Galaxy::getEnvironmentMapResource(m_environmentMap); }
+    uuid getEnvironmentMapResourceID() const {
+        const auto resource = getEnvironmentMapResource();
+        return resource.hasResource() ? resource.getResource().getResourceID() : uuid(0);
+    }
 
     void setDirection(const vec3& direction);
     vec3 getDirection() const { return m_direction; }
@@ -32,7 +36,7 @@ protected:
     virtual void enteredRoot() override;
 
 private:
-    ResourceHandle<CubemapResource> m_skybox;
+    EnvironmentMapSource m_environmentMap;
     int m_directionalLightID = -1;
 
     float m_intensity{1.0};

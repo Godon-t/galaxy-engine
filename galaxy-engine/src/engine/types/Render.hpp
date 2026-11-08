@@ -29,6 +29,7 @@ enum class TextureFormat {
     RG,
     RGB,
     RGBA,
+    RGB16F,
     DEPTH,
     DEPTH24STENCIL8,
     NONE

@@ -237,7 +237,7 @@ struct ResourceImporter {
         std::string path, filename, extension;
         Project::extractExtension(file, path, filename, extension);
 
-        if (extension == ".jpg" || extension == ".png") {
+        if (extension == ".jpg" || extension == ".png" || extension == ".hdr") {
             importImage(file);
         } else if (extension == ".gltf" || extension == ".glb" || extension == ".obj") {
             importGltf(file);

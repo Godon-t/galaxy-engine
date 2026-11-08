@@ -32,7 +32,7 @@ uniform sampler2D normalBuffer;
 uniform sampler2D materialBuffer;
 uniform sampler2D depthBuffer;
 
-
+uniform samplerCube environmentMap;
 
 
 uniform mat4 inverseProjection;
@@ -181,7 +181,7 @@ void main()
         Lo += shadowFactor * (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    vec3 irradiance = vec3(0.5);
+    vec3 irradiance = texture(environmentMap, N).rgb;
     vec3 ambient    = irradiance * albedo * ao;
     // vec3 finalColor = ambient + Lo;
     vec3 finalColor = Lo;

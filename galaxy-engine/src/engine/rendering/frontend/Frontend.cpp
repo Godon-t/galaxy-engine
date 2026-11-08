@@ -3,22 +3,72 @@
 #include "core/Helper.hpp"
 #include "Log.hpp"
 #include "rendering/Renderer.hpp"
+#include "resource/ResourceManager.hpp"
 
+#include <algorithm>
+#include <limits>
+#include <type_traits>
 #include <variant>
 
 namespace Galaxy {
-void Frontend::setSkybox(ResourceHandle<CubemapResource> skybox)
+Frontend::~Frontend()
 {
-    const auto request = ++m_skyboxRequest;
-    skybox.getResource().onLoaded([this, skybox, request] {
-        if (request != m_skyboxRequest)
-            return;
+    m_lifetimeToken.reset();
+    if (m_backend.isValid(m_environmentSourceTexture))
+        m_backend.clearTexture(m_environmentSourceTexture);
+}
 
-        const auto skyboxTexture = m_renderGraph.getRenderPass(m_passPostprocessId).findInputTexture("skybox");
-        if (const auto* cubemap = std::get_if<CubemapHandle>(&skyboxTexture))
-            m_backend.setCubemapData(*cubemap, skybox.getResource().getFaces());
-        else
-            GLX_CORE_WARN("Wrong texture handle for skybox cubemap data");
+void Frontend::clearEnvironmentCubemap()
+{
+    const auto cubemap = std::get<CubemapHandle>(m_renderGraph.getTextureHandle(m_environmentTextureId));
+    if (!m_backend.isValid(cubemap))
+        return;
+    const auto black = ResourceManager::getInstance().createInternalResource<Image>(1, 1, 3);
+    const std::array<float, 3> pixels {};
+    black.getResource().loadIntern(pixels.data());
+    CubemapResource::Faces faces;
+    faces.fill(black);
+    m_backend.setCubemapData(cubemap, faces);
+}
+
+void Frontend::clearEnvironmentMapSource()
+{
+    const auto source = m_environmentSourceTexture;
+    auto& pending = m_pendingEquirectangularConversions;
+    pending.erase(std::remove_if(pending.begin(), pending.end(),
+        [source](const auto& conversion) { return conversion.source == source; }), pending.end());
+    if (m_backend.isValid(source))
+        m_backend.clearTexture(source);
+    m_environmentSourceTexture = {};
+}
+
+void Frontend::setEnvironmentMap(EnvironmentMapSource environmentMap)
+{
+    const auto next = getEnvironmentMapResource(environmentMap);
+
+    m_environmentMap = std::move(environmentMap);
+
+    const auto source = m_environmentMap;
+    next.getResource().onLoaded([this, source] {
+        const auto cubemap = std::get<CubemapHandle>(m_renderGraph.getTextureHandle(m_environmentTextureId));
+
+        std::visit([this, cubemap](const auto& resourceHandle) {
+            auto& resource = resourceHandle.getResource();
+            if constexpr (std::is_same_v<std::decay_t<decltype(resourceHandle)>, ResourceHandle<CubemapResource>>) {
+                m_backend.setCubemapData(cubemap, resource.getFaces());
+                m_hasEnvironmentMap = true;
+            } else {
+                const auto texture = m_backend.instantiateTexture(
+                    TextureFormat::RGB16F, vec2(resource.getWidth(), resource.getHeight()));
+                if (!m_backend.setTextureData(texture, resource)) {
+                    m_backend.clearTexture(texture);
+                    return;
+                }
+                m_environmentSourceTexture = texture;
+                queueEquirectangularToCubemap(texture, cubemap, resource.getHeight() / 2);
+                m_hasEnvironmentMap = true;
+            }
+        }, source);
     });
 }
 
@@ -29,6 +79,26 @@ Frontend::Frontend(Backend& backend)
     m_skyboxCube = backend.generateCube(2.0f, true, [] {});
 
     RenderGraphDeclaration renderGraphDeclaration;
+
+    ///////////////////////////////// Equirectangular conversion pass declaration
+    GraphTextureDesc conversionInput;
+    conversionInput.name = "equirectangular_cubemap";
+    conversionInput.dimension = TextureDimension::Cubemap;
+    conversionInput.format = TextureFormat::RGB16F;
+    conversionInput.wrapS = TextureWrap::CLAMP_TO_EDGE;
+    conversionInput.wrapT = TextureWrap::CLAMP_TO_EDGE;
+    conversionInput.wrapR = TextureWrap::CLAMP_TO_EDGE;
+
+    RenderTargetDesc conversionTarget;
+    conversionTarget.colorAttachments.push_back(renderGraphDeclaration.addTexture(conversionInput));
+
+    RenderPassDesc conversion;
+    conversion.name = "equirectangular_to_cubemap";
+    conversion.associatedProgram = backend.loadShader(engineRes("shaders/filters/rectangularToCubemap.glsl"));
+    conversion.targetId = renderGraphDeclaration.addTarget(conversionTarget);
+    conversion.state.depthTest = false;
+    conversion.state.depthWrite = false;
+    m_passEquirectangularToCubemapId = renderGraphDeclaration.addPass(conversion);
 
     ///////////////////////////////// Shadow-map pass declaration
     GraphTextureDesc shadowTexture;
@@ -125,6 +195,16 @@ Frontend::Frontend(Backend& backend)
     lightingStepTarget.colorAttachments.push_back(lightingColorTexId);
     TargetId lightingStepTargetId = renderGraphDeclaration.addTarget(lightingStepTarget);
 
+    GraphTextureDesc environmentTexture;
+    environmentTexture.name = "environment";
+    environmentTexture.format = TextureFormat::RGB16F;
+    environmentTexture.dimension = TextureDimension::Cubemap;
+    environmentTexture.wrapS = TextureWrap::CLAMP_TO_EDGE;
+    environmentTexture.wrapT = TextureWrap::CLAMP_TO_EDGE;
+    environmentTexture.wrapR = TextureWrap::CLAMP_TO_EDGE;
+    m_environmentTextureId = renderGraphDeclaration.addTexture(environmentTexture);
+    const auto envTexId = m_environmentTextureId;
+
     RenderPassDesc lightingDesc(opaquePBRDesc);
     lightingDesc.associatedProgram = backend.loadShader(engineRes("shaders/post_processing/direct_lighting.glsl"));
     lightingDesc.name = "lighting";
@@ -134,6 +214,7 @@ Frontend::Frontend(Backend& backend)
     lightingDesc.inputTextures.push_back({materialTexId, "materialBuffer"});
     lightingDesc.inputTextures.push_back({hardwareDepthId, "depthBuffer"});
     lightingDesc.inputTextures.push_back({shadowTextureId, "shadowMaps"});
+    lightingDesc.inputTextures.push_back({envTexId, "environmentMap"});
     lightingDesc.state.clear = true;
     lightingDesc.state.bindMaterials = false;
     lightingDesc.state.depthTest = false;
@@ -155,17 +236,8 @@ Frontend::Frontend(Backend& backend)
     finalStepTarget.colorAttachments.push_back(finalColorTexId);
     finalStepTarget.depthAttachment = finalDepthTexId;
     TargetId finalStepTargetId = renderGraphDeclaration.addTarget(finalStepTarget);
-
-
-    GraphTextureDesc environmentTexture;
-    environmentTexture.name = "environment";
-    environmentTexture.dimension = TextureDimension::Cubemap;
-    environmentTexture.wrapS = TextureWrap::CLAMP_TO_EDGE;
-    environmentTexture.wrapT = TextureWrap::CLAMP_TO_EDGE;
-    environmentTexture.wrapR = TextureWrap::CLAMP_TO_EDGE;
-    auto envTexId = renderGraphDeclaration.addTexture(environmentTexture);
-
-
+    
+    
     RenderPassDesc noPostProcessingDesc;
     noPostProcessingDesc.targetId = finalStepTargetId;
     noPostProcessingDesc.associatedProgram = backend.loadShader(engineRes("shaders/post_processing/none.glsl"));
@@ -202,7 +274,7 @@ Frontend::Frontend(Backend& backend)
     // renderGraphDeclaration.addPass(postProcessingDesc);
     // m_passPostprocessId = renderGraphDeclaration.addPass(postProcessingSSGIDesc);
     m_passPostprocessId = renderGraphDeclaration.addPass(noPostProcessingDesc);
-
+    
     RenderPassDesc textureDesc;
     textureDesc.name = "texture";
     textureDesc.associatedProgram = backend.loadShader(engineRes("shaders/texture.glsl"));
@@ -210,27 +282,28 @@ Frontend::Frontend(Backend& backend)
     textureDesc.state.clear = false;
     textureDesc.state.bindMaterials = true;
     m_passTextureId = renderGraphDeclaration.addPass(textureDesc);
-
+    
     RenderPassDesc transparentTextureDesc(textureDesc);
     transparentTextureDesc.name = "transparent_texture";
     transparentTextureDesc.state.blend = BlendMode::Alpha;
     transparentTextureDesc.state.depthWrite = false;
     m_passTransparentTextureId = renderGraphDeclaration.addPass(transparentTextureDesc);
-
+    
     RenderPassDesc cubemapRenderDesc(textureDesc);
     cubemapRenderDesc.name = "cubemap_render";
     cubemapRenderDesc.associatedProgram = backend.loadShader(engineRes("shaders/debug/cubemap_render.glsl"));
     m_passCubemapRenderId = renderGraphDeclaration.addPass(cubemapRenderDesc);
-
+    
     RenderPassDesc transparentCubemapDesc(cubemapRenderDesc);
     transparentCubemapDesc.name = "transparent_cubemap";
     transparentCubemapDesc.state.blend = BlendMode::Alpha;
     transparentCubemapDesc.state.depthWrite = false;
     m_passTransparentCubemapId = renderGraphDeclaration.addPass(transparentCubemapDesc);
-
+    
     CompiledRenderGraph compiledRenderGraph(renderGraphDeclaration);
     m_renderGraph.build(compiledRenderGraph, backend);
-
+    clearEnvironmentCubemap();
+    
     
     // GLX-TODO: only applied on probe cubemap
     RenderPassDesc irradianceFilterDesc;
@@ -242,10 +315,10 @@ Frontend::Frontend(Backend& backend)
 
 void Frontend::addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material,
     const Transform& transform, const BitMask& layer)
-{
-    addObjectToScene(geometry, m_backend.getMeshBoundingVolume(geometry), material, transform, layer);
-}
-
+    {
+        addObjectToScene(geometry, m_backend.getMeshBoundingVolume(geometry), material, transform, layer);
+    }
+    
 void Frontend::addObjectToScene(GeometryHandle geometry, const Sphere& boundingVolume, std::optional<MaterialHandle> material,
     const Transform& transform, const BitMask& layer)
 {
@@ -268,6 +341,7 @@ void Frontend::notifyMaterialUpdated(MaterialHandle material, const MaterialRend
 RenderGraphExecution Frontend::buildFrameExecution()
 {
     RenderGraphExecution execution(m_renderGraph);
+    addEquirectangularConversions(execution);
     addShadowViews(execution);
 
     for (const auto& camera : m_frameCameras) {
@@ -277,6 +351,43 @@ RenderGraphExecution Frontend::buildFrameExecution()
 
     m_frameCameras.clear();
     return execution;
+}
+
+void Frontend::queueEquirectangularToCubemap(
+    TextureHandle source, CubemapHandle target, unsigned int resolution)
+{
+    m_pendingEquirectangularConversions.push_back({ source, target, resolution });
+}
+
+void Frontend::addEquirectangularConversions(RenderGraphExecution& execution)
+{
+    const auto framebuffer = std::get<CubemapFramebufferHandle>(
+        m_renderGraph.getRenderPass(m_passEquirectangularToCubemapId).targetFramebufferHandle);
+    for (const auto& conversion : m_pendingEquirectangularConversions) {
+        if (!m_backend.isValid(conversion.source) || !m_backend.isValid(conversion.target)) {
+            GLX_CORE_WARN("Skipping an equirectangular conversion whose source or target was released");
+            continue;
+        }
+
+        m_backend.setTextureWrap(conversion.source, TextureWrap::REPEAT, TextureWrap::CLAMP_TO_EDGE);
+
+        Camera capture;
+        capture.targetFramebuffer = framebuffer;
+        capture.viewportSize = vec2(static_cast<float>(conversion.resolution));
+        capture.zNear = 0.1f;
+        capture.zFar = 10.0f;
+        for (const auto& view : capture.getViews()) {
+            auto& invocation = execution.addInvocation(m_passEquirectangularToCubemapId);
+            configureView(invocation, view);
+            invocation.viewportSize = ivec2(static_cast<int>(conversion.resolution));
+            invocation.clearColor = vec4(0.0f);
+            invocation.targetColorCubemap = conversion.target;
+            invocation.targetLayer = view.targetLayer;
+            invocation.textureBindings.push_back({ conversion.source, "environmentHDR" });
+            invocation.items.push_back(RenderItem { m_skyboxCube });
+        }
+    }
+    m_pendingEquirectangularConversions.clear();
 }
 
 void Frontend::addShadowViews(RenderGraphExecution& execution)
@@ -345,6 +456,7 @@ void Frontend::addSceneView(RenderGraphExecution& execution, const RenderView& v
     lightInvocation.parameters.emplace("inverseView", inverse(view.viewMatrix));
     lightInvocation.parameters.emplace("inverseProjection", inverse(view.projectionMatrix));
     lightInvocation.parameters.emplace("cameraPos", view.position);
+    lightInvocation.parameters.emplace("hasEnvironmentMap", m_hasEnvironmentMap);
     lightInvocation.viewportPosition = view.viewportPosition;
     lightInvocation.viewportSize = view.viewportSize;
 

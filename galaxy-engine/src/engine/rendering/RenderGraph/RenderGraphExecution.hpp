@@ -46,6 +46,8 @@ namespace Galaxy
         std::vector<UpdateUBOCommand> updates;
         std::vector<TextureBinding> textureBindings;
         std::optional<RenderTargetHandle> targetFramebuffer;
+        // TODO-GLX: maybe define textures / cubemap as targets and not framebuffers
+        std::optional<CubemapHandle> targetColorCubemap;
 
         vec4 clearColor = vec4(1.0, 0.0, 0.0, 1.0);
         ivec2 viewportSize = ivec2(512);

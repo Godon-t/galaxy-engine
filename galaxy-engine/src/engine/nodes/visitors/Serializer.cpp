@@ -84,8 +84,8 @@ void SceneSerializer::visit(Sprite3D& node)
 void SceneSerializer::visit(EnvironmentNode& node)
 {
     visit(static_cast<Node&>(node));
-    if (node.getSkyboxResourceID() != 0)
-        m_yaml << YAML::Key << "SkyboxID" << YAML::Value << node.getSkyboxResourceID();
+    if (node.getEnvironmentMapResourceID() != 0)
+        m_yaml << YAML::Key << "EnvironmentMapID" << YAML::Value << node.getEnvironmentMapResourceID();
     m_yaml << YAML::Key << "DirectionalLight" << YAML::Value << YAML::BeginMap;
     m_yaml << YAML::Key << "Direction" << YAML::Value << node.getDirection();
     m_yaml << YAML::Key << "Color" << YAML::Value << node.getColor();

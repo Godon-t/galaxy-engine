@@ -104,13 +104,20 @@ public:
         visit(static_cast<Node&>(node));
 
         ImGui::SeparatorText("Environment");
-        if (ImGui::Button("Load skybox"))
-            m_resourceAccess.show("CubemapResource");
-        if (m_resourceAccess.display())
-            node.setSkybox(ResourceManager::getInstance().load<CubemapResource>(m_resourceAccess.selectedResourcePath));
-        const auto& skybox = node.getSkybox();
-        if (skybox.hasResource())
-            ImGui::Text("Skybox: %s", skybox.getResource().getPath().c_str());
+        if (ImGui::Button("Load environment map"))
+            m_environmentResourceAccess.show(std::vector<std::string> { "Image", "CubemapResource" }, "environment");
+        if (m_environmentResourceAccess.display("environment"))
+            node.loadEnvironmentMap(m_environmentResourceAccess.selectedResourcePath);
+        const auto environmentMap = node.getEnvironmentMapResource();
+        if (environmentMap.hasResource()) {
+            ImGui::Text("Environment map: %s", environmentMap.getResource().getPath().c_str());
+            if (environmentMap.getState() == LOADING)
+                ImGui::TextUnformatted("Loading environment map...");
+            else if (environmentMap.getState() == FAILED)
+                ImGui::TextUnformatted("Environment map could not be loaded");
+            if (ImGui::Button("Clear environment map"))
+                node.setEnvironmentMap({});
+        }
 
         ImGui::SeparatorText("Directional light");
         ImGui::PushID("environment_directional_light");
@@ -333,6 +340,7 @@ public:
 
     ResourceAccess m_resourceAccess;
     ResourceAccess m_textureResourceAccess {};
+    ResourceAccess m_environmentResourceAccess {};
     FramebufferHandle m_visualBuffer;
     GeometryHandle m_invertedCube;
     ResourceHandle<TextureMaterial> m_cubemapMaterialResource;

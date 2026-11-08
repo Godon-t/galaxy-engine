@@ -2,7 +2,7 @@
 
 #include "pch.hpp"
 
-#include "resource/CubemapResource.hpp"
+#include "resource/EnvironmentMap.hpp"
 #include "SceneContext.hpp"
 #include "data/Transform.hpp"
 #include "types/Render.hpp"
@@ -15,6 +15,7 @@
 #include "engine/rendering/frontend/LightManager.hpp"
 
 #include <optional>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -25,9 +26,10 @@ class Backend;
 class Frontend {
 public:
     void addCamera(Camera camera) { m_frameCameras.push_back(std::move(camera)); }
-    void setSkybox(ResourceHandle<CubemapResource> skybox);
+    void setEnvironmentMap(EnvironmentMapSource environmentMap);
 
     explicit Frontend(Backend& backend);
+    ~Frontend();
 
     void addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material,
         const Transform& transform = Transform {}, const BitMask& layer = BitMask {});
@@ -40,15 +42,27 @@ public:
 
     RenderGraphExecution buildFrameExecution();
 
+
+    void queueEquirectangularToCubemap(
+        TextureHandle source, CubemapHandle target, unsigned int resolution = 512);
+
     FramebufferHandle getFinalFramebuffer();
     LightManager& getLightManager() { return m_lightManager; }
     
     
 private:
     Backend& m_backend;
-    std::size_t m_skyboxRequest = 0;
+    std::size_t m_environmentMapRequest = 0;
+    EnvironmentMapSource m_environmentMap;
+    TextureHandle m_environmentSourceTexture;
+    GraphTextureId m_environmentTextureId;
+    bool m_hasEnvironmentMap = false;
+    std::shared_ptr<int> m_lifetimeToken = std::make_shared<int>(0);
 
+    void clearEnvironmentMapSource();
+    void clearEnvironmentCubemap();
     void addShadowViews(RenderGraphExecution& execution);
+    void addEquirectangularConversions(RenderGraphExecution& execution);
     void addTextureViews(RenderGraphExecution& execution, const RenderView& view,
         const std::vector<RenderItem>& items, bool transparent);
     void addSceneView(RenderGraphExecution& execution, const RenderView& view);
@@ -61,7 +75,16 @@ private:
     SceneContext m_frameContext;
     std::vector<Camera> m_frameCameras;
 
+    struct EquirectangularConversion {
+        TextureHandle source;
+        CubemapHandle target;
+        unsigned int resolution;
+    };
+    // GLX-TODO: temp, shouldn't be necessary. Adding right support in render graph will bring closer to dynamic render graph.
+    std::vector<EquirectangularConversion> m_pendingEquirectangularConversions;
+
     RenderGraph m_renderGraph;
+    RenderPassId m_passEquirectangularToCubemapId;
 
     RenderPassId m_passShadowId;
     RenderPassId m_passOpaquePBRId;

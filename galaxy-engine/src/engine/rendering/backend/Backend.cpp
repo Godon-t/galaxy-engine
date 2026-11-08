@@ -200,6 +200,15 @@ void Backend::execute(RenderGraphExecution& execution){
         auto& invocation = execution.getPass(entry.pass).invocations[entry.invocationIndex];
         const auto& targetFramebuffer = invocation.targetFramebuffer.value_or(pass.targetFramebufferHandle);
 
+        if (invocation.targetColorCubemap) {
+            const auto* framebuffer = std::get_if<CubemapFramebufferHandle>(&targetFramebuffer);
+            if (framebuffer == nullptr
+                || !attachColorCubemapToFramebuffer(*invocation.targetColorCubemap, *framebuffer, 0)) {
+                GLX_CORE_ERROR("Cannot render to the requested color cubemap");
+                continue;
+            }
+        }
+
         setActiveProgram(pass.program);
         const auto& renderState = compiledGraph.getPassDescription(entry.pass).state;
 
@@ -498,6 +507,18 @@ void Backend::setTextureData(TextureHandle textureHandle,  ResourceHandle<Image>
     });
 
     m_textureDestroyNotifications[textureHandle] = [image, textureHandle] { image.getResource().notifyGpuInstanceDestroyed(textureHandle); };
+}
+
+bool Backend::setTextureData(TextureHandle textureHandle, Image& image)
+{
+    auto* texture = m_textureInstances.tryGet(textureHandle);
+    const auto* pixels = image.getData();
+    if (texture == nullptr || pixels == nullptr || image.getWidth() <= 0 || image.getHeight() <= 0) {
+        GLX_CORE_ERROR("Cannot upload an invalid texture or empty image");
+        return false;
+    }
+    texture->init(pixels, image.getWidth(), image.getHeight(), image.getNbChannels());
+    return texture->getId() != 0;
 }
 
 void Backend::setTextureWrap(TextureHandle textureHandle, TextureWrap wrapS, TextureWrap wrapT)

@@ -56,6 +56,7 @@ bool saveTextureSlice(GLuint texture, unsigned int width, unsigned int height,
         channels = 2;
         break;
     case TextureFormat::RGB:
+    case TextureFormat::RGB16F:
         channels = 3;
         break;
     case TextureFormat::RGBA:
@@ -193,6 +194,8 @@ namespace detail {
             return GL_RG8;
         case TextureFormat::RGB:
             return GL_RGB8;
+        case TextureFormat::RGB16F:
+            return GL_RGB16F;
         case TextureFormat::RGBA:
             return GL_RGBA8;
         case TextureFormat::DEPTH:
@@ -213,6 +216,7 @@ namespace detail {
         case TextureFormat::RG:
             return GL_RG;
         case TextureFormat::RGB:
+        case TextureFormat::RGB16F:
             return GL_RGB;
         case TextureFormat::RGBA:
             return GL_RGBA;
@@ -235,6 +239,7 @@ namespace detail {
         case TextureFormat::RGBA:
             return GL_UNSIGNED_BYTE;
         case TextureFormat::DEPTH:
+        case TextureFormat::RGB16F:
             return GL_FLOAT;
         case TextureFormat::DEPTH24STENCIL8:
             return GL_UNSIGNED_INT_24_8;
@@ -451,7 +456,8 @@ void Texture::init(const float* data, unsigned int width, unsigned int height, u
         return;
     }
 
-    m_format = formatFromChannelCount(nbChannels);
+    if (m_format != TextureFormat::RGB16F || (nbChannels != 3 && nbChannels != 4))
+        m_format = formatFromChannelCount(nbChannels);
     m_width = width;
     m_height = height;
     m_layerCount = depthLayerCount;
@@ -460,7 +466,7 @@ void Texture::init(const float* data, unsigned int width, unsigned int height, u
     if (data == nullptr || getId() == 0)
         return;
 
-    const unsigned int externalFormat = detail::toOpenGLExternalFormat(m_format);
+    const unsigned int externalFormat = detail::toOpenGLExternalFormat(formatFromChannelCount(nbChannels));
     if (m_layerCount > 0) {
         glTextureSubImage3D(getId(), 0, 0, 0, 0,
             m_width, m_height, m_layerCount, externalFormat, GL_FLOAT, data);
@@ -613,7 +619,8 @@ void Cubemap::initFace(unsigned int face, const float* data,
         return;
     }
 
-    const TextureFormat format = formatFromChannelCount(nbChannels);
+    const TextureFormat format = m_format == TextureFormat::RGB16F && nbChannels == 3
+        ? TextureFormat::RGB16F : formatFromChannelCount(nbChannels);
     const bool hasInitializedFace = std::any_of(
         m_initializedFaces.begin(), m_initializedFaces.end(), [](bool initialized) { return initialized; });
     const bool storageDoesNotMatch =

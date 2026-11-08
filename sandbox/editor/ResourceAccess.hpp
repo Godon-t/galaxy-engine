@@ -3,6 +3,8 @@
 #include "Engine.hpp"
 
 #include <imgui.h>
+#include <algorithm>
+#include <vector>
 
 namespace Galaxy {
 struct ResourceAccess {
@@ -52,10 +54,16 @@ struct ResourceAccess {
 
     void show(const std::string& resourceType = "", const std::string& requester = "")
     {
+        show(resourceType.empty() ? std::vector<std::string> {} : std::vector<std::string> { resourceType }, requester);
+    }
+
+    void show(const std::vector<std::string>& resourceTypes, const std::string& requester = "")
+    {
         m_visiblePaths.clear();
         for (const auto& path : Project::getPaths(ProjectPathTypes::RESOURCE)) {
-            if (resourceType.empty() || IResourceMaker::readType(
-                    (std::filesystem::path(Project::getProjectRootPath()) / path.second).string()) == resourceType)
+            const auto type = resourceTypes.empty() ? std::string {} : IResourceMaker::readType(
+                (std::filesystem::path(Project::getProjectRootPath()) / path.second).string());
+            if (resourceTypes.empty() || std::find(resourceTypes.begin(), resourceTypes.end(), type) != resourceTypes.end())
                 m_visiblePaths.insert(path);
         }
         selectedResourceID = 0;

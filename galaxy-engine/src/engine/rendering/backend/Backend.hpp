@@ -40,6 +40,8 @@ public:
     TextureHandle instantiateTexture(TextureFormat format, vec2 size, TextureFiltering filter = TextureFiltering::LINEAR, size_t layerCount = 0);
     TextureHandle instantiateTexture(ResourceHandle<Image> image);
     void setTextureData(TextureHandle textureHandle, ResourceHandle<Image> image);
+    // Uploads loaded pixels without changing the image's cached GPU texture handle.
+    bool setTextureData(TextureHandle textureHandle, Image& image);
     void setTextureWrap(TextureHandle texture, TextureWrap wrapS, TextureWrap wrapT);
     void setTextureWrap(CubemapHandle cubemap, TextureWrap wrapS, TextureWrap wrapT, TextureWrap wrapR);
     void clearTexture(TextureHandle texture);

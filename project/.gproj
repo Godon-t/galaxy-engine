@@ -3,4 +3,7 @@ Scenes:
   - Id: 7857652255564026288
     Path: MainScene
 Resources:
-  []
+  - Id: 4228649165822332540
+    Path: .res/testShapes/sphere_material_0.gres
+  - Id: 212840179636608568
+    Path: .res/testShapes/sphere.gres

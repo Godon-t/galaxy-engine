@@ -3,4 +3,308 @@ Id: 7857652255564026288
 Root:
   Type: Node
   Childs:
-    []
+    - Type: EnvironmentNode
+      Childs:
+        []
+      DirectionalLight:
+        Direction: [-0.28221625, -0.94072086, -0.18814416]
+        Color: [1, 1, 1]
+        Intensity: 0
+    - Type: Node3D
+      Childs:
+        - Type: MeshInstance
+          Childs:
+            []
+          Transform:
+            Position: [0, 0, 0]
+            Rotation: [0, 0, 0]
+            Scale: [1, 1, 1]
+          MeshResourceID: 212840179636608568
+          SurfaceIndex: 0
+      Transform:
+        Position: [0, 0, 0]
+        Rotation: [0, -0, 0]
+        Scale: [1, 1, 1]
+    - Type: Node3D
+      Childs:
+        - Type: Node3D
+          Childs:
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [0, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [5, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [10, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [15, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [20, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+          Transform:
+            Position: [0, 0, 0]
+            Rotation: [0, 0, 0]
+            Scale: [1, 1, 1]
+        - Type: Node3D
+          Childs:
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [0, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [5, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [10, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [15, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [20, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+          Transform:
+            Position: [0, 5, 0]
+            Rotation: [0, 0, 0]
+            Scale: [1, 1, 1]
+        - Type: Node3D
+          Childs:
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [0, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [5, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [10, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [15, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [20, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+          Transform:
+            Position: [0, 10, 0]
+            Rotation: [0, 0, 0]
+            Scale: [1, 1, 1]
+        - Type: Node3D
+          Childs:
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [0, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [5, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [10, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [15, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [20, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+          Transform:
+            Position: [0, 15, 0]
+            Rotation: [0, 0, 0]
+            Scale: [1, 1, 1]
+        - Type: Node3D
+          Childs:
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [0, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [5, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [10, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [15, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+            - Type: MeshInstance
+              Childs:
+                []
+              Transform:
+                Position: [20, 0, 0]
+                Rotation: [0, 0, 0]
+                Scale: [1, 1, 1]
+              MeshResourceID: 212840179636608568
+              SurfaceIndex: 0
+          Transform:
+            Position: [0, 20, 0]
+            Rotation: [0, 0, 0]
+            Scale: [1, 1, 1]
+      Transform:
+        Position: [0, 0, 0]
+        Rotation: [0, 0, 0]
+        Scale: [1, 1, 1]
+    - Type: PointLight
+      Childs:
+        []
+      Transform:
+        Position: [-11, 0, -16]
+        Rotation: [0, 0, 0]
+        Scale: [1, 1, 1]
+      Intensity: 1000
+      Color: [1, 0.5568628, 0.4627451]
+      Range: 100
+      Shadows: false
+    - Type: PointLight
+      Childs:
+        []
+      Transform:
+        Position: [36, 0, -16]
+        Rotation: [0, 0, 0]
+        Scale: [1, 1, 1]
+      Intensity: 80
+      Color: [1, 1, 1]
+      Range: 1000
+      Shadows: false

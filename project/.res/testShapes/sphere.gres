@@ -1,0 +1,5 @@
+Type: Mesh
+ExternalFile: testShapes\sphere.glb
+SubMeshes:
+  - HasMaterial: true
+    MaterialID: 4228649165822332540

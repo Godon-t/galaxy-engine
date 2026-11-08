@@ -7,6 +7,7 @@
 
 #include <array>
 #include <cstdio>
+#include <limits>
 #include <optional>
 
 using namespace math;
@@ -110,6 +111,22 @@ public:
         const auto& skybox = node.getSkybox();
         if (skybox.hasResource())
             ImGui::Text("Skybox: %s", skybox.getResource().getPath().c_str());
+
+        ImGui::SeparatorText("Directional light");
+        ImGui::PushID("environment_directional_light");
+        vec3 direction = node.getDirection();
+        if (ImGui::DragFloat3("Direction", &direction[0], 0.01f))
+            node.setDirection(direction);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Direction in which light rays travel in world space.");
+        vec3 color = node.getColor();
+        if (ImGui::ColorEdit3("Color", &color[0], ImGuiColorEditFlags_Float))
+            node.setColor(color);
+        float intensity = node.getIntensity();
+        if (ImGui::DragFloat("Intensity", &intensity, 0.05f, 0.0f,
+                (std::numeric_limits<float>::max)(), "%.2f", ImGuiSliderFlags_AlwaysClamp))
+            node.setIntensity(intensity);
+        ImGui::PopID();
     }
     void visit(Light& node)
     {

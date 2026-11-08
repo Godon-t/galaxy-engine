@@ -121,7 +121,17 @@ void SceneDeSerializer::visit(Sprite3D& node)
 void SceneDeSerializer::visit(EnvironmentNode& node)
 {
     const uuid skyboxID(m_currentYAMLNode["SkyboxID"] ? m_currentYAMLNode["SkyboxID"].as<uint64_t>() : 0);
+    const auto light = m_currentYAMLNode["DirectionalLight"];
+    const bool hasDirectionalLight = static_cast<bool>(light);
+    const vec3 direction = light && light["Direction"] ? light["Direction"].as<vec3>() : node.getDirection();
+    const vec3 color = light && light["Color"] ? light["Color"].as<vec3>() : node.getColor();
+    const float intensity = light && light["Intensity"] ? light["Intensity"].as<float>() : node.getIntensity();
     visit(static_cast<Node&>(node));
+    if (hasDirectionalLight) {
+        node.setDirection(direction);
+        node.setColor(color);
+        node.setIntensity(intensity);
+    }
     if (skyboxID != 0) {
         node.setSkybox(ResourceManager::getInstance().load<CubemapResource>(Project::getPath(ProjectPathTypes::RESOURCE, skyboxID)));
     }

@@ -86,6 +86,11 @@ void SceneSerializer::visit(EnvironmentNode& node)
     visit(static_cast<Node&>(node));
     if (node.getSkyboxResourceID() != 0)
         m_yaml << YAML::Key << "SkyboxID" << YAML::Value << node.getSkyboxResourceID();
+    m_yaml << YAML::Key << "DirectionalLight" << YAML::Value << YAML::BeginMap;
+    m_yaml << YAML::Key << "Direction" << YAML::Value << node.getDirection();
+    m_yaml << YAML::Key << "Color" << YAML::Value << node.getColor();
+    m_yaml << YAML::Key << "Intensity" << YAML::Value << node.getIntensity();
+    m_yaml << YAML::EndMap;
 }
 
 void SceneSerializer::visitLightCommon(Light& node)

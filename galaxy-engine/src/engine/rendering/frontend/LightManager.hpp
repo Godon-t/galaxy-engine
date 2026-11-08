@@ -1,6 +1,8 @@
 #pragma once
 
 #include <queue>
+#include <unordered_map>
+#include <vector>
 
 #include "engine/data/Transform.hpp"
 #include "engine/nodes/Node.hpp"
@@ -17,40 +19,26 @@ const unsigned int maxLightCount = 32;
 enum LightType {
     POINTLIGHT = 0,
     SPOTLIGHT = 1,
+    DIRECTIONLIGHT = 2,
 };
 struct LightData {
-    LightType type;
-    int idx;
-    math::mat4 transformationMatrix;
-    int shadowMapLayer;
-    vec3 color;
-    float intensity;
-    float range;
-    float innerCutoff;
-    float outerCutoff;
-    bool castShadow;
+    LightType type = POINTLIGHT;
+    int idx = -1;
+    math::mat4 transformationMatrix { 1.0f };
+    int shadowMapLayer = -1;
+    vec3 color { 1.0f };
+    float intensity = 0.5f;
+    float range = 1.0f;
+    float innerCutoff = 22.5f;
+    float outerCutoff = 22.5f;
+    bool castShadow = false;
 
-    mat4 getProjection(const vec2& viewportDimmension);
+    mat4 getProjection(const vec2& viewportDimmension) const;
 
-    LightData()
-        : idx(-1)
-        , shadowMapLayer(0)
-        , color(1)
-        , intensity(0.5f)
-        , range(1.0f)
-        , innerCutoff(22.5f)
-        , outerCutoff(22.5f)
-        {
-        }
+    LightData() = default;
     LightData(int lightIdx, math::mat4& matrix)
         : idx(lightIdx)
         , transformationMatrix(matrix)
-        , shadowMapLayer(0)
-        , color(1)
-        , intensity(0.5)
-        , range(1.0)
-        , innerCutoff(22.5f)
-        , outerCutoff(22.5f)
     {
     }
 };
@@ -82,6 +70,10 @@ public:
     void init();
 
     int registerLight(LightData desc);
+    // Direction is the direction in which rays travel in world space (local -Z).
+    // Directional lights share the light budget; range/cutoffs are unused and shadows are unsupported.
+    int registerDirectionalLight(const vec3& direction, const vec3& color = vec3(1.0f), float intensity = 1.0f);
+    void updateLightDirection(lightID id, const vec3& direction);
     void updateLightTransform(lightID id, math::mat4 transform);
     void updateLightColor(lightID id, math::vec3 color);
     void updateLightIntensity(lightID id, float intensity);
@@ -90,7 +82,7 @@ public:
     void updateLightCastShadow(lightID id, bool state);
 
     void unregisterLight(int id);
-    unsigned int getShadowMapLayer(lightID light) { return m_lights[light].shadowMapLayer; }
+    int getShadowMapLayer(lightID light) const { return m_lights.at(light).shadowMapLayer; }
 
     unsigned int getProbesRadianceTexture();
 
@@ -108,6 +100,7 @@ public:
     const std::vector<LightData> getLightsData() const;
 
 private:
+    LightData* findLight(lightID id);
     struct ProbeCell {
         // from 0 to 1 with order x, y, z
         unsigned int probes[8];
@@ -119,7 +112,7 @@ private:
 
     std::unordered_map<lightID, LightData> m_lights;
     std::priority_queue<lightID, std::vector<lightID>, std::greater<lightID>> m_availableIDs; 
-    int m_maxLightCount = 32;
+    int m_maxLightCount = maxLightCount;
 
     FramebufferHandle m_shadowMapFramebuffer;
 
@@ -131,7 +124,7 @@ private:
     FramebufferHandle m_probesFramebuffer;
 
     BufferHandle m_lightsUBO;
-    GPULightData m_lightUniformData;
+    GPULightData m_lightUniformData {};
 
     bool m_dirty;
 

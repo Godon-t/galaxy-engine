@@ -48,6 +48,7 @@ uniform sampler2DArray shadowMaps;
 
 const int TYPE_POINTLIGHT = 0;
 const int TYPE_SPOTLIGHT = 1;
+const int TYPE_DIRECTIONLIGHT = 2;
 
 layout(std140, binding = 0) uniform LightBlock
 {
@@ -67,86 +68,12 @@ layout(std140, binding = 0) uniform LightBlock
 
 
 
-
-/*--------------------------------------PBR--------------------------------------*/
-float DistributionGGX(vec3 N, vec3 H, float roughness)
-{
-    float a      = roughness * roughness;
-    float a2     = a * a;
-    float NdotH  = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH * NdotH;
-
-    float num   = a2;
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom       = PI * denom * denom;
-
-    return num / denom;
-}
-
-float GeometrySchlickGGX(float NdotV, float roughness)
-{
-    float r = (roughness + 1.0);
-    float k = (r * r) / 8.0;
-    // float k = (roughness * roughness) / 2.f;
-
-    float num   = NdotV;
-    float denom = NdotV * (1.0 - k) + k;
-
-    return num / denom;
-}
-
-
-
-float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
-{
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx2  = GeometrySchlickGGX(NdotV, roughness);
-    float ggx1  = GeometrySchlickGGX(NdotL, roughness);
-
-    return ggx1 * ggx2;
-}
-
-
-vec3 fresnelSchlick(float cosTheta, vec3 F0)
-{
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
-
-
-vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
-{
-    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
-
-
-float ShadowCalculation(vec4 fragPosLightSpace, int layerIndex)
-{
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    projCoords = projCoords * 0.5 + 0.5;
-
-    if(projCoords.z > 1.0)
-        return 0.0;
-
-    float currentDepth = projCoords.z;
-
-    float bias = 0.000001;
-
-    // PCF (Percentage Closer Filtering) pour adoucir les ombres
-    float shadow   = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMaps, 0).xy;
-
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
-            vec2 offset = vec2(x, y) * texelSize;
-            vec2 uv = projCoords.xy + offset;
-            float pcfDepth = texture(shadowMaps, vec3(uv, layerIndex)).r;
-            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
-        }
-    }
-    return shadow / 9.0;
-}
-
+float DistributionGGX(vec3 N, vec3 H, float roughness);
+float GeometrySchlickGGX(float NdotV, float roughness);
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
+vec3 fresnelSchlick(float cosTheta, vec3 F0);
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness);
+float ShadowCalculation(vec4 fragPosLightSpace, int layerIndex);
 
 
 void main()
@@ -197,22 +124,35 @@ void main()
         int type = lightData.shadowMapLayers[i].y;
         bool castShadow = lightData.shadowMapLayers[i].z != 0;
 
-        vec3 L            = normalize(lightData.positions[i].xyz - worldPos);
-        vec3 H            = normalize(V + L);
-        float distance    = length(lightData.positions[i].xyz - worldPos);
-        float smoothRange = clamp(1.0 - distance / range, 0.0, 1.0);
-        float attenuation = (1 / (distance * distance)) * smoothRange;
-        vec3 radiance     = lightData.colors[i].xyz * intensity * attenuation;
+        vec3 diff = lightData.positions[i].xyz - worldPos;
+        float attenuation = 1.0f;
+        vec3 radiance = vec3(0);
+        vec3 L = vec3(0,1,0);
+        if(type == TYPE_DIRECTIONLIGHT){
+            diff        = direction;
+            L           = normalize(diff);
+            radiance    = lightData.colors[i].xyz * intensity;
+        } else if (type == TYPE_POINTLIGHT || type == TYPE_SPOTLIGHT) {
+            diff = lightData.positions[i].xyz - worldPos;
+            L    = normalize(diff);
 
-        if(type == TYPE_SPOTLIGHT){
-            float innerCos = cos(innerCutoff * 0.01);
-            float outerCos = cos(outerCutoff * 0.01);
-            float theta = dot(L, direction);
-            float coneFactor = smoothstep(outerCos, innerCos, theta);
+            float distance    = length(diff);
+            float smoothRange = clamp(1.0 - distance / range, 0.0, 1.0);
+            attenuation = (1 / (distance * distance)) * smoothRange;
 
-            radiance *= coneFactor;
+            radiance     = lightData.colors[i].xyz * intensity * attenuation;
+
+            if(type == TYPE_SPOTLIGHT){
+                float innerCos = cos(innerCutoff * 0.01);
+                float outerCos = cos(outerCutoff * 0.01);
+                float theta = dot(L, direction);
+                float coneFactor = smoothstep(outerCos, innerCos, theta);
+
+                radiance *= coneFactor;
+            }
         }
 
+        vec3 H            = normalize(V + L);
 
         // cook-torrance brdf
         float NDF = DistributionGGX(N, H, roughness);
@@ -238,28 +178,93 @@ void main()
             shadowFactor = 1.0 - shadow;
         }
 
-        Lo += shadowFactor * (kD * albedo / PI + specular) * radiance * NdotL * 50.f;
+        Lo += shadowFactor * (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    // ambient lighting (we now use IBL as the ambient term)
-    vec3 kS  = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
-    vec3 kD = 1.0 - kS;
-    kD *= 1.0 - metallic;
-
-
-
     vec3 irradiance = vec3(0.5);
-    vec3 diffuse = irradiance * albedo;
-    vec3 ambient = (kD * diffuse) * ao;
-    vec3 pbr     = ambient + Lo;
+    vec3 ambient    = irradiance * albedo * ao;
+    // vec3 finalColor = ambient + Lo;
+    vec3 finalColor = Lo;
 
 
+    // Tone mapping
+    finalColor = finalColor / (finalColor + vec3(1.0));
+    finalColor = pow(finalColor, vec3(1.0/2.2));
 
-
-
-
-
-
-    color.rgb = pbr * ao;
+    color.rgb = finalColor;
     color.a   = 1.0;
 }
+
+float DistributionGGX(vec3 N, vec3 H, float roughness)
+{
+    float a      = roughness * roughness;
+    float a2     = a * a;
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+
+    float num   = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom       = PI * denom * denom;
+
+    return num / denom;
+}
+
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+    // float k = (roughness * roughness) / 2.f;
+
+    float num   = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+
+    return num / denom;
+}
+
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2  = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1  = GeometrySchlickGGX(NdotL, roughness);
+
+    return ggx1 * ggx2;
+}
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+float ShadowCalculation(vec4 fragPosLightSpace, int layerIndex)
+{
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    if(projCoords.z > 1.0)
+        return 0.0;
+
+    float currentDepth = projCoords.z;
+
+    float bias = 0.000001;
+
+    // PCF (Percentage Closer Filtering) pour adoucir les ombres
+    float shadow   = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMaps, 0).xy;
+
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            vec2 offset = vec2(x, y) * texelSize;
+            vec2 uv = projCoords.xy + offset;
+            float pcfDepth = texture(shadowMaps, vec3(uv, layerIndex)).r;
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    return shadow / 9.0;
+}
+

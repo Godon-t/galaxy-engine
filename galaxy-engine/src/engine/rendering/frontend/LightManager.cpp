@@ -3,7 +3,23 @@
 #include "engine/rendering/frontend/CameraManager.hpp"
 #include "engine/rendering/Renderer.hpp"
 
+#include <algorithm>
+#include <cmath>
+
 namespace Galaxy {
+namespace {
+bool setLightDirection(mat4& transform, const vec3& direction)
+{
+    const vec3 forward = direction;
+    const vec3 up = std::abs(forward.y) > 0.99f ? vec3(1, 0, 0) : vec3(0, 1, 0);
+    const mat4 orientation = inverse(lookAt(vec3(0), forward, up));
+    transform[0] = orientation[0];
+    transform[1] = orientation[1];
+    transform[2] = orientation[2];
+    return true;
+}
+}
+
 LightManager::LightManager()
     : m_gridDimX(0)
     , m_gridDimY(0)
@@ -13,7 +29,7 @@ LightManager::LightManager()
     , m_textureHeight(1024)
     , m_probeResolution(512)
     , m_dirty(true)
-    , m_maxLightCount(32)
+    , m_maxLightCount(maxLightCount)
 {
     for(size_t i=0; i<m_maxLightCount; i++){
         m_availableIDs.emplace(static_cast<lightID>(i));
@@ -48,6 +64,7 @@ void LightManager::init()
     // resizeProbeFieldGrid(2, 2, 2, 100.f);
 
     m_lightsUBO = backend.instantiateUBO(sizeof(m_lightUniformData));
+    m_dirty = true;
 
     // auto& frontend = Renderer::getInstance().getFrontend();
     // frontend.bindUBO(m_lightsUBO, 0);
@@ -72,46 +89,96 @@ int LightManager::registerLight(LightData desc)
     }
 }
 
+int LightManager::registerDirectionalLight(const vec3& direction, const vec3& color, float intensity)
+{
+    LightData light;
+    light.type = DIRECTIONLIGHT;
+    light.color = color;
+    light.intensity = intensity;
+    light.range = 0.0f;
+    light.innerCutoff = 0.0f;
+    light.outerCutoff = 0.0f;
+    setLightDirection(light.transformationMatrix, direction);
+    return registerLight(light);
+}
+
+LightData* LightManager::findLight(lightID id)
+{
+    const auto found = m_lights.find(id);
+    if (found == m_lights.end()) {
+        GLX_CORE_WARN("Cannot update unregistered light {0}", id);
+        return nullptr;
+    }
+    return &found->second;
+}
+
+void LightManager::updateLightDirection(lightID id, const vec3& direction)
+{
+    if (auto* light = findLight(id)) {
+        if (setLightDirection(light->transformationMatrix, direction))
+            m_dirty = true;
+    }
+}
+
 void LightManager::updateLightTransform(lightID id, math::mat4 transform)
 {
-    m_lights[id].transformationMatrix = transform;
-    m_dirty = true;
+    if (auto* light = findLight(id)) {
+        if (light->type == DIRECTIONLIGHT && !setLightDirection(transform, -vec3(transform[2])))
+            return;
+        light->transformationMatrix = transform;
+        m_dirty = true;
+    }
 }
 
 void LightManager::updateLightColor(lightID id, math::vec3 color)
 {
-    m_lights[id].color      = color;
-    m_dirty = true;
+    if (auto* light = findLight(id)) {
+        light->color = color;
+        m_dirty = true;
+    }
 }
 
 void LightManager::updateLightIntensity(lightID id, float intensity)
 {
-    m_lights[id].intensity  = intensity;
-    m_dirty = true;
+    if (auto* light = findLight(id)) {
+        light->intensity = intensity;
+        m_dirty = true;
+    }
 }
 
 void LightManager::updateLightRange(lightID id, float range)
 {
-    m_lights[id].range      = range;
-    m_dirty = true;
+    if (auto* light = findLight(id)) {
+        light->range = range;
+        m_dirty = true;
+    }
 }
 
 void LightManager::updateLightCutoffs(lightID id, float innerCutoff, float outerCutoff)
 {
-    m_lights[id].innerCutoff      = innerCutoff;
-    m_lights[id].outerCutoff      = outerCutoff;
-    m_dirty = true;
+    if (auto* light = findLight(id)) {
+        light->innerCutoff = innerCutoff;
+        light->outerCutoff = outerCutoff;
+        m_dirty = true;
+    }
 }
 
 void LightManager::updateLightCastShadow(lightID id, bool state)
 {
-    m_lights[id].castShadow = state;
-    m_dirty = true;
+    if (auto* light = findLight(id)) {
+        if (state && light->type == DIRECTIONLIGHT) {
+            GLX_CORE_WARN("Directional light shadows require an orthographic shadow volume and are not supported yet");
+            return;
+        }
+        light->castShadow = state;
+        m_dirty = true;
+    }
 }
 
 void LightManager::unregisterLight(int id)
 {
-    m_lights.erase(id);
+    if (m_lights.erase(id) == 0)
+        return;
     m_availableIDs.emplace(id);
     m_dirty = true;
 }
@@ -148,29 +215,31 @@ std::vector<vec3> LightManager::getProbePositions()
 
 UpdateUBOCommand LightManager::getLightUboUpdate()
 {
-    vec2 viewportDimmension = vec2(1024, 1024);
-    for (auto& light : m_lights) {
-        auto& lightData = light.second;
-        mat4 projMat = lightData.getProjection(viewportDimmension);
-
-        m_lightUniformData.colors[lightData.idx]    = vec4(lightData.color, 1.0);
-        m_lightUniformData.positions[lightData.idx] = lightData.transformationMatrix[3];
+    m_lightUniformData = {};
+    const auto lights = getLightsData();
+    m_lightUniformData.count = static_cast<int>(lights.size());
+    const vec2 viewportDimmension(1024);
+    // GPU entries are contiguous even when public light IDs have gaps.
+    for (std::size_t index = 0; index < lights.size(); ++index) {
+        const auto& lightData = lights[index];
+        const bool directional = lightData.type == DIRECTIONLIGHT;
+        m_lightUniformData.colors[index]    = vec4(lightData.color, 1.0);
+        m_lightUniformData.positions[index] = directional ? vec4(0.0f) : lightData.transformationMatrix[3];
         const vec3 direction = normalize(-vec3(lightData.transformationMatrix[2]));
-        m_lightUniformData.directions[lightData.idx] = vec4(direction, 0.0f);
-        m_lightUniformData.params[lightData.idx].x  = lightData.intensity;
-        m_lightUniformData.params[lightData.idx].y  = lightData.range;
-        m_lightUniformData.params[lightData.idx].z  = lightData.innerCutoff;
-        m_lightUniformData.params[lightData.idx].w  = lightData.outerCutoff;
-        m_lightUniformData.shadowMapLayers[lightData.idx].layer = lightData.shadowMapLayer;
-        m_lightUniformData.shadowMapLayers[lightData.idx].type = lightData.type;
-        m_lightUniformData.shadowMapLayers[lightData.idx].castShadow = lightData.castShadow ? 1 : 0;
-
-
-        mat4 view             = CameraManager::processViewMatrix(lightData.transformationMatrix);
-        mat4 lightSpaceMatrix = projMat * view;
-        m_lightUniformData.lightMatrices[lightData.idx] = lightSpaceMatrix;
+        m_lightUniformData.directions[index] = vec4(direction, 0.0f);
+        m_lightUniformData.params[index] = vec4(lightData.intensity,
+            directional ? 0.0f : lightData.range,
+            directional ? 0.0f : lightData.innerCutoff,
+            directional ? 0.0f : lightData.outerCutoff);
+        m_lightUniformData.shadowMapLayers[index].layer = lightData.shadowMapLayer;
+        m_lightUniformData.shadowMapLayers[index].type = lightData.type;
+        m_lightUniformData.shadowMapLayers[index].castShadow = lightData.castShadow ? 1 : 0;
+        m_lightUniformData.lightMatrices[index] = directional ? mat4(1.0f)
+            : lightData.getProjection(viewportDimmension)
+                * CameraManager::processViewMatrix(lightData.transformationMatrix);
     }
 
+    m_dirty = false;
     return UpdateUBOCommand::make(m_lightsUBO, m_lightUniformData);
 }
 
@@ -183,6 +252,7 @@ const std::vector<LightData> LightManager::getLightsData() const
     for (auto& [id, lightData] : m_lights) {
         res.push_back(lightData);
     }
+    std::sort(res.begin(), res.end(), [](const LightData& lhs, const LightData& rhs) { return lhs.idx < rhs.idx; });
 
     return res;
 }
@@ -310,8 +380,10 @@ vec2 LightManager::getProbeTexCoord(unsigned int probeGridIdx)
     return texturePos;
 }
 
-mat4 LightData::getProjection(const vec2& viewportDimmension)
+mat4 LightData::getProjection(const vec2& viewportDimmension) const
 {
+    if (type == DIRECTIONLIGHT)
+        return mat4(1.0f);
     return CameraManager::processProjectionMatrix(viewportDimmension, 0.01f, range, outerCutoff);
 }
 

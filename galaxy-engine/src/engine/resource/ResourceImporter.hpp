@@ -239,9 +239,11 @@ struct ResourceImporter {
 
         if (extension == ".jpg" || extension == ".png") {
             importImage(file);
-        }
-        if (extension == ".gltf" || extension == ".obj") {
+        } else if (extension == ".gltf" || extension == ".glb" || extension == ".obj") {
             importGltf(file);
+        } else {
+            GLX_CORE_ERROR("Unsuported file ({0}) to import", extension);
+            return false;
         }
         Project::savePaths();
         return true;

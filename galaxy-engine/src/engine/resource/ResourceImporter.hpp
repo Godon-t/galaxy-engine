@@ -148,14 +148,14 @@ struct ResourceImporter {
         }
 
         float value = 0.f;
-        tryImport(aiTextureType_SPECULAR, METALLIC);
+        tryImport(aiTextureType_METALNESS, METALLIC);
         if (material->Get(AI_MATKEY_METALLIC_FACTOR, value) == AI_SUCCESS) {
             resource->setMetallic(value);
         }
 
         tryImport(aiTextureType_NORMALS, NORMAL);
 
-        tryImport(aiTextureType_SHININESS, ROUGHNESS);
+        tryImport(aiTextureType_DIFFUSE_ROUGHNESS, ROUGHNESS);
         if (material->Get(AI_MATKEY_ROUGHNESS_FACTOR, value) == AI_SUCCESS) {
             resource->setRoughness(value);
         }

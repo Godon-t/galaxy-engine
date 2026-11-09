@@ -42,7 +42,7 @@ uniform float transparencyVal = 1.0f;
 
 uniform sampler2D albedoMap;
 uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
+uniform sampler2D metallicRoughnessMap;
 uniform sampler2D roughnessMap;
 uniform sampler2D aoMap;
 
@@ -94,8 +94,8 @@ void main()
     float transparency = transparencyVal * (useAlbedoMap ? texture(albedoMap, v_texCoords).a : 1.0);
     albedo             = useAlbedoMap ? texture(albedoMap, v_texCoords).rgb : albedoVal;
     normal             = useNormalMap ? getNormalFromNormalMap() : v_normal;
-    metallic           = useMetallicMap ? texture(metallicMap, v_texCoords).r : metallicVal;
-    roughness          = useRoughnessMap ? texture(roughnessMap, v_texCoords).r : roughnessVal;
+    roughness          = useRoughnessMap ? texture(metallicRoughnessMap, v_texCoords).g : roughnessVal;
+    metallic           = useMetallicMap ? texture(metallicRoughnessMap, v_texCoords).b : metallicVal;
     ao                 = useAoMap ? texture(aoMap, v_texCoords).r : aoVal;
 
     if(transparency > 0.1){

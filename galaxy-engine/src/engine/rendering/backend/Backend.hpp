@@ -9,6 +9,8 @@
 #include "rendering/GPUInstances/VisualInstance.hpp"
 #include "rendering/GPUInstances/Program.hpp"
 #include "rendering/GPUInstances/GpuResourceRegistry.hpp"
+#include "rendering/RenderGraph/RenderGraphExecution.hpp"
+#include "rendering/RenderGraph/RenderGraph.hpp"
 #include "resource/Image.hpp"
 #include "resource/Material.hpp"
 #include "resource/Mesh.hpp"
@@ -134,6 +136,12 @@ private:
     void bindPBRMaterial(const MaterialInstance& material);
     void releaseMaterialTextures(const MaterialInstance& material);
     void processCommand(const UpdateUBOCommand& command);
+
+    void executeInvocation(
+        const RenderPassResources& pass, 
+        const RenderState& renderState, 
+        const RenderPassInvocation& invocation
+    );
 
     Program* getActiveProgram();
     const Program* getActiveProgram() const;

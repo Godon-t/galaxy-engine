@@ -5,8 +5,6 @@
 #include "gl_headers.hpp"
 #include "pch.hpp"
 #include "rendering/OpenglHelper.hpp"
-#include "rendering/RenderGraph/RenderGraphExecution.hpp"
-#include "rendering/RenderGraph/RenderGraph.hpp"
 
 namespace Galaxy {
 Backend::Backend(size_t maxSize)
@@ -169,8 +167,20 @@ void applyState(const RenderState& state){
 void Backend::execute(RenderGraphExecution& execution){
     const auto& compiledGraph = execution.graph.compilation;
 
-    GraphFramebufferHandle currentFramebuffer;
+    for (const auto& pass : execution.passes) {
+        for(const auto& invocation : pass.invocations){
+            const auto& renderState = compiledGraph.getPassDescription(pass.pass).state;
+            const auto& passResource = execution.graph.getRenderPass(pass.pass);
 
+            executeInvocation(passResource, renderState, invocation);
+        }
+    }
+}
+
+
+void Backend::executeInvocation(const RenderPassResources& pass, const RenderState& renderState, const RenderPassInvocation& invocation)
+{
+    ////// GraphFramebufferHandle is a variant so these visit are necessary
     auto unbind = [this](const GraphFramebufferHandle& framebuffer) {
         std::visit([this](const auto& typedHandle) {
             if (typedHandle)
@@ -194,108 +204,100 @@ void Backend::execute(RenderGraphExecution& execution){
             bindFramebuffer(typedHandle, targetLayer);
         }, framebuffer);
     };
+    //////////////
 
-    for (const auto& entry : execution.invocationOrder) {
-        const auto& pass = execution.graph.getRenderPass(entry.pass);
-        auto& invocation = execution.getPass(entry.pass).invocations[entry.invocationIndex];
-        const auto& targetFramebuffer = invocation.targetFramebuffer.value_or(pass.targetFramebufferHandle);
 
-        if (invocation.targetColorCubemap) {
-            const auto* framebuffer = std::get_if<CubemapFramebufferHandle>(&targetFramebuffer);
-            if (framebuffer == nullptr
-                || !attachColorCubemapToFramebuffer(*invocation.targetColorCubemap, *framebuffer, 0)) {
-                GLX_CORE_ERROR("Cannot render to the requested color cubemap");
-                continue;
-            }
-        }
+    const auto& targetFramebuffer = invocation.targetFramebuffer.value_or(pass.targetFramebufferHandle);
 
-        setActiveProgram(pass.program);
-        const auto& renderState = compiledGraph.getPassDescription(entry.pass).state;
-
-        const bool framebufferChanged = currentFramebuffer != targetFramebuffer;
-        if(RenderGraph::hasFramebuffer(currentFramebuffer) && framebufferChanged)
-            unbind(currentFramebuffer);
-
-        resize(targetFramebuffer, invocation.viewportSize);
-        bind(targetFramebuffer, invocation.targetLayer);
-        currentFramebuffer = targetFramebuffer;
-
-        glClearColor(
-            invocation.clearColor.r,
-            invocation.clearColor.g,
-            invocation.clearColor.b,
-            invocation.clearColor.a);
-        glViewport(
-            invocation.viewportPosition.x,
-            invocation.viewportPosition.y,
-            invocation.viewportSize.x,
-            invocation.viewportSize.y);
-        applyState(renderState);
-
-        Program& currentProg = *getActiveProgram();
-        // GLX-TODO: no diff between viewParameters and parameters
-        for(auto& setParameter : invocation.viewParameters)
-            applyShaderParameter(currentProg, setParameter.first, setParameter.second);
-
-        for(auto& setParameter : invocation.parameters)
-            applyShaderParameter(currentProg, setParameter.first, setParameter.second);
-
-        for (const auto& update : invocation.updates)
-            processCommand(update);
-
-        for(auto& binding : invocation.uniformBindings){
-            auto* ubo = m_uboInstances.get(binding.buffer);
-            if(ubo != nullptr)
-                ubo->bind(binding.bindingPoint);
-        }
-
-        for(size_t i = 0; i<pass.inputTextures.size(); i++)
-        {
-            std::visit([this, &pass, i](const auto& textureHandle) {
-                using Handle = std::decay_t<decltype(textureHandle)>;
-                if constexpr (std::is_same_v<Handle, TextureHandle>) {
-                    Texture* texture = m_textureInstances.tryGet(textureHandle);
-                    if (texture == nullptr) {
-                        GLX_CORE_ERROR("Cannot bind an invalid texture handle (slot={0}, generation={1})",
-                            textureHandle.index(), textureHandle.generation());
-                        return;
-                    }
-                    texture->activate(static_cast<int>(pass.inputTexturesLocations[i]));
-                } else {
-                    Cubemap* cubemap = m_cubemapInstances.tryGet(textureHandle);
-                    if (cubemap == nullptr) {
-                        GLX_CORE_ERROR("Cannot bind an invalid cubemap handle (slot={0}, generation={1})",
-                            textureHandle.index(), textureHandle.generation());
-                        return;
-                    }
-                    cubemap->activate(static_cast<int>(pass.inputTexturesLocations[i]));
-                }
-            }, pass.inputTextures[i]);
-        }
-
-        for (const auto& binding : invocation.textureBindings) {
-            const int location = currentProg.getUniformLocation(binding.samplerName);
-            std::visit([this, location](const auto& textureHandle) {
-                using Handle = std::decay_t<decltype(textureHandle)>;
-                if constexpr (std::is_same_v<Handle, TextureHandle>)
-                    m_textureInstances.get(textureHandle)->activate(location);
-                else
-                    m_cubemapInstances.get(textureHandle)->activate(location);
-            }, binding.texture);
-        }
-
-        for (const RenderItem& item : invocation.items) {
-            if (renderState.bindMaterials) {
-                if (item.material)
-                    bindMaterial(*item.material);
-                else
-                    bindPBRMaterial(MaterialInstance {});
-            }
-            draw(item.geometry, item.transform.getGlobalModelMatrix());
+    if (invocation.targetColorCubemap) {
+        const auto* framebuffer = std::get_if<CubemapFramebufferHandle>(&targetFramebuffer);
+        if (framebuffer == nullptr
+            || !attachColorCubemapToFramebuffer(*invocation.targetColorCubemap, *framebuffer, 0)) {
+            GLX_CORE_ERROR("Cannot render to the requested color cubemap");
+            return;
         }
     }
-    if(RenderGraph::hasFramebuffer(currentFramebuffer))
-        unbind(currentFramebuffer);
+
+    setActiveProgram(pass.program);
+
+    resize(targetFramebuffer, invocation.viewportSize);
+    bind(targetFramebuffer, invocation.targetLayer);
+
+    glClearColor(
+        invocation.clearColor.r,
+        invocation.clearColor.g,
+        invocation.clearColor.b,
+        invocation.clearColor.a);
+    glViewport(
+        invocation.viewportPosition.x,
+        invocation.viewportPosition.y,
+        invocation.viewportSize.x,
+        invocation.viewportSize.y);
+    applyState(renderState);
+
+    Program& currentProg = *getActiveProgram();
+    // GLX-TODO: no diff between viewParameters and parameters
+    for(auto& setParameter : invocation.viewParameters)
+        applyShaderParameter(currentProg, setParameter.first, setParameter.second);
+
+    for(auto& setParameter : invocation.parameters)
+        applyShaderParameter(currentProg, setParameter.first, setParameter.second);
+
+    for (const auto& update : invocation.updates)
+        processCommand(update);
+
+    for(auto& binding : invocation.uniformBindings){
+        auto* ubo = m_uboInstances.get(binding.buffer);
+        if(ubo != nullptr)
+            ubo->bind(binding.bindingPoint);
+    }
+
+    for(size_t i = 0; i<pass.inputTextures.size(); i++)
+    {
+        std::visit([this, &pass, i](const auto& textureHandle) {
+            using Handle = std::decay_t<decltype(textureHandle)>;
+            if constexpr (std::is_same_v<Handle, TextureHandle>) {
+                Texture* texture = m_textureInstances.tryGet(textureHandle);
+                if (texture == nullptr) {
+                    GLX_CORE_ERROR("Cannot bind an invalid texture handle (slot={0}, generation={1})",
+                        textureHandle.index(), textureHandle.generation());
+                    return;
+                }
+                texture->activate(static_cast<int>(pass.inputTexturesLocations[i]));
+            } else {
+                Cubemap* cubemap = m_cubemapInstances.tryGet(textureHandle);
+                if (cubemap == nullptr) {
+                    GLX_CORE_ERROR("Cannot bind an invalid cubemap handle (slot={0}, generation={1})",
+                        textureHandle.index(), textureHandle.generation());
+                    return;
+                }
+                cubemap->activate(static_cast<int>(pass.inputTexturesLocations[i]));
+            }
+        }, pass.inputTextures[i]);
+    }
+
+    for (const auto& binding : invocation.textureBindings) {
+        const int location = currentProg.getUniformLocation(binding.samplerName);
+        std::visit([this, location](const auto& textureHandle) {
+            using Handle = std::decay_t<decltype(textureHandle)>;
+            if constexpr (std::is_same_v<Handle, TextureHandle>)
+                m_textureInstances.get(textureHandle)->activate(location);
+            else
+                m_cubemapInstances.get(textureHandle)->activate(location);
+        }, binding.texture);
+    }
+
+    for (const RenderItem& item : invocation.items) {
+        if (renderState.bindMaterials) {
+            if (item.material)
+                bindMaterial(*item.material);
+            else
+                bindPBRMaterial(MaterialInstance {});
+        }
+        draw(item.geometry, item.transform.getGlobalModelMatrix());
+    }
+
+    unbind(targetFramebuffer);
 }
 
 void Backend::bindFramebuffer(FramebufferHandle fb, int targetLayer){

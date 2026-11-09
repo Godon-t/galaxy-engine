@@ -37,7 +37,6 @@ namespace Galaxy
         std::string samplerName;
     };
 
-    // One concrete rendering of a pass: one camera, light, cubemap face, etc.
     struct RenderPassInvocation {
         std::vector<RenderItem> items;
         ShaderParameterSet parameters;
@@ -60,25 +59,17 @@ namespace Galaxy
     struct RenderPassExecution {
         RenderPassId pass;
 
-        // Zero invocations skip this pass for the frame; several repeat only this pass.
         std::vector<RenderPassInvocation> invocations;
     };
 
-    struct RenderPassInvocationIndex {
-        RenderPassId pass;
-        std::size_t invocationIndex;
-    };
-
-    // Execution phase: dynamic work submitted for one frame to the unique render graph.
     struct RenderGraphExecution {
         explicit RenderGraphExecution(RenderGraph& renderGraph);
 
         [[nodiscard]] RenderPassExecution& getPass(RenderPassId pass);
         [[nodiscard]] RenderPassInvocation& addInvocation(RenderPassId pass);
+        void addInvocation(RenderPassId pass, RenderPassInvocation invocation);
 
         std::vector<RenderPassExecution> passes;
-        // Preserve complete view pipelines while their passes share intermediate textures.
-        std::vector<RenderPassInvocationIndex> invocationOrder;
         RenderGraph& graph;
     };
 

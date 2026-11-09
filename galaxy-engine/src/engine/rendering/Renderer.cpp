@@ -71,6 +71,8 @@ void Renderer::renderFrame()
     m_backend.execute(execution);
     
     m_frontend.clearContext();
+
+    m_sceneFramebuffer = m_frontend.getFinalFramebuffer();
 }
 
 // void Renderer::applyFilterOnCubemap(GeometryHandle skyboxMesh, CubemapHandle source, CubemapHandle target, FilterEnum filter)

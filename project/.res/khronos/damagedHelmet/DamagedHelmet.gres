@@ -1,0 +1,5 @@
+Type: Mesh
+ExternalFile: khronos\damagedHelmet\DamagedHelmet.gltf
+SubMeshes:
+  - HasMaterial: true
+    MaterialID: 16084162259486949506

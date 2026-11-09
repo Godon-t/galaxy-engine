@@ -3,11 +3,23 @@ Scenes:
   - Id: 7857652255564026288
     Path: MainScene
 Resources:
-  - Id: 13007285211879087664
-    Path: .res/environment/cobblestone_parish_road_4k.gres
+  - Id: 17070358701402422630
+    Path: .res/khronos\damagedHelmet/Default_normal.gres
+  - Id: 15608180991898639922
+    Path: .res/khronos\damagedHelmet/DamagedHelmet.gres
   - Id: 4228649165822332540
     Path: .res/testShapes/sphere_material_0.gres
-  - Id: 9731669312543324129
-    Path: .res/environment/historic_cloister_passage_8k.gres
   - Id: 212840179636608568
     Path: .res/testShapes/sphere.gres
+  - Id: 9731669312543324129
+    Path: .res/environment/historic_cloister_passage_8k.gres
+  - Id: 13171661056041708395
+    Path: .res/environment/teufelsberg_inner_4k.gres
+  - Id: 16084162259486949506
+    Path: .res/khronos\damagedHelmet/DamagedHelmet_material_0.gres
+  - Id: 8726579003176529483
+    Path: .res/khronos\damagedHelmet/Default_albedo.gres
+  - Id: 14061661091438673318
+    Path: .res/khronos\damagedHelmet/Default_AO.gres
+  - Id: 15292460582698067566
+    Path: .res/khronos\damagedHelmet/Default_metalRoughness.gres

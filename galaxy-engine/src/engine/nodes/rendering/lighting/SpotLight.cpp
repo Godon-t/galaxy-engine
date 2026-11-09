@@ -11,7 +11,6 @@ SpotLight::SpotLight(std::string name)
     : Light(name)
     , m_innerCutoffAngle(20.0f)
     , m_outerCutoffAngle(45.0f)
-    , m_castShadows(false)
     , m_initialized(false)
 {
 }

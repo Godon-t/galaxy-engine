@@ -32,7 +32,6 @@ private:
     float m_innerCutoffAngle;
     float m_outerCutoffAngle;
 
-    bool m_castShadows;
     bool m_initialized;
 };
 }

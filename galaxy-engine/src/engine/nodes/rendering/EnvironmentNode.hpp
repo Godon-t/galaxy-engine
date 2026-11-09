@@ -40,6 +40,7 @@ private:
     void prepareEnvironmentMap();
 
     RenderPassId m_passEquirectangularToCubemapId;
+    RenderPassId m_passIrradianceConvolutionId;
     GeometryHandle m_captureCube;
     TextureHandle m_environmentSourceTexture;
 

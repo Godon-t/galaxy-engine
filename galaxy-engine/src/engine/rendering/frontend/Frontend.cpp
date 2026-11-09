@@ -57,6 +57,10 @@ GraphTextureId Frontend::getEnvironmentGraphTexture()
     return m_environmentTextureId;
 }
 
+GraphTextureId Frontend::getIrradianceGraphTexture()
+{
+    return m_irradianceTextureId;
+}
 
 Frontend::Frontend(Backend& backend)
     : m_backend(backend)
@@ -167,7 +171,15 @@ Frontend::Frontend(Backend& backend)
     environmentTexture.wrapT = TextureWrap::CLAMP_TO_EDGE;
     environmentTexture.wrapR = TextureWrap::CLAMP_TO_EDGE;
     m_environmentTextureId = m_renderGraphDeclaration.addTexture(environmentTexture);
-    const auto envTexId = m_environmentTextureId;
+
+    GraphTextureDesc irradianceTexture;
+    irradianceTexture.name = "irradiance";
+    irradianceTexture.format = TextureFormat::RGB16F;
+    irradianceTexture.dimension = TextureDimension::Cubemap;
+    irradianceTexture.wrapS = TextureWrap::CLAMP_TO_EDGE;
+    irradianceTexture.wrapT = TextureWrap::CLAMP_TO_EDGE;
+    irradianceTexture.wrapR = TextureWrap::CLAMP_TO_EDGE;
+    m_irradianceTextureId = m_renderGraphDeclaration.addTexture(irradianceTexture);
 
     RenderPassDesc lightingDesc(opaquePBRDesc);
     lightingDesc.associatedProgram = backend.loadShader(engineRes("shaders/post_processing/direct_lighting.glsl"));
@@ -178,7 +190,8 @@ Frontend::Frontend(Backend& backend)
     lightingDesc.inputTextures.push_back({materialTexId, "materialBuffer"});
     lightingDesc.inputTextures.push_back({hardwareDepthId, "depthBuffer"});
     lightingDesc.inputTextures.push_back({shadowTextureId, "shadowMaps"});
-    lightingDesc.inputTextures.push_back({envTexId, "environmentMap"});
+    lightingDesc.inputTextures.push_back({m_environmentTextureId, "environmentMap"});
+    lightingDesc.inputTextures.push_back({m_irradianceTextureId, "irradianceMap"});
     lightingDesc.state.clear = true;
     lightingDesc.state.bindMaterials = false;
     lightingDesc.state.depthTest = false;
@@ -208,7 +221,7 @@ Frontend::Frontend(Backend& backend)
     noPostProcessingDesc.name = "post_processing_no";
     noPostProcessingDesc.state.clear = true;
     noPostProcessingDesc.inputTextures.push_back({lightingColorTexId, "sceneBuffer"});
-    noPostProcessingDesc.inputTextures.push_back({envTexId, "skybox"});
+    noPostProcessingDesc.inputTextures.push_back({m_environmentTextureId, "skybox"});
     noPostProcessingDesc.inputTextures.push_back({hardwareDepthId, "depthBuffer"});
     
     RenderPassDesc postProcessingDesc;
@@ -323,6 +336,8 @@ RenderGraphExecution Frontend::buildFrameExecution()
     for(auto& invocation: m_renderPassInvocations){
         graphExecution.addInvocation(invocation.first, invocation.second);
     }
+
+    m_renderPassInvocations.clear();
 
     addShadowViews(graphExecution);
 

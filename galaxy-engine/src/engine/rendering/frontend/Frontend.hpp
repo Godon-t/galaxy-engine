@@ -28,6 +28,7 @@ public:
     void addCamera(Camera camera) { m_frameCameras.push_back(std::move(camera)); }
     void setEnvironmentMap(ResourceHandle<CubemapResource>& cubemapRes);
     GraphTextureId getEnvironmentGraphTexture();
+    GraphTextureId getIrradianceGraphTexture();
 
     explicit Frontend(Backend& backend);
     ~Frontend();
@@ -54,11 +55,13 @@ public:
     
 private:
     Backend& m_backend;
-    std::size_t m_environmentMapRequest = 0;
     EnvironmentMapSource m_environmentMap;
     TextureHandle m_environmentSourceTexture;
-    GraphTextureId m_environmentTextureId;
     bool m_hasEnvironmentMap = false;
+
+    GraphTextureId m_environmentTextureId;
+    GraphTextureId m_irradianceTextureId;
+
     std::shared_ptr<int> m_lifetimeToken = std::make_shared<int>(0);
 
     RenderGraphDeclaration m_renderGraphDeclaration;

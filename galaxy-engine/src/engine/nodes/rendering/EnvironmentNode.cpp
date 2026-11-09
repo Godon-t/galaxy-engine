@@ -45,34 +45,40 @@ void EnvironmentNode::enteredRoot()
 
     auto& frontend = Renderer::getInstance().getFrontend();
     auto& backend = Renderer::getInstance().getBackend();
-    const auto program = backend.loadShader(engineRes("shaders/filters/rectangularToCubemap.glsl"));
-    if (!backend.isValid(program))
-        return;
+    const auto rectangularProgram = backend.loadShader(engineRes("shaders/filters/rectangularToCubemap.glsl"));
+    const auto irradianceProgram = backend.loadShader(engineRes("shaders/filters/irradiance.glsl"));
+
 
     m_captureCube = backend.generateCube(2.0f, true, nullptr);
-    if (!backend.isValid(m_captureCube)) {
-        backend.clearProgram(program);
-        return;
-    }
-
-    GraphTextureDesc conversionInput;
-    conversionInput.name = "equirectangular_cubemap";
-    conversionInput.dimension = TextureDimension::Cubemap;
-    conversionInput.format = TextureFormat::RGB16F;
-    conversionInput.wrapS = TextureWrap::CLAMP_TO_EDGE;
-    conversionInput.wrapT = TextureWrap::CLAMP_TO_EDGE;
-    conversionInput.wrapR = TextureWrap::CLAMP_TO_EDGE;
 
     RenderTargetDesc conversionTarget;
     conversionTarget.colorAttachments.push_back(frontend.getEnvironmentGraphTexture());
 
     RenderPassDesc conversion;
     conversion.name = "equirectangular_to_cubemap";
-    conversion.associatedProgram = program;
+    conversion.associatedProgram = rectangularProgram;
     conversion.targetId = frontend.addGraphTarget(conversionTarget);
     conversion.state.depthTest = false;
     conversion.state.depthWrite = false;
     m_passEquirectangularToCubemapId = frontend.addGraphPass(conversion);
+
+
+    
+    RenderTargetDesc irradianceTarget;
+    irradianceTarget.colorAttachments.push_back(frontend.getIrradianceGraphTexture());
+
+    SampledTextureInputDesc irradianceInput;
+    irradianceInput.samplerName = "skybox";
+    irradianceInput.texture = frontend.getEnvironmentGraphTexture();
+
+    RenderPassDesc irradianceFilter;
+    irradianceFilter.name = "irradiance_convolution";
+    irradianceFilter.associatedProgram = irradianceProgram;
+    irradianceFilter.targetId = frontend.addGraphTarget(irradianceTarget);
+    irradianceFilter.state.depthTest = false;
+    irradianceFilter.state.depthWrite = false;
+    irradianceFilter.inputTextures.push_back(irradianceInput);
+    m_passIrradianceConvolutionId = frontend.addGraphPass(irradianceFilter);
 }
 
 void EnvironmentNode::setDirection(const vec3& direction)
@@ -174,6 +180,17 @@ void EnvironmentNode::prepareEnvironmentMap()
             invocation.textureBindings.push_back({ source, "environmentHDR" });
             invocation.items.push_back(RenderItem { m_captureCube });
             renderer.getFrontend().pushPassInvocation(m_passEquirectangularToCubemapId, std::move(invocation));
+
+
+
+            RenderPassInvocation irradianceInvocation;
+            irradianceInvocation.viewParameters["projection"] = projection;
+            irradianceInvocation.viewParameters["view"] = lookAt(vec3(0), directions[face], ups[face]);
+            irradianceInvocation.viewportSize = ivec2(resolution);
+            irradianceInvocation.clearColor = vec4(0.0f);
+            irradianceInvocation.targetLayer = static_cast<int>(face);
+            irradianceInvocation.items.push_back(RenderItem { m_captureCube });
+            renderer.getFrontend().pushPassInvocation(m_passIrradianceConvolutionId, std::move(irradianceInvocation));
         }
     });
 

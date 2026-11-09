@@ -33,6 +33,7 @@ uniform sampler2D materialBuffer;
 uniform sampler2D depthBuffer;
 
 uniform samplerCube environmentMap;
+uniform samplerCube irradianceMap;
 
 
 uniform mat4 inverseProjection;
@@ -85,7 +86,7 @@ void main()
     vec3 albedo     = texture(albedoBuffer, TexCoords).rgb;
     vec3 material = texture(materialBuffer, TexCoords).rgb;
 
-    float roughness = material.x;
+    float roughness = clamp(material.x, 0.045, 1.0);
     float metallic = material.y;
     float ao = material.z;
 
@@ -181,10 +182,13 @@ void main()
         Lo += shadowFactor * (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    vec3 irradiance = texture(environmentMap, N).rgb;
-    vec3 ambient    = irradiance * albedo * ao;
-    // vec3 finalColor = ambient + Lo;
-    vec3 finalColor = Lo;
+
+    vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness); 
+    vec3 kD = 1.0 - kS;
+    vec3 irradiance = texture(irradianceMap, N).rgb;
+    vec3 diffuse = irradiance * albedo;
+    vec3 ambient    = (kD * diffuse) * ao;
+    vec3 finalColor = ambient + Lo;
 
 
     // Tone mapping
@@ -239,7 +243,7 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 {
     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
+}   
 
 float ShadowCalculation(vec4 fragPosLightSpace, int layerIndex)
 {
@@ -251,7 +255,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, int layerIndex)
 
     float currentDepth = projCoords.z;
 
-    float bias = 0.000001;
+    float bias = 0.00001;
 
     // PCF (Percentage Closer Filtering) pour adoucir les ombres
     float shadow   = 0.0;

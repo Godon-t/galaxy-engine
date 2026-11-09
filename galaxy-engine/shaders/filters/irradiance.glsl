@@ -34,7 +34,7 @@ void main()
     vec3 normal = normalize(TexCoords);
 
     vec3 irradiance = vec3(0.0);
-    vec3 up         = vec3(0.0, 1.0, 0.0);
+    vec3 up         = abs(normal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(0.0, 0.0, 1.0);
     vec3 right      = normalize(cross(up, normal));
     up              = normalize(cross(normal, right));
 

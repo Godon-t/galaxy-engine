@@ -92,11 +92,21 @@ void main()
     float metallic, roughness, ao;
 
     float transparency = transparencyVal * (useAlbedoMap ? texture(albedoMap, v_texCoords).a : 1.0);
-    albedo             = useAlbedoMap ? texture(albedoMap, v_texCoords).rgb : albedoVal;
-    normal             = useNormalMap ? getNormalFromNormalMap() : v_normal;
-    roughness          = useRoughnessMap ? texture(metallicRoughnessMap, v_texCoords).g : roughnessVal;
-    metallic           = useMetallicMap ? texture(metallicRoughnessMap, v_texCoords).b : metallicVal;
-    ao                 = useAoMap ? texture(aoMap, v_texCoords).r : aoVal;
+    albedo             = useAlbedoMap ? 
+        texture(albedoMap, v_texCoords).rgb * albedoVal : 
+        albedoVal;
+    normal             = useNormalMap ? 
+        getNormalFromNormalMap() : 
+        v_normal;
+    roughness          = useRoughnessMap ? 
+        texture(metallicRoughnessMap, v_texCoords).g * roughnessVal: 
+        roughnessVal;
+    metallic           = useMetallicMap ? 
+        texture(metallicRoughnessMap, v_texCoords).b * metallicVal: 
+        metallicVal;
+    ao                 = useAoMap ? 
+        texture(aoMap, v_texCoords).r : 
+        aoVal;
 
     if(transparency > 0.1){
         // gDepth = vec4(length(v_camPos - v_worldPos) / zFar, ao, 0, 1);
@@ -106,7 +116,7 @@ void main()
         gNormal.rgb = (normal + vec3(1.0)) * 0.5;
         gNormal.a = 1.0;
 
-        gMaterial = vec4(roughness, metallic, ao, 0.0);
+        gMaterial = vec4(roughness, metallic, ao, 1.0);
     } else {
         discard;
     }

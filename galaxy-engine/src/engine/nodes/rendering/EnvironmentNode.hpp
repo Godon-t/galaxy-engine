@@ -2,6 +2,7 @@
 
 #include "nodes/Node.hpp"
 #include "resource/EnvironmentMap.hpp"
+#include "rendering/RenderGraph/RenderGraphDeclaration.hpp"
 
 namespace Galaxy {
 class EnvironmentNode : public Node {
@@ -15,7 +16,7 @@ public:
 
     void accept(Galaxy::NodeVisitor& visitor) override;
 
-    inline virtual void draw() override;
+    void draw() override;
     void setEnvironmentMap(EnvironmentMapSource environmentMap);
     bool loadEnvironmentMap(const std::string& path);
     const EnvironmentMapSource& getEnvironmentMap() const { return m_environmentMap; }
@@ -36,6 +37,12 @@ protected:
     virtual void enteredRoot() override;
 
 private:
+    void prepareEnvironmentMap();
+
+    RenderPassId m_passEquirectangularToCubemapId;
+    GeometryHandle m_captureCube;
+    TextureHandle m_environmentSourceTexture;
+
     EnvironmentMapSource m_environmentMap;
     int m_directionalLightID = -1;
 

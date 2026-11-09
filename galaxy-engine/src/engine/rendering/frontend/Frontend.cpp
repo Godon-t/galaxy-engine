@@ -31,74 +31,38 @@ void Frontend::clearEnvironmentCubemap()
     m_backend.setCubemapData(cubemap, faces);
 }
 
-void Frontend::clearEnvironmentMapSource()
+void Frontend::recompileRenderGraph()
 {
-    const auto source = m_environmentSourceTexture;
-    auto& pending = m_pendingEquirectangularConversions;
-    pending.erase(std::remove_if(pending.begin(), pending.end(),
-        [source](const auto& conversion) { return conversion.source == source; }), pending.end());
-    if (m_backend.isValid(source))
-        m_backend.clearTexture(source);
-    m_environmentSourceTexture = {};
+    CompiledRenderGraph compiledRenderGraph(m_renderGraphDeclaration);
+    m_renderGraph.build(compiledRenderGraph, m_backend);
+
+    m_renderGraphDirty = false;
 }
 
-void Frontend::setEnvironmentMap(EnvironmentMapSource environmentMap)
+void Frontend::setEnvironmentMap(ResourceHandle<CubemapResource>& cubemapRes)
 {
-    const auto next = getEnvironmentMapResource(environmentMap);
+    m_environmentMap = std::move(cubemapRes);
 
-    m_environmentMap = std::move(environmentMap);
-
-    const auto source = m_environmentMap;
-    next.getResource().onLoaded([this, source] {
+    cubemapRes.getResource().onLoaded([this, cubemapRes] {
         const auto cubemap = std::get<CubemapHandle>(m_renderGraph.getTextureHandle(m_environmentTextureId));
 
-        std::visit([this, cubemap](const auto& resourceHandle) {
-            auto& resource = resourceHandle.getResource();
-            if constexpr (std::is_same_v<std::decay_t<decltype(resourceHandle)>, ResourceHandle<CubemapResource>>) {
-                m_backend.setCubemapData(cubemap, resource.getFaces());
-                m_hasEnvironmentMap = true;
-            } else {
-                const auto texture = m_backend.instantiateTexture(
-                    TextureFormat::RGB16F, vec2(resource.getWidth(), resource.getHeight()));
-                if (!m_backend.setTextureData(texture, resource)) {
-                    m_backend.clearTexture(texture);
-                    return;
-                }
-                m_environmentSourceTexture = texture;
-                queueEquirectangularToCubemap(texture, cubemap, resource.getHeight() / 2);
-                m_hasEnvironmentMap = true;
-            }
-        }, source);
+        auto& resource = cubemapRes.getResource();
+        m_backend.setCubemapData(cubemap, resource.getFaces());
+        m_hasEnvironmentMap = true;
     });
 }
+
+GraphTextureId Frontend::getEnvironmentGraphTexture()
+{
+    return m_environmentTextureId;
+}
+
 
 Frontend::Frontend(Backend& backend)
     : m_backend(backend)
 {
     m_postProcessingQuad = backend.generateQuad(vec2(2, 2), [] {});
     m_skyboxCube = backend.generateCube(2.0f, true, [] {});
-
-    RenderGraphDeclaration renderGraphDeclaration;
-
-    ///////////////////////////////// Equirectangular conversion pass declaration
-    GraphTextureDesc conversionInput;
-    conversionInput.name = "equirectangular_cubemap";
-    conversionInput.dimension = TextureDimension::Cubemap;
-    conversionInput.format = TextureFormat::RGB16F;
-    conversionInput.wrapS = TextureWrap::CLAMP_TO_EDGE;
-    conversionInput.wrapT = TextureWrap::CLAMP_TO_EDGE;
-    conversionInput.wrapR = TextureWrap::CLAMP_TO_EDGE;
-
-    RenderTargetDesc conversionTarget;
-    conversionTarget.colorAttachments.push_back(renderGraphDeclaration.addTexture(conversionInput));
-
-    RenderPassDesc conversion;
-    conversion.name = "equirectangular_to_cubemap";
-    conversion.associatedProgram = backend.loadShader(engineRes("shaders/filters/rectangularToCubemap.glsl"));
-    conversion.targetId = renderGraphDeclaration.addTarget(conversionTarget);
-    conversion.state.depthTest = false;
-    conversion.state.depthWrite = false;
-    m_passEquirectangularToCubemapId = renderGraphDeclaration.addPass(conversion);
 
     ///////////////////////////////// Shadow-map pass declaration
     GraphTextureDesc shadowTexture;
@@ -109,11 +73,11 @@ Frontend::Frontend(Backend& backend)
     shadowTexture.wrapS = TextureWrap::CLAMP_TO_BORDER;
     shadowTexture.wrapT = TextureWrap::CLAMP_TO_BORDER;
 
-    const GraphTextureId shadowTextureId = renderGraphDeclaration.addTexture(shadowTexture);
+    const GraphTextureId shadowTextureId = m_renderGraphDeclaration.addTexture(shadowTexture);
 
     RenderTargetDesc shadowTarget;
     shadowTarget.depthAttachment = shadowTextureId;
-    const TargetId shadowTargetId = renderGraphDeclaration.addTarget(shadowTarget);
+    const TargetId shadowTargetId = m_renderGraphDeclaration.addTarget(shadowTarget);
 
     RenderPassDesc shadowPassDesc;
     shadowPassDesc.name = "shadow_pass";
@@ -121,7 +85,7 @@ Frontend::Frontend(Backend& backend)
     shadowPassDesc.targetId = shadowTargetId;
     shadowPassDesc.state.clear = true;
 
-    m_passShadowId = renderGraphDeclaration.addPass(shadowPassDesc);
+    m_passShadowId = m_renderGraphDeclaration.addPass(shadowPassDesc);
 
     ///////////////////////////////// Opaque PBR pass declaration    
     GraphTextureDesc opaqueColor;
@@ -148,10 +112,10 @@ Frontend::Frontend(Backend& backend)
     
     
     
-    auto albedoTexId = renderGraphDeclaration.addTexture(opaqueColor);
-    auto normalTexId = renderGraphDeclaration.addTexture(opaqueNormal);
-    auto materialTexId = renderGraphDeclaration.addTexture(opaqueMaterial);
-    auto hardwareDepthId = renderGraphDeclaration.addTexture(hardwareDepth);
+    auto albedoTexId = m_renderGraphDeclaration.addTexture(opaqueColor);
+    auto normalTexId = m_renderGraphDeclaration.addTexture(opaqueNormal);
+    auto materialTexId = m_renderGraphDeclaration.addTexture(opaqueMaterial);
+    auto hardwareDepthId = m_renderGraphDeclaration.addTexture(hardwareDepth);
     
     RenderTargetDesc step1Target;
     step1Target.colorAttachments.push_back(albedoTexId);
@@ -159,7 +123,7 @@ Frontend::Frontend(Backend& backend)
     step1Target.colorAttachments.push_back(materialTexId);
     step1Target.depthAttachment = hardwareDepthId;
     
-    TargetId step1Id = renderGraphDeclaration.addTarget(step1Target);
+    TargetId step1Id = m_renderGraphDeclaration.addTarget(step1Target);
 
 
     RenderPassDesc opaquePBRDesc;
@@ -190,10 +154,10 @@ Frontend::Frontend(Backend& backend)
     lightingColor.format = TextureFormat::RGBA;
     // lightingColor.filter = TextureFiltering::NEAREST;
     lightingColor.name = "lighting";
-    auto lightingColorTexId = renderGraphDeclaration.addTexture(lightingColor);
+    auto lightingColorTexId = m_renderGraphDeclaration.addTexture(lightingColor);
     RenderTargetDesc lightingStepTarget;
     lightingStepTarget.colorAttachments.push_back(lightingColorTexId);
-    TargetId lightingStepTargetId = renderGraphDeclaration.addTarget(lightingStepTarget);
+    TargetId lightingStepTargetId = m_renderGraphDeclaration.addTarget(lightingStepTarget);
 
     GraphTextureDesc environmentTexture;
     environmentTexture.name = "environment";
@@ -202,7 +166,7 @@ Frontend::Frontend(Backend& backend)
     environmentTexture.wrapS = TextureWrap::CLAMP_TO_EDGE;
     environmentTexture.wrapT = TextureWrap::CLAMP_TO_EDGE;
     environmentTexture.wrapR = TextureWrap::CLAMP_TO_EDGE;
-    m_environmentTextureId = renderGraphDeclaration.addTexture(environmentTexture);
+    m_environmentTextureId = m_renderGraphDeclaration.addTexture(environmentTexture);
     const auto envTexId = m_environmentTextureId;
 
     RenderPassDesc lightingDesc(opaquePBRDesc);
@@ -227,15 +191,15 @@ Frontend::Frontend(Backend& backend)
     GraphTextureDesc finalColor;
     finalColor.format = TextureFormat::RGBA;
     finalColor.name = "color";
-    auto finalColorTexId = renderGraphDeclaration.addTexture(finalColor);
+    auto finalColorTexId = m_renderGraphDeclaration.addTexture(finalColor);
     GraphTextureDesc finalDepth;
     finalDepth.name = "finalDepth";
     finalDepth.format = TextureFormat::DEPTH24STENCIL8;
-    auto finalDepthTexId = renderGraphDeclaration.addTexture(finalDepth);
+    auto finalDepthTexId = m_renderGraphDeclaration.addTexture(finalDepth);
     RenderTargetDesc finalStepTarget;
     finalStepTarget.colorAttachments.push_back(finalColorTexId);
     finalStepTarget.depthAttachment = finalDepthTexId;
-    TargetId finalStepTargetId = renderGraphDeclaration.addTarget(finalStepTarget);
+    TargetId finalStepTargetId = m_renderGraphDeclaration.addTarget(finalStepTarget);
     
     
     RenderPassDesc noPostProcessingDesc;
@@ -267,13 +231,13 @@ Frontend::Frontend(Backend& backend)
     postProcessingSSGIDesc.inputTextures.push_back({hardwareDepthId, "depthBuffer"});
     postProcessingSSGIDesc.state.clear = true;
     
-    m_passOpaquePBRId = renderGraphDeclaration.addPass(opaquePBRDesc);
-    m_passTransparentPBRId = renderGraphDeclaration.addPass(transparentDesc);
-    m_passUnicolorId = renderGraphDeclaration.addPass(unicolorDesc);
-    m_passLightingId = renderGraphDeclaration.addPass(lightingDesc);
-    // renderGraphDeclaration.addPass(postProcessingDesc);
-    // m_passPostprocessId = renderGraphDeclaration.addPass(postProcessingSSGIDesc);
-    m_passPostprocessId = renderGraphDeclaration.addPass(noPostProcessingDesc);
+    m_passOpaquePBRId = m_renderGraphDeclaration.addPass(opaquePBRDesc);
+    m_passTransparentPBRId = m_renderGraphDeclaration.addPass(transparentDesc);
+    m_passUnicolorId = m_renderGraphDeclaration.addPass(unicolorDesc);
+    m_passLightingId = m_renderGraphDeclaration.addPass(lightingDesc);
+    // m_renderGraphDeclaration.addPass(postProcessingDesc);
+    // m_passPostprocessId = m_renderGraphDeclaration.addPass(postProcessingSSGIDesc);
+    m_passPostprocessId = m_renderGraphDeclaration.addPass(noPostProcessingDesc);
     
     RenderPassDesc textureDesc;
     textureDesc.name = "texture";
@@ -281,36 +245,30 @@ Frontend::Frontend(Backend& backend)
     textureDesc.targetId = finalStepTargetId;
     textureDesc.state.clear = false;
     textureDesc.state.bindMaterials = true;
-    m_passTextureId = renderGraphDeclaration.addPass(textureDesc);
+    m_passTextureId = m_renderGraphDeclaration.addPass(textureDesc);
     
     RenderPassDesc transparentTextureDesc(textureDesc);
     transparentTextureDesc.name = "transparent_texture";
     transparentTextureDesc.state.blend = BlendMode::Alpha;
     transparentTextureDesc.state.depthWrite = false;
-    m_passTransparentTextureId = renderGraphDeclaration.addPass(transparentTextureDesc);
+    m_passTransparentTextureId = m_renderGraphDeclaration.addPass(transparentTextureDesc);
     
     RenderPassDesc cubemapRenderDesc(textureDesc);
     cubemapRenderDesc.name = "cubemap_render";
     cubemapRenderDesc.associatedProgram = backend.loadShader(engineRes("shaders/debug/cubemap_render.glsl"));
-    m_passCubemapRenderId = renderGraphDeclaration.addPass(cubemapRenderDesc);
+    m_passCubemapRenderId = m_renderGraphDeclaration.addPass(cubemapRenderDesc);
     
     RenderPassDesc transparentCubemapDesc(cubemapRenderDesc);
     transparentCubemapDesc.name = "transparent_cubemap";
     transparentCubemapDesc.state.blend = BlendMode::Alpha;
     transparentCubemapDesc.state.depthWrite = false;
-    m_passTransparentCubemapId = renderGraphDeclaration.addPass(transparentCubemapDesc);
-    
-    CompiledRenderGraph compiledRenderGraph(renderGraphDeclaration);
-    m_renderGraph.build(compiledRenderGraph, backend);
-    clearEnvironmentCubemap();
+    m_passTransparentCubemapId = m_renderGraphDeclaration.addPass(transparentCubemapDesc);
     
     
-    // GLX-TODO: only applied on probe cubemap
-    RenderPassDesc irradianceFilterDesc;
-    irradianceFilterDesc.associatedProgram = backend.loadShader(engineRes("shaders/filters/irradiance.glsl"));
-    
-    RenderPassDesc computeOcahedralDesc;
-    computeOcahedralDesc.associatedProgram = backend.loadShader(engineRes("shaders/compute_octahedral.glsl"));
+    // RenderPassDesc computeOcahedralDesc;
+    // computeOcahedralDesc.associatedProgram = backend.loadShader(engineRes("shaders/compute_octahedral.glsl"));
+
+    recompileRenderGraph();
 }
 
 void Frontend::addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material,
@@ -337,57 +295,49 @@ void Frontend::notifyMaterialUpdated(MaterialHandle material, const MaterialRend
     m_frameContext.onMaterialUpdated(material, info);
 }
 
+TargetId Frontend::addGraphTarget(const RenderTargetDesc& description)
+{
+    m_renderGraphDirty = true;
+    return m_renderGraphDeclaration.addTarget(description);
+}
+
+RenderPassId Frontend::addGraphPass(const RenderPassDesc& description)
+{
+    m_renderGraphDirty = true;
+    return m_renderGraphDeclaration.addPass(description);
+}
+
+GraphTextureId Frontend::addGraphTexture(const GraphTextureDesc& description)
+{
+    m_renderGraphDirty = true;
+    return m_renderGraphDeclaration.addTexture(description);
+}
 
 RenderGraphExecution Frontend::buildFrameExecution()
 {
-    RenderGraphExecution execution(m_renderGraph);
-    addEquirectangularConversions(execution);
-    addShadowViews(execution);
+    if(m_renderGraphDirty)
+        recompileRenderGraph();
+
+    RenderGraphExecution graphExecution(m_renderGraph);
+
+    for(auto& invocation: m_renderPassInvocations){
+        graphExecution.addInvocation(invocation.first, invocation.second);
+    }
+
+    addShadowViews(graphExecution);
 
     for (const auto& camera : m_frameCameras) {
         for (const auto& view : camera.getViews())
-            addSceneView(execution, view);
+            addSceneView(graphExecution, view);
     }
 
     m_frameCameras.clear();
-    return execution;
+    return graphExecution;
 }
 
-void Frontend::queueEquirectangularToCubemap(
-    TextureHandle source, CubemapHandle target, unsigned int resolution)
+void Frontend::pushPassInvocation(RenderPassId id, RenderPassInvocation invocation)
 {
-    m_pendingEquirectangularConversions.push_back({ source, target, resolution });
-}
-
-void Frontend::addEquirectangularConversions(RenderGraphExecution& execution)
-{
-    const auto framebuffer = std::get<CubemapFramebufferHandle>(
-        m_renderGraph.getRenderPass(m_passEquirectangularToCubemapId).targetFramebufferHandle);
-    for (const auto& conversion : m_pendingEquirectangularConversions) {
-        if (!m_backend.isValid(conversion.source) || !m_backend.isValid(conversion.target)) {
-            GLX_CORE_WARN("Skipping an equirectangular conversion whose source or target was released");
-            continue;
-        }
-
-        m_backend.setTextureWrap(conversion.source, TextureWrap::REPEAT, TextureWrap::CLAMP_TO_EDGE);
-
-        Camera capture;
-        capture.targetFramebuffer = framebuffer;
-        capture.viewportSize = vec2(static_cast<float>(conversion.resolution));
-        capture.zNear = 0.1f;
-        capture.zFar = 10.0f;
-        for (const auto& view : capture.getViews()) {
-            auto& invocation = execution.addInvocation(m_passEquirectangularToCubemapId);
-            configureView(invocation, view);
-            invocation.viewportSize = ivec2(static_cast<int>(conversion.resolution));
-            invocation.clearColor = vec4(0.0f);
-            invocation.targetColorCubemap = conversion.target;
-            invocation.targetLayer = view.targetLayer;
-            invocation.textureBindings.push_back({ conversion.source, "environmentHDR" });
-            invocation.items.push_back(RenderItem { m_skyboxCube });
-        }
-    }
-    m_pendingEquirectangularConversions.clear();
+    m_renderPassInvocations.push_back(std::make_pair(id, invocation));
 }
 
 void Frontend::addShadowViews(RenderGraphExecution& execution)

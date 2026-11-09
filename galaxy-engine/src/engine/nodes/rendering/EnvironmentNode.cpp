@@ -1,14 +1,25 @@
 #include "EnvironmentNode.hpp"
 
+#include "rendering/RenderGraph/RenderGraph.hpp"
+#include "rendering/RenderGraph/RenderGraphExecution.hpp"
 #include "rendering/Renderer.hpp"
 #include "resource/ResourceManager.hpp"
+#include "core/Helper.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 
 namespace Galaxy {
 EnvironmentNode::~EnvironmentNode()
 {
+    if (!m_environmentSourceTexture && !m_captureCube && m_directionalLightID < 0)
+        return;
+    auto& backend = Renderer::getInstance().getBackend();
+    if (backend.isValid(m_environmentSourceTexture))
+        backend.clearTexture(m_environmentSourceTexture);
+    if (backend.isValid(m_captureCube))
+        backend.clearMesh(m_captureCube);
     if (m_directionalLightID >= 0)
         Renderer::getInstance().getLightManager().unregisterLight(m_directionalLightID);
 }
@@ -18,14 +29,50 @@ void EnvironmentNode::accept(Galaxy::NodeVisitor& visitor)
     visitor.visit(*this);
 }
 
-inline void EnvironmentNode::draw()
+void EnvironmentNode::draw()
 {
+    Node::draw();
 }
 
 void EnvironmentNode::enteredRoot()
 {
     if (m_directionalLightID < 0)
         m_directionalLightID = Renderer::getInstance().getLightManager().registerDirectionalLight(m_direction, m_color, m_intensity);
+
+    // A node can enter the root again without registering duplicate passes.
+    if (m_passEquirectangularToCubemapId.isValid())
+        return;
+
+    auto& frontend = Renderer::getInstance().getFrontend();
+    auto& backend = Renderer::getInstance().getBackend();
+    const auto program = backend.loadShader(engineRes("shaders/filters/rectangularToCubemap.glsl"));
+    if (!backend.isValid(program))
+        return;
+
+    m_captureCube = backend.generateCube(2.0f, true, nullptr);
+    if (!backend.isValid(m_captureCube)) {
+        backend.clearProgram(program);
+        return;
+    }
+
+    GraphTextureDesc conversionInput;
+    conversionInput.name = "equirectangular_cubemap";
+    conversionInput.dimension = TextureDimension::Cubemap;
+    conversionInput.format = TextureFormat::RGB16F;
+    conversionInput.wrapS = TextureWrap::CLAMP_TO_EDGE;
+    conversionInput.wrapT = TextureWrap::CLAMP_TO_EDGE;
+    conversionInput.wrapR = TextureWrap::CLAMP_TO_EDGE;
+
+    RenderTargetDesc conversionTarget;
+    conversionTarget.colorAttachments.push_back(frontend.getEnvironmentGraphTexture());
+
+    RenderPassDesc conversion;
+    conversion.name = "equirectangular_to_cubemap";
+    conversion.associatedProgram = program;
+    conversion.targetId = frontend.addGraphTarget(conversionTarget);
+    conversion.state.depthTest = false;
+    conversion.state.depthWrite = false;
+    m_passEquirectangularToCubemapId = frontend.addGraphPass(conversion);
 }
 
 void EnvironmentNode::setDirection(const vec3& direction)
@@ -65,7 +112,72 @@ void EnvironmentNode::setEnvironmentMap(EnvironmentMapSource environmentMap)
         return;
 
     m_environmentMap = std::move(environmentMap);
-    Renderer::getInstance().getFrontend().setEnvironmentMap(m_environmentMap);
+    prepareEnvironmentMap();
+}
+
+void EnvironmentNode::prepareEnvironmentMap()
+{
+    auto& renderer = Renderer::getInstance();
+    auto& backend = renderer.getBackend();
+    const auto resource = getEnvironmentMapResource();
+    if (!resource.hasResource()) {
+        if (backend.isValid(m_environmentSourceTexture))
+            backend.clearTexture(m_environmentSourceTexture);
+        m_environmentSourceTexture = {};
+        return;
+    }
+
+    resource.getResource().onLoaded([this, &renderer, &backend]() {
+        if (auto* cubemap = std::get_if<ResourceHandle<CubemapResource>>(&m_environmentMap)) {
+            renderer.getFrontend().setEnvironmentMap(*cubemap);
+            return;
+        }
+    
+        auto& image = std::get<ResourceHandle<Image>>(m_environmentMap).getResource();
+        const auto* pixels = image.getData();
+        if (pixels == nullptr || image.getWidth() <= 0 || image.getHeight() <= 0) {
+            GLX_CORE_WARN("Cannot convert an empty environment image");
+            return;
+        }
+    
+        const int resolution = std::max(1, image.getHeight() / 2);
+        const auto source = backend.instantiateTexture(
+            TextureFormat::RGB16F, vec2(image.getWidth(), image.getHeight()));
+        if (!backend.isValid(source))
+            return;
+        if (!backend.setTextureData(source, image)) {
+            backend.clearTexture(source);
+            return;
+        }
+        backend.setTextureWrap(source, TextureWrap::REPEAT, TextureWrap::CLAMP_TO_EDGE);
+    
+        if (backend.isValid(m_environmentSourceTexture))
+            backend.clearTexture(m_environmentSourceTexture);
+        m_environmentSourceTexture = source;
+    
+        const std::array<vec3, 6> directions {
+            vec3(1, 0, 0), vec3(-1, 0, 0), vec3(0, 1, 0),
+            vec3(0, -1, 0), vec3(0, 0, 1), vec3(0, 0, -1)
+        };
+        const std::array<vec3, 6> ups {
+            vec3(0, -1, 0), vec3(0, -1, 0), vec3(0, 0, 1),
+            vec3(0, 0, -1), vec3(0, -1, 0), vec3(0, -1, 0)
+        };
+        const auto projection = perspective(radians(90.0f), 1.0f, 0.1f, 10.0f);
+        for (std::size_t face = 0; face < directions.size(); ++face) {
+            RenderPassInvocation invocation;
+            invocation.viewParameters["projection"] = projection;
+            invocation.viewParameters["view"] = lookAt(vec3(0), directions[face], ups[face]);
+            invocation.viewportSize = ivec2(resolution);
+            invocation.clearColor = vec4(0.0f);
+            invocation.targetLayer = static_cast<int>(face);
+            invocation.textureBindings.push_back({ source, "environmentHDR" });
+            invocation.items.push_back(RenderItem { m_captureCube });
+            renderer.getFrontend().pushPassInvocation(m_passEquirectangularToCubemapId, std::move(invocation));
+        }
+    });
+
+
 }
 
 bool EnvironmentNode::loadEnvironmentMap(const std::string& path)

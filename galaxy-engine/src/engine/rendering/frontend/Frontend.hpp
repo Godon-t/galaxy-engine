@@ -26,7 +26,8 @@ class Backend;
 class Frontend {
 public:
     void addCamera(Camera camera) { m_frameCameras.push_back(std::move(camera)); }
-    void setEnvironmentMap(EnvironmentMapSource environmentMap);
+    void setEnvironmentMap(ResourceHandle<CubemapResource>& cubemapRes);
+    GraphTextureId getEnvironmentGraphTexture();
 
     explicit Frontend(Backend& backend);
     ~Frontend();
@@ -40,11 +41,12 @@ public:
     void notifyMaterialUpdated(MaterialHandle material, const MaterialRenderInfo& info);
     inline void clearContext(){m_frameContext.clear();}
 
+    TargetId addGraphTarget(const RenderTargetDesc& description);
+    RenderPassId addGraphPass(const RenderPassDesc& description);
+    GraphTextureId addGraphTexture(const GraphTextureDesc& description);
     RenderGraphExecution buildFrameExecution();
 
-
-    void queueEquirectangularToCubemap(
-        TextureHandle source, CubemapHandle target, unsigned int resolution = 512);
+    void pushPassInvocation(RenderPassId id, RenderPassInvocation invocation);
 
     FramebufferHandle getFinalFramebuffer();
     LightManager& getLightManager() { return m_lightManager; }
@@ -59,10 +61,12 @@ private:
     bool m_hasEnvironmentMap = false;
     std::shared_ptr<int> m_lifetimeToken = std::make_shared<int>(0);
 
-    void clearEnvironmentMapSource();
+    RenderGraphDeclaration m_renderGraphDeclaration;
+    bool m_renderGraphDirty = false;
+
+    void recompileRenderGraph();
     void clearEnvironmentCubemap();
     void addShadowViews(RenderGraphExecution& execution);
-    void addEquirectangularConversions(RenderGraphExecution& execution);
     void addTextureViews(RenderGraphExecution& execution, const RenderView& view,
         const std::vector<RenderItem>& items, bool transparent);
     void addSceneView(RenderGraphExecution& execution, const RenderView& view);
@@ -75,16 +79,9 @@ private:
     SceneContext m_frameContext;
     std::vector<Camera> m_frameCameras;
 
-    struct EquirectangularConversion {
-        TextureHandle source;
-        CubemapHandle target;
-        unsigned int resolution;
-    };
-    // GLX-TODO: temp, shouldn't be necessary. Adding right support in render graph will bring closer to dynamic render graph.
-    std::vector<EquirectangularConversion> m_pendingEquirectangularConversions;
-
     RenderGraph m_renderGraph;
-    RenderPassId m_passEquirectangularToCubemapId;
+
+    std::vector<std::pair<RenderPassId, RenderPassInvocation>> m_renderPassInvocations;
 
     RenderPassId m_passShadowId;
     RenderPassId m_passOpaquePBRId;

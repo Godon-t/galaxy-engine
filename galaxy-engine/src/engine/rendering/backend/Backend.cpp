@@ -1230,7 +1230,7 @@ void Backend::bindPBRMaterial(const MaterialInstance& material)
         "useAlbedoMap", "useNormalMap", "useMetallicMap", "useRoughnessMap", "useAoMap"
     };
     static const std::array<const char*, TextureType::COUNT> samplerUniforms {
-        "albedoMap", "normalMap", "metallicRoughnessMap", "aoMap"
+        "albedoMap", "normalMap", "metallicRoughnessMap", "metallicRoughnessMap", "aoMap"
     };
     for (int type = 0; type < TextureType::COUNT; ++type) {
         program.setUniform(useUniforms[type], material.useImage[type]);

@@ -131,9 +131,11 @@ struct ResourceImporter {
         };
 
         if (!tryImport(aiTextureType_BASE_COLOR, ALBEDO)) {
-            tryImport(aiTextureType_AMBIENT, ALBEDO);
-        } else {
-            tryImport(aiTextureType_AMBIENT, AO);
+            tryImport(aiTextureType_DIFFUSE, ALBEDO);
+        }
+        
+        if (!tryImport(aiTextureType_AMBIENT_OCCLUSION, AO)) {
+            tryImport(aiTextureType_LIGHTMAP, AO);
         }
 
         if (resource->canUseImage(ALBEDO))

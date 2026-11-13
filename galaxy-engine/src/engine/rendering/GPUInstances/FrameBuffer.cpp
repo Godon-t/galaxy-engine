@@ -353,6 +353,18 @@ void FrameBuffer::applyAttachments()
     }
 }
 
+unsigned int FrameBuffer::readPixel(unsigned int attachment, math::ivec2 coords)
+{
+    ScopedFramebufferBinding binding(m_fbo);
+    GLuint res;
+
+    glReadBuffer(GL_COLOR_ATTACHMENT0 + attachment);
+
+    glReadPixels(coords.x, coords.y, 1, 1,
+                GL_RED_INTEGER, GL_UNSIGNED_INT, &res);
+    return res;
+}
+
 
 CubemapFrameBuffer::CubemapFrameBuffer()
     : CubemapFrameBuffer(512)

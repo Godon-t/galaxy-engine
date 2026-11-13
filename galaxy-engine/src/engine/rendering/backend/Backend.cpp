@@ -175,6 +175,20 @@ void Backend::execute(RenderGraphExecution& execution){
             executeInvocation(passResource, renderState, invocation);
         }
     }
+
+    for(auto& pixelReader: m_recordingPixels){
+        auto& pass = execution.graph.getRenderPass(pixelReader.pass);
+
+        auto* framebuffer = m_frameBufferInstances.get(std::get<FramebufferHandle>(pass.targetFramebufferHandle));
+        auto res = framebuffer->readPixel(pixelReader.colorAttachment, pixelReader.coord);
+        pixelReader.returnFunction(res);
+    }
+    m_recordingPixels.clear();
+}
+
+void Backend::recordPixelValue(RecordPixelObject record)
+{
+    m_recordingPixels.push_back(record);
 }
 
 
@@ -1143,7 +1157,7 @@ void Backend::setCubemapData(CubemapHandle cubemapID, std::array<ResourceHandle<
     }
 }
 
-void Backend::draw(const GeometryHandle geometryH, const mat4 model)
+void Backend::draw(const GeometryHandle& geometryH, const mat4 model)
 {
     auto* geometry = m_visualInstances.tryGet(geometryH);
     if (geometry == nullptr) {
@@ -1159,6 +1173,7 @@ void Backend::draw(const GeometryHandle geometryH, const mat4 model)
     }
 
     program->setUniform("model", model);
+    program->setUniform("objectId", geometryH.index());
     geometry->draw();
     ++m_drawCount;
 }

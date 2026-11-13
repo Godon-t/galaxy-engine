@@ -460,6 +460,18 @@ bool Program::setUniform(const std::string& uniformName, int value) const
     return true;
 }
 
+bool Program::setUniform(const std::string& uniformName, const unsigned int value) const
+{
+    const UniformInfo* uniform = getUniformInfo(uniformName);
+    if (uniform == nullptr || uniform->type != ShaderValueType::UnsignedInt)
+        return false;
+    const int location = getUniformLocation(uniformName);
+    if (location < 0)
+        return false;
+    glUniform1ui(location, value);
+    return true;
+}
+
 bool Program::setUniform(const std::string& uniformName, const math::vec2& value) const
 {
     const UniformInfo* uniform = getUniformInfo(uniformName);

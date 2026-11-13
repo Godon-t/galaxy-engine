@@ -120,6 +120,14 @@ public:
     bool saveCubemap(CubemapHandle cubemap, const std::string& prefix, bool hdr = false);
     
     void execute(RenderGraphExecution& execution);
+
+    struct RecordPixelObject{
+        RenderPassId pass;
+        unsigned int colorAttachment;
+        ivec2 coord;
+        std::function<void(unsigned int)> returnFunction;
+    };
+    void recordPixelValue(RecordPixelObject record);
     
 private:
     struct FramebufferAttachments {
@@ -135,7 +143,7 @@ private:
     void releaseAttachments(FramebufferHandle framebuffer);
     void releaseAttachments(CubemapFramebufferHandle framebuffer);
 
-    void draw(const GeometryHandle geometryH, const mat4 model);
+    void draw(const GeometryHandle& geometryH, const mat4 model);
     void bindMaterial(const MaterialHandle handle);
     void bindPBRMaterial(const MaterialInstance& material);
     void releaseMaterialTextures(const MaterialInstance& material);
@@ -166,6 +174,8 @@ private:
     std::unordered_map<FramebufferHandle, FramebufferAttachments, GpuResourceHandleHash> m_framebufferAttachments;
     std::unordered_map<CubemapFramebufferHandle, CubemapFramebufferAttachments, GpuResourceHandleHash> m_cubemapFramebufferAttachments;
     std::shared_ptr<int> m_lifetimeToken = std::make_shared<int>(0);
+  
+    std::vector<RecordPixelObject> m_recordingPixels;
 
     MaterialUpdateCallback m_materialUpdateCallback;
     std::function<void(MaterialHandle)> m_materialDestroyCallback;

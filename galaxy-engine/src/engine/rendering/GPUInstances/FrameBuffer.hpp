@@ -3,6 +3,7 @@
 #include "Texture.hpp"
 #include "pch.hpp"
 #include "types/Render.hpp"
+#include "types/math.hpp"
 
 namespace Galaxy {
 
@@ -34,6 +35,8 @@ public:
     // Attached textures are borrowed and must outlive this framebuffer.
     bool attachColorTexture(Texture& texture, int idx);
     bool attachDepthTexture(Texture& texture);
+
+    unsigned int readPixel(unsigned int attachment, math::ivec2 coords);
 
 private:
     struct TextureAttachment {

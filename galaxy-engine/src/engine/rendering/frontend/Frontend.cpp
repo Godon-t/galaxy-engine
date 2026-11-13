@@ -116,7 +116,12 @@ Frontend::Frontend(Backend& backend)
     GraphTextureDesc opaqueMaterial;
     opaqueMaterial.format = TextureFormat::RGBA;
     opaqueMaterial.name = "gMaterial";
-    opaqueMaterial.matchViewSize = true;;
+    opaqueMaterial.matchViewSize = true;
+
+    GraphTextureDesc objectIds;
+    objectIds.format = TextureFormat::R16UI;
+    objectIds.name = "gObjectId";
+    objectIds.matchViewSize = true;
 
     GraphTextureDesc hardwareDepth;
     hardwareDepth.name = "hardwareDepth";
@@ -130,12 +135,14 @@ Frontend::Frontend(Backend& backend)
     auto albedoTexId = m_renderGraphDeclaration.addTexture(opaqueColor);
     auto normalTexId = m_renderGraphDeclaration.addTexture(opaqueNormal);
     auto materialTexId = m_renderGraphDeclaration.addTexture(opaqueMaterial);
+    auto objectIdTexId = m_renderGraphDeclaration.addTexture(objectIds);
     auto hardwareDepthId = m_renderGraphDeclaration.addTexture(hardwareDepth);
     
     RenderTargetDesc step1Target;
     step1Target.colorAttachments.push_back(albedoTexId);
     step1Target.colorAttachments.push_back(normalTexId);
     step1Target.colorAttachments.push_back(materialTexId);
+    step1Target.colorAttachments.push_back(objectIdTexId);
     step1Target.depthAttachment = hardwareDepthId;
     
     TargetId step1Id = m_renderGraphDeclaration.addTarget(step1Target);

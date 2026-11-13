@@ -26,6 +26,7 @@ public:
     void setMaterial(ResourceHandle<BaseMaterial> material);
 
     inline int getSurfaceIdx() const { return m_meshSurfaceIdx; }
+    GeometryHandle getGeometryHandle() const { return m_geometry; }
 
     inline ResourceHandle<Mesh> getMeshResource() const { return m_meshResource; }
 

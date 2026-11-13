@@ -54,6 +54,7 @@ public:
     LightManager& getLightManager() { return m_lightManager; }
 
     void resize(ivec2 newSize);
+    RenderPassId getPbrPassId(){return m_passTransparentPBRId;}
     
     
 private:

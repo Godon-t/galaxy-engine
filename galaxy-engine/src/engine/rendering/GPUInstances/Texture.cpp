@@ -49,6 +49,7 @@ bool saveTextureSlice(GLuint texture, unsigned int width, unsigned int height,
     switch (textureFormat) {
     case TextureFormat::RED:
     case TextureFormat::DEPTH:
+    case TextureFormat::R16UI:
     case TextureFormat::DEPTH24STENCIL8:
         channels = 1;
         break;
@@ -190,6 +191,8 @@ namespace detail {
         switch (format) {
         case TextureFormat::RED:
             return GL_R8;
+        case TextureFormat::R16UI:
+            return GL_R16UI;
         case TextureFormat::RG:
             return GL_RG8;
         case TextureFormat::RGB:
@@ -212,6 +215,7 @@ namespace detail {
     {
         switch (format) {
         case TextureFormat::RED:
+        case TextureFormat::R16UI:
             return GL_RED;
         case TextureFormat::RG:
             return GL_RG;
@@ -243,6 +247,8 @@ namespace detail {
             return GL_FLOAT;
         case TextureFormat::DEPTH24STENCIL8:
             return GL_UNSIGNED_INT_24_8;
+        case TextureFormat::R16UI:
+            return GL_UNSIGNED_INT;
         case TextureFormat::NONE:
             return 0;
         }

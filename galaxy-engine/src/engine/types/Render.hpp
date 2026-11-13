@@ -2,8 +2,6 @@
 
 #include "Math.hpp"
 
-#include <cstddef>
-
 using ShaderParameterValue = std::variant<
     bool,
     int,
@@ -26,6 +24,7 @@ struct Vertex {
 
 enum class TextureFormat {
     RED,
+    R16UI,
     RG,
     RGB,
     RGBA,

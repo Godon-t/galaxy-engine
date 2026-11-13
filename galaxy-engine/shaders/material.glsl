@@ -52,6 +52,8 @@ uniform bool useMetallicMap  = false;
 uniform bool useRoughnessMap = false;
 uniform bool useAoMap        = false;
 
+uniform uint objectId;
+
 
 in vec2 v_texCoords;
 in vec3 v_worldPos;
@@ -61,6 +63,7 @@ in vec3 v_camPos;
 layout(location = 0) out vec4 gAlbedo;
 layout(location = 1) out vec4 gNormal;
 layout(location = 2) out vec4 gMaterial;
+layout(location = 3) out uint gObjectId;
 
 
 
@@ -108,6 +111,7 @@ void main()
         texture(aoMap, v_texCoords).r : 
         aoVal;
 
+    gObjectId = objectId;
     if(transparency > 0.1){
         // gDepth = vec4(length(v_camPos - v_worldPos) / zFar, ao, 0, 1);
         gAlbedo.rgb = albedo;

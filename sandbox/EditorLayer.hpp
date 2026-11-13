@@ -52,6 +52,9 @@ private:
     bool m_leftClickDown = false;
     vec2 m_mouseDelta { 0.0f };
 
+    bool m_pixelReadWaiting = false;
+    unsigned int m_pixelRead = 0;
+
     void updateCamera();
     void displayMenuBar(bool validScene);
     void displayViewport(bool sceneSelected);

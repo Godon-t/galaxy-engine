@@ -7,6 +7,24 @@
 namespace Galaxy {
 std::unordered_map<Galaxy::uuid, std::string> ResourceAccess::paths;
 
+static MeshInstance* findMeshInstanceByGeometryIndex(Node* node, unsigned int index)
+{
+    if (node == nullptr)
+        return nullptr;
+
+    if (auto* mesh = dynamic_cast<MeshInstance*>(node)) {
+        const GeometryHandle handle = mesh->getGeometryHandle();
+        if (handle && handle.index() == index)
+            return mesh;
+    }
+
+    for (Node* child : node->getChildren()) {
+        if (auto* mesh = findMeshInstanceByGeometryIndex(child, index))
+            return mesh;
+    }
+    return nullptr;
+}
+
 // Helper function to find the first SpotLight in the scene
 static SpotLight* findFirstSpotLight(Node* node)
 {
@@ -236,6 +254,38 @@ void EditorLayer::displayViewport(bool validScene)
         if (m_disablePostProcessing)
             GLX_WARN("Cannot disable post processing currently (TODO)");
         ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 1, 1 }, ImVec2 { 0, 0 });
+
+        if (ImGui::IsItemHovered() && 
+            ImGui::IsMouseReleased(ImGuiMouseButton_Left)
+        ) {
+            const ImVec2 min = ImGui::GetItemRectMin();
+            const ImVec2 max = ImGui::GetItemRectMax();
+            const ImVec2 mouse = ImGui::GetMousePos();
+
+            const float u = (mouse.x - min.x) / (max.x - min.x);
+            const float v = (mouse.y - min.y) / (max.y - min.y);
+
+            const int width = static_cast<int>(m_viewportSize.x);
+            const int height = static_cast<int>(m_viewportSize.y);
+
+            if (width > 0 && height > 0
+                && u >= 0.f && u < 1.f && v >= 0.f && v < 1.f) {
+                Backend::RecordPixelObject record;
+                record.colorAttachment = 3;
+                record.coord = ivec2(
+                    width - 1 - static_cast<int>(u * width),
+                    height - 1 - static_cast<int>(v * height));
+                record.pass =
+                    Renderer::getInstance().getFrontend().getPbrPassId();
+                record.returnFunction = [this](unsigned int val) {
+                    m_pixelReadWaiting = true;
+                    m_pixelRead = val;
+                };
+
+                Renderer::getInstance().getBackend().recordPixelValue(record);
+            }
+        }
+
     } else {
         ImGui::PopStyleVar();
     }
@@ -333,7 +383,7 @@ void EditorLayer::onImGuiRender()
             testRoot->addChild(row);
             for(int j=0; j<nbRough; j++){
                 auto meshMat = ResourceManager::getInstance().createInternalResource<PBRMaterial>();
-                meshMat.getResource().setAlbedo({0.8, 0.6, 0.65});
+                meshMat.getResource().setAlbedo({1.0, 0.0, 0.0});
                 meshMat.getResource().setMetallic((float) i / (float) (nbMetal - 1));
                 meshMat.getResource().setRoughness((float) j / (float) (nbRough - 1));
                 
@@ -343,6 +393,16 @@ void EditorLayer::onImGuiRender()
                 testInstance->translate({j * 5, 0, 0});
                 testInstance->setMaterial(meshMat);
                 row->addChild(testInstance);
+            }
+        }
+    }
+
+    if (m_pixelReadWaiting) {
+        m_pixelReadWaiting = false;
+        if (validScene && m_selectedScene) {
+            if (auto* mesh = findMeshInstanceByGeometryIndex(
+                    m_selectedScene->getNodePtr().get(), m_pixelRead)) {
+                m_nodeList.selectedNodeId = mesh->id;
             }
         }
     }

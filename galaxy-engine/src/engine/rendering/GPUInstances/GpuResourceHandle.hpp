@@ -21,24 +21,19 @@ public:
     {
     }
 
-    [[nodiscard]] Index index() const noexcept { return m_index; }
-    [[nodiscard]] uint32_t generation() const noexcept { return m_generation; }
-    // This only tells whether the handle contains an index/generation pair.
-    // Liveness must be checked by the registry (Backend::isValid).
-    [[nodiscard]] bool hasValue() const noexcept
-    {
+    Index index() const noexcept { return m_index; }
+    uint32_t generation() const noexcept { return m_generation; }
+    bool hasValue() const noexcept{
         return m_index != InvalidIndex && m_generation != 0;
     }
 
     explicit operator bool() const noexcept { return hasValue(); }
 
-    friend bool operator==(GpuResourceHandle lhs, GpuResourceHandle rhs) noexcept
-    {
+    friend bool operator==(GpuResourceHandle lhs, GpuResourceHandle rhs) noexcept{
         return lhs.m_index == rhs.m_index && lhs.m_generation == rhs.m_generation;
     }
 
-    friend bool operator!=(GpuResourceHandle lhs, GpuResourceHandle rhs) noexcept
-    {
+    friend bool operator!=(GpuResourceHandle lhs, GpuResourceHandle rhs) noexcept{
         return !(lhs == rhs);
     }
 

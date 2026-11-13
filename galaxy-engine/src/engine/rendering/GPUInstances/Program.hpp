@@ -79,6 +79,7 @@ public:
     bool setUniform(const std::string& uniformName, bool value) const;
     bool setUniform(const std::string& uniformName, float value) const;
     bool setUniform(const std::string& uniformName, int value) const;
+    bool setUniform(const std::string& uniformName, const unsigned int value) const;
     bool setUniform(const std::string& uniformName, const math::vec2& value) const;
     bool setUniform(const std::string& uniformName, const math::vec3& value) const;
     bool setUniform(const std::string& uniformName, const math::ivec3& value) const;

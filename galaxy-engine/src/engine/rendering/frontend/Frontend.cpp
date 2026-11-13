@@ -220,6 +220,7 @@ Frontend::Frontend(Backend& backend)
     lightingDesc.inputTextures.push_back({shadowTextureId, "shadowMaps"});
     lightingDesc.inputTextures.push_back({m_environmentTextureId, "environmentMap"});
     lightingDesc.inputTextures.push_back({m_irradianceTextureId, "irradianceMap"});
+    lightingDesc.inputTextures.push_back({m_specularTextureId, "specularMap"});
     lightingDesc.state.clear = true;
     lightingDesc.state.bindMaterials = false;
     lightingDesc.state.depthTest = false;
@@ -310,6 +311,10 @@ Frontend::Frontend(Backend& backend)
     
     // RenderPassDesc computeOcahedralDesc;
     // computeOcahedralDesc.associatedProgram = backend.loadShader(engineRes("shaders/compute_octahedral.glsl"));
+
+    auto brdfImage = ResourceManager::getInstance().load<Image>(engineRes("imgs/brdf.gres"));
+    m_brdfLookupTextureHandle = backend.instantiateTexture(brdfImage);
+    backend.setTextureWrap(m_brdfLookupTextureHandle, TextureWrap::CLAMP_TO_EDGE, TextureWrap::CLAMP_TO_EDGE);
 
     recompileRenderGraph();
 }
@@ -454,6 +459,10 @@ void Frontend::addSceneView(RenderGraphExecution& execution, const RenderView& v
     lightInvocation.parameters.emplace("inverseProjection", inverse(view.projectionMatrix));
     lightInvocation.parameters.emplace("cameraPos", view.position);
     lightInvocation.parameters.emplace("hasEnvironmentMap", m_hasEnvironmentMap);
+    auto textureBinding = TextureBinding();
+    textureBinding.samplerName = "brdfLookupMap";
+    textureBinding.texture = m_brdfLookupTextureHandle;
+    lightInvocation.textureBindings.push_back(textureBinding);
     lightInvocation.viewportPosition = view.viewportPosition;
     lightInvocation.viewportSize = view.viewportSize;
 

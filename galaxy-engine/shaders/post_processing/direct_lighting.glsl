@@ -34,6 +34,8 @@ uniform sampler2D depthBuffer;
 
 uniform samplerCube environmentMap;
 uniform samplerCube irradianceMap;
+uniform samplerCube specularMap;
+uniform sampler2D brdfLookupMap;
 
 
 uniform mat4 inverseProjection;
@@ -76,7 +78,6 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0);
 vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness);
 float ShadowCalculation(vec4 fragPosLightSpace, int layerIndex);
 
-
 void main()
 {
     float depth = texture(depthBuffer, TexCoords).r;
@@ -86,7 +87,7 @@ void main()
     vec3 albedo     = texture(albedoBuffer, TexCoords).rgb;
     vec3 material = texture(materialBuffer, TexCoords).rgb;
 
-    float roughness = clamp(material.x, 0.045, 1.0);
+    float roughness = clamp(material.x, 0.045, 0.99);
     float metallic = material.y;
     float ao = material.z;
 
@@ -106,6 +107,7 @@ void main()
 
     vec3 V = normalize(cameraPos - worldPos);
     vec3 N = normalize(normal);
+    vec3 R = reflect(-V, N);
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
 
@@ -183,11 +185,20 @@ void main()
     }
 
 
-    vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness); 
-    vec3 kD = 1.0 - kS;
+    float NdotV = clamp(dot(N, V), 0.0001, 1.0);
+    
+    vec3 F = fresnelSchlickRoughness(NdotV, F0, roughness);
+    vec3 kS = F; 
+    vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+    
     vec3 irradiance = texture(irradianceMap, N).rgb;
     vec3 diffuse = irradiance * albedo;
-    vec3 ambient    = (kD * diffuse) * ao;
+
+    const float MAX_REFLECTION_LOD = 4.0;
+    vec3 prefilteredColor = textureLod(specularMap, R, roughness * MAX_REFLECTION_LOD).rgb;
+    vec2 envBRDF = texture(brdfLookupMap, vec2(NdotV, roughness)).xy;
+    vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+    vec3 ambient = (kD * diffuse + specular) * ao;
     vec3 finalColor = ambient + Lo;
 
 

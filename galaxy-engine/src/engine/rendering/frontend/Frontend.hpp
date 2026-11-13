@@ -65,6 +65,7 @@ private:
     GraphTextureId m_environmentTextureId;
     GraphTextureId m_irradianceTextureId;
     GraphTextureId m_specularTextureId;
+    TextureHandle  m_brdfLookupTextureHandle;
 
     std::shared_ptr<int> m_lifetimeToken = std::make_shared<int>(0);
 

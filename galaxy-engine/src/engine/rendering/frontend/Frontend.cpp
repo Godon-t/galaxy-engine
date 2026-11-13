@@ -62,6 +62,11 @@ GraphTextureId Frontend::getIrradianceGraphTexture()
     return m_irradianceTextureId;
 }
 
+GraphTextureId Frontend::getSpecularGraphTexture()
+{
+    return m_specularTextureId;
+}
+
 Frontend::Frontend(Backend& backend)
     : m_backend(backend)
 {
@@ -192,6 +197,17 @@ Frontend::Frontend(Backend& backend)
     
     
 
+    GraphTextureDesc specularTexture;
+    specularTexture.name = "specular";
+    specularTexture.format = TextureFormat::RGB16F;
+    specularTexture.dimension = TextureDimension::Cubemap;
+    specularTexture.wrapS = TextureWrap::CLAMP_TO_EDGE;
+    specularTexture.wrapT = TextureWrap::CLAMP_TO_EDGE;
+    specularTexture.wrapR = TextureWrap::CLAMP_TO_EDGE;
+    specularTexture.textureSize = ivec2(1024);
+    specularTexture.mipLevels = 5;
+    specularTexture.filter = TextureFiltering::LINEAR;
+    m_specularTextureId = m_renderGraphDeclaration.addTexture(specularTexture);
 
     RenderPassDesc lightingDesc(opaquePBRDesc);
     lightingDesc.associatedProgram = backend.loadShader(engineRes("shaders/post_processing/direct_lighting.glsl"));

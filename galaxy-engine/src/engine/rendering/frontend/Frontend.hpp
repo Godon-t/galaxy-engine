@@ -29,6 +29,7 @@ public:
     void setEnvironmentMap(ResourceHandle<CubemapResource>& cubemapRes);
     GraphTextureId getEnvironmentGraphTexture();
     GraphTextureId getIrradianceGraphTexture();
+    GraphTextureId getSpecularGraphTexture();
 
     explicit Frontend(Backend& backend);
     ~Frontend();
@@ -63,6 +64,7 @@ private:
 
     GraphTextureId m_environmentTextureId;
     GraphTextureId m_irradianceTextureId;
+    GraphTextureId m_specularTextureId;
 
     std::shared_ptr<int> m_lifetimeToken = std::make_shared<int>(0);
 

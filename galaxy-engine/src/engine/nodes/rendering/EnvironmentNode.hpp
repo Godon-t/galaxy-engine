@@ -41,6 +41,7 @@ private:
 
     RenderPassId m_passEquirectangularToCubemapId;
     RenderPassId m_passIrradianceConvolutionId;
+    RenderPassId m_passSpecularFilterId;
     GeometryHandle m_captureCube;
     TextureHandle m_environmentSourceTexture;
 

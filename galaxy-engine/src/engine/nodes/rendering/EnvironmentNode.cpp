@@ -47,6 +47,7 @@ void EnvironmentNode::enteredRoot()
     auto& backend = Renderer::getInstance().getBackend();
     const auto rectangularProgram = backend.loadShader(engineRes("shaders/filters/rectangularToCubemap.glsl"));
     const auto irradianceProgram = backend.loadShader(engineRes("shaders/filters/irradiance.glsl"));
+    const auto specularFilterProgram = backend.loadShader(engineRes("shaders/filters/specular.glsl"));
 
 
     m_captureCube = backend.generateCube(2.0f, true, nullptr);
@@ -63,13 +64,14 @@ void EnvironmentNode::enteredRoot()
     m_passEquirectangularToCubemapId = frontend.addGraphPass(conversion);
 
 
+    SampledTextureInputDesc skyboxInput;
+    skyboxInput.samplerName = "skybox";
+    skyboxInput.texture = frontend.getEnvironmentGraphTexture();
+
+
     
     RenderTargetDesc irradianceTarget;
     irradianceTarget.colorAttachments.push_back(frontend.getIrradianceGraphTexture());
-
-    SampledTextureInputDesc irradianceInput;
-    irradianceInput.samplerName = "skybox";
-    irradianceInput.texture = frontend.getEnvironmentGraphTexture();
 
     RenderPassDesc irradianceFilter;
     irradianceFilter.name = "irradiance_convolution";
@@ -77,8 +79,21 @@ void EnvironmentNode::enteredRoot()
     irradianceFilter.targetId = frontend.addGraphTarget(irradianceTarget);
     irradianceFilter.state.depthTest = false;
     irradianceFilter.state.depthWrite = false;
-    irradianceFilter.inputTextures.push_back(irradianceInput);
+    irradianceFilter.inputTextures.push_back(skyboxInput);
     m_passIrradianceConvolutionId = frontend.addGraphPass(irradianceFilter);
+
+
+    RenderTargetDesc specularTarget;
+    specularTarget.colorAttachments.push_back(frontend.getSpecularGraphTexture());
+
+    RenderPassDesc specularFilter;
+    specularFilter.name = "specular_filter";
+    specularFilter.associatedProgram = specularFilterProgram;
+    specularFilter.targetId = frontend.addGraphTarget(specularTarget);
+    specularFilter.state.depthTest = false;
+    specularFilter.state.depthWrite = false;
+    specularFilter.inputTextures.push_back(skyboxInput);
+    m_passSpecularFilterId = frontend.addGraphPass(specularFilter);
 }
 
 void EnvironmentNode::setDirection(const vec3& direction)
@@ -192,6 +207,25 @@ void EnvironmentNode::prepareEnvironmentMap()
             irradianceInvocation.items.push_back(RenderItem { m_captureCube });
             renderer.getFrontend().pushPassInvocation(m_passIrradianceConvolutionId, std::move(irradianceInvocation));
         }
+
+        int maxMipLevels = 5;
+        for(int mip=0; mip < maxMipLevels; mip++)
+        for (std::size_t face = 0; face < directions.size(); ++face){
+            RenderPassInvocation specularInvocation;
+            specularInvocation.viewParameters["projection"] = projection;
+            specularInvocation.viewParameters["view"] = lookAt(vec3(0), directions[face], ups[face]);
+
+            float roughness = (float)mip / (float)(maxMipLevels - 1);
+            specularInvocation.parameters["roughness"] = roughness;
+            
+            specularInvocation.viewportSize = ivec2(resolution * std::pow(0.5, mip));
+            specularInvocation.clearColor = vec4(0.0f);
+            specularInvocation.targetLayer = static_cast<int>(face);
+            specularInvocation.targetMip = mip;
+            specularInvocation.items.push_back(RenderItem { m_captureCube });
+            renderer.getFrontend().pushPassInvocation(m_passSpecularFilterId, std::move(specularInvocation));
+        }
+        
     });
 
 

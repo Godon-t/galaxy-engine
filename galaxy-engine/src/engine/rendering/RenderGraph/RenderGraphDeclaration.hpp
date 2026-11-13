@@ -1,15 +1,15 @@
 #pragma once
 
+#include "core/pch.hpp"
 #include "engine/rendering/GPUInstances/GpuResourceHandle.hpp"
 #include "engine/types/Render.hpp"
+#include "engine/types/Math.hpp"
 
 #include <cstdint>
 #include <limits>
 #include <optional>
-#include <string>
 #include <string_view>
 #include <utility>
-#include <vector>
 
 namespace Galaxy {
 
@@ -62,6 +62,8 @@ struct GraphTextureDesc {
     std::string name;
     TextureFormat format = TextureFormat::RGBA;
     TextureDimension dimension = TextureDimension::Texture2D;
+    math::ivec2 textureSize = math::ivec2(512);
+    bool matchViewSize = false;
     std::uint32_t arrayLayers = 0;
 
     TextureFiltering filter = TextureFiltering::LINEAR;

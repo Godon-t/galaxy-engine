@@ -44,6 +44,7 @@ private:
         void makeOwned(TextureFormat format, int width, int height, int depthLayerCount = 0);
         void borrow(Texture& texture);
         void reset();
+        bool isOwned() const { return owned != nullptr; }
     };
 
     FramebufferTextureFormat m_format = FramebufferTextureFormat::RGBA8;
@@ -52,6 +53,7 @@ private:
     unsigned int m_fbo                 = 0;
     int m_width                        = 0;
     int m_height                       = 0;
+    int m_targetDepthLayer = 0;
 
     std::vector<TextureAttachment> m_colorAttachments;
     TextureAttachment m_depthAttachment;
@@ -62,9 +64,7 @@ private:
     bool usesDepth() const;
     TextureFormat depthFormat() const;
     unsigned int depthAttachmentPoint() const;
-
-    void capturePreviousFB();
-    void restorePreviousFB();
+    void applyAttachments();
 };
 
 class CubemapFrameBuffer {
@@ -99,15 +99,19 @@ private:
         void makeOwned(TextureFormat format, unsigned int size);
         void borrow(Cubemap& cubemap);
         void reset();
+        bool isOwned() const { return owned != nullptr; }
     };
 
     unsigned int m_fbo  = 0;
     unsigned int m_size = 0;
+    int m_targetFace = 0;
 
     std::vector<CubemapAttachment> m_colorCubemaps;
     CubemapAttachment m_depthCubemap;
 
     void invalidate();
     void destroyFramebuffer();
+    // Requires this framebuffer to be bound; never changes cubemap storage.
+    void applyAttachments();
 };
 }

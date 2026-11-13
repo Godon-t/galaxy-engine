@@ -545,6 +545,27 @@ void Backend::setTextureWrap(CubemapHandle cubemapHandle, TextureWrap wrapS, Tex
     cubemap->setWrap(wrapS, wrapT, wrapR);
 }
 
+void Backend::setTextureSize(TextureHandle textureHandle, ivec2 newSize)
+{
+    auto* texture  = m_textureInstances.get(textureHandle);
+    if(texture == nullptr){
+        GLX_ERROR("texture not found when changing size!");
+        return;
+    } else
+        texture->resize(newSize.x, newSize.y);
+}
+
+void Backend::setTextureSize(CubemapHandle cubemapHandle, unsigned int newSize)
+{
+    auto* cubemap = m_cubemapInstances.tryGet(cubemapHandle);
+    if (cubemap == nullptr) {
+        GLX_ERROR("Cubemap not found when changing size!");
+        return;
+    }
+
+    cubemap->resize(newSize);
+}
+
 TextureHandle Backend::instantiateTexture(TextureFormat format, vec2 size, TextureFiltering filter, size_t layerCount)
 {
     if (!m_textureInstances.canCreate())

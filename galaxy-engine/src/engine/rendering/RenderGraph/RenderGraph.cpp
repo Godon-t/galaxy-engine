@@ -48,22 +48,30 @@ void RenderGraph::build(const CompiledRenderGraph& compiledGraph, Backend& backe
     m_graphTextureHandles.clear();
     m_graphTextureHandles.resize(compiledGraph.declaration.textures.size());
 
-    constexpr unsigned int temporarySize = 512;
+    int temporarySize = 1024;
     for (const CompiledGraphTexture& texture : compiledGraph.textures) {
         const GraphTextureDesc& textureDesc = compiledGraph.getTextureDescription(texture.textureId);
 
         if (textureDesc.dimension == TextureDimension::Cubemap) {
             const CubemapHandle gpuHandle = backend.instantiateCubemap(
-                temporarySize, textureDesc.format, textureDesc.filter);
+                textureDesc.textureSize.x, 
+                textureDesc.format, 
+                textureDesc.filter);
             m_graphTextureHandles.at(texture.textureId.index) = gpuHandle;
             backend.setTextureWrap(
-                gpuHandle, textureDesc.wrapS, textureDesc.wrapT, textureDesc.wrapR);
+                gpuHandle, 
+                textureDesc.wrapS, 
+                textureDesc.wrapT, 
+                textureDesc.wrapR);
         } else {
             const std::size_t layerCount = textureDesc.dimension == TextureDimension::Texture2DArray
-                ? textureDesc.arrayLayers
-                : 0U;
+            ? textureDesc.arrayLayers
+            : 0U;
             const TextureHandle gpuHandle = backend.instantiateTexture(
-                textureDesc.format, math::vec2(temporarySize), textureDesc.filter, layerCount);
+                textureDesc.format, 
+                textureDesc.textureSize, 
+                textureDesc.filter, 
+                layerCount);
             m_graphTextureHandles.at(texture.textureId.index) = gpuHandle;
             backend.setTextureWrap(gpuHandle, textureDesc.wrapS, textureDesc.wrapT);
         }
@@ -161,6 +169,26 @@ void RenderGraph::build(const CompiledRenderGraph& compiledGraph, Backend& backe
         }
 
         m_passes.push_back(std::move(passResources));
+    }
+}
+
+void RenderGraph::prepareResources(Backend& backend)
+{
+    for(auto& texture : compilation.textures){
+        auto& textureDesc = compilation.getTextureDescription(texture.textureId);
+        if(textureDesc.matchViewSize){
+            auto& textureHandle = getTextureHandle(texture.textureId);
+            
+            switch(textureDesc.dimension){
+                case TextureDimension::Texture2D:
+                case TextureDimension::Texture2DArray:
+                    backend.setTextureSize(std::get<TextureHandle>(textureHandle), m_viewSize);
+                    break;
+                case TextureDimension::Cubemap:
+                    backend.setTextureSize(std::get<CubemapHandle>(textureHandle), m_viewSize.x);
+                    break;
+            }
+        }
     }
 }
 

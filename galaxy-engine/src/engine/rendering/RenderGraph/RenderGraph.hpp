@@ -2,9 +2,8 @@
 
 #include "engine/rendering/GPUInstances/GpuResourceHandle.hpp"
 #include "RenderGraphCompilation.hpp"
+#include "types/Math.hpp"
 
-#include <cstddef>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -33,7 +32,6 @@ namespace Galaxy
         GraphFramebufferHandle targetFramebufferHandle;
     };
 
-    // Runtime graph: owns the compiled schedule and its allocated GPU resources.
     class RenderGraph {
     public:
         CompiledRenderGraph compilation;
@@ -60,11 +58,15 @@ namespace Galaxy
             return m_passes.size();
         }
 
+        void prepareResources(Backend& backend);
+        void setViewSize(math::ivec2 newSize){m_viewSize = newSize;}
+
         static bool hasFramebuffer(const GraphFramebufferHandle& handle);
         
     private:
         std::vector<RenderPassResources> m_passes;
         std::vector<GraphTextureHandle> m_graphTextureHandles;
+        math::ivec2 m_viewSize;
     };
 } // namespace Galaxy
 

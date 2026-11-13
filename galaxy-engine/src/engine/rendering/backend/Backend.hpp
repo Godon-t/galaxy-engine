@@ -46,6 +46,8 @@ public:
     bool setTextureData(TextureHandle textureHandle, Image& image);
     void setTextureWrap(TextureHandle texture, TextureWrap wrapS, TextureWrap wrapT);
     void setTextureWrap(CubemapHandle cubemap, TextureWrap wrapS, TextureWrap wrapT, TextureWrap wrapR);
+    void setTextureSize(TextureHandle textureHandle, ivec2 newSize);
+    void setTextureSize(CubemapHandle textureHandle, unsigned int newSize);
     void clearTexture(TextureHandle texture);
     
     

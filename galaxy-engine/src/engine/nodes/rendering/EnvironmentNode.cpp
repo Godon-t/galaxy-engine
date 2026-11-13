@@ -146,7 +146,7 @@ void EnvironmentNode::prepareEnvironmentMap()
             return;
         }
     
-        const int resolution = std::max(1, image.getHeight() / 2);
+        constexpr int resolution = 1024;
         const auto source = backend.instantiateTexture(
             TextureFormat::RGB16F, vec2(image.getWidth(), image.getHeight()));
         if (!backend.isValid(source))

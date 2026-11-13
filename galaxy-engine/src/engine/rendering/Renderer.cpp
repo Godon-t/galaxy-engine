@@ -62,6 +62,7 @@ void Renderer::resize(unsigned int width, unsigned int height)
 {
     m_mainViewportSize.x = width;
     m_mainViewportSize.y = height;
+    m_frontend.resize(m_mainViewportSize);
 }
 
 void Renderer::renderFrame()

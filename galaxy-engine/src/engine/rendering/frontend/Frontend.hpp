@@ -51,6 +51,8 @@ public:
 
     FramebufferHandle getFinalFramebuffer();
     LightManager& getLightManager() { return m_lightManager; }
+
+    void resize(ivec2 newSize);
     
     
 private:

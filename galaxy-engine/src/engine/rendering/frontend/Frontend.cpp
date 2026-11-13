@@ -76,6 +76,7 @@ Frontend::Frontend(Backend& backend)
     shadowTexture.arrayLayers = maxLightCount;
     shadowTexture.wrapS = TextureWrap::CLAMP_TO_BORDER;
     shadowTexture.wrapT = TextureWrap::CLAMP_TO_BORDER;
+    shadowTexture.textureSize = ivec2(2048);
 
     const GraphTextureId shadowTextureId = m_renderGraphDeclaration.addTexture(shadowTexture);
 
@@ -95,22 +96,27 @@ Frontend::Frontend(Backend& backend)
     GraphTextureDesc opaqueColor;
     opaqueColor.format = TextureFormat::RGBA;
     opaqueColor.name = "gAlbedo";
+    opaqueColor.matchViewSize = true;
 
     GraphTextureDesc opaqueNormal;
     opaqueNormal.format = TextureFormat::RGBA;
     opaqueNormal.name = "gNormal";
+    opaqueNormal.matchViewSize = true;
 
     GraphTextureDesc opaqueDepth;
     opaqueDepth.format = TextureFormat::RGBA;
     opaqueDepth.name = "gDepth";
+    opaqueDepth.matchViewSize = true;
     
     GraphTextureDesc opaqueMaterial;
     opaqueMaterial.format = TextureFormat::RGBA;
     opaqueMaterial.name = "gMaterial";
+    opaqueMaterial.matchViewSize = true;;
 
     GraphTextureDesc hardwareDepth;
     hardwareDepth.name = "hardwareDepth";
     hardwareDepth.format = TextureFormat::DEPTH24STENCIL8;
+    hardwareDepth.matchViewSize = true;
 
     
     
@@ -156,6 +162,7 @@ Frontend::Frontend(Backend& backend)
     // Lighting step
     GraphTextureDesc lightingColor;
     lightingColor.format = TextureFormat::RGBA;
+    lightingColor.matchViewSize = true;
     // lightingColor.filter = TextureFiltering::NEAREST;
     lightingColor.name = "lighting";
     auto lightingColorTexId = m_renderGraphDeclaration.addTexture(lightingColor);
@@ -170,6 +177,7 @@ Frontend::Frontend(Backend& backend)
     environmentTexture.wrapS = TextureWrap::CLAMP_TO_EDGE;
     environmentTexture.wrapT = TextureWrap::CLAMP_TO_EDGE;
     environmentTexture.wrapR = TextureWrap::CLAMP_TO_EDGE;
+    environmentTexture.textureSize = ivec2(1024);
     m_environmentTextureId = m_renderGraphDeclaration.addTexture(environmentTexture);
 
     GraphTextureDesc irradianceTexture;
@@ -179,7 +187,11 @@ Frontend::Frontend(Backend& backend)
     irradianceTexture.wrapS = TextureWrap::CLAMP_TO_EDGE;
     irradianceTexture.wrapT = TextureWrap::CLAMP_TO_EDGE;
     irradianceTexture.wrapR = TextureWrap::CLAMP_TO_EDGE;
+    irradianceTexture.textureSize = ivec2(1024);
     m_irradianceTextureId = m_renderGraphDeclaration.addTexture(irradianceTexture);
+    
+    
+
 
     RenderPassDesc lightingDesc(opaquePBRDesc);
     lightingDesc.associatedProgram = backend.loadShader(engineRes("shaders/post_processing/direct_lighting.glsl"));
@@ -204,10 +216,12 @@ Frontend::Frontend(Backend& backend)
     GraphTextureDesc finalColor;
     finalColor.format = TextureFormat::RGBA;
     finalColor.name = "color";
+    finalColor.matchViewSize = true;
     auto finalColorTexId = m_renderGraphDeclaration.addTexture(finalColor);
     GraphTextureDesc finalDepth;
     finalDepth.name = "finalDepth";
     finalDepth.format = TextureFormat::DEPTH24STENCIL8;
+    finalDepth.matchViewSize = true;
     auto finalDepthTexId = m_renderGraphDeclaration.addTexture(finalDepth);
     RenderTargetDesc finalStepTarget;
     finalStepTarget.colorAttachments.push_back(finalColorTexId);
@@ -330,6 +344,8 @@ RenderGraphExecution Frontend::buildFrameExecution()
 {
     if(m_renderGraphDirty)
         recompileRenderGraph();
+    
+    m_renderGraph.prepareResources(m_backend);
 
     RenderGraphExecution graphExecution(m_renderGraph);
 
@@ -359,7 +375,7 @@ void Frontend::addShadowViews(RenderGraphExecution& execution)
 {
     // A single compiled shadow pass is invoked once for every light view.
     auto lightsData = m_lightManager.getLightsData();
-    vec2 viewportDimmension = vec2(1024, 1024);
+    vec2 viewportDimmension = vec2(2048, 2048);
     for (auto& light : lightsData) {
         if(!light.castShadow)
             continue;
@@ -470,6 +486,11 @@ FramebufferHandle Frontend::getFinalFramebuffer()
         return {};
     }
     return *texture2DFramebuffer;
+}
+
+void Frontend::resize(ivec2 newSize)
+{
+    m_renderGraph.setViewSize(newSize);
 }
 
 } // namespace Galaxy

@@ -1,6 +1,5 @@
 #include "Image.hpp"
 
-#include "Core.hpp"
 #include "Log.hpp"
 #include "ResourceSerializer.hpp"
 #include "project/Project.hpp"
@@ -93,14 +92,10 @@ void Image::freeCpuData()
 
 bool Image::loadExtern(const std::string& path)
 {
-    // Keep a copy: ensureCpuData may pass m_relativeExternalFilePath itself.
-    const std::string externalPath = path;
-    std::filesystem::path filePath(externalPath);
-    if (filePath.is_relative() && !std::filesystem::exists(filePath))
-        filePath = std::filesystem::path(Project::getProjectRootPath()) / filePath;
+    std::filesystem::path filePath = Project::resolvePath(path);
     const std::string filename = filePath.string();
     freeCpuData();
-    m_relativeExternalFilePath = externalPath;
+    m_relativeExternalFilePath = path;
     m_isInternal = false;
 
     bool loaded = false;
@@ -122,7 +117,7 @@ bool Image::loadExtern(const std::string& path)
         }
     }
     if (!loaded) {
-        GLX_CORE_ERROR("Failed to load: '{0}'", externalPath);
+        GLX_CORE_ERROR("Failed to load: '{0}' ({1})", filePath.string(), path);
         return false;
     }
     return true;

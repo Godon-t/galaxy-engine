@@ -25,6 +25,19 @@ inline const char* toString(ProjectPathTypes type)
     }
 }
 
+std::filesystem::path Project::resolvePath(const std::string& path)
+{
+    bool engPath = path.rfind("eng:") == 0;
+    bool resPath = path.rfind("res:") == 0;
+    std::filesystem::path filePath(engPath || resPath ? path.substr(4) : path);
+    if(engPath)
+        return std::filesystem::path("galaxy-engine") / filePath.relative_path();
+    else if(filePath.is_relative() || resPath)
+        return std::filesystem::path(Project::getProjectRootPath()) / filePath.relative_path();
+
+    return std::filesystem::path(path);
+}
+
 Project& Project::getInstance()
 {
     static Project instance;

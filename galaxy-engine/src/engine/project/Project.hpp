@@ -2,6 +2,7 @@
 
 #include "Scene.hpp"
 #include "pch.hpp"
+#include <filesystem>
 
 #include "UUID.hpp"
 
@@ -42,6 +43,7 @@ public:
 
     inline static std::string getProjectRootPath() { return getInstance().m_projectFolderPath; }
     inline static std::string toRelativePath(const std::string& absoluteFile) { return getInstance()._toRelativePath(absoluteFile); }
+    static std::filesystem::path resolvePath(const std::string& path);
 
 private:
     static Project& getInstance();

@@ -72,6 +72,8 @@ struct GraphTextureDesc {
     TextureWrap wrapT = TextureWrap::REPEAT;
     TextureWrap wrapR = TextureWrap::CLAMP_TO_EDGE;
 
+    unsigned int mipLevels = 1;
+
     [[nodiscard]] bool hasDepth() const
     {
         return format == TextureFormat::DEPTH24STENCIL8 || format == TextureFormat::DEPTH;

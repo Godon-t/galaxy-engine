@@ -73,6 +73,7 @@ public:
     void setFormat(TextureFormat format);
     void setFiltering(TextureFiltering filtering);
     void setWrap(TextureWrap wrapS, TextureWrap wrapT);
+    void setMipLevels(unsigned int mipLevels);
 
     void init(const float* data, unsigned int width, unsigned int height, unsigned int nbChannels, unsigned int depthLayerCount = 0);
     bool save(const std::string& prefix, bool hdr = false) const;
@@ -83,6 +84,7 @@ public:
     [[nodiscard]] unsigned int getLayerCount() const { return m_layerCount; }
     [[nodiscard]] unsigned int getWidth() const { return m_width; }
     [[nodiscard]] unsigned int getHeight() const { return m_height; }
+    [[nodiscard]] unsigned int getMipLevels() const { return m_mipLevels; }
     [[nodiscard]] TextureFormat getFormat() const { return m_format; }
     [[nodiscard]] TextureFiltering getFiltering() const { return m_filter; }
 
@@ -104,6 +106,8 @@ private:
     TextureFiltering m_filter = TextureFiltering::LINEAR;
     TextureWrap m_wrapS = TextureWrap::REPEAT;
     TextureWrap m_wrapT = TextureWrap::REPEAT;
+
+    unsigned int m_mipLevels = 1;
 
     unsigned int m_width  = 0;
     unsigned int m_height = 0;
@@ -131,6 +135,7 @@ public:
     bool save(const std::string& prefix, bool hdr = false) const;
 
     void resize(unsigned int resolution);
+    void setMipLevels(unsigned int mipLevels);
     void setFormat(TextureFormat format);
     void setFiltering(TextureFiltering filtering);
     void setWrap(TextureWrap wrapS, TextureWrap wrapT,
@@ -142,6 +147,7 @@ public:
 
     [[nodiscard]] unsigned int getId() const { return m_object.id(); }
     [[nodiscard]] unsigned int getResolution() const { return m_resolution; }
+    [[nodiscard]] unsigned int getMipLevels() const { return m_mipLevels; }
     [[nodiscard]] TextureFormat getFormat() const { return m_format; }
     [[nodiscard]] TextureFiltering getFiltering() const { return m_filter; }
 
@@ -152,6 +158,7 @@ private:
 
     detail::TextureObject m_object;
     unsigned int m_resolution = 0;
+    unsigned int m_mipLevels = 1;
     TextureFormat m_format = TextureFormat::RGBA;
     TextureFiltering m_filter = TextureFiltering::LINEAR;
     TextureWrap m_wrapS = TextureWrap::CLAMP_TO_EDGE;

@@ -79,6 +79,7 @@ FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept
     , m_fbo(std::exchange(other.m_fbo, 0))
     , m_width(other.m_width)
     , m_height(other.m_height)
+    , m_targetMip(other.m_targetMip)
     , m_targetDepthLayer(other.m_targetDepthLayer)
     , m_colorAttachments(std::move(other.m_colorAttachments))
     , m_depthAttachment(std::move(other.m_depthAttachment))
@@ -97,6 +98,7 @@ FrameBuffer& FrameBuffer::operator=(FrameBuffer&& other) noexcept
     m_fbo             = std::exchange(other.m_fbo, 0);
     m_width           = other.m_width;
     m_height          = other.m_height;
+    m_targetMip       = other.m_targetMip;
     m_targetDepthLayer = other.m_targetDepthLayer;
     m_colorAttachments = std::move(other.m_colorAttachments);
     m_depthAttachment  = std::move(other.m_depthAttachment);
@@ -130,6 +132,18 @@ void FrameBuffer::resize(unsigned int newWidth, unsigned int newHeight, int dept
     m_height = static_cast<int>(newHeight);
     m_depthLayerCount = static_cast<unsigned int>(requestedLayerCount);
     invalidate();
+}
+
+void FrameBuffer::setMipTarget(unsigned int newMip)
+{
+    if (m_targetMip == newMip)
+        return;
+
+    ScopedFramebufferBinding binding(m_fbo);
+    m_targetMip = newMip;
+    applyAttachments();
+    GLX_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+        "Framebuffer not complete after mip selection");
 }
 
 bool FrameBuffer::attachColorTexture(Texture& texture, int idx)
@@ -212,6 +226,8 @@ void FrameBuffer::invalidate()
         m_depthAttachment.reset();
     }
 
+    if (!isMipTargetValid(m_targetMip))
+        m_targetMip = 0;
     applyAttachments();
 
     if (m_format == FramebufferTextureFormat::DEPTH || m_format == FramebufferTextureFormat::DEPTH24STENCIL8) {
@@ -300,21 +316,40 @@ unsigned int FrameBuffer::depthAttachmentPoint() const
     return format == TextureFormat::DEPTH24STENCIL8 ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT;
 }
 
+bool FrameBuffer::isMipTargetValid(unsigned int mip) const
+{
+    bool selectsMip = false;
+    for (const auto& attachment : m_colorAttachments) {
+        if (attachment.get() != nullptr) {
+            selectsMip = true;
+            if (mip >= attachment.get()->getMipLevels())
+                return false;
+        }
+    }
+    if (m_depthAttachment.get() != nullptr && !m_depthAttachment.isOwned()) {
+        selectsMip = true;
+        if (mip >= m_depthAttachment.get()->getMipLevels())
+            return false;
+    }
+    return mip == 0 || selectsMip;
+}
+
 void FrameBuffer::applyAttachments()
 {
     if (usesColor()) {
         for (unsigned int i = 0; i < m_colorsCount; ++i) {
             const auto& attachment = m_colorAttachments[i];
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, attachment.get()->getId(), 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, attachment.get()->getId(), m_targetMip);
         }
     }
 
     if (usesDepth() && m_depthAttachment.get() != nullptr) {
         const auto& depth = *m_depthAttachment.get();
+        const unsigned int mip = m_depthAttachment.isOwned() ? 0 : m_targetMip;
         if (depth.getLayerCount() > 0)
-            glFramebufferTextureLayer(GL_FRAMEBUFFER, depthAttachmentPoint(), depth.getId(), 0, m_targetDepthLayer);
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, depthAttachmentPoint(), depth.getId(), mip, m_targetDepthLayer);
         else
-            glFramebufferTexture2D(GL_FRAMEBUFFER, depthAttachmentPoint(), GL_TEXTURE_2D, depth.getId(), 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, depthAttachmentPoint(), GL_TEXTURE_2D, depth.getId(), mip);
     }
 }
 
@@ -360,6 +395,7 @@ CubemapFrameBuffer::~CubemapFrameBuffer()
 CubemapFrameBuffer::CubemapFrameBuffer(CubemapFrameBuffer&& other) noexcept
     : m_fbo(std::exchange(other.m_fbo, 0))
     , m_size(other.m_size)
+    , m_targetMip(other.m_targetMip)
     , m_targetFace(other.m_targetFace)
     , m_colorCubemaps(std::move(other.m_colorCubemaps))
     , m_depthCubemap(std::move(other.m_depthCubemap))
@@ -374,6 +410,7 @@ CubemapFrameBuffer& CubemapFrameBuffer::operator=(CubemapFrameBuffer&& other) no
     destroy();
     m_fbo           = std::exchange(other.m_fbo, 0);
     m_size          = other.m_size;
+    m_targetMip     = other.m_targetMip;
     m_targetFace    = other.m_targetFace;
     m_colorCubemaps = std::move(other.m_colorCubemaps);
     m_depthCubemap  = std::move(other.m_depthCubemap);
@@ -445,6 +482,22 @@ void CubemapFrameBuffer::resize(unsigned int newSize)
     invalidate();
 }
 
+void CubemapFrameBuffer::setMipTarget(unsigned int newMip)
+{
+    if (m_targetMip == newMip)
+        return;
+    if (!isMipTargetValid(newMip)) {
+        GLX_CORE_ERROR("Cubemap framebuffer mip {0} is not allocated on its attachments", newMip);
+        return;
+    }
+
+    ScopedFramebufferBinding binding(m_fbo);
+    m_targetMip = newMip;
+    applyAttachments();
+    GLX_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+        "Cubemap framebuffer not complete after mip selection");
+}
+
 void CubemapFrameBuffer::invalidate()
 {
     if (m_fbo == 0)
@@ -457,9 +510,29 @@ void CubemapFrameBuffer::invalidate()
         if (attachment.isOwned())
             attachment.get()->resize(m_size);
     }
+    if (!isMipTargetValid(m_targetMip))
+        m_targetMip = 0;
 
     applyAttachments();
     checkOpenGLErrors("Cubemap frame buffer initialization");
+}
+
+bool CubemapFrameBuffer::isMipTargetValid(unsigned int mip) const
+{
+    bool selectsMip = false;
+    for (const auto& attachment : m_colorCubemaps) {
+        if (attachment.get() != nullptr) {
+            selectsMip = true;
+            if (mip >= attachment.get()->getMipLevels())
+                return false;
+        }
+    }
+    if (m_depthCubemap.get() != nullptr && !m_depthCubemap.isOwned()) {
+        selectsMip = true;
+        if (mip >= m_depthCubemap.get()->getMipLevels())
+            return false;
+    }
+    return mip == 0 || selectsMip;
 }
 
 void CubemapFrameBuffer::applyAttachments()
@@ -473,7 +546,7 @@ void CubemapFrameBuffer::applyAttachments()
             if (readBuffer == GL_NONE)
                 readBuffer = attachments[i];
             glFramebufferTexture2D(GL_FRAMEBUFFER, attachments[i],
-                GL_TEXTURE_CUBE_MAP_POSITIVE_X + m_targetFace, cubemap->getId(), 0);
+                GL_TEXTURE_CUBE_MAP_POSITIVE_X + m_targetFace, cubemap->getId(), m_targetMip);
         }
     }
 
@@ -481,8 +554,9 @@ void CubemapFrameBuffer::applyAttachments()
     if (depth != nullptr) {
         const unsigned int attachment = depth->getFormat() == TextureFormat::DEPTH24STENCIL8
             ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT;
+        const unsigned int mip = m_depthCubemap.isOwned() ? 0 : m_targetMip;
         glFramebufferTexture2D(GL_FRAMEBUFFER, attachment,
-            GL_TEXTURE_CUBE_MAP_POSITIVE_X + m_targetFace, depth->getId(), 0);
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X + m_targetFace, depth->getId(), mip);
     }
 
     if (attachments.empty())

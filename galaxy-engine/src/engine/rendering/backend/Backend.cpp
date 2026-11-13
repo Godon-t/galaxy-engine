@@ -199,9 +199,10 @@ void Backend::executeInvocation(const RenderPassResources& pass, const RenderSta
             }
         }, framebuffer);
     };
-    auto bind = [this](const GraphFramebufferHandle& framebuffer, int targetLayer) {
-        std::visit([this, targetLayer](const auto& typedHandle) {
-            bindFramebuffer(typedHandle, targetLayer);
+    auto bind = [this](const GraphFramebufferHandle& framebuffer, int targetLayer, int mipTarget = 0) {
+        std::visit([this, targetLayer, mipTarget](const auto& typedHandle) {
+            bindFramebuffer(typedHandle, targetLayer, mipTarget);
+            
         }, framebuffer);
     };
     //////////////
@@ -221,7 +222,7 @@ void Backend::executeInvocation(const RenderPassResources& pass, const RenderSta
     setActiveProgram(pass.program);
 
     resize(targetFramebuffer, invocation.viewportSize);
-    bind(targetFramebuffer, invocation.targetLayer);
+    bind(targetFramebuffer, invocation.targetLayer, invocation.targetMip);
 
     glClearColor(
         invocation.clearColor.r,
@@ -300,7 +301,7 @@ void Backend::executeInvocation(const RenderPassResources& pass, const RenderSta
     unbind(targetFramebuffer);
 }
 
-void Backend::bindFramebuffer(FramebufferHandle fb, int targetLayer){
+void Backend::bindFramebuffer(FramebufferHandle fb, int targetLayer, int targetMip){
     // GLX-TODO: redudancy in framebuffer accession
     auto* framebufferInstance = m_frameBufferInstances.tryGet(fb);
     if (framebufferInstance == nullptr) {
@@ -308,17 +309,19 @@ void Backend::bindFramebuffer(FramebufferHandle fb, int targetLayer){
         return;
     }
 
+    framebufferInstance->setMipTarget(targetMip);
     framebufferInstance->bind(targetLayer < 0 ? 0 : targetLayer);
 }
 
-void Backend::bindFramebuffer(CubemapFramebufferHandle fb, int targetFace)
+void Backend::bindFramebuffer(CubemapFramebufferHandle fb, int targetFace, int targetMip)
 {
     auto* framebufferInstance = m_cubemapFrameBufferInstances.tryGet(fb);
     if (framebufferInstance == nullptr) {
         GLX_CORE_ERROR("Cannot bind an unknown cubemap framebuffer");
         return;
     }
-
+    
+    framebufferInstance->setMipTarget(targetMip);
     framebufferInstance->bind(targetFace < 0 ? 0 : targetFace);
 }
 
@@ -543,6 +546,28 @@ void Backend::setTextureWrap(CubemapHandle cubemapHandle, TextureWrap wrapS, Tex
     }
 
     cubemap->setWrap(wrapS, wrapT, wrapR);
+}
+
+void Backend::setTextureMipLevels(TextureHandle textureHandle, unsigned int mipLevels)
+{
+    auto* texture  = m_textureInstances.get(textureHandle);
+    if(texture == nullptr){
+        GLX_ERROR("texture not found when changing mip levels!");
+        return;
+    } else {
+        texture->setMipLevels(mipLevels);
+    }
+}
+
+void Backend::setTextureMipLevels(CubemapHandle cubemapHandle, unsigned int mipLevels)
+{
+    auto* cubemap = m_cubemapInstances.tryGet(cubemapHandle);
+    if (cubemap == nullptr) {
+        GLX_ERROR("Cubemap not found when changing mip levels!");
+        return;
+    }
+
+    cubemap->setMipLevels(mipLevels);
 }
 
 void Backend::setTextureSize(TextureHandle textureHandle, ivec2 newSize)

@@ -63,6 +63,7 @@ void RenderGraph::build(const CompiledRenderGraph& compiledGraph, Backend& backe
                 textureDesc.wrapS, 
                 textureDesc.wrapT, 
                 textureDesc.wrapR);
+            backend.setTextureMipLevels(gpuHandle, textureDesc.mipLevels);
         } else {
             const std::size_t layerCount = textureDesc.dimension == TextureDimension::Texture2DArray
             ? textureDesc.arrayLayers
@@ -74,6 +75,7 @@ void RenderGraph::build(const CompiledRenderGraph& compiledGraph, Backend& backe
                 layerCount);
             m_graphTextureHandles.at(texture.textureId.index) = gpuHandle;
             backend.setTextureWrap(gpuHandle, textureDesc.wrapS, textureDesc.wrapT);
+            backend.setTextureMipLevels(gpuHandle, textureDesc.mipLevels);
         }
     }
 

@@ -46,6 +46,8 @@ public:
     bool setTextureData(TextureHandle textureHandle, Image& image);
     void setTextureWrap(TextureHandle texture, TextureWrap wrapS, TextureWrap wrapT);
     void setTextureWrap(CubemapHandle cubemap, TextureWrap wrapS, TextureWrap wrapT, TextureWrap wrapR);
+    void setTextureMipLevels(TextureHandle textureHandle, unsigned int mipLevels);
+    void setTextureMipLevels(CubemapHandle cubemapHandle, unsigned int mipLevels);
     void setTextureSize(TextureHandle textureHandle, ivec2 newSize);
     void setTextureSize(CubemapHandle textureHandle, unsigned int newSize);
     void clearTexture(TextureHandle texture);
@@ -105,8 +107,8 @@ public:
     [[nodiscard]] int getUniformLocation(ProgramHandle program, const std::string& uniformName) const;
     
     
-    void bindFramebuffer(FramebufferHandle fb, int targetLayer = -1);
-    void bindFramebuffer(CubemapFramebufferHandle fb, int targetFace = 0);
+    void bindFramebuffer(FramebufferHandle fb, int targetLayer = -1, int targetMip = 0);
+    void bindFramebuffer(CubemapFramebufferHandle fb, int targetFace = 0, int targetMip = 0);
     void unbindFramebuffer(FramebufferHandle fb);
     void unbindFramebuffer(CubemapFramebufferHandle fb);
     bool attachColorTextureToFramebuffer(TextureHandle texture, FramebufferHandle framebuffer, int colorattachmentIdx);

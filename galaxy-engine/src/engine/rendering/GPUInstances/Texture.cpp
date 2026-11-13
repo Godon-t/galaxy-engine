@@ -330,6 +330,7 @@ Texture::Texture(Texture&& other) noexcept
     , m_filter(other.m_filter)
     , m_wrapS(other.m_wrapS)
     , m_wrapT(other.m_wrapT)
+    , m_mipLevels(std::exchange(other.m_mipLevels, 1))
     , m_width(std::exchange(other.m_width, 0))
     , m_height(std::exchange(other.m_height, 0))
     , m_layerCount(std::exchange(other.m_layerCount, 0))
@@ -346,6 +347,7 @@ Texture& Texture::operator=(Texture&& other) noexcept
     m_filter = other.m_filter;
     m_wrapS = other.m_wrapS;
     m_wrapT = other.m_wrapT;
+    m_mipLevels = std::exchange(other.m_mipLevels, 1);
     m_width = std::exchange(other.m_width, 0);
     m_height = std::exchange(other.m_height, 0);
     m_layerCount = std::exchange(other.m_layerCount, 0);
@@ -391,9 +393,9 @@ void Texture::regenerate()
     setDepthBorderColor(getId(), m_format);
 
     if (m_layerCount > 0)
-        glTextureStorage3D(getId(), 1, internalFormat, m_width, m_height, m_layerCount);
+        glTextureStorage3D(getId(), m_mipLevels, internalFormat, m_width, m_height, m_layerCount);
     else
-        glTextureStorage2D(getId(), 1, internalFormat, m_width, m_height);
+        glTextureStorage2D(getId(), m_mipLevels, internalFormat, m_width, m_height);
 
     checkOpenGLErrors("Texture regeneration");
 }
@@ -447,6 +449,15 @@ void Texture::setWrap(TextureWrap wrapS, TextureWrap wrapT)
     m_wrapS = wrapS;
     m_wrapT = wrapT;
     applySamplerState();
+}
+
+void Texture::setMipLevels(unsigned int mipLevels)
+{
+    if (mipLevels == m_mipLevels)
+        return;
+
+    m_mipLevels = mipLevels;
+    regenerate();
 }
 
 void Texture::init(const float* data, unsigned int width, unsigned int height, unsigned int nbChannels, unsigned int depthLayerCount)
@@ -539,6 +550,7 @@ Cubemap::Cubemap(TextureFormat format, unsigned int resolution,
 Cubemap::Cubemap(Cubemap&& other) noexcept
     : m_object(std::move(other.m_object))
     , m_resolution(std::exchange(other.m_resolution, 0))
+    , m_mipLevels(std::exchange(other.m_mipLevels, 1))
     , m_format(other.m_format)
     , m_filter(other.m_filter)
     , m_wrapS(other.m_wrapS)
@@ -555,6 +567,7 @@ Cubemap& Cubemap::operator=(Cubemap&& other) noexcept
 
     m_object = std::move(other.m_object);
     m_resolution = std::exchange(other.m_resolution, 0);
+    m_mipLevels = std::exchange(other.m_mipLevels, 1);
     m_format = other.m_format;
     m_filter = other.m_filter;
     m_wrapS = other.m_wrapS;
@@ -574,7 +587,10 @@ void Cubemap::applySamplerState()
     glTextureParameteri(getId(), GL_TEXTURE_WRAP_R, detail::toOpenGLWrap(m_wrapR));
 
     const unsigned int glFilter = detail::toOpenGLFilter(m_filter);
-    glTextureParameteri(getId(), GL_TEXTURE_MIN_FILTER, glFilter);
+    if(m_mipLevels > 1 && m_filter == TextureFiltering::LINEAR)
+        glTextureParameteri(getId(), GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); 
+    else
+        glTextureParameteri(getId(), GL_TEXTURE_MIN_FILTER, glFilter);
     glTextureParameteri(getId(), GL_TEXTURE_MAG_FILTER, glFilter);
 }
 
@@ -597,7 +613,10 @@ void Cubemap::regenerate()
     m_object.create(GL_TEXTURE_CUBE_MAP);
     applySamplerState();
     setDepthBorderColor(getId(), m_format);
-    glTextureStorage2D(getId(), 1, internalFormat, m_resolution, m_resolution);
+    if(m_mipLevels > 1){
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    }
+    glTextureStorage2D(getId(), m_mipLevels, internalFormat, m_resolution, m_resolution);
     checkOpenGLErrors("Cubemap regeneration");
 }
 
@@ -656,6 +675,15 @@ void Cubemap::resize(unsigned int resolution)
         return;
 
     m_resolution = resolution;
+    regenerate();
+}
+
+void Cubemap::setMipLevels(unsigned int mipLevels)
+{
+    if (m_mipLevels == mipLevels)
+        return;
+
+    m_mipLevels = mipLevels;
     regenerate();
 }
 

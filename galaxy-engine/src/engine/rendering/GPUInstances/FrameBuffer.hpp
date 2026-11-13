@@ -26,6 +26,7 @@ public:
     unsigned int getDepthTextureID() const;
 
     void resize(unsigned int newWidth, unsigned int newHeight, int depthLayerCount = -1);
+    void setMipTarget(unsigned int newMip);
 
     void setColorsCount(unsigned int count);
     void setFormat(FramebufferTextureFormat format);
@@ -53,6 +54,7 @@ private:
     unsigned int m_fbo                 = 0;
     int m_width                        = 0;
     int m_height                       = 0;
+    unsigned int m_targetMip = 0;
     int m_targetDepthLayer = 0;
 
     std::vector<TextureAttachment> m_colorAttachments;
@@ -64,6 +66,7 @@ private:
     bool usesDepth() const;
     TextureFormat depthFormat() const;
     unsigned int depthAttachmentPoint() const;
+    bool isMipTargetValid(unsigned int mip) const;
     void applyAttachments();
 };
 
@@ -88,6 +91,7 @@ public:
     void destroy();
 
     void resize(unsigned int newSize);
+    void setMipTarget(unsigned int newMip);
 
 private:
     struct CubemapAttachment {
@@ -104,6 +108,7 @@ private:
 
     unsigned int m_fbo  = 0;
     unsigned int m_size = 0;
+    unsigned int m_targetMip = 0;
     int m_targetFace = 0;
 
     std::vector<CubemapAttachment> m_colorCubemaps;
@@ -111,6 +116,7 @@ private:
 
     void invalidate();
     void destroyFramebuffer();
+    bool isMipTargetValid(unsigned int mip) const;
     // Requires this framebuffer to be bound; never changes cubemap storage.
     void applyAttachments();
 };

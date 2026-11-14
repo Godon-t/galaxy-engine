@@ -6,12 +6,13 @@ include_directories(external/imgui/include/)
 
 add_subdirectory(external/imgui)
 
-add_executable(sandbox
+add_executable(editor
   main.cpp
-
+  
   EditorLayer.cpp
+  src/ImGui/ImGuiContext.cpp
+  
   external/imguizmo/ImGuizmo.cpp
-  editor/ImGui/ImGuiContext.cpp
 )
 
-target_link_libraries(sandbox PRIVATE galaxy-engine imgui)
+target_link_libraries(editor PRIVATE galaxy-engine imgui)

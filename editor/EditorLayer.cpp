@@ -1,6 +1,6 @@
 #include "EditorLayer.hpp"
 #include "Engine.hpp"
-#include "editor/NodeListPanel.hpp"
+#include "src/NodeListPanel.hpp"
 
 #include <imgui.h>
 

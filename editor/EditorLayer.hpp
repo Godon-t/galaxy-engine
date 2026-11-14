@@ -2,12 +2,12 @@
 
 #include <Engine.hpp>
 
-#include "editor/CubemapCreation.hpp"
-#include "editor/NodeEditPanel.hpp"
-#include "editor/NodeListPanel.hpp"
-#include "editor/ResourceAccess.hpp"
-#include "editor/imfilebrowser.h"
-#include "editor/ImGui/ImGuiContext.hpp"
+#include "src/CubemapCreation.hpp"
+#include "src/NodeEditPanel.hpp"
+#include "src/NodeListPanel.hpp"
+#include "src/ResourceAccess.hpp"
+#include "src/imfilebrowser.h"
+#include "src/ImGui/ImGuiContext.hpp"
 
 namespace Galaxy {
 enum class EditorMode {

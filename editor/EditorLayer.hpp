@@ -26,6 +26,9 @@ public:
     void onImGuiRender();
     void onEvent(Event& evt) override;
 
+    mat4 getEditorViewMatrix(){return m_editorCamera->getCamera()->getViews()[0].viewMatrix;}
+    mat4 getEditorProjectionMatrix(){return m_editorCamera->getCamera()->getViews()[0].projectionMatrix;}
+
 private:
     // Used to ask Project if the scene is still valid
     uuid m_selectedSceneId = 0;
@@ -49,6 +52,8 @@ private:
     std::shared_ptr<Node> m_rootEditorNode;
     std::shared_ptr<CameraNode> m_editorCamera;
     std::shared_ptr<Node> m_rootSceneNode;
+
+    std::shared_ptr<Node> m_selectedNode;
 
     float m_cameraSpeed   = 0.15f;
     bool m_rightClickDown = false;

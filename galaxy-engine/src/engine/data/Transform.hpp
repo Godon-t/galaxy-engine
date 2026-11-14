@@ -14,6 +14,7 @@ private:
     vec3 m_pos               = { 0.0f, 0.0f, 0.0f };
     vec3 m_scale             = { 1.0f, 1.0f, 1.0f };
     mat4 m_globalModelMatrix = mat4(1.f);
+    mat4 m_parentModelMatrix = mat4(1.f);
     quat m_rotationQuat      = quat();
 
     vec3 m_rotationEuler = vec3(0, 0, 0);
@@ -28,6 +29,7 @@ public:
 
     mat4 getLocalModelMatrix() const;
     mat4 getGlobalModelMatrix() const;
+    void setGlobalModelMatrix(mat4 global);
 
     void setLocalPosition(const vec3& position);
     vec3 getLocalPosition() const;

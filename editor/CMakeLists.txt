@@ -1,4 +1,5 @@
 include_directories(external/imgui/include/)
+include_directories(external/imguizmo)
 
 # set(ALL_LIBS
 # 	imgui

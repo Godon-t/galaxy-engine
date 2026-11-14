@@ -26,5 +26,7 @@ using glm::toMat4;
 using glm::translate;
 using glm::normalize;
 
+using glm::value_ptr;
+
 const float PI = 3.141592653589793;
 } // namespace math

@@ -2,6 +2,8 @@
 
 #include "Transform.hpp"
 
+#include <cmath>
+
 Transform::Transform()
     : m_globalModelMatrix(1.f)
     , m_pos(0.0f)
@@ -28,6 +30,7 @@ void Transform::computeModelMatrix(const mat4& parentGlobalModelMatrix)
 {
     auto localMat       = getLocalModelMatrix();
     m_globalModelMatrix = parentGlobalModelMatrix * localMat;
+    m_parentModelMatrix = parentGlobalModelMatrix;
     dirty               = false;
 }
 
@@ -48,6 +51,32 @@ mat4 Transform::getLocalModelMatrix() const
 mat4 Transform::getGlobalModelMatrix() const
 {
     return m_globalModelMatrix;
+}
+
+void Transform::setGlobalModelMatrix(mat4 global)
+{
+    const float parentDeterminant = glm::determinant(m_parentModelMatrix);
+    if (!std::isfinite(parentDeterminant) || parentDeterminant == 0.0f)
+        return;
+
+    const mat4 local = inverse(m_parentModelMatrix) * global;
+    const vec3 position(local[3]);
+    vec3 scale(length(vec3(local[0])), length(vec3(local[1])), length(vec3(local[2])));
+    for (int axis = 0; axis < 3; ++axis) {
+        if (!std::isfinite(position[axis]) || !std::isfinite(scale[axis]) || scale[axis] == 0.0f)
+            return;
+    }
+
+    if (dot(cross(vec3(local[0]), vec3(local[1])), vec3(local[2])) < 0.0f)
+        scale.x = -scale.x;
+
+    mat4 rotation(1.0f);
+    for (int axis = 0; axis < 3; ++axis)
+        rotation[axis] = vec4(vec3(local[axis]) / scale[axis], 0.0f);
+
+    m_pos = position;
+    m_scale = scale;
+    setLocalRotation(glm::normalize(glm::quat_cast(rotation)));
 }
 
 void Transform::setLocalPosition(const vec3& position)

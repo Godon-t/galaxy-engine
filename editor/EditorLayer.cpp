@@ -1,6 +1,7 @@
 #include "EditorLayer.hpp"
 #include "Engine.hpp"
 #include "src/NodeListPanel.hpp"
+#include "ImGuizmo.h"
 
 #include <imgui.h>
 
@@ -260,7 +261,8 @@ void EditorLayer::displayViewport(bool validScene)
         unsigned int textureID = Renderer::getInstance().getSceneTextureID();
         if (m_disablePostProcessing)
             GLX_WARN("Cannot disable post processing currently (TODO)");
-        ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 1, 1 }, ImVec2 { 0, 0 });
+        ImGui::Image(reinterpret_cast<void*>(textureID), pannelSize, ImVec2 { 0, 1 }, ImVec2 { 1, 0 });
+
 
         if (ImGui::IsItemHovered() && 
             ImGui::IsMouseReleased(ImGuiMouseButton_Left)
@@ -280,7 +282,7 @@ void EditorLayer::displayViewport(bool validScene)
                 Backend::RecordPixelObject record;
                 record.colorAttachment = 3;
                 record.coord = ivec2(
-                    width - 1 - static_cast<int>(u * width),
+                    static_cast<int>(u * width),
                     height - 1 - static_cast<int>(v * height));
                 record.pass =
                     Renderer::getInstance().getFrontend().getPbrPassId();
@@ -292,6 +294,23 @@ void EditorLayer::displayViewport(bool validScene)
                 Renderer::getInstance().getBackend().recordPixelValue(record);
             }
         }
+
+
+        if(m_selectedNode){
+            if(Node3D* node3D = dynamic_cast<Node3D*>(m_selectedNode.get())){
+                ImGuizmo::SetOrthographic(false);
+                ImGuizmo::SetDrawlist();
+                
+                const ImVec2 min = ImGui::GetItemRectMin();
+                const ImVec2 max = ImGui::GetItemRectMax();
+                ImGuizmo::SetRect(min.x, min.y, max.x - min.x, max.y - min.y);
+        
+                auto cam = m_editorCamera->getCamera()->getViews()[0];
+                mat4 test = node3D->getTransform().getGlobalModelMatrix();
+                ImGuizmo::Manipulate(value_ptr(cam.viewMatrix), value_ptr(cam.projectionMatrix), ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::LOCAL, value_ptr(test));
+                node3D->getTransform().setGlobalModelMatrix(test);
+            }
+        } 
 
     } else {
         ImGui::PopStyleVar();
@@ -419,7 +438,8 @@ void EditorLayer::onImGuiRender()
     else if (validScene)
         m_nodeList.listNodes(*m_selectedScene->getNodePtr().get());
     if (Node::nodeExists(m_nodeList.selectedNodeId)) {
-        m_editNode.selectNode(*Node::getNode(m_nodeList.selectedNodeId).lock().get(), m_mouseDelta);
+        m_selectedNode = Node::getNode(m_nodeList.selectedNodeId).lock();
+        m_editNode.selectNode(*m_selectedNode.get(), m_mouseDelta);
     }
     ImGui::End();
     m_mouseDelta = vec2(0.0f);
@@ -438,7 +458,7 @@ void EditorLayer::onEvent(Event& evt)
     } else if (evt.getEventType() == EventType::MouseMotion) {
         MouseMotionEvent& mouseMotion = (MouseMotionEvent&)evt;
         if (m_rightClickDown) {
-            m_editorCamera->getTransform().globalRotateY(mouseMotion.getDeltaX() * 0.001);
+            m_editorCamera->getTransform().globalRotateY(-mouseMotion.getDeltaX() * 0.001);
             m_editorCamera->getTransform().localRotateX(mouseMotion.getDeltaY() * 0.001);
         }
         if (m_leftClickDown)
@@ -456,18 +476,18 @@ void EditorLayer::onEvent(Event& evt)
 void EditorLayer::updateCamera()
 {
     vec3 translation(0);
-    vec3 forwardVec = m_editorCamera->getForward();
-    vec3 leftVec    = cross(forwardVec, vec3(0, 1, 0));
+    vec3 forwardVec = -m_editorCamera->getForward();
+    vec3 right    = cross(vec3(0, 1, 0), forwardVec);
     forwardVec *= m_cameraSpeed;
-    leftVec *= m_cameraSpeed;
+    right *= m_cameraSpeed;
     if (InputManager::isActionPressed("editor_forward"))
-        m_editorCamera->translate(-forwardVec);
-    if (InputManager::isActionPressed("editor_backward"))
         m_editorCamera->translate(forwardVec);
+    if (InputManager::isActionPressed("editor_backward"))
+        m_editorCamera->translate(-forwardVec);
     if (InputManager::isActionPressed("editor_right"))
-        m_editorCamera->translate(-leftVec);
+        m_editorCamera->translate(right);
     if (InputManager::isActionPressed("editor_left"))
-        m_editorCamera->translate(leftVec);
+        m_editorCamera->translate(-right);
     if (InputManager::isActionPressed("editor_up"))
         m_editorCamera->translate(vec3(0, m_cameraSpeed, 0));
     if (InputManager::isActionPressed("editor_down"))

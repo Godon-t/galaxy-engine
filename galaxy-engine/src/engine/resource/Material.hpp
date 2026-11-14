@@ -70,8 +70,8 @@ public:
 
 private:
     math::vec3 m_albedo = { 1.0f, 0.7f, 0.77f };
-    float m_metallic = 0.5f;
-    float m_roughness = 0.5f;
+    float m_metallic = 0.0f;
+    float m_roughness = 1.0f;
     float m_ambient = 1.0f;
     std::array<bool, TextureType::COUNT> m_useImage {};
     std::array<ResourceHandle<Image>, TextureType::COUNT> m_images;

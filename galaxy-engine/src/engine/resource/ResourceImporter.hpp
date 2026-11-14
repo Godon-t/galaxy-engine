@@ -144,7 +144,7 @@ struct ResourceImporter {
                 resource->save();
             });
 
-        aiColor3D color(0.f, 0.f, 0.f);
+        aiColor3D color(1.f, 1.f, 1.f);
         if (material->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS) {
             resource->setAlbedo(vec3(color.r, color.g, color.b));
         }

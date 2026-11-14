@@ -8,6 +8,7 @@
 #include "src/ResourceAccess.hpp"
 #include "src/imfilebrowser.h"
 #include "src/ImGui/ImGuiContext.hpp"
+#include "ImGuizmo.h"
 
 namespace Galaxy {
 enum class EditorMode {
@@ -41,6 +42,7 @@ private:
     ResourceAccess m_resourceAccess;
     CubemapCreation m_cubemapCreation;
     ImGui::FileBrowser m_fileDialog;
+    ImGuizmo::OPERATION m_imGuizmode = ImGuizmo::TRANSLATE;
 
     vec2 m_viewportSize { 0.0f };
 
@@ -64,6 +66,7 @@ private:
     unsigned int m_pixelRead = 0;
 
     void updateCamera();
+    void updateImGuizmode();
     void displayMenuBar(bool validScene);
     void displayViewport(bool sceneSelected);
     void applicationWidgetRender();

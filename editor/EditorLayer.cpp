@@ -1,7 +1,6 @@
 #include "EditorLayer.hpp"
 #include "Engine.hpp"
 #include "src/NodeListPanel.hpp"
-#include "ImGuizmo.h"
 
 #include <imgui.h>
 
@@ -103,6 +102,10 @@ void EditorLayer::onAttach()
     InputManager::addAction(Action(GLX_KEY_Q, "editor_down"));
     InputManager::addAction(Action(GLX_KEY_E, "editor_up"));
 
+    InputManager::addAction(Action(GLX_KEY_S, "editor_scale"));
+    InputManager::addAction(Action(GLX_KEY_G, "editor_translate"));
+    InputManager::addAction(Action(GLX_KEY_R, "editor_rotate"));
+
     m_imGuiContext.onAttach();
 }
 
@@ -127,7 +130,10 @@ void EditorLayer::onUpdate()
             camera = CameraManager::getInstance().getCurrentCamera();
         } else {
             camera = m_editorCamera->getCamera();
+            if(m_rightClickDown)
                 updateCamera();
+            else
+                updateImGuizmode();
         }
 
         // // Find the first spotlight for shadow mapping
@@ -307,7 +313,7 @@ void EditorLayer::displayViewport(bool validScene)
         
                 auto cam = m_editorCamera->getCamera()->getViews()[0];
                 mat4 test = node3D->getTransform().getGlobalModelMatrix();
-                if(ImGuizmo::Manipulate(value_ptr(cam.viewMatrix), value_ptr(cam.projectionMatrix), ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::LOCAL, value_ptr(test)))
+                if(ImGuizmo::Manipulate(value_ptr(cam.viewMatrix), value_ptr(cam.projectionMatrix), m_imGuizmode, ImGuizmo::LOCAL, value_ptr(test)))
                     node3D->getTransform().setGlobalModelMatrix(test);
             }
         } 
@@ -454,9 +460,12 @@ void EditorLayer::onEvent(Event& evt)
     } else if (evt.getEventType() == EventType::MouseScroll) {
         MouseScrollEvent& scrollEvt = (MouseScrollEvent&)evt;
         m_cameraSpeed += scrollEvt.getYOffset() * 0.1;
+        m_cameraSpeed = m_cameraSpeed <= 0 ? 0.00001 : m_cameraSpeed;
     } else if (evt.getEventType() == EventType::MouseMotion) {
         MouseMotionEvent& mouseMotion = (MouseMotionEvent&)evt;
         if (m_rightClickDown) {
+            m_editorCamera->getTransform().globalRotateY(-mouseMotion.getDeltaX() * 0.003);
+            m_editorCamera->getTransform().localRotateX(mouseMotion.getDeltaY() * 0.003);
         }
         if (m_leftClickDown)
             m_mouseDelta += vec2(mouseMotion.getDeltaX(), mouseMotion.getDeltaY());
@@ -489,5 +498,14 @@ void EditorLayer::updateCamera()
         m_editorCamera->translate(vec3(0, m_cameraSpeed, 0));
     if (InputManager::isActionPressed("editor_down"))
         m_editorCamera->translate(vec3(0, -m_cameraSpeed, 0));
+}
+void EditorLayer::updateImGuizmode()
+{
+    if (InputManager::isActionPressed("editor_translate"))
+        m_imGuizmode = ImGuizmo::TRANSLATE;
+    else if (InputManager::isActionPressed("editor_rotate"))
+        m_imGuizmode = ImGuizmo::ROTATE;
+    else if (InputManager::isActionPressed("editor_scale"))
+        m_imGuizmode = ImGuizmo::SCALE;
 }
 }

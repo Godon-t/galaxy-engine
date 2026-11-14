@@ -127,7 +127,7 @@ void EditorLayer::onUpdate()
             camera = CameraManager::getInstance().getCurrentCamera();
         } else {
             camera = m_editorCamera->getCamera();
-            updateCamera();
+                updateCamera();
         }
 
         // // Find the first spotlight for shadow mapping
@@ -307,8 +307,8 @@ void EditorLayer::displayViewport(bool validScene)
         
                 auto cam = m_editorCamera->getCamera()->getViews()[0];
                 mat4 test = node3D->getTransform().getGlobalModelMatrix();
-                ImGuizmo::Manipulate(value_ptr(cam.viewMatrix), value_ptr(cam.projectionMatrix), ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::LOCAL, value_ptr(test));
-                node3D->getTransform().setGlobalModelMatrix(test);
+                if(ImGuizmo::Manipulate(value_ptr(cam.viewMatrix), value_ptr(cam.projectionMatrix), ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::LOCAL, value_ptr(test)))
+                    node3D->getTransform().setGlobalModelMatrix(test);
             }
         } 
 
@@ -454,12 +454,9 @@ void EditorLayer::onEvent(Event& evt)
     } else if (evt.getEventType() == EventType::MouseScroll) {
         MouseScrollEvent& scrollEvt = (MouseScrollEvent&)evt;
         m_cameraSpeed += scrollEvt.getYOffset() * 0.1;
-        m_cameraSpeed = m_cameraSpeed <= 0 ? 0.0001 : m_cameraSpeed;
     } else if (evt.getEventType() == EventType::MouseMotion) {
         MouseMotionEvent& mouseMotion = (MouseMotionEvent&)evt;
         if (m_rightClickDown) {
-            m_editorCamera->getTransform().globalRotateY(-mouseMotion.getDeltaX() * 0.001);
-            m_editorCamera->getTransform().localRotateX(mouseMotion.getDeltaY() * 0.001);
         }
         if (m_leftClickDown)
             m_mouseDelta += vec2(mouseMotion.getDeltaX(), mouseMotion.getDeltaY());

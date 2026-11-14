@@ -21,7 +21,6 @@ void Node3D::updateTransformAndChilds(const mat4& matrix)
         child->updateTransformAndChilds(m_transform.getGlobalModelMatrix());
     }
 
-    onWorldTransformChanged();
 }
 
 void Node3D::forceUpdateTransformAndChilds(const mat4& matrix)
@@ -31,6 +30,7 @@ void Node3D::forceUpdateTransformAndChilds(const mat4& matrix)
     for (auto&& child : m_children) {
         child->forceUpdateTransformAndChilds(m_transform.getGlobalModelMatrix());
     }
+    onWorldTransformChanged();
 }
 
 void Node3D::translate(vec3 translation)

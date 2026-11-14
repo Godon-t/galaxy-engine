@@ -15,16 +15,6 @@ Transform::Transform()
 {
 }
 
-Transform::Transform(Transform&& other) noexcept
-    : m_pos(std::move(other.m_pos))
-    , m_rotationQuat(std::move(other.m_rotationQuat))
-    , m_scale(std::move(other.m_scale))
-    , m_globalModelMatrix(std::move(other.m_globalModelMatrix))
-    , dirty(other.dirty)
-    , m_rotationOrder(other.m_rotationOrder)
-    , m_rotationEuler(other.m_rotationEuler)
-{
-}
 
 void Transform::computeModelMatrix(const mat4& parentGlobalModelMatrix)
 {

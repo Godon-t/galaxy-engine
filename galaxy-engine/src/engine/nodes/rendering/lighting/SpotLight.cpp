@@ -95,22 +95,19 @@ vec3 SpotLight::getDirection() const
 
 mat4 SpotLight::getLightSpaceMatrix() const
 {
-    // Créer une matrice de projection en perspective pour le spot
-    float aspect    = 1.0f; // La shadowmap est carrée
-    float fov       = glm::radians(m_outerCutoffAngle * 2.0f);
-    mat4 projection = glm::perspective(fov, aspect, 0.1f, m_range);
+    float aspect    = 1.0f;
+    float fov       = radians(m_outerCutoffAngle * 2.0f);
+    mat4 projection = perspective(fov, aspect, 0.1f, m_range);
 
-    // Créer la matrice de vue depuis la position et direction de la lumière
     vec3 position  = getTransform().getGlobalPosition();
     vec3 direction = getDirection();
     vec3 up        = vec3(0, 1, 0);
 
-    // Éviter que up soit parallèle à direction
     if (abs(dot(direction, up)) > 0.99f) {
         up = vec3(1, 0, 0);
     }
 
-    mat4 view = glm::lookAt(position, position + direction, up);
+    mat4 view = lookAt(position, position + direction, up);
 
     return projection * view;
 }

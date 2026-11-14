@@ -31,8 +31,6 @@ Application::Application()
     m_terminated      = false;
     m_window          = std::unique_ptr<Window>(Window::create(props));
     m_frameDuration   = std::chrono::milliseconds(1000 / 60); // 60 fps
-    m_imGuiLayer      = new ImGuiLayer();
-    pushOverlay(m_imGuiLayer);
 
     m_window->setEventCallback([this](Event& event) {
         for (auto it = m_layerStack.end(); it != m_layerStack.begin();) {
@@ -60,7 +58,6 @@ Application::~Application()
     // Release all of them while the renderer and its OpenGL context still exist.
     Project::unloadScenes();
     m_layerStack.clear();
-    m_imGuiLayer = nullptr;
     m_root->clear();
 
     Renderer::getInstance().shutdown();
@@ -92,12 +89,6 @@ void Application::run()
         for (Layer* layer : m_layerStack) {
             layer->onUpdate();
         }
-
-        m_imGuiLayer->begin();
-        for (Layer* layer : m_layerStack) {
-            layer->onImGuiRender();
-        }
-        m_imGuiLayer->end();
 
         m_window->onUpdate();
 

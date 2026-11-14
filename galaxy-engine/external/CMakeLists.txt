@@ -53,6 +53,12 @@ add_library( GLEW_1130 STATIC
 	${GLEW_INCLUDE}
 )
 
+target_include_directories(GLEW_1130 PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/glew-1.13.0/include"
+)
+
+target_compile_definitions(GLEW_1130 PUBLIC GLEW_STATIC)
+
 target_link_libraries(GLEW_1130
 	${OPENGL_LIBRARY}
 	${EXTRA_LIBS}
@@ -68,6 +74,7 @@ set(ASSIMP_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assimp)
 option(ASSIMP_BUILD_TESTS "Build tests" OFF)
 option(ASSIMP_BUILD_SAMPLES "Build samples" OFF)
 option(ASSIMP_BUILD_ASSIMP_TOOLS "Build tools" OFF)
+option(ASSIMP_WARNINGS_AS_ERRORS "Treat Assimp warnings as errors" OFF)
 
 
 

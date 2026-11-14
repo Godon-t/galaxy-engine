@@ -6,6 +6,7 @@
 
 #include "common/Util.hpp"
 
+#include "core/gl_headers.hpp"
 
 #include "types/Math.hpp"
 #include "types/Render.hpp"

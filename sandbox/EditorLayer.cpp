@@ -101,10 +101,13 @@ void EditorLayer::onAttach()
 
     InputManager::addAction(Action(GLX_KEY_Q, "editor_down"));
     InputManager::addAction(Action(GLX_KEY_E, "editor_up"));
+
+    m_imGuiContext.onAttach();
 }
 
 void EditorLayer::onDetach()
 {
+    m_imGuiContext.onDetach();
     m_editNode.destroy();
 }
 
@@ -114,10 +117,9 @@ void EditorLayer::onUpdate()
         m_selectedScene = &Project::loadScene(m_selectedSceneId);
     } else {
         m_selectedScene = nullptr;
-        return;
     }
 
-    if (m_selectedScene->getNodePtr()) {
+    if (m_selectedScene && m_selectedScene->getNodePtr()) {
         auto& renderer = Renderer::getInstance();
         std::shared_ptr<Camera> camera;
         if (m_mode == EditorMode::Run) {
@@ -150,6 +152,11 @@ void EditorLayer::onUpdate()
 
         renderer.renderFrame();
     }
+
+
+    m_imGuiContext.begin();
+    onImGuiRender();
+    m_imGuiContext.end();
 }
 
 void EditorLayer::displayMenuBar(bool validScene)

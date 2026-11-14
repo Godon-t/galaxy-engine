@@ -7,6 +7,7 @@
 #include "editor/NodeListPanel.hpp"
 #include "editor/ResourceAccess.hpp"
 #include "editor/imfilebrowser.h"
+#include "editor/ImGui/ImGuiContext.hpp"
 
 namespace Galaxy {
 enum class EditorMode {
@@ -22,13 +23,15 @@ public:
     void onAttach() override;
     void onDetach() override;
     void onUpdate() override;
-    void onImGuiRender() override;
+    void onImGuiRender();
     void onEvent(Event& evt) override;
 
 private:
     // Used to ask Project if the scene is still valid
     uuid m_selectedSceneId = 0;
     Scene* m_selectedScene  = nullptr;
+
+    ImGuiContext m_imGuiContext;
 
     NodeListPanel m_nodeList;
     NodeEditPanel m_editNode;

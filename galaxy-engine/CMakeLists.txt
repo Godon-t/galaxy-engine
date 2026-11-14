@@ -28,7 +28,6 @@ include_directories(
     external/glfw-3.4/include/
     external/glm-0.9.7.1/
     external/glew-1.13.0/include/
-    external/imgui/include/
     .
 )
 
@@ -38,7 +37,6 @@ set(ALL_LIBS
     GLEW_1130
     assimp
 	yaml-cpp
-	imgui
 	spdlog::spdlog_header_only
 )
 
@@ -48,7 +46,6 @@ add_definitions(
 	-DTW_NO_DIRECT3D
 	-DGLEW_STATIC
 	-D_CRT_SECURE_NO_WARNINGS
-	-DIMGUI_IMPL_OPENGL_LOADER_GLEW
 )
 
 add_library(galaxy-engine
@@ -61,8 +58,6 @@ add_library(galaxy-engine
 	src/engine/core/LayerStack.cpp
 
 	src/engine/event/InputManager.cpp
-
-	src/engine/ImGui/ImGuiLayer.cpp
 
 	src/engine/data/Transform.cpp
 	src/engine/data/Camera.cpp
@@ -127,8 +122,6 @@ target_precompile_headers(galaxy-engine PUBLIC src/engine/core/pch.hpp)
 target_include_directories(galaxy-engine PUBLIC external/glm-0.9.7.1)
 target_include_directories(galaxy-engine PUBLIC external/stbi)
 
-# TODO: move to right spot
-add_subdirectory(external/imgui)
 
 
 target_link_libraries(galaxy-engine ${ALL_LIBS})

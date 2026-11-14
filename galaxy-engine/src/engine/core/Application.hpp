@@ -4,7 +4,6 @@
 #include "Layer.hpp"
 #include "LayerStack.hpp"
 #include "Window.hpp"
-#include "engine/ImGui/ImGuiLayer.hpp"
 #include "engine/nodes/Root.hpp"
 
 #include <chrono>
@@ -32,7 +31,6 @@ public:
 
 private:
     static Application* s_instance;
-    ImGuiLayer* m_imGuiLayer;
     std::unique_ptr<Window> m_window;
     LayerStack m_layerStack;
     bool m_terminated;

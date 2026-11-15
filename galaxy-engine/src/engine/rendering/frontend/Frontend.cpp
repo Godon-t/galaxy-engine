@@ -104,7 +104,7 @@ Frontend::Frontend(Backend& backend)
     opaqueColor.matchViewSize = true;
 
     GraphTextureDesc opaqueNormal;
-    opaqueNormal.format = TextureFormat::RGBA;
+    opaqueNormal.format = TextureFormat::RGB16F;
     opaqueNormal.name = "gNormal";
     opaqueNormal.matchViewSize = true;
 

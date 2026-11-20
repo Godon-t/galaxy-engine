@@ -7,19 +7,17 @@
 namespace Galaxy {
 std::unordered_map<Galaxy::uuid, std::string> ResourceAccess::paths;
 
-static MeshInstance* findMeshInstanceByGeometryIndex(Node* node, unsigned int index)
+static MeshInstance* findMeshInstanceObjectId(Node* node, unsigned int id)
 {
     if (node == nullptr)
         return nullptr;
 
-    if (auto* mesh = dynamic_cast<MeshInstance*>(node)) {
-        const GeometryHandle handle = mesh->getGeometryHandle();
-        if (handle && handle.index() == index)
+    if (auto* mesh = dynamic_cast<MeshInstance*>(node))
+        if (mesh->getRenderItemId() == id)
             return mesh;
-    }
 
     for (Node* child : node->getChildren()) {
-        if (auto* mesh = findMeshInstanceByGeometryIndex(child, index))
+        if (auto* mesh = findMeshInstanceObjectId(child, id))
             return mesh;
     }
     return nullptr;
@@ -407,8 +405,8 @@ void EditorLayer::onImGuiRender()
         auto testRoot = std::make_shared<Node3D>();
         m_selectedScene->getNodePtr()->addChild(testRoot);
         
-        int nbMetal = 5;
-        int nbRough = 5;
+        int nbMetal = 8;
+        int nbRough = 8;
         for(int i=0; i<nbMetal; i++){
             auto row = std::make_shared<Node3D>();
             row->translate({0, i * 5, 0});
@@ -432,7 +430,7 @@ void EditorLayer::onImGuiRender()
     if (m_pixelReadWaiting) {
         m_pixelReadWaiting = false;
         if (validScene && m_selectedScene) {
-            if (auto* mesh = findMeshInstanceByGeometryIndex(
+            if (auto* mesh = findMeshInstanceObjectId(
                     m_selectedScene->getNodePtr().get(), m_pixelRead)) {
                 m_nodeList.selectedNodeId = mesh->id;
             }

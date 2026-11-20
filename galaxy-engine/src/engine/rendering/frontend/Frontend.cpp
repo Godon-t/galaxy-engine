@@ -107,6 +107,7 @@ Frontend::Frontend(Backend& backend)
     opaqueNormal.format = TextureFormat::RGB16F;
     opaqueNormal.name = "gNormal";
     opaqueNormal.matchViewSize = true;
+    opaqueNormal.filter = TextureFiltering::NEAREST;
 
     GraphTextureDesc opaqueDepth;
     opaqueDepth.format = TextureFormat::RGBA;
@@ -328,22 +329,21 @@ Frontend::Frontend(Backend& backend)
 
 void Frontend::addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material,
     const Transform& transform, const BitMask& layer)
-    {
-        addObjectToScene(geometry, m_backend.getMeshBoundingVolume(geometry), material, transform, layer);
-    }
-    
-void Frontend::addObjectToScene(GeometryHandle geometry, const Sphere& boundingVolume, std::optional<MaterialHandle> material,
-    const Transform& transform, const BitMask& layer)
 {
     RenderItem item;
     item.geometry = geometry;
     item.material = material;
     item.visibilityLayer = layer;
-    item.bounds = boundingVolume;
+    item.bounds = m_backend.getMeshBoundingVolume(geometry);
     item.transform = transform;
     m_frameContext.push(std::move(item));
 }
-
+    
+void Frontend::addObjectToScene(RenderItem item)
+{
+    item.bounds = m_backend.getMeshBoundingVolume(item.geometry);
+    m_frameContext.push(std::move(item));
+}
 
 void Frontend::notifyMaterialUpdated(MaterialHandle material, const MaterialRenderInfo& info)
 {

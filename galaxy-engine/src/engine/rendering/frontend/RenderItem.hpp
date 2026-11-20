@@ -14,6 +14,10 @@ namespace Galaxy {
 // Frontend description of something that may be rendered. It is not a GPU
 // resource.
 struct RenderItem {
+    RenderItem() = default;
+    RenderItem(GeometryHandle geometry): geometry(geometry){}
+
+    uint32_t objectId = 0;
     GeometryHandle geometry;
     std::optional<MaterialHandle> material;
     BitMask visibilityLayer;

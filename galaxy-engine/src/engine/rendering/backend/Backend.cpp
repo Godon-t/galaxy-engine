@@ -309,7 +309,7 @@ void Backend::executeInvocation(const RenderPassResources& pass, const RenderSta
             else
                 bindPBRMaterial(MaterialInstance {});
         }
-        draw(item.geometry, item.transform.getGlobalModelMatrix());
+        draw(item.geometry, item.transform.getGlobalModelMatrix(), item.objectId);
     }
 
     unbind(targetFramebuffer);
@@ -1157,7 +1157,7 @@ void Backend::setCubemapData(CubemapHandle cubemapID, std::array<ResourceHandle<
     }
 }
 
-void Backend::draw(const GeometryHandle& geometryH, const mat4 model)
+void Backend::draw(const GeometryHandle& geometryH, const mat4 model, uint32_t objectId)
 {
     auto* geometry = m_visualInstances.tryGet(geometryH);
     if (geometry == nullptr) {
@@ -1173,7 +1173,7 @@ void Backend::draw(const GeometryHandle& geometryH, const mat4 model)
     }
 
     program->setUniform("model", model);
-    program->setUniform("objectId", geometryH.index());
+    program->setUniform("objectId", objectId);
     geometry->draw();
     ++m_drawCount;
 }

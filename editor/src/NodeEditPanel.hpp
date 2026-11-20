@@ -263,7 +263,7 @@ public:
         ImGui::SeparatorText("Transform");
         vec3 position = transform.getLocalPosition();
         if (ImGui::DragFloat3("Position", &position[0])) {
-            transform.setLocalPosition(position);
+                transform.setLocalPosition(position);
         }
         vec3 startRotation    = transform.getLocalRotation() / (M_PI / 180.f);
         vec3 modifiedRotation = startRotation;

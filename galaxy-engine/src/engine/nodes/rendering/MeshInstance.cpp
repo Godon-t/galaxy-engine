@@ -8,24 +8,43 @@
 #include "resource/ResourceManager.hpp"
 
 namespace Galaxy {
+uint32_t MAX_IDs = 4096;
+std::queue<uint32_t> initAvailableIDs(){
+    std::queue<uint32_t> res;
+    for(uint32_t id=1; id<MAX_IDs; id++){
+        res.push(id);
+    }
+    return res;
+}
+
+std::queue<uint32_t> MeshInstance::s_availableIDs = initAvailableIDs();
+
+MeshInstance::MeshInstance(std::string name) : Node3D(name)
+    , m_meshSurfaceIdx(-1)
+{
+    m_renderItem.objectId = s_availableIDs.front();
+    s_availableIDs.pop();
+}
+
 MeshInstance::~MeshInstance()
 {
-    if (m_geometry)
-        Renderer::getInstance().getBackend().clearMesh(m_geometry);
-    if (m_materialHandle) {
-        Renderer::getInstance().getBackend().clearMaterial(m_materialHandle);
+    if (m_renderItem.geometry)
+        Renderer::getInstance().getBackend().clearMesh(m_renderItem.geometry);
+    if (m_renderItem.material.has_value()) {
+        Renderer::getInstance().getBackend().clearMaterial(m_renderItem.material.value());
     }
+
+    s_availableIDs.push(m_renderItem.objectId);
+    m_renderItem.objectId = 0;
 }
 
 void MeshInstance::draw()
 {
-    if (!m_geometry)
+    if (!m_renderItem.geometry)
         return;
 
-    std::optional<MaterialHandle> material;
-    if (m_materialHandle)
-        material = m_materialHandle;
-    Renderer::getInstance().getFrontend().addObjectToScene(m_geometry, material, getTransform(), m_visibilityLayer);
+    m_renderItem.transform = getTransform();
+    Renderer::getInstance().getFrontend().addObjectToScene(m_renderItem);    
 }
 
 void MeshInstance::lightPassDraw()
@@ -79,23 +98,25 @@ void MeshInstance::loadMesh(std::string path)
 void MeshInstance::loadMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 {
     // GLX-TODO: potential bug, we are not sure it is the only instance of geometry and material. Could potentialy invalidate GPU resource for other instances
-    if (m_geometry) {
-        Renderer::getInstance().getBackend().clearMesh(m_geometry);
-        m_geometry = {};
+    if (m_renderItem.geometry) {
+        Renderer::getInstance().getBackend().clearMesh(m_renderItem.geometry);
+        m_renderItem.geometry = {};
     }
-    if (m_materialHandle) {
-        Renderer::getInstance().getBackend().clearMaterial(m_materialHandle);
-        m_materialHandle = {};
+    if (m_renderItem.material.has_value()) {
+        Renderer::getInstance().getBackend().clearMaterial(m_renderItem.material.value());
+        m_renderItem.material = {};
         m_materialResource = {};
     }
 
     mesh.getResource().onLoaded([this, mesh, surfaceIdx] {
-        m_geometry = Renderer::getInstance().getBackend().instantiateMesh(mesh, surfaceIdx);
+        m_renderItem.geometry = Renderer::getInstance().getBackend().instantiateMesh(mesh, surfaceIdx);
 
         if (!mesh.getResource().hasMaterial(surfaceIdx))
             return;
 
         setMaterial(mesh.getResource().getMaterial(surfaceIdx));
+
+        m_renderItem.bounds = Renderer::getInstance().getBackend().getMeshBoundingVolume(m_renderItem.geometry);
     });
 
     m_meshResource   = mesh;
@@ -104,12 +125,12 @@ void MeshInstance::loadMesh(ResourceHandle<Mesh> mesh, int surfaceIdx)
 
 void MeshInstance::setMaterial(ResourceHandle<BaseMaterial> material)
 {
-    if (m_materialHandle)
-        Renderer::getInstance().getBackend().clearMaterial(m_materialHandle);
-    m_materialHandle = {};
+    if (m_renderItem.material.has_value())
+        Renderer::getInstance().getBackend().clearMaterial(m_renderItem.material.value());
+    m_renderItem.material = {};
     m_materialResource = material;
     material.getResource().onLoaded([this, material] {
-        m_materialHandle = Renderer::getInstance().getBackend().instantiateMaterial(material);
+        m_renderItem.material = Renderer::getInstance().getBackend().instantiateMaterial(material);
     });
 }
 } // namespace Galaxy

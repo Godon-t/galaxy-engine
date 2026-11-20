@@ -61,7 +61,7 @@ in vec3 v_normal;
 in vec3 v_camPos;
 
 layout(location = 0) out vec4 gAlbedo;
-layout(location = 1) out vec4 gNormal;
+layout(location = 1) out vec3 gNormal;
 layout(location = 2) out vec4 gMaterial;
 layout(location = 3) out uint gObjectId;
 
@@ -100,7 +100,7 @@ void main()
         albedoVal;
     normal             = useNormalMap ? 
         getNormalFromNormalMap() : 
-        v_normal;
+        normalize(v_normal);
     roughness          = useRoughnessMap ? 
         texture(metallicRoughnessMap, v_texCoords).g * roughnessVal: 
         roughnessVal;
@@ -117,8 +117,7 @@ void main()
         gAlbedo.rgb = albedo;
         gAlbedo.a   = transparency;
 
-        gNormal.rgb = (normal + vec3(1.0)) * 0.5;
-        gNormal.a = 1.0;
+        gNormal = (normal + vec3(1.0)) * 0.5;
 
         gMaterial = vec4(roughness, metallic, ao, 1.0);
     } else {

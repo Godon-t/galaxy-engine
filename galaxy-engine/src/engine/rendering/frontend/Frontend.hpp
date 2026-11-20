@@ -36,8 +36,7 @@ public:
 
     void addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material,
         const Transform& transform = Transform {}, const BitMask& layer = BitMask {});
-    void addObjectToScene(GeometryHandle geometry, const Sphere& boundingVolume, std::optional<MaterialHandle> material,
-        const Transform& transform = Transform {}, const BitMask& layer = BitMask {});
+    void addObjectToScene(RenderItem item);
 
     inline void removeMaterialID(MaterialHandle material) { m_frameContext.removeMaterial(material); }
     void notifyMaterialUpdated(MaterialHandle material, const MaterialRenderInfo& info);

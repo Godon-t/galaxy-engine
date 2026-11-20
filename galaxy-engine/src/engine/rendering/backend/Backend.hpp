@@ -143,7 +143,7 @@ private:
     void releaseAttachments(FramebufferHandle framebuffer);
     void releaseAttachments(CubemapFramebufferHandle framebuffer);
 
-    void draw(const GeometryHandle& geometryH, const mat4 model);
+    void draw(const GeometryHandle& geometryH, const mat4 model, uint32_t objectId);
     void bindMaterial(const MaterialHandle handle);
     void bindPBRMaterial(const MaterialInstance& material);
     void releaseMaterialTextures(const MaterialInstance& material);

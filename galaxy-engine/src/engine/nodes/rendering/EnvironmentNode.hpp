@@ -37,6 +37,7 @@ protected:
     virtual void enteredRoot() override;
 
 private:
+    void addTextureRectToCubemapInvocation();
     void prepareEnvironmentMap();
 
     RenderPassId m_passEquirectangularToCubemapId;
@@ -44,6 +45,8 @@ private:
     RenderPassId m_passSpecularFilterId;
     GeometryHandle m_captureCube;
     TextureHandle m_environmentSourceTexture;
+    CubemapHandle m_preparedEnvironment;
+    bool m_environmentDirty = true;
 
     EnvironmentMapSource m_environmentMap;
     int m_directionalLightID = -1;

@@ -11,13 +11,10 @@
 #include "engine/rendering/RenderGraph/RenderGraphDeclaration.hpp"
 #include "engine/rendering/RenderGraph/RenderGraphCompilation.hpp"
 #include "engine/rendering/RenderGraph/RenderGraph.hpp"
-#include "engine/rendering/RenderGraph/RenderGraphExecution.hpp"
 #include "engine/rendering/frontend/LightManager.hpp"
 
-#include <optional>
 #include <memory>
 #include <utility>
-#include <vector>
 
 namespace Galaxy {
 
@@ -26,12 +23,11 @@ class Backend;
 class Frontend {
 public:
     void addCamera(Camera camera) { m_frameCameras.push_back(std::move(camera)); }
-    void setEnvironmentMap(ResourceHandle<CubemapResource>& cubemapRes);
-    GraphTextureId getEnvironmentGraphTexture();
-    GraphTextureId getIrradianceGraphTexture();
-    GraphTextureId getSpecularGraphTexture();
+    GraphResourceIdTexture getEnvironmentGraphTexture();
+    GraphResourceIdTexture getIrradianceGraphTexture();
+    GraphResourceIdTexture getSpecularGraphTexture();
 
-    explicit Frontend(Backend& backend);
+    explicit Frontend(RenderGraph& graph, Backend& backend);
     ~Frontend();
 
     void addObjectToScene(GeometryHandle geometry, std::optional<MaterialHandle> material,
@@ -40,21 +36,14 @@ public:
 
     inline void removeMaterialID(MaterialHandle material) { m_frameContext.removeMaterial(material); }
     void notifyMaterialUpdated(MaterialHandle material, const MaterialRenderInfo& info);
-    inline void clearContext(){m_frameContext.clear();}
+    void clearContext();
 
-    TargetId addGraphTarget(const RenderTargetDesc& description);
-    RenderPassId addGraphPass(const RenderPassDesc& description);
-    GraphTextureId addGraphTexture(const GraphTextureDesc& description);
-    RenderGraphExecution buildFrameExecution();
+    void addFrameInvocationsToContext(RenderGraph& graph);
 
-    void pushPassInvocation(RenderPassId id, RenderPassInvocation invocation);
-
-    FramebufferHandle getFinalFramebuffer();
     LightManager& getLightManager() { return m_lightManager; }
 
-    void resize(ivec2 newSize);
     RenderPassId getPbrPassId(){return m_passTransparentPBRId;}
-    
+
     
 private:
     Backend& m_backend;
@@ -62,23 +51,26 @@ private:
     TextureHandle m_environmentSourceTexture;
     bool m_hasEnvironmentMap = false;
 
-    GraphTextureId m_environmentTextureId;
-    GraphTextureId m_irradianceTextureId;
-    GraphTextureId m_specularTextureId;
+    GraphResourceIdTexture m_environmentTextureId;
+    GraphResourceIdTexture m_irradianceTextureId;
+    GraphResourceIdTexture m_specularTextureId;
     TextureHandle  m_brdfLookupTextureHandle;
 
     std::shared_ptr<int> m_lifetimeToken = std::make_shared<int>(0);
 
-    RenderGraphDeclaration m_renderGraphDeclaration;
-    bool m_renderGraphDirty = false;
-
-    void recompileRenderGraph();
-    void clearEnvironmentCubemap();
-    void addShadowViews(RenderGraphExecution& execution);
-    void addTextureViews(RenderGraphExecution& execution, const RenderView& view,
-        const std::vector<RenderItem>& items, bool transparent);
-    void addSceneView(RenderGraphExecution& execution, const RenderView& view);
-    static void configureView(RenderPassInvocation& invocation, const RenderView& view);
+    void addShadowViews(RenderGraph& graph);
+    void addTextureViews(
+        RenderGraph& graph,
+        const RenderView& view,
+        const std::vector<RenderItem>& items, 
+        bool transparent);
+    void addSceneView(
+        RenderGraph& graph,
+        const RenderView& view);
+    static void configureView(
+        RenderGraph& graph, 
+        RenderPassInvocation& invocation, 
+        const RenderView& view);
 
     GeometryHandle m_postProcessingQuad;
     GeometryHandle m_skyboxCube;
@@ -86,10 +78,6 @@ private:
     LightManager m_lightManager;
     SceneContext m_frameContext;
     std::vector<Camera> m_frameCameras;
-
-    RenderGraph m_renderGraph;
-
-    std::vector<std::pair<RenderPassId, RenderPassInvocation>> m_renderPassInvocations;
 
     RenderPassId m_passShadowId;
     RenderPassId m_passOpaquePBRId;

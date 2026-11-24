@@ -88,7 +88,6 @@ add_library(galaxy-engine
 	src/engine/rendering/frontend/LightManager.cpp
 	src/engine/rendering/frontend/Frontend.cpp
 	src/engine/rendering/frontend/SceneContext.cpp
-	src/engine/rendering/RenderGraph/RenderGraphExecution.cpp
 	src/engine/rendering/RenderGraph/RenderGraph.cpp
 	src/engine/rendering/frontend/CameraManager.cpp
 	src/engine/rendering/GPUInstances/VisualInstance.cpp

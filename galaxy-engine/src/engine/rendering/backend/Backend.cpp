@@ -144,63 +144,8 @@ const Program* Backend::getActiveProgram() const
 }
 
 
-void applyState(const RenderState& state){
-    glDepthMask(state.depthWrite ? GL_TRUE : GL_FALSE);
-    if(state.clear)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    if(state.depthTest)
-        glEnable(GL_DEPTH_TEST);
-    else
-        glDisable(GL_DEPTH_TEST);
-
-    // state.blend
-    if(state.blend == BlendMode::Alpha){
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    } else if (state.blend == BlendMode::Disabled)
-        glDisable(GL_BLEND);
-
-}
-
-
-void Backend::execute(RenderGraphExecution& execution){
-    const auto& compiledGraph = execution.graph.compilation;
-
-    for (const auto& pass : execution.passes) {
-        for(const auto& invocation : pass.invocations){
-            const auto& renderState = compiledGraph.getPassDescription(pass.pass).state;
-            const auto& passResource = execution.graph.getRenderPass(pass.pass);
-
-            executeInvocation(passResource, renderState, invocation);
-        }
-    }
-
-    for(auto& pixelReader: m_recordingPixels){
-        auto& pass = execution.graph.getRenderPass(pixelReader.pass);
-
-        auto* framebuffer = m_frameBufferInstances.get(std::get<FramebufferHandle>(pass.targetFramebufferHandle));
-        auto res = framebuffer->readPixel(pixelReader.colorAttachment, pixelReader.coord);
-        pixelReader.returnFunction(res);
-    }
-    m_recordingPixels.clear();
-}
-
-void Backend::recordPixelValue(RecordPixelObject record)
+void Backend::beginPassInvocation(const RenderPassResources& pass, const PassDescRender& state, const RenderPassInvocation& invocation)
 {
-    m_recordingPixels.push_back(record);
-}
-
-
-void Backend::executeInvocation(const RenderPassResources& pass, const RenderState& renderState, const RenderPassInvocation& invocation)
-{
-    ////// GraphFramebufferHandle is a variant so these visit are necessary
-    auto unbind = [this](const GraphFramebufferHandle& framebuffer) {
-        std::visit([this](const auto& typedHandle) {
-            if (typedHandle)
-                unbindFramebuffer(typedHandle);
-        }, framebuffer);
-    };
     auto resize = [this](const GraphFramebufferHandle& framebuffer, const ivec2& viewportSize) {
         std::visit([this, &viewportSize](const auto& typedHandle) {
             using Handle = std::decay_t<decltype(typedHandle)>;
@@ -219,11 +164,9 @@ void Backend::executeInvocation(const RenderPassResources& pass, const RenderSta
             
         }, framebuffer);
     };
-    //////////////
-
+    ///////////////////////////////////
 
     const auto& targetFramebuffer = invocation.targetFramebuffer.value_or(pass.targetFramebufferHandle);
-
     if (invocation.targetColorCubemap) {
         const auto* framebuffer = std::get_if<CubemapFramebufferHandle>(&targetFramebuffer);
         if (framebuffer == nullptr
@@ -232,7 +175,7 @@ void Backend::executeInvocation(const RenderPassResources& pass, const RenderSta
             return;
         }
     }
-
+    
     setActiveProgram(pass.program);
 
     resize(targetFramebuffer, invocation.viewportSize);
@@ -248,15 +191,66 @@ void Backend::executeInvocation(const RenderPassResources& pass, const RenderSta
         invocation.viewportPosition.y,
         invocation.viewportSize.x,
         invocation.viewportSize.y);
-    applyState(renderState);
+
+    glDepthMask(state.depthWrite ? GL_TRUE : GL_FALSE);
+    if(state.clear)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    if(state.depthTest)
+        glEnable(GL_DEPTH_TEST);
+    else
+        glDisable(GL_DEPTH_TEST);
+
+    // state.blend
+    if(state.blend == BlendMode::ALPHA){
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    } else if (state.blend == BlendMode::DISABLED)
+        glDisable(GL_BLEND);
+
+}
+
+
+void Backend::execute(const RenderGraph& execution){
+    for (const auto& invocation : execution.getInvocationsInOrder()) {
+        const auto& passResource = execution.getRenderPass(invocation.passId);
+
+        beginPassInvocation(passResource, execution.getPassDescription(invocation.passId), invocation);
+        executeInvocation(invocation, execution);
+    }
+
+    for(auto& pixelReader: m_recordingPixels){
+        auto& pass = execution.getRenderPass(pixelReader.pass);
+
+        auto* framebuffer = m_frameBufferInstances.get(std::get<FramebufferHandle>(pass.targetFramebufferHandle));
+        auto res = framebuffer->readPixel(pixelReader.colorAttachment, pixelReader.coord);
+        pixelReader.returnFunction(res);
+    }
+    m_recordingPixels.clear();
+}
+
+void Backend::recordPixelValue(RecordPixelObject record)
+{
+    m_recordingPixels.push_back(record);
+}
+
+void Backend::executeInvocation(const RenderPassInvocation& invocation, const RenderGraph& graph)
+{
+    ////// GraphFramebufferHandle is a variant so these visit are necessary
+    auto unbind = [this](const GraphFramebufferHandle& framebuffer) {
+        std::visit([this](const auto& typedHandle) {
+            if (typedHandle)
+                unbindFramebuffer(typedHandle);
+        }, framebuffer);
+    };
+    //////////////
+
+    const auto& pass = graph.getRenderPass(invocation.passId);
+    const auto& targetFramebuffer = invocation.targetFramebuffer.value_or(pass.targetFramebufferHandle);
 
     Program& currentProg = *getActiveProgram();
-    // GLX-TODO: no diff between viewParameters and parameters
-    for(auto& setParameter : invocation.viewParameters)
-        applyShaderParameter(currentProg, setParameter.first, setParameter.second);
-
     for(auto& setParameter : invocation.parameters)
-        applyShaderParameter(currentProg, setParameter.first, setParameter.second);
+        currentProg.applyShaderParameter(setParameter.first, setParameter.second);
 
     for (const auto& update : invocation.updates)
         processCommand(update);
@@ -303,7 +297,7 @@ void Backend::executeInvocation(const RenderPassResources& pass, const RenderSta
     }
 
     for (const RenderItem& item : invocation.items) {
-        if (renderState.bindMaterials) {
+        if (graph.getPassDescription(invocation.passId).bindMaterials) {
             if (item.material)
                 bindMaterial(*item.material);
             else

@@ -2,12 +2,10 @@
 
 #include "RenderGraphDeclaration.hpp"
 #include "engine/core/Log.hpp"
+#include "pch.hpp"
 
-#include <algorithm>
-#include <deque>
 #include <limits>
-#include <optional>
-#include <vector>
+
 
 namespace Galaxy {
 
@@ -16,7 +14,7 @@ struct CompiledGraphTexture {
 
     std::optional<RenderPassId> producer;
     std::vector<RenderPassId> consumers;
-    GraphTextureId textureId;
+    GraphResourceIdTexture textureId;
 
     std::size_t firstUse = NoUse;
     std::size_t lastUse = NoUse;
@@ -25,34 +23,20 @@ struct CompiledGraphTexture {
 struct CompiledRenderPass {
     RenderPassId id;
     std::vector<RenderPassId> dependencies;
-    TargetId renderTargetId;
+    RenderTargetId renderTargetId;
 };
 
 // Compilation phase: owns the dependency order and resource lifetimes.
 struct CompiledRenderGraph {
-    RenderGraphDeclaration declaration;
-
     // Passes are stored directly in execution order.
     std::vector<CompiledRenderPass> passes;
     std::vector<CompiledGraphTexture> textures;
 
-    // Converts a declaration PassId to its position in the execution order.
     std::vector<std::size_t> executionIndexByPass;
-
-    [[nodiscard]] const GraphTextureDesc& getTextureDescription(GraphTextureId id) const
-    {
-        return declaration.textures[id.index];
-    }
-
-    [[nodiscard]] const RenderPassDesc& getPassDescription(RenderPassId id) const
-    {
-        return declaration.passes[id.index];
-    }
 
     CompiledRenderGraph() = default;
 
     CompiledRenderGraph(const RenderGraphDeclaration& graphDeclaration)
-        : declaration(graphDeclaration)
     {
         const std::size_t passCount = graphDeclaration.passes.size();
         const std::size_t textureCount = graphDeclaration.textures.size();
@@ -62,7 +46,7 @@ struct CompiledRenderGraph {
             textures.push_back(CompiledGraphTexture {
                 std::nullopt,
                 {},
-                GraphTextureId { static_cast<GraphTextureId::Index>(textureIndex) },
+                GraphResourceIdTexture { static_cast<GraphResourceIdTexture::Index>(textureIndex) },
                 CompiledGraphTexture::NoUse,
                 CompiledGraphTexture::NoUse
             });
@@ -71,13 +55,13 @@ struct CompiledRenderGraph {
         std::vector<bool> registeredTargets(graphDeclaration.targets.size(), false);
         for (std::size_t passIndex = 0; passIndex < passCount; ++passIndex) {
             const RenderPassId passId { static_cast<RenderPassId::Index>(passIndex) };
-            const RenderPassDesc& pass = graphDeclaration.passes[passIndex];
-            const RenderTargetDesc& target = graphDeclaration.targets[pass.targetId.index];
+            const PassDescRender& pass = graphDeclaration.passes[passIndex];
+            const TargetDescRender& target = graphDeclaration.targets[pass.targetId.index];
 
             // Several passes can share a target. Its attachments are still produced once.
             if (!registeredTargets[pass.targetId.index]) {
                 registeredTargets[pass.targetId.index] = true;
-                for (GraphTextureId output : target.colorAttachments) {
+                for (GraphResourceIdTexture output : target.colorAttachments) {
                     CompiledGraphTexture& texture = textures[output.index];
                     if (texture.producer.has_value()) {
                         GLX_ERROR(
@@ -92,7 +76,7 @@ struct CompiledRenderGraph {
                     textures[target.depthAttachment->index].producer = passId;
             }
 
-            for (const SampledTextureInputDesc& input : pass.inputTextures) {
+            for (const InputDescTexture& input : pass.inputTextures) {
                 std::vector<RenderPassId>& consumers = textures[input.texture.index].consumers;
                 if (std::find(consumers.begin(), consumers.end(), passId) == consumers.end())
                     consumers.push_back(passId);
@@ -158,7 +142,7 @@ struct CompiledRenderGraph {
         executionIndexByPass.resize(passCount);
         passes.reserve(passCount);
 
-        auto markTextureUse = [this](GraphTextureId texture, std::size_t executionIndex) {
+        auto markTextureUse = [this](GraphResourceIdTexture texture, std::size_t executionIndex) {
             CompiledGraphTexture& compiledTexture = textures[texture.index];
             compiledTexture.firstUse = std::min(compiledTexture.firstUse, executionIndex);
             compiledTexture.lastUse = executionIndex;
@@ -166,8 +150,8 @@ struct CompiledRenderGraph {
 
         for (std::size_t executionIndex = 0; executionIndex < executionOrder.size(); ++executionIndex) {
             const RenderPassId passId = executionOrder[executionIndex];
-            const RenderPassDesc& pass = graphDeclaration.passes[passId.index];
-            const RenderTargetDesc& target = graphDeclaration.targets[pass.targetId.index];
+            const PassDescRender& pass = graphDeclaration.passes[passId.index];
+            const TargetDescRender& target = graphDeclaration.targets[pass.targetId.index];
 
             executionIndexByPass[passId.index] = executionIndex;
             passes.push_back(CompiledRenderPass {
@@ -176,9 +160,9 @@ struct CompiledRenderGraph {
                 pass.targetId
             });
 
-            for (const SampledTextureInputDesc& input : pass.inputTextures)
+            for (const InputDescTexture& input : pass.inputTextures)
                 markTextureUse(input.texture, executionIndex);
-            for (GraphTextureId output : target.colorAttachments)
+            for (GraphResourceIdTexture output : target.colorAttachments)
                 markTextureUse(output, executionIndex);
             if (target.depthAttachment)
                 markTextureUse(*target.depthAttachment, executionIndex);

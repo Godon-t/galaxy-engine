@@ -45,6 +45,17 @@ enum struct TextureFiltering {
     LINEAR
 };
 
+enum class TextureDimension {
+    TEXTURE_2D,
+    TEXTURE_2D_ARRAY,
+    CUBEMAP
+};
+
+enum class BlendMode {
+    DISABLED,
+    ALPHA
+};
+
 enum class FramebufferTextureFormat {
     None = 0,
 

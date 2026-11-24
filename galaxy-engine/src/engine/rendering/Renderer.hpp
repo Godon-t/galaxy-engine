@@ -28,6 +28,7 @@ public:
 
     Backend& getBackend(){return m_backend;}
     Frontend& getFrontend(){return m_frontend;}
+    RenderGraph& getRenderGraph(){return m_graph;}
     LightManager& getLightManager(){return m_frontend.getLightManager();}
 
     inline vec2 getRenderingWindowSize() const {return m_mainViewportSize;}
@@ -43,7 +44,9 @@ private:
     ~Renderer();
 
     Backend m_backend;
+    RenderGraph m_graph;
     Frontend m_frontend;
+
 
     FramebufferHandle m_sceneFramebuffer;
     vec2 m_mainViewportSize;

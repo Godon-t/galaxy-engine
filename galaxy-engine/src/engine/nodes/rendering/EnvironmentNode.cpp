@@ -1,16 +1,29 @@
 #include "EnvironmentNode.hpp"
 
+#include "pch.hpp"
+
 #include "rendering/RenderGraph/RenderGraph.hpp"
-#include "rendering/RenderGraph/RenderGraphExecution.hpp"
 #include "rendering/Renderer.hpp"
 #include "resource/ResourceManager.hpp"
 #include "core/Helper.hpp"
 
-#include <algorithm>
-#include <array>
 #include <cmath>
 
 namespace Galaxy {
+const std::array<vec3, 6> directions {
+    vec3(1, 0, 0), vec3(-1, 0, 0), vec3(0, 1, 0),
+    vec3(0, -1, 0), vec3(0, 0, 1), vec3(0, 0, -1)
+};
+const std::array<vec3, 6> ups {
+    vec3(0, -1, 0), vec3(0, -1, 0), vec3(0, 0, 1),
+    vec3(0, 0, -1), vec3(0, -1, 0), vec3(0, -1, 0)
+};
+const auto projection = perspective(radians(90.0f), 1.0f, 0.1f, 10.0f);
+constexpr int resolution = 1024;
+
+
+
+
 EnvironmentNode::~EnvironmentNode()
 {
     if (!m_environmentSourceTexture && !m_captureCube && m_directionalLightID < 0)
@@ -45,6 +58,7 @@ void EnvironmentNode::enteredRoot()
 
     auto& frontend = Renderer::getInstance().getFrontend();
     auto& backend = Renderer::getInstance().getBackend();
+    auto& graphDeclaration = Renderer::getInstance().getRenderGraph().getDeclaration();
     const auto rectangularProgram = backend.loadShader(engineRes("shaders/filters/rectangularToCubemap.glsl"));
     const auto irradianceProgram = backend.loadShader(engineRes("shaders/filters/irradiance.glsl"));
     const auto specularFilterProgram = backend.loadShader(engineRes("shaders/filters/specular.glsl"));
@@ -52,48 +66,48 @@ void EnvironmentNode::enteredRoot()
 
     m_captureCube = backend.generateCube(2.0f, true, nullptr);
 
-    RenderTargetDesc conversionTarget;
+    TargetDescRender conversionTarget;
     conversionTarget.colorAttachments.push_back(frontend.getEnvironmentGraphTexture());
 
-    RenderPassDesc conversion;
+    PassDescRender conversion;
     conversion.name = "equirectangular_to_cubemap";
     conversion.associatedProgram = rectangularProgram;
-    conversion.targetId = frontend.addGraphTarget(conversionTarget);
-    conversion.state.depthTest = false;
-    conversion.state.depthWrite = false;
-    m_passEquirectangularToCubemapId = frontend.addGraphPass(conversion);
+    conversion.targetId = graphDeclaration.addTarget(conversionTarget);
+    conversion.depthTest = false;
+    conversion.depthWrite = false;
+    m_passEquirectangularToCubemapId = graphDeclaration.addPass(conversion);
 
 
-    SampledTextureInputDesc skyboxInput;
+    InputDescTexture skyboxInput;
     skyboxInput.samplerName = "skybox";
     skyboxInput.texture = frontend.getEnvironmentGraphTexture();
 
 
     
-    RenderTargetDesc irradianceTarget;
+    TargetDescRender irradianceTarget;
     irradianceTarget.colorAttachments.push_back(frontend.getIrradianceGraphTexture());
 
-    RenderPassDesc irradianceFilter;
+    PassDescRender irradianceFilter;
     irradianceFilter.name = "irradiance_convolution";
     irradianceFilter.associatedProgram = irradianceProgram;
-    irradianceFilter.targetId = frontend.addGraphTarget(irradianceTarget);
-    irradianceFilter.state.depthTest = false;
-    irradianceFilter.state.depthWrite = false;
+    irradianceFilter.targetId = graphDeclaration.addTarget(irradianceTarget);
+    irradianceFilter.depthTest = false;
+    irradianceFilter.depthWrite = false;
     irradianceFilter.inputTextures.push_back(skyboxInput);
-    m_passIrradianceConvolutionId = frontend.addGraphPass(irradianceFilter);
+    m_passIrradianceConvolutionId = graphDeclaration.addPass(irradianceFilter);
 
 
-    RenderTargetDesc specularTarget;
+    TargetDescRender specularTarget;
     specularTarget.colorAttachments.push_back(frontend.getSpecularGraphTexture());
 
-    RenderPassDesc specularFilter;
+    PassDescRender specularFilter;
     specularFilter.name = "specular_filter";
     specularFilter.associatedProgram = specularFilterProgram;
-    specularFilter.targetId = frontend.addGraphTarget(specularTarget);
-    specularFilter.state.depthTest = false;
-    specularFilter.state.depthWrite = false;
+    specularFilter.targetId = graphDeclaration.addTarget(specularTarget);
+    specularFilter.depthTest = false;
+    specularFilter.depthWrite = false;
     specularFilter.inputTextures.push_back(skyboxInput);
-    m_passSpecularFilterId = frontend.addGraphPass(specularFilter);
+    m_passSpecularFilterId = graphDeclaration.addPass(specularFilter);
 }
 
 void EnvironmentNode::setDirection(const vec3& direction)
@@ -136,6 +150,44 @@ void EnvironmentNode::setEnvironmentMap(EnvironmentMapSource environmentMap)
     prepareEnvironmentMap();
 }
 
+void EnvironmentNode::addTextureRectToCubemapInvocation()
+{
+    auto& renderer = Renderer::getInstance();
+    auto& backend = renderer.getBackend();
+
+    auto& image = std::get<ResourceHandle<Image>>(m_environmentMap).getResource();
+    const auto* pixels = image.getData();
+    if (pixels == nullptr || image.getWidth() <= 0 || image.getHeight() <= 0) {
+        GLX_CORE_WARN("Cannot convert an empty environment image");
+        return;
+    }
+
+    const auto source = backend.instantiateTexture(
+        TextureFormat::RGB16F, vec2(image.getWidth(), image.getHeight()));
+    if (!backend.isValid(source))
+        return;
+    if (!backend.setTextureData(source, image)) {
+        backend.clearTexture(source);
+        return;
+    }
+    backend.setTextureWrap(source, TextureWrap::REPEAT, TextureWrap::CLAMP_TO_EDGE);
+
+    if (backend.isValid(m_environmentSourceTexture))
+        backend.clearTexture(m_environmentSourceTexture);
+    m_environmentSourceTexture = source;
+
+    for (std::size_t face = 0; face < directions.size(); ++face) {
+        RenderPassInvocation& invocation = renderer.getRenderGraph().generateInvocation(m_passEquirectangularToCubemapId);
+        invocation.parameters["projection"] = projection;
+        invocation.parameters["view"] = lookAt(vec3(0), directions[face], ups[face]);
+        invocation.viewportSize = ivec2(resolution);
+        invocation.clearColor = vec4(0.0f);
+        invocation.targetLayer = static_cast<int>(face);
+        invocation.textureBindings.push_back({ source, "environmentHDR" });
+        invocation.items.push_back(RenderItem { m_captureCube });
+    }
+}
+
 void EnvironmentNode::prepareEnvironmentMap()
 {
     auto& renderer = Renderer::getInstance();
@@ -150,70 +202,31 @@ void EnvironmentNode::prepareEnvironmentMap()
 
     resource.getResource().onLoaded([this, &renderer, &backend]() {
         if (auto* cubemap = std::get_if<ResourceHandle<CubemapResource>>(&m_environmentMap)) {
-            renderer.getFrontend().setEnvironmentMap(*cubemap);
-            return;
+            auto envGraphTexId = Renderer::getInstance().getFrontend().getEnvironmentGraphTexture();
+            const auto cubemapHandle = std::get<CubemapHandle>(Renderer::getInstance().getRenderGraph().getTextureHandle(envGraphTexId));
+
+            // GLX-TODO: should be set through RenderGraph, setting frontend texture data like this feels like a hack
+            Renderer::getInstance().getBackend().setCubemapData(cubemapHandle, cubemap->getResource().getFaces());
+        } else {
+            addTextureRectToCubemapInvocation();
         }
     
-        auto& image = std::get<ResourceHandle<Image>>(m_environmentMap).getResource();
-        const auto* pixels = image.getData();
-        if (pixels == nullptr || image.getWidth() <= 0 || image.getHeight() <= 0) {
-            GLX_CORE_WARN("Cannot convert an empty environment image");
-            return;
-        }
-    
-        constexpr int resolution = 1024;
-        const auto source = backend.instantiateTexture(
-            TextureFormat::RGB16F, vec2(image.getWidth(), image.getHeight()));
-        if (!backend.isValid(source))
-            return;
-        if (!backend.setTextureData(source, image)) {
-            backend.clearTexture(source);
-            return;
-        }
-        backend.setTextureWrap(source, TextureWrap::REPEAT, TextureWrap::CLAMP_TO_EDGE);
-    
-        if (backend.isValid(m_environmentSourceTexture))
-            backend.clearTexture(m_environmentSourceTexture);
-        m_environmentSourceTexture = source;
-    
-        const std::array<vec3, 6> directions {
-            vec3(1, 0, 0), vec3(-1, 0, 0), vec3(0, 1, 0),
-            vec3(0, -1, 0), vec3(0, 0, 1), vec3(0, 0, -1)
-        };
-        const std::array<vec3, 6> ups {
-            vec3(0, -1, 0), vec3(0, -1, 0), vec3(0, 0, 1),
-            vec3(0, 0, -1), vec3(0, -1, 0), vec3(0, -1, 0)
-        };
-        const auto projection = perspective(radians(90.0f), 1.0f, 0.1f, 10.0f);
         for (std::size_t face = 0; face < directions.size(); ++face) {
-            RenderPassInvocation invocation;
-            invocation.viewParameters["projection"] = projection;
-            invocation.viewParameters["view"] = lookAt(vec3(0), directions[face], ups[face]);
-            invocation.viewportSize = ivec2(resolution);
-            invocation.clearColor = vec4(0.0f);
-            invocation.targetLayer = static_cast<int>(face);
-            invocation.textureBindings.push_back({ source, "environmentHDR" });
-            invocation.items.push_back(RenderItem { m_captureCube });
-            renderer.getFrontend().pushPassInvocation(m_passEquirectangularToCubemapId, std::move(invocation));
-
-
-
-            RenderPassInvocation irradianceInvocation;
-            irradianceInvocation.viewParameters["projection"] = projection;
-            irradianceInvocation.viewParameters["view"] = lookAt(vec3(0), directions[face], ups[face]);
+            RenderPassInvocation& irradianceInvocation = renderer.getRenderGraph().generateInvocation(m_passIrradianceConvolutionId);
+            irradianceInvocation.parameters["projection"] = projection;
+            irradianceInvocation.parameters["view"] = lookAt(vec3(0), directions[face], ups[face]);
             irradianceInvocation.viewportSize = ivec2(resolution);
             irradianceInvocation.clearColor = vec4(0.0f);
             irradianceInvocation.targetLayer = static_cast<int>(face);
             irradianceInvocation.items.push_back(RenderItem { m_captureCube });
-            renderer.getFrontend().pushPassInvocation(m_passIrradianceConvolutionId, std::move(irradianceInvocation));
         }
 
         int maxMipLevels = 5;
         for(int mip=0; mip < maxMipLevels; mip++)
         for (std::size_t face = 0; face < directions.size(); ++face){
-            RenderPassInvocation specularInvocation;
-            specularInvocation.viewParameters["projection"] = projection;
-            specularInvocation.viewParameters["view"] = lookAt(vec3(0), directions[face], ups[face]);
+            RenderPassInvocation& specularInvocation = renderer.getRenderGraph().generateInvocation(m_passSpecularFilterId);
+            specularInvocation.parameters["projection"] = projection;
+            specularInvocation.parameters["view"] = lookAt(vec3(0), directions[face], ups[face]);
 
             float roughness = (float)mip / (float)(maxMipLevels - 1);
             specularInvocation.parameters["roughness"] = roughness;
@@ -223,9 +236,7 @@ void EnvironmentNode::prepareEnvironmentMap()
             specularInvocation.targetLayer = static_cast<int>(face);
             specularInvocation.targetMip = mip;
             specularInvocation.items.push_back(RenderItem { m_captureCube });
-            renderer.getFrontend().pushPassInvocation(m_passSpecularFilterId, std::move(specularInvocation));
         }
-        
     });
 
 

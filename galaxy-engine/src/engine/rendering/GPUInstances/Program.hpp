@@ -1,11 +1,9 @@
 #pragma once
 
-#include "types/Math.hpp"
+#include "pch.hpp"
 
-#include <cstddef>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include "types/Math.hpp"
+#include "types/Render.hpp"
 
 namespace Galaxy {
 
@@ -76,15 +74,16 @@ public:
 
     bool bindUniformBlock(const std::string& blockName, unsigned int bindingPoint);
 
-    bool setUniform(const std::string& uniformName, bool value) const;
-    bool setUniform(const std::string& uniformName, float value) const;
-    bool setUniform(const std::string& uniformName, int value) const;
-    bool setUniform(const std::string& uniformName, const unsigned int value) const;
-    bool setUniform(const std::string& uniformName, const math::vec2& value) const;
-    bool setUniform(const std::string& uniformName, const math::vec3& value) const;
-    bool setUniform(const std::string& uniformName, const math::ivec3& value) const;
-    bool setUniform(const std::string& uniformName, const math::vec4& value) const;
-    bool setUniform(const std::string& uniformName, const math::mat4& value) const;
+    bool setUniform(const std::string& uniformName, bool value);
+    bool setUniform(const std::string& uniformName, float value);
+    bool setUniform(const std::string& uniformName, int value);
+    bool setUniform(const std::string& uniformName, const unsigned int value);
+    bool setUniform(const std::string& uniformName, const math::vec2& value);
+    bool setUniform(const std::string& uniformName, const math::vec3& value);
+    bool setUniform(const std::string& uniformName, const math::ivec3& value);
+    bool setUniform(const std::string& uniformName, const math::vec4& value);
+    bool setUniform(const std::string& uniformName, const math::mat4& value);
+    bool applyShaderParameter(const std::string& name, const ShaderParameterValue& parameter);
 
 private:
     [[nodiscard]] bool compile(unsigned int shaderID, const char* content) const;

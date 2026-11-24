@@ -3,11 +3,42 @@
 #include "engine/core/Log.hpp"
 #include "engine/rendering/backend/Backend.hpp"
 
-#include <optional>
-
 namespace Galaxy {
-const GraphTextureHandle RenderPassResources::findInputTexture(
-    std::string_view samplerName) const
+RenderPassInvocation& RenderGraph::generateInvocation(RenderPassId pass)
+{
+    auto& invocations = m_invocationsByPass[pass.index];
+    invocations.emplace_back();
+    invocations.back().passId = pass;
+    return invocations.back();
+}
+
+void RenderGraph::clearInvocations()
+{
+    for(auto& invocation: m_invocationsByPass){
+        invocation.clear();
+    }
+}
+
+std::vector<RenderPassInvocation> RenderGraph::getInvocationsInOrder() const
+{
+    std::vector<RenderPassInvocation> res;
+
+    for(const auto& pass : m_compiled.passes){
+        for(const auto& passInvocation: m_invocationsByPass[pass.id.index]){
+            res.push_back(passInvocation);
+        }
+    }
+
+    return res;
+}
+
+
+
+
+
+
+
+const GraphTextureHandle RenderPassResources::findInputTexture(std::string_view samplerName) const
 {
     for (std::size_t index = 0; index < inputTextureNames.size(); ++index) {
         if (inputTextureNames[index] == samplerName)
@@ -17,42 +48,13 @@ const GraphTextureHandle RenderPassResources::findInputTexture(
     return GraphTextureHandle();
 }
 
-bool targetUsesCubemaps(const CompiledRenderGraph& graph, const RenderTargetDesc& target)
+void RenderGraph::initializeTexturesHandle(Backend& backend)
 {
-    std::optional<bool> usesCubemaps;
-    auto inspectAttachment = [&](GraphTextureId id) {
-        const bool attachmentUsesCubemaps =
-            graph.getTextureDescription(id).dimension == TextureDimension::Cubemap;
-        if (usesCubemaps && *usesCubemaps != attachmentUsesCubemaps) {
-            GLX_CORE_ERROR("A render target cannot mix cubemap and non-cubemap attachments");
-            return false;
-        }
-        usesCubemaps = attachmentUsesCubemaps;
-        return true;
-    };
 
-    for (GraphTextureId colorAttachment : target.colorAttachments) {
-        if (!inspectAttachment(colorAttachment))
-            return false;
-    }
-    if (target.depthAttachment && !inspectAttachment(*target.depthAttachment))
-        return false;
+    for (const CompiledGraphTexture& texture : m_compiled.textures) {
+        const GraphResourceDescTexture& textureDesc = getTextureDescription(texture.textureId);
 
-    return usesCubemaps.value_or(false);
-}
-
-void RenderGraph::build(const CompiledRenderGraph& compiledGraph, Backend& backend)
-{
-    compilation = compiledGraph;
-    m_passes.clear();
-    m_graphTextureHandles.clear();
-    m_graphTextureHandles.resize(compiledGraph.declaration.textures.size());
-
-    int temporarySize = 1024;
-    for (const CompiledGraphTexture& texture : compiledGraph.textures) {
-        const GraphTextureDesc& textureDesc = compiledGraph.getTextureDescription(texture.textureId);
-
-        if (textureDesc.dimension == TextureDimension::Cubemap) {
+        if (textureDesc.dimension == TextureDimension::CUBEMAP) {
             const CubemapHandle gpuHandle = backend.instantiateCubemap(
                 textureDesc.textureSize.x, 
                 textureDesc.format, 
@@ -65,7 +67,7 @@ void RenderGraph::build(const CompiledRenderGraph& compiledGraph, Backend& backe
                 textureDesc.wrapR);
             backend.setTextureMipLevels(gpuHandle, textureDesc.mipLevels);
         } else {
-            const std::size_t layerCount = textureDesc.dimension == TextureDimension::Texture2DArray
+            const std::size_t layerCount = textureDesc.dimension == TextureDimension::TEXTURE_2D_ARRAY
             ? textureDesc.arrayLayers
             : 0U;
             const TextureHandle gpuHandle = backend.instantiateTexture(
@@ -78,17 +80,33 @@ void RenderGraph::build(const CompiledRenderGraph& compiledGraph, Backend& backe
             backend.setTextureMipLevels(gpuHandle, textureDesc.mipLevels);
         }
     }
+}
 
-    std::vector<GraphFramebufferHandle> targetFramebuffers(compiledGraph.declaration.targets.size());
-    m_passes.reserve(compiledGraph.passes.size());
+void RenderGraph::recompile(Backend& backend)
+{
+    m_compiled = CompiledRenderGraph(m_declaration);
+    m_invocationsByPass.resize(m_declaration.getPasseIds().size());
 
-    for (const CompiledRenderPass& pass : compiledGraph.passes) {
-        const RenderPassDesc& passDesc = compiledGraph.getPassDescription(pass.id);
-        const RenderTargetDesc& passTarget = compiledGraph.declaration.targets.at(passDesc.targetId.index);
-        const bool cubemapTarget = targetUsesCubemaps(compiledGraph, passTarget);
+    for (const CompiledRenderPass& pass : m_compiled.passes)
+        m_invocationsByPass[pass.id.index].reserve(1);
+
+    m_passes.clear();
+    m_graphTextureHandles.clear();
+    m_graphTextureHandles.resize(m_declaration.textures.size());
+
+    initializeTexturesHandle(backend);
+    int temporarySize = 1024;
+
+
+    std::vector<GraphFramebufferHandle> targetFramebuffers(m_declaration.targets.size());
+    m_passes.reserve(m_compiled.passes.size());
+
+    for (const CompiledRenderPass& pass : m_compiled.passes) {
+        const PassDescRender& passDesc = getPassDescription(pass.id);
+        const TargetDescRender& passTarget = m_declaration.targets.at(passDesc.targetId.index);
+        const bool cubemapTarget = targetUsesCubemaps(passTarget);
 
         RenderPassResources passResources;
-        passResources.passName = passDesc.name;
         passResources.program = passDesc.associatedProgram;
 
         GraphFramebufferHandle& targetFramebuffer = targetFramebuffers.at(pass.renderTargetId.index);
@@ -101,7 +119,7 @@ void RenderGraph::build(const CompiledRenderGraph& compiledGraph, Backend& backe
                     temporarySize, static_cast<unsigned int>(colorCount));
             } else {
                 const unsigned int depthLayerCount = hasDepth
-                    ? compiledGraph.getTextureDescription(*passTarget.depthAttachment).arrayLayers
+                    ? getTextureDescription(*passTarget.depthAttachment).arrayLayers
                     : 0U;
                 const FramebufferTextureFormat format = hasDepth && colorCount > 0
                     ? FramebufferTextureFormat::DEPTH24RGBA8
@@ -117,7 +135,7 @@ void RenderGraph::build(const CompiledRenderGraph& compiledGraph, Backend& backe
         }
         passResources.targetFramebufferHandle = targetFramebuffer;
 
-        for (const SampledTextureInputDesc& inputTexture : passDesc.inputTextures) {
+        for (const InputDescTexture& inputTexture : passDesc.inputTextures) {
             passResources.inputTextures.push_back(getTextureHandle(inputTexture.texture));
             passResources.inputTextureNames.push_back(inputTexture.samplerName);
             passResources.inputTexturesLocations.push_back(
@@ -174,19 +192,49 @@ void RenderGraph::build(const CompiledRenderGraph& compiledGraph, Backend& backe
     }
 }
 
+bool RenderGraph::targetUsesCubemaps(const TargetDescRender& target)
+{
+    std::optional<bool> usesCubemaps;
+    auto inspectAttachment = [&](GraphResourceIdTexture id) {
+        const bool attachmentUsesCubemaps = getTextureDescription(id).dimension == TextureDimension::CUBEMAP;
+        if (usesCubemaps && *usesCubemaps != attachmentUsesCubemaps) {
+            GLX_CORE_ERROR("A render target cannot mix cubemap and non-cubemap attachments");
+            return false;
+        }
+        usesCubemaps = attachmentUsesCubemaps;
+        return true;
+    };
+
+    for (GraphResourceIdTexture colorAttachment : target.colorAttachments) {
+        if (!inspectAttachment(colorAttachment))
+            return false;
+    }
+    if (target.depthAttachment && !inspectAttachment(*target.depthAttachment))
+        return false;
+
+    return usesCubemaps.value_or(false);
+}
+
 void RenderGraph::prepareResources(Backend& backend)
 {
-    for(auto& texture : compilation.textures){
-        auto& textureDesc = compilation.getTextureDescription(texture.textureId);
+    if(m_declaration.isDirty()){
+        recompile(backend);
+        m_declaration.noMoreDirty();
+
+        m_lastFB = std::get<FramebufferHandle>(m_passes.back().targetFramebufferHandle);
+    }
+
+    for(auto& texture : m_compiled.textures){
+        auto& textureDesc = getTextureDescription(texture.textureId);
         if(textureDesc.matchViewSize){
             auto& textureHandle = getTextureHandle(texture.textureId);
             
             switch(textureDesc.dimension){
-                case TextureDimension::Texture2D:
-                case TextureDimension::Texture2DArray:
+                case TextureDimension::TEXTURE_2D:
+                case TextureDimension::TEXTURE_2D_ARRAY:
                     backend.setTextureSize(std::get<TextureHandle>(textureHandle), m_viewSize);
                     break;
-                case TextureDimension::Cubemap:
+                case TextureDimension::CUBEMAP:
                     backend.setTextureSize(std::get<CubemapHandle>(textureHandle), m_viewSize.x);
                     break;
             }

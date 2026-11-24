@@ -424,7 +424,7 @@ bool Program::bindUniformBlock(const std::string& blockName, unsigned int bindin
     return true;
 }
 
-bool Program::setUniform(const std::string& uniformName, bool value) const
+bool Program::setUniform(const std::string& uniformName, bool value)
 {
     const UniformInfo* uniform = getUniformInfo(uniformName);
     if (uniform == nullptr || uniform->type != ShaderValueType::Bool)
@@ -436,7 +436,7 @@ bool Program::setUniform(const std::string& uniformName, bool value) const
     return true;
 }
 
-bool Program::setUniform(const std::string& uniformName, float value) const
+bool Program::setUniform(const std::string& uniformName, float value)
 {
     const UniformInfo* uniform = getUniformInfo(uniformName);
     if (uniform == nullptr || uniform->type != ShaderValueType::Float)
@@ -448,7 +448,7 @@ bool Program::setUniform(const std::string& uniformName, float value) const
     return true;
 }
 
-bool Program::setUniform(const std::string& uniformName, int value) const
+bool Program::setUniform(const std::string& uniformName, int value)
 {
     const UniformInfo* uniform = getUniformInfo(uniformName);
     if (uniform == nullptr || uniform->type != ShaderValueType::Int)
@@ -460,7 +460,7 @@ bool Program::setUniform(const std::string& uniformName, int value) const
     return true;
 }
 
-bool Program::setUniform(const std::string& uniformName, const unsigned int value) const
+bool Program::setUniform(const std::string& uniformName, const unsigned int value)
 {
     const UniformInfo* uniform = getUniformInfo(uniformName);
     if (uniform == nullptr || uniform->type != ShaderValueType::UnsignedInt)
@@ -472,7 +472,7 @@ bool Program::setUniform(const std::string& uniformName, const unsigned int valu
     return true;
 }
 
-bool Program::setUniform(const std::string& uniformName, const math::vec2& value) const
+bool Program::setUniform(const std::string& uniformName, const math::vec2& value)
 {
     const UniformInfo* uniform = getUniformInfo(uniformName);
     if (uniform == nullptr || uniform->type != ShaderValueType::Float2)
@@ -484,7 +484,7 @@ bool Program::setUniform(const std::string& uniformName, const math::vec2& value
     return true;
 }
 
-bool Program::setUniform(const std::string& uniformName, const math::vec3& value) const
+bool Program::setUniform(const std::string& uniformName, const math::vec3& value)
 {
     const UniformInfo* uniform = getUniformInfo(uniformName);
     if (uniform == nullptr || uniform->type != ShaderValueType::Float3)
@@ -496,7 +496,7 @@ bool Program::setUniform(const std::string& uniformName, const math::vec3& value
     return true;
 }
 
-bool Program::setUniform(const std::string& uniformName, const math::ivec3& value) const
+bool Program::setUniform(const std::string& uniformName, const math::ivec3& value)
 {
     const UniformInfo* uniform = getUniformInfo(uniformName);
     if (uniform == nullptr || uniform->type != ShaderValueType::Int3)
@@ -508,7 +508,7 @@ bool Program::setUniform(const std::string& uniformName, const math::ivec3& valu
     return true;
 }
 
-bool Program::setUniform(const std::string& uniformName, const math::vec4& value) const
+bool Program::setUniform(const std::string& uniformName, const math::vec4& value)
 {
     const UniformInfo* uniform = getUniformInfo(uniformName);
     if (uniform == nullptr || uniform->type != ShaderValueType::Float4)
@@ -520,7 +520,7 @@ bool Program::setUniform(const std::string& uniformName, const math::vec4& value
     return true;
 }
 
-bool Program::setUniform(const std::string& uniformName, const math::mat4& value) const
+bool Program::setUniform(const std::string& uniformName, const math::mat4& value)
 {
     const UniformInfo* uniform = getUniformInfo(uniformName);
     if (uniform == nullptr || uniform->type != ShaderValueType::Matrix4)
@@ -530,6 +530,18 @@ bool Program::setUniform(const std::string& uniformName, const math::mat4& value
         return false;
     glUniformMatrix4fv(location, 1, GL_FALSE, &value[0][0]);
     return true;
+}
+
+bool Program::applyShaderParameter(const std::string& name, const ShaderParameterValue& parameter)
+{
+    if (!hasUniform(name))
+        return false;
+
+    return std::visit(
+        [&](const auto& typedValue) {
+            return setUniform(name, typedValue);
+        },
+        parameter);
 }
 
 } // namespace Galaxy

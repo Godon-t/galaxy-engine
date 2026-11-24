@@ -6,27 +6,10 @@
 #include "engine/types/Math.hpp"
 
 #include <cstdint>
-#include <limits>
-#include <optional>
-#include <string_view>
 #include <utility>
+#include <limits>
 
 namespace Galaxy {
-
-enum class DefaultRenderTexture {
-    OpaqueColor
-};
-
-[[nodiscard]] inline constexpr std::string_view toString(DefaultRenderTexture texture) noexcept
-{
-    switch (texture) {
-    case DefaultRenderTexture::OpaqueColor:
-        return "opaque_color_texture";
-    }
-
-    return {};
-}
-
 struct GenericId {
     using Index = std::uint32_t;
 
@@ -48,23 +31,22 @@ struct GenericId {
     }
 };
 
-using GraphTextureId = GenericId;
+
+
+
 using RenderPassId = GenericId;
-using TargetId = GenericId;
+using RenderTargetId = GenericId;
 
-enum class TextureDimension {
-    Texture2D,
-    Texture2DArray,
-    Cubemap
-};
+using GraphResourceIdTexture = GenericId;
 
-struct GraphTextureDesc {
+
+struct GraphResourceDescTexture{
     std::string name;
     TextureFormat format = TextureFormat::RGBA;
-    TextureDimension dimension = TextureDimension::Texture2D;
+    TextureDimension dimension = TextureDimension::TEXTURE_2D;
     math::ivec2 textureSize = math::ivec2(512);
-    bool matchViewSize = false;
-    std::uint32_t arrayLayers = 0;
+    bool matchViewSize = false; // GLX-TODO: match fb size rather ?
+    std::uint32_t arrayLayers = 0; // GLX-TODO: only usable when array texture, should be there ?
 
     TextureFiltering filter = TextureFiltering::LINEAR;
 
@@ -74,71 +56,91 @@ struct GraphTextureDesc {
 
     unsigned int mipLevels = 1;
 
-    [[nodiscard]] bool hasDepth() const
+    bool hasDepth() const
     {
         return format == TextureFormat::DEPTH24STENCIL8 || format == TextureFormat::DEPTH;
     }
 };
 
-struct RenderTargetDesc {
-    std::vector<GraphTextureId> colorAttachments;
-    std::optional<GraphTextureId> depthAttachment;
+
+struct TargetDescRender {
+    std::vector<GraphResourceIdTexture> colorAttachments;
+    std::optional<GraphResourceIdTexture> depthAttachment;
 };
 
-enum class BlendMode {
-    Disabled,
-    Alpha
-};
 
-struct RenderState {
-    bool depthTest = true;
-    bool depthWrite = true;
-    BlendMode blend = BlendMode::Disabled;
-    bool clear = true;
-
-    bool bindMaterials = false;
-};
-
-struct SampledTextureInputDesc {
-    GraphTextureId texture;
+struct InputDescTexture {
+    GraphResourceIdTexture texture;
     std::string samplerName;
 };
 
-struct RenderPassDesc {
+struct PassDescRender {
     std::string name;
     ProgramHandle associatedProgram;
-    RenderState state;
 
-    std::vector<SampledTextureInputDesc> inputTextures;
-    TargetId targetId;
+    // RenderState
+    BlendMode blend = BlendMode::DISABLED;
+    bool depthTest = true;
+    bool depthWrite = true;
+    bool clear = true;
+    bool bindMaterials = false;
+    ////////
+    
+    std::vector<InputDescTexture> inputTextures;
+
+    RenderTargetId targetId;
 };
 
-// Declaration phase: describes resources, targets and passes without allocating GPU objects.
 struct RenderGraphDeclaration {
-    std::vector<GraphTextureDesc> textures;
-    std::vector<RenderPassDesc> passes;
-    std::vector<RenderTargetDesc> targets;
+    std::vector<GraphResourceDescTexture> textures;
+    std::vector<PassDescRender> passes;
+    std::vector<TargetDescRender> targets;
 
-    [[nodiscard]] GraphTextureId addTexture(GraphTextureDesc desc)
+    GraphResourceIdTexture addResource(GraphResourceDescTexture desc)
     {
-        const auto id = GraphTextureId { static_cast<GraphTextureId::Index>(textures.size()) };
+        const auto id = GraphResourceIdTexture { static_cast<GraphResourceIdTexture::Index>(textures.size()) };
+        textureIds.push_back(id);
         textures.push_back(std::move(desc));
+        m_dirty = true;
         return id;
     }
 
-    [[nodiscard]] RenderPassId addPass(RenderPassDesc desc)
+    RenderPassId addPass(PassDescRender desc)
     {
         const auto id = RenderPassId { static_cast<RenderPassId::Index>(passes.size()) };
+        passeIds.push_back(id);
         passes.push_back(std::move(desc));
+        m_dirty = true;
         return id;
     }
 
-    [[nodiscard]] TargetId addTarget(RenderTargetDesc desc)
+    RenderTargetId addTarget(TargetDescRender desc)
     {
-        const auto id = TargetId { static_cast<TargetId::Index>(targets.size()) };
+        const auto id = RenderTargetId { static_cast<RenderTargetId::Index>(targets.size()) };
+        targetIds.push_back(id);
         targets.push_back(std::move(desc));
+        m_dirty = true;
         return id;
     }
+
+    GraphResourceDescTexture getGraphResource(const GraphResourceIdTexture& textureId){
+        return textures[textureId.index];
+    }
+
+    std::vector<RenderPassId> getPasseIds() const { return passeIds; }
+    std::vector<GraphResourceIdTexture> getTextureIds() const { return textureIds; }
+    std::vector<RenderTargetId> getTargetIds() const { return targetIds; }
+
+    bool isDirty() const {return m_dirty;}
+    // GLX-TODO: bad method name
+    void noMoreDirty(){m_dirty = false;}
+
+    private:
+    std::vector<RenderPassId> passeIds;
+    std::vector<GraphResourceIdTexture> textureIds;
+    std::vector<RenderTargetId> targetIds;
+
+    bool m_dirty = true;
 };
 
 } // namespace Galaxy

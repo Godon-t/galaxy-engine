@@ -9,7 +9,6 @@
 #include "rendering/GPUInstances/VisualInstance.hpp"
 #include "rendering/GPUInstances/Program.hpp"
 #include "rendering/GPUInstances/GpuResourceRegistry.hpp"
-#include "rendering/RenderGraph/RenderGraphExecution.hpp"
 #include "rendering/RenderGraph/RenderGraph.hpp"
 #include "resource/Image.hpp"
 #include "resource/Material.hpp"
@@ -119,7 +118,7 @@ public:
     bool saveTexture(TextureHandle texture, const std::string& prefix, bool hdr = false);
     bool saveCubemap(CubemapHandle cubemap, const std::string& prefix, bool hdr = false);
     
-    void execute(RenderGraphExecution& execution);
+    void execute(const RenderGraph& execution);
 
     struct RecordPixelObject{
         RenderPassId pass;
@@ -140,6 +139,12 @@ private:
         CubemapHandle depth;
     };
 
+    void beginPassInvocation(const RenderPassResources& pass, const PassDescRender& state, const RenderPassInvocation& invocation);
+    void executeInvocation(
+        const RenderPassInvocation& invocation, 
+        const RenderGraph& graph
+    );
+
     void releaseAttachments(FramebufferHandle framebuffer);
     void releaseAttachments(CubemapFramebufferHandle framebuffer);
 
@@ -149,11 +154,6 @@ private:
     void releaseMaterialTextures(const MaterialInstance& material);
     void processCommand(const UpdateUBOCommand& command);
 
-    void executeInvocation(
-        const RenderPassResources& pass, 
-        const RenderState& renderState, 
-        const RenderPassInvocation& invocation
-    );
 
     Program* getActiveProgram();
     const Program* getActiveProgram() const;
